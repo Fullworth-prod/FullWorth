@@ -3,10 +3,10 @@
 This section supersedes older branch/release snapshots elsewhere in this file. Verify current source, CI, and GitHub refs before acting.
 
 ### Repository development state
-- Current `development` head: `5b358d3b8a16f099504a61a9ea68efa2c50f9b70`.
+- Runtime development head immediately before the handoff-only PR #720: `5b358d3b8a16f099504a61a9ea68efa2c50f9b70`. PR #720 then merged this documentation checkpoint as `d587d075ee69f28753120b9c7406d7b9a6b0bc07`.
 - PR #716 merged recovery credentials as a file-backed Compose secret. Exact head `6cb87266bdfa9da72075dc4804ba092e0127072e` passed FullWorth CI #1733 and Dependency Security #823; merge commit `c5619f6d82bcd45ebfa6762a1e0d2e541dd9f1a8`.
 - PR #717 merged the protected-branch governance verifier. Exact head `e1f47b57129ef0e594f13cac67113238ccaa1d9e` passed FullWorth CI #1734 and Dependency Security #824; merge commit `10bc2666d88e626d3288628e91414dff477d1649`. This verifies repository settings and reports gaps; it does not change GitHub ruleset settings or create independent approvals.
-- PR #719 merged the version-flexible signed-provenance action-pin regression. Exact head `974b710650fcf28c90b665ef00c325de16bbb4a4` passed FullWorth CI #1736 and Dependency Security #826; merge commit is the current head above. The Android workflow completed successfully with its build step skipped because this was a script-only change. Linux production-container validation, including encrypted backup and isolated restore, and backend tests passed.
+- PR #719 merged the version-flexible signed-provenance action-pin regression. Exact head `974b710650fcf28c90b665ef00c325de16bbb4a4` passed FullWorth CI #1736 and Dependency Security #826; merge commit: `5b358d3b8a16f099504a61a9ea68efa2c50f9b70`. The Android workflow completed successfully with its build step skipped because this was a script-only change. Linux production-container validation, including encrypted backup and isolated restore, and backend tests passed.
 - PR #718 was closed as superseded by #719 after its base advanced. Six Dependabot PRs were open at this checkpoint; inspect their current state before selecting dependency updates.
 
 ### Release boundary

@@ -1,3 +1,23 @@
+## Current continuation checkpoint — 2026-10-10
+
+This section supersedes older branch/release snapshots elsewhere in this file. Verify current source, CI, and GitHub refs before acting.
+
+### Repository development state
+- Current `development` head: `5b358d3b8a16f099504a61a9ea68efa2c50f9b70`.
+- PR #716 merged recovery credentials as a file-backed Compose secret. Exact head `6cb87266bdfa9da72075dc4804ba092e0127072e` passed FullWorth CI #1733 and Dependency Security #823; merge commit `c5619f6d82bcd45ebfa6762a1e0d2e541dd9f1a8`.
+- PR #717 merged the protected-branch governance verifier. Exact head `e1f47b57129ef0e594f13cac67113238ccaa1d9e` passed FullWorth CI #1734 and Dependency Security #824; merge commit `10bc2666d88e626d3288628e91414dff477d1649`. This verifies repository settings and reports gaps; it does not change GitHub ruleset settings or create independent approvals.
+- PR #719 merged the version-flexible signed-provenance action-pin regression. Exact head `974b710650fcf28c90b665ef00c325de16bbb4a4` passed FullWorth CI #1736 and Dependency Security #826; merge commit is the current head above. The Android workflow completed successfully with its build step skipped because this was a script-only change. Linux production-container validation, including encrypted backup and isolated restore, and backend tests passed.
+- PR #718 was closed as superseded by #719 after its base advanced. Six Dependabot PRs were open at this checkpoint; inspect their current state before selecting dependency updates.
+
+### Release boundary
+- Current `master` candidate: `c8858a38b38d7eb0888d273b9a1a409308e565b4`. The earlier `f401a591a8abdade557827c09412dc3166fb9de2` candidate is superseded.
+- Verified live production remains `7e8571a26447538db249c862ad009487cce119bc`. Candidate `c8858a38` is not deployed; no production deployment was performed during this work.
+- Guarded run #15 failed closed on the earlier candidate before candidate startup. Host state and backup readiness still require operator reconciliation. Do not start the public stack against an empty database or treat CI restore tests as proof of the real off-host repository.
+- Remaining release/security evidence includes provider-enforced immutable off-host backup, a separate read-only R2 recovery credential, a verified clean-host/compromised-host restore, reconciling the SSH target with the inspected host, independent-review policy decision/settings, exact deployed-release evidence, physical Android/PWA checks, and Plaid acceptance.
+- Production deployment remains explicitly outside this continuation. Repository changes and CI do not authorize or prove production acceptance.
+
+---
+
 ## Repository-side security closure checkpoint — 2026-10-03
 
 The October 3 repository-side security program has advanced to **61 completed checks and 4 open checks** on issue #291. The remaining items are real-environment/provider/governance gates rather than missing generic application code.

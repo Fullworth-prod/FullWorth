@@ -1,35 +1,31 @@
 ## Current release state
 
-**Status:** Deployment and recovery are blocked. Do not start public services or deploy the candidate.
+**Status:** Deployment remains blocked until the pinned SSH host key is verified and the clean-recovery-host requirement is resolved. No candidate deployment is confirmed.
 
 Current release candidate on `master`:
 
-`f401a591a8abdade557827c09412dc3166fb9de2`
+`c8858a38b38d7eb0888d273b9a1a409308e565b4`
 
-- [x] PR #704 promoted the candidate to `master`.
-- [x] Exact PR FullWorth CI #1679 and Dependency Security #771 passed; master-push CI #1680, Repository Governance #18, and CodeQL #58 passed.
-- [x] Exact attested artifact: `fullworth-production-image-artifacts-f401a591a8abdade557827c09412dc3166fb9de2` (artifact ID `11374998766`, digest `sha256:0f24594dc289350487574f757956c7cd325c68b3a07e2d58bd4ce5f411a7052b`; expires 2026-10-12).
-- [x] PR #708 merged the recovery-verifier passfile wiring; PR #709 added a host-confirmation gate; PR #707 fixed PostgreSQL passfile escaping and merged as development head `ae84e5f0b91fadfd8e0d41b3786c9af94c793fe1` after exact-head FullWorth CI #1703 and Dependency Security #794 passed. None supplies remote R2 read access or proves a recovery.
-- [ ] Run #15 failed closed before candidate startup. Its partial API/Web/edge report conflicts with subsequent host inspection: OVH 40.160.137.55 read-only inventory found zero Docker containers, zero Docker volumes, and a missing release marker; this conflicts with run #15's partial-runtime report.
-- [ ] Remote R2 recovery returned AccessDenied with the host's configured backup credential; a separate read-only recovery credential is required. The development fix does not supply this credential; do not broaden the production backup key.
-- [ ] The copied object tree on the VPS has not passed encrypted Restic integrity or clean-host restore verification.
-- [ ] Reconcile the guarded workflow SSH destination with the inspected OVH host and verify the actual host/project read-only before any service repair.
-- [ ] Restore and verify the encrypted backup in isolation before any data-bearing production startup. The inspected OVH host has no Docker volumes; a normal first startup would be empty.
-- [ ] Only after all recovery and target-identity gates pass, run the guarded workflow for the current exact master SHA and verify auth smoke, public readiness, and the release marker all identify that SHA.
+- [x] Exact-head FullWorth CI completed successfully for `c8858a38b38d7eb0888d273b9a1a409308e565b4` (run [37511551336](https://github.com/Fullworth/FullWorth/actions/runs/37511551336)).
+- [x] Exact attested production image artifact: `fullworth-production-image-artifacts-c8858a38b38d7eb0888d273b9a1a409308e565b4` (artifact ID `11435103773`, digest `sha256:39d566b68cdbef5dfd52ef616ce23642b8aa33e77fe26026f4f1c2ea135db823`; expires 2026-10-13 18:30 UTC).
+- [x] Operator supplied OVH target IP `40.160.137.55`.
+- [x] Isolated restore drill passed on VPS `vps-32597e02` using Restic snapshot `726a1e85` (manifest ReleaseId `f401a591a8abdade557827c09412dc3166fb9de2`). Restored files passed checksum validation; database restore and migration verification passed. The drill used the exact snapshot release, not the current `master` release.
+- [ ] Verify the SSH host key for `40.160.137.55` against a trusted OVH/provider source and the pinned GitHub Environment value `FULLWORTH_PRODUCTION_SSH_KNOWN_HOSTS`. The operator has been asked to retrieve the server's public host key; verification is pending.
+- [ ] Resolve whether `vps-32597e02` can satisfy the documented separate clean-recovery-host requirement; it is also the nominated deployment target. The operator reports there is no live production server.
+- [ ] Verify provider-enforced backup immutability and that temporary recovery credentials have been removed or returned to least privilege.
+- [ ] After all recovery and target-identity gates pass, dispatch the guarded workflow for the exact current `master` SHA and verify auth smoke, public readiness, running release, and release marker.
 
-Current verified live production release marker remains:
-
-`7e8571a26447538db249c862ad009487cce119bc`. No release marker or successful deployment of the candidate has been observed. Keep credentials out of chat, source control, command history, and logs.
+**Production state:** Operator reports no production server is currently live. The older claimed live marker `7e8571a26447538db249c862ad009487cce119bc` is unverified and must not be treated as current. No successful deployment of the current candidate has been observed. Keep credentials out of chat, source control, command history, and logs.
 
 ## Guarded production deployment and same-release acceptance — issue #669
 
 **Next concrete sequence:**
 
-1. Use the approved secret-handling path to install the separate least-privilege R2 Object Read credential on the verified recovery host. Do not paste its value into chat or write it into source control or shell history.
-2. Re-run the isolated recovery drill against the remote repository and require encrypted-repository integrity plus successful database, statement, and Data Protection key restoration.
-3. In GitHub Environment `production`, set the non-secret variable `FULLWORTH_PRODUCTION_SSH_HOST` to `40.160.137.55` only after verifying the pinned `FULLWORTH_PRODUCTION_SSH_KNOWN_HOSTS` entry is this OVH server. At workflow dispatch, type the same host into `confirm_production_host`; preserve the current live release and do not guess at service restarts.
-4. Only after recovery and target identity are verified, check the exact master artifact and all guarded deployment preflights, then dispatch the guarded workflow for that exact SHA.
-5. Confirm automatic auth smoke, public API/Web readiness, running release, and verified marker all agree on the deployed SHA.
+1. Verify the trusted OVH host key against the pinned GitHub Environment host-key value before connecting the deployment workflow.
+2. Confirm the recovery drill meets the separate clean-host requirement; if not, run it on a separate clean VPS using the exact backup release `f401a591a8abdade557827c09412dc3166fb9de2`.
+3. Verify the current exact-master artifact and all guarded deployment preflights before dispatch. Artifact `11435103773` expires 2026-10-13 18:30 UTC.
+4. In GitHub Environment `production`, set `FULLWORTH_PRODUCTION_SSH_HOST` to `40.160.137.55` only after the host-key match is established. At workflow dispatch, enter the same host into `confirm_production_host` and approve the guarded deployment.
+5. Confirm automatic auth smoke, public API/Web readiness, running image release, and verified release marker all identify `c8858a38b38d7eb0888d273b9a1a409308e565b4`.
 
 A workflow checkout, CI result, artifact, or copied object tree is not proof of production deployment or a successful restore.
 

@@ -6,7 +6,7 @@ Current release candidate on `master`:
 
 `c8858a38b38d7eb0888d273b9a1a409308e565b4`
 
-- [x] PR #704 promoted the candidate to `master`.
+- [x] Current `master` is the exact candidate SHA listed above; PR #704 was the earlier release promotion.
 - [x] Exact-master release checks and the attested production image artifact are recorded for `c8858a38b38d7eb0888d273b9a1a409308e565b4`.
 - [x] Exact attested artifact: `fullworth-production-image-artifacts-c8858a38b38d7eb0888d273b9a1a409308e565b4` (artifact ID `11435103773`, digest `sha256:39d566b68cdbef5dfd52ef616ce23642b8aa33e77fe26026f4f1c2ea135db823`; expires 2026-10-13T18:30:56Z).
 - [x] PR #708 merged the recovery-verifier passfile wiring; PR #709 added a host-confirmation gate; PR #707 fixed PostgreSQL passfile escaping and merged as development head `ae84e5f0b91fadfd8e0d41b3786c9af94c793fe1` after exact-head FullWorth CI #1703 and Dependency Security #794 passed. None supplies remote R2 read access or proves a recovery.

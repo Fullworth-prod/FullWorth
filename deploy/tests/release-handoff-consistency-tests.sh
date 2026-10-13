@@ -100,9 +100,9 @@ else
         fail "handoff master release SHA does not match origin/master."
 fi
 
-todo_live="$(awk '/^Current verified live production release marker:$/ { getline; gsub(/^[[:space:]\x60]+|[[:space:]\x60]+$/, ""); print; exit }' "$todo")"
-context_live="$(awk '/Verified live production release:/ { line = $0; sub(/^.*Verified live production release:[[:space:]]*/, "", line); gsub(/[\x60*.]/, "", line); print line; exit }' "$context")"
-roadmap_live="$(awk '/^No production server is currently running,/ { print "none"; exit }' "$roadmap")"
+todo_live="$(awk '/^Current verified live production release marker:$/ { getline; gsub(/[`*.]/, ""); print; exit }' "$todo")"
+context_live="$(awk '/Verified live production release:/ { line = $0; sub(/^.*Verified live production release:[[:space:]]*/, "", line); split(line, parts, /[[:space:]]/); gsub(/[`*.]/, "", parts[1]); print parts[1]; exit }' "$context")"
+roadmap_live="$(awk '/^Currently verified live production release:/ { line = $0; sub(/^.*Currently verified live production release:[[:space:]]*/, "", line); split(line, parts, /[[:space:]]/); gsub(/[`*.]/, "", parts[1]); print parts[1]; exit }' "$roadmap")"
 
 [ -n "$todo_live" ] && [ "$todo_live" = "$context_live" ] && [ "$todo_live" = "$roadmap_live" ] ||
     fail "handoff docs disagree on whether a production release is currently live."

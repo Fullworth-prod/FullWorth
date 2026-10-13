@@ -252,7 +252,7 @@ This section is the current release-readiness snapshot. It must be refreshed whe
 
 ## 4.1 Branch and release position
 
-As of 2026-10-06:
+As of 2026-10-13:
 
 - The `master` release branch at candidate `c8858a38b38d7eb0888d273b9a1a409308e565b4` is current and is not deployed.
 - Exact-master release checks and the attested production image artifact are recorded for `c8858a38b38d7eb0888d273b9a1a409308e565b4`: artifact `fullworth-production-image-artifacts-c8858a38b38d7eb0888d273b9a1a409308e565b4` (ID `11435103773`, digest `sha256:39d566b68cdbef5dfd52ef616ce23642b8aa33e77fe26026f4f1c2ea135db823`; expires 2026-10-13T18:30:56Z).
@@ -2324,7 +2324,7 @@ Do not manufacture CI substitutes for provider-enforced immutability, clean-host
 
 ## Step 6 — Guarded-deploy the exact `master` release
 
-**Current state:** Candidate `f401a591a8abdade557827c09412dc3166fb9de2` is not deployed. Run #15 failed closed before candidate startup. Its report of a partially running public runtime conflicts with a later read-only inventory of the OVH host:
+**Current state:** Candidate `c8858a38b38d7eb0888d273b9a1a409308e565b4` is not deployed. Run #15 failed closed before candidate startup. Its report of a partially running public runtime conflicts with a later read-only inventory of the OVH host:
 
 OVH 40.160.137.55 read-only inventory found zero Docker containers, zero Docker volumes, and a missing release marker; this conflicts with run #15's partial-runtime report.
 
@@ -2340,7 +2340,7 @@ Do not assume the workflow and interactive SSH inspection reached the same machi
 4. Preserve the existing live release and data. Do not deploy until the actual target is identified, recovery succeeds, the exact-master artifact remains valid, and every guarded preflight passes.
 5. Only then use the guarded production workflow for the current exact `master` SHA. Require its automatic auth smoke, public API/Web readiness, and release marker to confirm the same deployed SHA.
 
-The current verified live production release remains `7e8571a26447538db249c862ad009487cce119bc`. CI, an attested image, a source checkout, or the same-host object copy does not prove deployment or recovery.
+Currently verified live production release: none. The operator confirmed no production server is running. CI, an attested image, a source checkout, or the same-host object copy does not prove deployment or recovery.
 ## Step 7 — Build one same-release private-beta evidence bundle
 
 Against the exact deployed candidate, complete and correlate:

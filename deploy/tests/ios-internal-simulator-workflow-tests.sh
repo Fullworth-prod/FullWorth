@@ -74,8 +74,93 @@ if grep -Fq 'mapfile ' "$workflow"; then
 fi
 grep -Fq 'ios-simulator-smoke.sh' "$workflow" ||
     fail "workflow does not install and launch the built app in Simulator."
-grep -Fq 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' "$workflow" ||
-    fail "workflow does not publish a simulator artifact."
+grep -Eq '^[[:space:]]*uses:[[:space:]]+actions/upload-artifact@[0-9a-f]{40}[[:space:]]*
+grep -Fq 'retention-days: 14' "$workflow" ||
+    fail "iOS simulator artifact retention is not bounded."
+grep -Fq 'shasum -a 256' "$workflow" ||
+    fail "workflow does not publish an artifact integrity hash."
+grep -Fq 'not signed for a physical iPhone' "$workflow" ||
+    fail "workflow summary does not clearly distinguish simulator output from a device build."
+
+if grep -Fq '${{ secrets.' "$workflow"; then
+    fail "simulator-only workflow must not consume persistent GitHub secrets."
+fi
+
+if grep -Eiq '(codesign|provisioning|certificate|p12|mobileprovision).*(password|secret|base64)' "$workflow"; then
+    fail "simulator workflow appears to contain signing-secret handling."
+fi
+
+grep -Fq 'com.apple.CoreSimulator.SimRuntime.iOS-26-0' "$smoke_script" ||
+    fail "smoke is not pinned to the iOS 26.0 simulator runtime compatible with the selected Xcode."
+grep -Fq 'xcrun simctl list devices --json' "$smoke_script" ||
+    fail "smoke does not select a preinstalled iOS 26.0 iPhone Simulator."
+grep -Fq 'xcrun simctl erase' "$smoke_script" ||
+    fail "smoke does not reset the selected Simulator before launch."
+boot_function=$(
+    sed -n '/^boot_simulator()$/,/^}/p' "$smoke_script"
+)
+printf '%s\n' "$boot_function" |
+    grep -Fq 'run_with_timeout 30' ||
+    fail "Simulator boot command is not bounded."
+printf '%s\n' "$boot_function" |
+    grep -Fq 'xcrun simctl boot "$udid"' ||
+    fail "bounded boot helper does not boot the selected Simulator."
+printf '%s\n' "$boot_function" |
+    grep -Fq 'run_with_timeout 180' ||
+    fail "Simulator boot readiness wait is not bounded."
+printf '%s\n' "$boot_function" |
+    grep -Fq 'xcrun simctl bootstatus "$udid" -b' ||
+    fail "smoke does not wait for Simulator boot completion."
+
+install_function=$(
+    sed -n '/^install_app()$/,/^}/p' "$smoke_script"
+)
+printf '%s\n' "$install_function" |
+    grep -Fq 'run_with_timeout 180' ||
+    fail "Simulator installation is not bounded to 180 seconds."
+printf '%s\n' "$install_function" |
+    grep -Fq 'xcrun simctl install "$udid" "$app_path"' ||
+    fail "bounded install helper does not install the FullWorth app."
+
+grep -Fq 'if ! install_app; then' "$smoke_script" ||
+    fail "Simulator installation does not have a bounded recovery path."
+grep -Fq 'Initial FullWorth simulator install failed or timed out; rebooting and retrying once.' "$smoke_script" ||
+    fail "Simulator install retry is not explicitly limited to one recovery attempt."
+grep -Fq 'FullWorth could not be installed into the iOS Simulator after one bounded retry.' "$smoke_script" ||
+    fail "Simulator install retry does not fail closed."
+
+grep -Fq 'run_with_timeout 60' "$smoke_script" ||
+    fail "Simulator reset or app launch is not bounded."
+launch_function=$(
+    sed -n '/^launch_app()$/,/^}/p' "$smoke_script"
+)
+printf '%s\\n' "$launch_function" |
+    grep -Fq 'run_with_timeout 180' ||
+    fail "FullWorth app launch is not bounded to 180 seconds."
+printf '%s\\n' "$launch_function" |
+    grep -Fq 'xcrun simctl launch "$udid" "$expected_bundle_id"' ||
+    fail "bounded launch helper does not launch the expected FullWorth app."
+
+grep -Fq 'xcrun simctl launch' "$smoke_script" ||
+    fail "smoke does not launch FullWorth."
+grep -Fq 'xcrun simctl get_app_container' "$smoke_script" ||
+    fail "smoke does not verify the launched app container."
+grep -Fq 'xcrun simctl shutdown' "$smoke_script" ||
+    fail "Simulator cleanup is missing."
+grep -Fq 'subprocess.run(' "$smoke_script" ||
+    fail "smoke does not use the bounded command wrapper."
+
+sh -n "$smoke_script" ||
+    fail "iOS simulator smoke script has invalid shell syntax."
+
+grep -Fq 'cannot be installed on a physical iPhone' "$docs" ||
+    fail "documentation does not state the simulator artifact boundary."
+grep -Fq 'Issue #258' "$docs" ||
+    fail "documentation does not keep the iOS PWA issue separate."
+
+printf '%s\n' "iOS internal simulator workflow regression passed."
+ "$workflow" ||
+    fail "workflow does not publish a simulator artifact with an immutable action pin."
 grep -Fq 'retention-days: 14' "$workflow" ||
     fail "iOS simulator artifact retention is not bounded."
 grep -Fq 'shasum -a 256' "$workflow" ||

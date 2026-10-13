@@ -538,6 +538,17 @@ public sealed class BillStatementChangeDetectionService
                 continue;
             }
 
+            // The downstream comparison and alert contracts express a monthly
+            // delta and multiply it by twelve. Do not apply those contracts to
+            // annual/quarterly/partial periods or overlapping statement coverage.
+            // Keep the statements as evidence until cadence-aware comparison exists.
+            if (!HasMonthlyPeriod(previous) ||
+                !HasMonthlyPeriod(current) ||
+                current.PeriodStart <= previous.PeriodEnd)
+            {
+                continue;
+            }
+
             lineItemsByStatement.TryGetValue(
                 previous.Id,
                 out var previousLineItems);
@@ -610,6 +621,16 @@ public sealed class BillStatementChangeDetectionService
         }
 
         return desiredChanges.AsReadOnly();
+    }
+
+    private static bool HasMonthlyPeriod(BillStatementEntity statement)
+    {
+        var days = statement.PeriodEnd.DayNumber -
+                   statement.PeriodStart.DayNumber + 1;
+
+        // Match the existing recurring-transaction monthly window, allowing
+        // normal calendar length and modest provider billing-date movement.
+        return days is >= 23 and <= 38;
     }
 
     private static BillStatement

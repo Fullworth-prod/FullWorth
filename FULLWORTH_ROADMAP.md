@@ -254,7 +254,7 @@ This section is the current release-readiness snapshot. It must be refreshed whe
 
 As of 2026-10-06:
 
-- The current `master` release candidate is `c8858a38b38d7eb0888d273b9a1a409308e565b4`; it is not deployed.
+- The `master` release branch at candidate `c8858a38b38d7eb0888d273b9a1a409308e565b4` is current and is not deployed.
 - Exact-master release checks and the attested production image artifact are recorded for `c8858a38b38d7eb0888d273b9a1a409308e565b4`: artifact `fullworth-production-image-artifacts-c8858a38b38d7eb0888d273b9a1a409308e565b4` (ID `11435103773`, digest `sha256:39d566b68cdbef5dfd52ef616ce23642b8aa33e77fe26026f4f1c2ea135db823`; expires 2026-10-13T18:30:56Z).
 - Current `development` head is `ae84e5f0b91fadfd8e0d41b3786c9af94c793fe1`, the squash merge for PR #707. PR #707 corrected PostgreSQL passfile escaping for recovery; exact-head FullWorth CI #1703 and Dependency Security #794 passed before merge. PR #709's host-confirmation guard is also merged. These changes do not establish remote R2 access or production recovery. No deployment occurred.
 - Guarded production deploy run #15 for the candidate failed closed before candidate startup. Its partial API/Web/edge report conflicts with follow-up read-only inventory of the OVH target: OVH 40.160.137.55 read-only inventory found zero Docker containers, zero Docker volumes, and a missing release marker; this conflicts with run #15's partial-runtime report.

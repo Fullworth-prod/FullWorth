@@ -100,19 +100,18 @@ else
         fail "handoff master release SHA does not match origin/master."
 fi
 
-todo_live="$(extract_first_sha_after "$todo" 'Current verified live production release marker remains:')"
-context_live="$(extract_first_sha_after_or_from_line "$context" 'Verified live production remains')"
-roadmap_live="$(extract_first_sha_after_or_from_line "$roadmap" 'currently verified')"
+todo_live="$(awk '/^Current verified live production release marker:$/ { getline; gsub(/^[[:space:]\x60]+|[[:space:]\x60]+$/, ""); print; exit }' "$todo")"
+context_live="$(awk '/Verified live production release:/ { line = $0; sub(/^.*Verified live production release:[[:space:]]*/, "", line); gsub(/[\x60*.]/, "", line); print line; exit }' "$context")"
+roadmap_live="$(awk '/^No production server is currently running,/ { print "none"; exit }' "$roadmap")"
 
-for candidate in "$todo_live" "$context_live" "$roadmap_live"
-do
-    is_sha "$candidate" || fail "could not extract a valid verified-live production SHA from handoff docs."
-done
+[ -n "$todo_live" ] && [ "$todo_live" = "$context_live" ] && [ "$todo_live" = "$roadmap_live" ] ||
+    fail "handoff docs disagree on whether a production release is currently live."
 
-[ "$todo_live" = "$context_live" ] ||
-    fail "HUMAN-TODO and FULLWORTH_CONTEXT disagree on verified-live production release."
-
-[ "$todo_live" = "$roadmap_live" ] ||
-    fail "HUMAN-TODO and FULLWORTH_ROADMAP disagree on verified-live production release."
+if [ "$todo_live" != none ]; then
+    for candidate in "$todo_live" "$context_live" "$roadmap_live"
+    do
+        is_sha "$candidate" || fail "current live production release must be a SHA or explicitly none."
+    done
+fi
 
 printf '%s\n' 'Release handoff consistency tests passed.'

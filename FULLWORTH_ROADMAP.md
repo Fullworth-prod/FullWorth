@@ -254,13 +254,13 @@ This section is the current release-readiness snapshot. It must be refreshed whe
 
 As of 2026-10-06:
 
-- The `master` release branch at candidate `f401a591a8abdade557827c09412dc3166fb9de2` was promoted by PR #704; it is not a deployed release.
-- The candidate's exact PR FullWorth CI #1679, Dependency Security #771, master FullWorth CI #1680, Repository Governance #18, CodeQL #58, and attested artifact checks passed. Artifact `fullworth-production-image-artifacts-f401a591a8abdade557827c09412dc3166fb9de2` (ID `11374998766`, digest `sha256:0f24594dc289350487574f757956c7cd325c68b3a07e2d58bd4ce5f411a7052b`) expires 2026-10-12.
+- The current `master` release candidate is `c8858a38b38d7eb0888d273b9a1a409308e565b4`; it is not deployed.
+- Exact-master release checks and the attested production image artifact are recorded for `c8858a38b38d7eb0888d273b9a1a409308e565b4`: artifact `fullworth-production-image-artifacts-c8858a38b38d7eb0888d273b9a1a409308e565b4` (ID `11435103773`, digest `sha256:39d566b68cdbef5dfd52ef616ce23642b8aa33e77fe26026f4f1c2ea135db823`; expires 2026-10-13T18:30:56Z).
 - Current `development` head is `ae84e5f0b91fadfd8e0d41b3786c9af94c793fe1`, the squash merge for PR #707. PR #707 corrected PostgreSQL passfile escaping for recovery; exact-head FullWorth CI #1703 and Dependency Security #794 passed before merge. PR #709's host-confirmation guard is also merged. These changes do not establish remote R2 access or production recovery. No deployment occurred.
 - Guarded production deploy run #15 for the candidate failed closed before candidate startup. Its partial API/Web/edge report conflicts with follow-up read-only inventory of the OVH target: OVH 40.160.137.55 read-only inventory found zero Docker containers, zero Docker volumes, and a missing release marker; this conflicts with run #15's partial-runtime report.
 - Remote R2 recovery returned AccessDenied with the host's configured backup credential; a separate read-only recovery credential is required. PR #708 fixes the verifier secret wiring but does not grant R2 access. Do not broaden the production backup credential or put secret values in chat, source control, command history, or logs.
 - The copied backup tree on the OVH host has object-level parity only. It is not an off-host copy, verified encrypted Restic repository, or successful clean-host recovery.
-- The candidate is not deployed. The currently verified live production release remains `7e8571a26447538db249c862ad009487cce119bc`. Do not start the public stack against an empty database: the OVH inspection found no Docker volumes and no release marker.
+- The candidate is not deployed. No production server is currently running, per operator confirmation; no live release SHA is established. Do not start the public stack against an empty database: the OVH inspection found no Docker volumes and no release marker.
 - Before deployment, reconcile which SSH target the guarded workflow addresses, install the separate read-only recovery credential through the approved secret-handling path, and complete isolated encrypted-repository integrity and restore checks. Keep the conflicting host observations unresolved until verified against the actual workflow target.
 - Issue #291 remains 61/65, with four real-evidence/governance gates: provider-enforced immutable/off-host storage, compromised-host clean restore, independent-review policy, and exact deployed-release evidence.
 ### Release-readiness estimate
@@ -391,13 +391,9 @@ AI-derived persistence remains disabled. Deterministic extraction remains the pr
 
 ## 4.4 Production state
 
-The current verified live production release is:
+No production server is currently running, per operator confirmation. There is no current live production release SHA.
 
-`7e8571a26447538db249c862ad009487cce119bc`
-
-It was proven by successful guarded production deploy run #7 (`36221860082`).
-
-That evidence establishes the release actually deployed through the guarded path. It does **not** silently extend to newer code on `master` or `development`.
+Guarded deploy run #7 (`36221860082`) is historical evidence only; it does not establish a currently running production server.
 
 The current release/acceptance model must continue to distinguish:
 

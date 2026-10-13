@@ -100,7 +100,21 @@ else
         fail "handoff master release SHA does not match origin/master."
 fi
 
-todo_live="$(awk '/^Current verified live production release marker:$/ { getline; gsub(/[`*.]/, ""); split($0, parts, /[[:space:]]/); print parts[1]; exit }' "$todo")"
+todo_live="$(awk '
+    /^Current verified live production release marker:$/ {
+        while (getline > 0) {
+            if ($0 ~ /^[[:space:]]*$/) {
+                continue
+            }
+
+            line = $0
+            gsub(/[`*.]/, "", line)
+            split(line, parts, /[[:space:]]/)
+            print parts[1]
+            exit
+        }
+    }
+' "$todo")"
 context_live="$(awk '/Verified live production release:/ { line = $0; sub(/^.*Verified live production release:[[:space:]]*/, "", line); split(line, parts, /[[:space:]]/); gsub(/[`*.]/, "", parts[1]); print parts[1]; exit }' "$context")"
 roadmap_live="$(awk '/^Currently verified live production release:/ { line = $0; sub(/^.*Currently verified live production release:[[:space:]]*/, "", line); split(line, parts, /[[:space:]]/); gsub(/[`*.]/, "", parts[1]); print parts[1]; exit }' "$roadmap")"
 

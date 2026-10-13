@@ -1,6 +1,12 @@
 ## Current release state
 
-**Status:** Deployment and recovery are blocked. Do not start public services or deploy the candidate.
+**Status:** Deployment remains blocked. No current live release is established. Do not start public services against empty data.
+
+The October 12–13 operator-assisted handoff reports an isolated restore of Restic snapshot `726a1e85` (manifest ReleaseId `f401a591a8abdade557827c09412dc3166fb9de2`) on `vps-32597e02`, with checksum/database/migration/key checks passing. This backup had **zero statement uploads**, so actual statement-file recovery remains unproven. Separate clean-host recovery, trusted host identity, provider immutability, and current least-privilege credentials remain open. This pass did not rerun that drill.
+
+The recorded artifact expiry, **2026-10-13 18:30 UTC**, has elapsed. Require a fresh exact-release artifact and green gates before dispatch. PR #724's proposed saved-host behavior remains separate and is not authorized by this handoff.
+
+The checked items immediately below retain historical repository evidence; they do not establish a currently downloadable artifact or current development head.
 
 Current release candidate on `master`:
 
@@ -12,21 +18,21 @@ Current release candidate on `master`:
 - [x] Current development head `0168093384961e4d2e9838c495fbaf5bfb2c279a` includes PR #710's release-handoff refresh, PR #707's recovery passfile fix, and PR #709's host-confirmation gate. Exact current-head FullWorth CI #1707 and Dependency Security #798 passed. These changes do not grant remote R2 access or prove recovery.
 - [ ] Run #15 failed closed before candidate startup. Its partial API/Web/edge report conflicts with subsequent host inspection: OVH 40.160.137.55 read-only inventory found zero Docker containers, zero Docker volumes, and a missing release marker; this conflicts with run #15's partial-runtime report.
 - [ ] Remote R2 recovery returned AccessDenied with the host's configured backup credential; a separate read-only recovery credential is required. The development fix does not supply this credential; do not broaden the production backup key.
-- [ ] The copied object tree on the VPS has not passed encrypted Restic integrity or clean-host restore verification.
+- [ ] Reconcile the reported isolated snapshot restore with the required separate clean-host and actual statement-file recovery evidence; do not treat a zero-statement drill as complete recovery proof.
 - [ ] Reconcile the guarded workflow SSH destination with the inspected OVH host and verify the actual host/project read-only before any service repair.
 - [ ] Restore and verify the encrypted backup in isolation before any data-bearing production startup. The inspected OVH host has no Docker volumes; a normal first startup would be empty.
 - [ ] Only after all recovery and target-identity gates pass, run the guarded workflow for the current exact master SHA and verify auth smoke, public readiness, and the release marker all identify that SHA.
 
-Current verified live production release marker remains:
+Current verified live production release marker:
 
-`7e8571a26447538db249c862ad009487cce119bc`. No release marker or successful deployment of the candidate has been observed. Keep credentials out of chat, source control, command history, and logs.
+`none`. The operator reports no production server is running; prior deployment markers are historical only. No successful deployment of the candidate has been observed. Keep credentials out of chat, source control, command history, and logs.
 
 ## Guarded production deployment and same-release acceptance — issue #669
 
 **Next concrete sequence:**
 
-1. Use the approved secret-handling path to install the separate least-privilege R2 Object Read credential on the verified recovery host. Do not paste its value into chat or write it into source control or shell history.
-2. Re-run the isolated recovery drill against the remote repository and require encrypted-repository integrity plus successful database, statement, and Data Protection key restoration.
+1. Verify the separate least-privilege R2 Object Read credential is installed on the trusted recovery host through the approved secret-handling path; the historical AccessDenied report does not establish current credential state. Do not paste its value into chat or write it into source control or shell history.
+2. Complete the separate clean-host exercise against the real off-host repository, including actual statement files, database, and both Data Protection rings. Preserve the snapshot/release relationship and sanitized evidence; the reported zero-statement drill does not close this gate.
 3. In GitHub Environment `production`, set the non-secret variable `FULLWORTH_PRODUCTION_SSH_HOST` to `40.160.137.55` only after verifying the pinned `FULLWORTH_PRODUCTION_SSH_KNOWN_HOSTS` entry is this OVH server. At workflow dispatch, type the same host into `confirm_production_host`; preserve the current live release and do not guess at service restarts.
 4. Only after recovery and target identity are verified, check the exact master artifact and all guarded deployment preflights, then dispatch the guarded workflow for that exact SHA.
 5. Confirm automatic auth smoke, public API/Web readiness, running release, and verified marker all agree on the deployed SHA.

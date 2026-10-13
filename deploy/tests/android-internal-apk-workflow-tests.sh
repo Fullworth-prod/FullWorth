@@ -54,9 +54,21 @@ grep -Fq '*-Signed.apk' "$workflow" ||
     fail "workflow does not require the signed APK output."
 grep -Fq 'Get-FileHash -Algorithm SHA256' "$workflow" ||
     fail "workflow does not publish an APK integrity hash."
-awk '$1 == "uses:" && $2 ~ /^actions\/upload-artifact@[0-9a-f]{40}$/ { found = 1 } END { exit !found }' "$workflow" ||
+awk '
+    $1 == "uses:" && $2 ~ /^actions\/upload-artifact@/ {
+        count++
+        if ($2 !~ /^actions\/upload-artifact@[0-9a-f]{40}$/) invalid = 1
+    }
+    END { exit !(count > 0 && !invalid) }
+' "$workflow" ||
     fail "workflow does not publish the test package with an immutable action pin."
-awk '$1 == "uses:" && $2 ~ /^actions\/download-artifact@[0-9a-f]{40}$/ { found = 1 } END { exit !found }' "$workflow" ||
+awk '
+    $1 == "uses:" && $2 ~ /^actions\/download-artifact@/ {
+        count++
+        if ($2 !~ /^actions\/download-artifact@[0-9a-f]{40}$/) invalid = 1
+    }
+    END { exit !(count > 0 && !invalid) }
+' "$workflow" ||
     fail "workflow does not retrieve the signed APK with an immutable action pin for emulator smoke testing."
 grep -Fq 'android-apk-emulator-smoke.sh' "$workflow" ||
     fail "workflow does not install and launch the produced APK in an Android emulator."

@@ -1,5 +1,11 @@
 # FullWorth Product & Engineering Roadmap
 
+## Owner-approved release policy — 2026-10-14
+
+On 2026-10-14 the owner explicitly approved removing the independent-review requirement to release as a solo maintainer. The approved policy permits zero required approvals while retaining mandatory pull requests, strict current-branch checks for `Backend build and tests`, `MAUI Android build`, `Linux production container`, and `Dependency review` (GitHub Actions app 15368), thread resolution, deletion/force-push restrictions, and an empty bypass list. Read back the saved ruleset before merging; authorization is not evidence that GitHub saved it. Independent review is no longer a release prerequisite under this decision. Host identity, real recovery, attested exact-master artifacts, and deployed acceptance remain required.
+
+This decision supersedes earlier independent-approval requirements below. It does not mark production as deployed or waive data-recovery gates. Physical-device acceptance follows verified deployment.
+
 Last updated: 2026-10-14
 
 Status: Active planning document
@@ -256,7 +262,7 @@ Current state as of 2026-10-14: see the authoritative continuation checkpoint in
 
 Latest verified repository milestone: integration #739 and cleanup #740 are merged. FullWorth CI #1775/#1778 and Dependency Security #865/#868 passed; Android internal #78 and iOS internal #72 passed on the integration head. Cleanup passed all 1,348 backend tests with zero build warnings/errors. Governance verifier correction #741 also merged after exact-head FullWorth CI #1779 and Dependency Security #869 passed. Administrator settings remain incomplete; the verifier correction is not policy enforcement.
 
-Use [RELEASE_CANDIDATE.md](RELEASE_CANDIDATE.md) as the release gate matrix and financial acceptance checklist. Governance readback still shows 0 required approvals and no required status checks; a prepared promotion is not launch approval.
+Use [RELEASE_CANDIDATE.md](RELEASE_CANDIDATE.md) as the release gate matrix and financial acceptance checklist. Governance configuration is now verified: one required approval, strict current-branch policy, four required GitHub Actions job contexts and no bypass actors. Independent review remains required; a prepared promotion is not launch approval. The verifier-detail correction in this change must pass exact-head CI and live workflow verification.
 
 Historical repository snapshot as of 2026-10-06:
 

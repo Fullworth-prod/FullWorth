@@ -303,6 +303,19 @@ public sealed class DeterministicBillStatementParserTests
         Assert.Contains(nameof(BillStatementStructuredData.TotalAmount), result.ConflictingFields);
     }
 
+    [Theory]
+    [InlineData("(-79.99)")]
+    [InlineData("(79.99)")]
+    [InlineData("-79.99")]
+    [InlineData("$-79.99")]
+    public void NegativeOrParenthesizedCredit_CannotBecomeAPositiveBill(string amount)
+    {
+        var result = _parser.Parse("Total Amount Due: " + amount +
+            "\nBilling Period: 07/01/2026 - 07/31/2026");
+        Assert.Null(result.TotalAmount);
+        Assert.False(result.IsReadyForPersistence);
+    }
+
     private const string CompleteDocument = """
         Statement Date: 08/10/2026
         Billing Period: 07/01/2026 - 07/31/2026

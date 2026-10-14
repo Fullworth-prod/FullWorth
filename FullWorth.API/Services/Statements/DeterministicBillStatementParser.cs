@@ -220,7 +220,7 @@ public sealed partial class DeterministicBillStatementParser
         if (isParenthesized)
         {
             amount =
-                -amount;
+                -Math.Abs(amount);
         }
 
         if (amount <

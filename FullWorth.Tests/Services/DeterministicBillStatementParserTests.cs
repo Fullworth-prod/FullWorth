@@ -305,6 +305,8 @@ public sealed class DeterministicBillStatementParserTests
 
     [Theory]
     [InlineData("(-79.99)")]
+    [InlineData("(-79228162514264337593543950335)")]
+    [InlineData("(79228162514264337593543950335)")]
     [InlineData("(79.99)")]
     [InlineData("-79.99")]
     [InlineData("$-79.99")]

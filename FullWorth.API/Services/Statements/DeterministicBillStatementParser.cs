@@ -220,7 +220,7 @@ public sealed partial class DeterministicBillStatementParser
         if (isParenthesized)
         {
             amount =
-                -Math.Abs(amount);
+                amount > 0m ? -amount : amount;
         }
 
         if (amount <
@@ -418,4 +418,3 @@ public enum BillStatementStructuredDataConfidence
     Partial = 1,
     StrongEvidence = 2
 }
-

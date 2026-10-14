@@ -13,6 +13,24 @@ var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
     Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
 };
 
+// Build-time probe uses only the fixed synthetic image, never a supplied document.
+// The production readiness probe still exercises the contained child-process path.
+if (args.Length == 1 && args[0] == "--ocr-native-self-test")
+{
+    using var input = new MemoryStream(OcrRuntimeProbe.ImageBytes, writable: false);
+    var result = TesseractBillStatementOcrEngine.RunImageWorker(
+        input,
+        "image/png",
+        Path.Combine(AppContext.BaseDirectory, "tessdata"));
+    var healthy = OcrRuntimeProbe.IsHealthy(result);
+    var message = healthy
+        ? "OCR native runtime self-test passed."
+        : "OCR native runtime self-test failed.";
+    await (healthy ? Console.Out : Console.Error).WriteLineAsync(message);
+    Environment.ExitCode = healthy ? 0 : 70;
+    return;
+}
+
 if (args.Length == 1 && args[0] == "--containment-memory-child")
 {
     /*

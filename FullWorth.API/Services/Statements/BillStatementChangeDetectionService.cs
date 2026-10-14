@@ -628,9 +628,11 @@ public sealed class BillStatementChangeDetectionService
         var days = statement.PeriodEnd.DayNumber -
                    statement.PeriodStart.DayNumber + 1;
 
-        // Match the existing recurring-transaction monthly window, allowing
-        // normal calendar length and modest provider billing-date movement.
-        return days is >= 23 and <= 38;
+        // A recurring-transaction date window is not proof that a statement
+        // total represents a complete monthly period. Shorter/longer periods
+        // can be prorated, and annualizing their total delta is misleading.
+        // Be conservative until explicit billing-cadence evidence is available.
+        return days is >= 28 and <= 31;
     }
 
     private static BillStatement

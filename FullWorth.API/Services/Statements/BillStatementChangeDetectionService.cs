@@ -542,9 +542,9 @@ public sealed class BillStatementChangeDetectionService
             // delta and multiply it by twelve. Do not apply those contracts to
             // annual/quarterly/partial periods or overlapping statement coverage.
             // Keep the statements as evidence until cadence-aware comparison exists.
-            if (!HasMonthlyPeriod(previous) ||
-                !HasMonthlyPeriod(current) ||
-                current.PeriodStart <= previous.PeriodEnd)
+            if (!MonthlyStatementPeriodPolicy.CanCompare(
+                    previous.PeriodStart, previous.PeriodEnd,
+                    current.PeriodStart, current.PeriodEnd))
             {
                 continue;
             }
@@ -621,18 +621,6 @@ public sealed class BillStatementChangeDetectionService
         }
 
         return desiredChanges.AsReadOnly();
-    }
-
-    private static bool HasMonthlyPeriod(BillStatementEntity statement)
-    {
-        var days = statement.PeriodEnd.DayNumber -
-                   statement.PeriodStart.DayNumber + 1;
-
-        // A recurring-transaction date window is not proof that a statement
-        // total represents a complete monthly period. Shorter/longer periods
-        // can be prorated, and annualizing their total delta is misleading.
-        // Be conservative until explicit billing-cadence evidence is available.
-        return days is >= 28 and <= 31;
     }
 
     private static BillStatement

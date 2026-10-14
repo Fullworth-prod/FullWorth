@@ -313,6 +313,73 @@ public sealed class StatementBillPlanningChangeFactsGatewayTests
             result);
     }
 
+    [Theory]
+    [InlineData("foreign_previous")]
+    [InlineData("different_stream")]
+    [InlineData("missing_previous")]
+    [InlineData("self_reference")]
+    [InlineData("stale_previous_total")]
+    [InlineData("stale_current_total")]
+    [InlineData("wrong_delta")]
+    [InlineData("wrong_annual")]
+    [InlineData("wrong_direction")]
+    [InlineData("different_currency")]
+    [InlineData("invalid_currency")]
+    [InlineData("quarterly_period")]
+    [InlineData("four_weekly")]
+    [InlineData("missing_month")]
+    public async Task GetLatestConfirmedAsync_RejectsUntrustworthySavedChange(string defect)
+    {
+        var options = new DbContextOptionsBuilder<FullWorthDbContext>()
+            .UseInMemoryDatabase($"change-evidence-{Guid.NewGuid():N}").Options;
+        var userId = Guid.NewGuid();
+        var streamId = Guid.NewGuid();
+        var previous = Statement(userId, streamId, new DateOnly(2026, 8, 31), 80m);
+        var current = Statement(userId, streamId, new DateOnly(2026, 9, 30), 95m);
+        var change = Change(userId, streamId, previous.Id, current.Id,
+            BillChangeType.TotalIncrease, BillChangeConfidence.Confirmed,
+            80m, 95m, 15m, 180m, "Statement evidence");
+
+        switch (defect)
+        {
+            case "foreign_previous": previous.UserId = Guid.NewGuid(); break;
+            case "different_stream": previous.BillStreamId = Guid.NewGuid(); break;
+            case "missing_previous": change.PreviousStatementId = Guid.NewGuid(); break;
+            case "self_reference": change.PreviousStatementId = current.Id; break;
+            case "stale_previous_total": previous.TotalAmount = 70m; break;
+            case "stale_current_total": current.TotalAmount = 100m; break;
+            case "wrong_delta": change.AmountDifference = 150m; break;
+            case "wrong_annual": change.AnnualizedImpact = 1800m; break;
+            case "wrong_direction": change.ChangeType = BillChangeType.TotalDecrease; break;
+            case "different_currency": previous.CurrencyCode = "EUR"; break;
+            case "invalid_currency": previous.CurrencyCode = current.CurrencyCode = "12X"; break;
+            case "quarterly_period": previous.PeriodStart = new DateOnly(2026, 6, 1); break;
+            case "four_weekly":
+                previous.PeriodStart = new DateOnly(2026, 1, 1);
+                previous.PeriodEnd = new DateOnly(2026, 1, 28);
+                current.PeriodStart = new DateOnly(2026, 1, 29);
+                current.PeriodEnd = new DateOnly(2026, 2, 25);
+                break;
+            case "missing_month":
+                previous.PeriodStart = new DateOnly(2026, 7, 1);
+                previous.PeriodEnd = new DateOnly(2026, 7, 31);
+                break;
+        }
+
+        await using var db = new FullWorthDbContext(options);
+        db.BillStatements.AddRange(previous, current);
+        db.BillChanges.Add(change);
+        await db.SaveChangesAsync();
+
+        var result = await new StatementBillPlanningChangeFactsGateway(db)
+            .GetLatestConfirmedAsync(userId, [streamId]);
+
+        Assert.Empty(result);
+        // Read filtering must preserve the original evidence and stored history.
+        Assert.Equal(2, await db.BillStatements.CountAsync());
+        Assert.Single(await db.BillChanges.ToListAsync());
+    }
+
     private static BillStatementEntity Statement(
         Guid userId,
         Guid billStreamId,
@@ -331,8 +398,7 @@ public sealed class StatementBillPlanningChangeFactsGatewayTests
             BillStreamId =
                 billStreamId,
             PeriodStart =
-                periodEnd.AddMonths(
-                    -1),
+                new DateOnly(periodEnd.Year, periodEnd.Month, 1),
             PeriodEnd =
                 periodEnd,
             StatementDate =

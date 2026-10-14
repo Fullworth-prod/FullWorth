@@ -1,6 +1,7 @@
 using FullWorth.API.Data;
 using FullWorth.API.Data.Entities;
 using FullWorth.API.Services.Contracts;
+using FullWorth.Core.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace FullWorth.API.Services.Statements;
@@ -74,7 +75,22 @@ public sealed class StatementBillPlanningChangeFactsGateway(
                             statement.Id,
                         statement.UserId
                     }
+                join previous in dbContext.BillStatements.AsNoTracking()
+                    on new { StatementId = change.PreviousStatementId, change.UserId }
+                    equals new { StatementId = (Guid?)previous.Id, previous.UserId }
                 where
+                    previous.BillStreamId == change.BillStreamId &&
+                    previous.Id != statement.Id &&
+                    previous.TotalAmount == change.PreviousAmount &&
+                    statement.TotalAmount == change.CurrentAmount &&
+                    previous.TotalAmount >= 0m &&
+                    statement.TotalAmount >= 0m &&
+                    change.AmountDifference == statement.TotalAmount - previous.TotalAmount &&
+                    change.AnnualizedImpact == change.AmountDifference * 12m &&
+                    (
+                        (change.ChangeType == BillChangeType.TotalIncrease && change.AmountDifference > 0m) ||
+                        (change.ChangeType == BillChangeType.TotalDecrease && change.AmountDifference < 0m)
+                    ) &&
                     change.UserId ==
                         userId &&
                     ids.Contains(
@@ -94,7 +110,15 @@ public sealed class StatementBillPlanningChangeFactsGateway(
                     statement.PeriodEnd descending,
                     change.DetectedAtUtc descending,
                     change.Id descending
-                select new BillPlanningChangeFact(
+                select new
+                {
+                    PreviousPeriodStart = previous.PeriodStart,
+                    PreviousPeriodEnd = previous.PeriodEnd,
+                    CurrentPeriodStart = statement.PeriodStart,
+                    CurrentPeriodEnd = statement.PeriodEnd,
+                    PreviousCurrency = previous.CurrencyCode,
+                    CurrentCurrency = statement.CurrencyCode,
+                    Fact = new BillPlanningChangeFact(
                     change.BillStreamId,
                     change.Id,
                     change.PreviousStatementId,
@@ -105,11 +129,20 @@ public sealed class StatementBillPlanningChangeFactsGateway(
                     change.AnnualizedImpact,
                     change.Description,
                     statement.PeriodEnd)
+                }
             )
             .ToListAsync(
                 cancellationToken);
 
         return candidates
+            .Where(candidate =>
+                IsSupportedCurrency(candidate.CurrentCurrency) &&
+                string.Equals(candidate.PreviousCurrency, candidate.CurrentCurrency,
+                    StringComparison.Ordinal) &&
+                MonthlyStatementPeriodPolicy.CanCompare(
+                    candidate.PreviousPeriodStart, candidate.PreviousPeriodEnd,
+                    candidate.CurrentPeriodStart, candidate.CurrentPeriodEnd))
+            .Select(candidate => candidate.Fact)
             .GroupBy(
                 candidate =>
                     candidate.BillStreamId)
@@ -119,4 +152,7 @@ public sealed class StatementBillPlanningChangeFactsGateway(
                 group =>
                     group.First());
     }
+    private static bool IsSupportedCurrency(string? currency) =>
+        currency is { Length: 3 } &&
+        currency.All(character => character is >= 'A' and <= 'Z');
 }

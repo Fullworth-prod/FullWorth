@@ -10,12 +10,15 @@ This section supersedes historical release snapshots and resume instructions bel
 - That backup contained **zero statement uploads**. It does not prove restoration of actual statement files, and it does not establish separate clean-host/compromised-host recovery, provider-enforced immutability, current read-only credential state, or production acceptance.
 - Confirm trusted host identity and pinned GitHub SSH host-key configuration, separate clean-host recovery requirements, statement-file recovery, and least-privilege recovery credentials before any deployment. Preserve existing data.
 
-### Repository continuation
-- PR #728 merged as `715fe39459faf777b0fb182b6c2115fac71bd1a1` after exact head `f8ff06dde60c573249f5d202bcd87a14136e7bc1` passed FullWorth CI #1756, Dependency Security #846, Android internal #73, and iOS internal #67.
-- PR #729 repairs the Linux OCR native-loader mismatch in the pending TesseractOCR 5.5.2 update and adds a fixed-image native OCR build probe alongside the .NET image, test SDK, and QR dependencies. Inspect current CI/merge state before continuing.
-- PR #730 reapplies artifact/SBOM action updates on current immutable-pin contracts. Inspect current CI/merge state before continuing.
-- PR #724's saved-host dispatch change remains separate: it removes independent typed-host confirmation. This documentation correction does not accept that security behavior change or authorize production deployment.
-- Keep AI-derived persistence and subscription enforcement disabled. Continue through development PRs and exact-head CI; no production action was performed in this pass.
+### Repository continuation — post-integration baseline
+- Verified `development` integration baseline before this documentation update: `8370678cbc57b3aa88d98b7f501811fe2643460c`. Read the actual branch head before further writes.
+- PR #728 merged earlier as `715fe39459faf777b0fb182b6c2115fac71bd1a1` after exact-head FullWorth CI #1756, Dependency Security #846, Android internal #73, and iOS internal #67 passed.
+- PR #729 merged as `04386e5110a638f82f39cec2ea9c00de062ceb3d`: TesseractOCR 5.5.2 Linux native aliases, build-time real OCR self-test, pinned .NET images, test SDK and QR updates. Exact head `f662a3f1105f5ec34b88f2d692e500b5b2c89ffd` passed FullWorth CI #1757 and Dependency Security #847, including all three production images, OCR readiness, memory containment, backup and isolated restore.
+- PR #730 merged as `209658aba34fb1a6be8795156a71cbf926bb7c07`: pinned artifact and SBOM action updates. Exact head `46b12aa94caf80b48d4b387db5afd70ec487f334` passed FullWorth CI #1758, Dependency Security #848, Android internal #74 and iOS internal #68. Master-only SBOM attestation publishing still requires an exact master release build.
+- PR #731 merged as `bb52350d4ec3b0bdd79c38d0ceaaa18aabcd8126`: corrected historical live-release, expired-artifact and reported zero-statement restore evidence. Fresh integrated head `d3c6145e3a92d17661cd9e56257a98dceb782c1e` passed FullWorth CI #1762 and Dependency Security #852. Earlier master-targeting docs PR #723 was closed as superseded.
+- PR #732 merged as `8370678cbc57b3aa88d98b7f501811fe2643460c`: automatic statement-change alerts now decline to annualize unmatched periods or periods outside the conservative 28–31 day length window; overlapping periods remain rejected. Added negative tests for short/long prorated periods, quarterly/annual statements and stale managed-alert cleanup. Fresh integrated head `7d12dbb157bf20bf483d6a53e8efb37db6050d29` passed FullWorth CI #1766 and Dependency Security #856. Period length is **not** definitive billing cadence evidence: cadence-aware matching remains future work, and this guard does not validate a real provider.
+- PR #724 remains a separate unmerged production-deploy proposal that removes the independent typed-host confirmation introduced by #709. No change here accepts that safety tradeoff or authorizes a dispatch.
+- Next: prioritize provider/stream billing-cadence evidence, real statement extraction and Plaid acceptance, and operator-verified off-host/clean-host recovery and production target identity. Do not claim a live deployment or general-release readiness from CI. AI-derived persistence and subscription enforcement remain disabled; preserve current source authority and exact-head CI.
 
 ---
 

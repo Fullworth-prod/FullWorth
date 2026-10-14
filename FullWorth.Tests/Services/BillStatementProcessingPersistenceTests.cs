@@ -23,6 +23,36 @@ public sealed class BillStatementProcessingPersistenceTests
             factory;
     }
 
+    [Theory]
+    [InlineData("Total Amount Due: $105.99")]
+    [InlineData("Billing Period: 06/01/2026 - 06/30/2026")]
+    [InlineData("Due Date: 09/15/2026")]
+    [InlineData("Statement Date: 08/11/2026")]
+    public async Task ConflictingStatementEvidence_StaysInReviewWithoutFinancialRows(string conflict)
+    {
+        using var client = _factory.CreateHttpsClient();
+        var user = await TestUserAuthentication.RegisterAndLoginAsync(client);
+        TestUserAuthentication.Authorize(client, user);
+        var streamId = await CreateBillStreamAsync(client);
+        var uploadId = await UploadAsync(client, streamId, CreatePdf(
+            ["Example Provider",
+             "Statement Date: 08/10/2026",
+             "Billing Period: 07/01/2026 - 07/31/2026",
+             "Due Date: 08/31/2026",
+             "Total Amount Due: $104.99",
+             conflict]));
+
+        await WaitForStatusAsync(uploadId, BillStatementUploadStatus.ReadyForParsing);
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FullWorthDbContext>();
+        var upload = await db.BillStatementUploads.AsNoTracking()
+            .SingleAsync(item => item.Id == uploadId);
+        Assert.Null(upload.BillStatementId);
+        Assert.False(await db.BillStatements.AnyAsync(item => item.BillStreamId == streamId));
+        Assert.False(await db.BillChanges.AnyAsync(item => item.BillStreamId == streamId));
+        Assert.False(await db.BillAlerts.AnyAsync(item => item.BillStreamId == streamId));
+    }
+
     [Fact]
     public async Task
         CompleteTextStatement_IsPersistedAndLinked()

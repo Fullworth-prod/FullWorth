@@ -59,7 +59,7 @@
         : IBillStatementExtractionService
     {
         public const string Version =
-            "deterministic-v1";
+            "deterministic-v2";
 
         private readonly DeterministicBillStatementParser
             _statementParser;

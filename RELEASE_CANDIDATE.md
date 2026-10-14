@@ -1,5 +1,11 @@
 # Release candidate readiness — 2026-10-14
 
+## Owner-approved release policy — 2026-10-14
+
+On 2026-10-14 the owner explicitly approved removing the independent-review requirement to release as a solo maintainer. The approved policy permits zero required approvals while retaining mandatory pull requests, strict current-branch checks for `Backend build and tests`, `MAUI Android build`, `Linux production container`, and `Dependency review` (GitHub Actions app 15368), thread resolution, deletion/force-push restrictions, and an empty bypass list. Read back the saved ruleset before merging; authorization is not evidence that GitHub saved it. Independent review is no longer a release prerequisite under this decision. Host identity, real recovery, attested exact-master artifacts, and deployed acceptance remain required.
+
+This decision supersedes earlier independent-approval requirements below. It does not mark production as deployed or waive data-recovery gates. Physical-device acceptance follows verified deployment.
+
 **Decision: HOLD for production.** Repository verification and operational acceptance are separate gates. No current live release is verified. This checklist is the acceptance contract for the next candidate; it does not authorize a deployment.
 
 ## Candidate identity and verified repository evidence
@@ -24,7 +30,7 @@ Calendar coverage is not proof a charge recurs. Annualized impact remains a proj
 | Order | Gate | Current evidence / closure condition | Responsible role |
 | --- | --- | --- | --- |
 | 1 | Final repository candidate | Exact-head backend, container, dependency/security and applicable mobile checks pass; promotion diff reviewed | Engineering |
-| 2 | Protected-branch governance | Configuration verified: one approval, four GitHub Actions checks, strict current-branch policy, no bypass actors; independent review and verifier-detail fix remain | Repository administrator + independent reviewer |
+| 2 | Protected-branch governance | Owner approved zero approvals; verify saved settings, mandatory PRs, four strict GitHub Actions checks, no bypass actors and updated verifier | Repository administrator / maintainer |
 | 3 | Master artifact | Merge the verified promotion through a PR; exact master CI, CodeQL, governance and signed image/SBOM publication must pass; retain artifact ID, digest and expiry | Engineering |
 | 4 | Trusted target | Reconcile OVH inventory with failed run #15; independently verify configured host and pinned SSH key | Infrastructure operator |
 | 5 | Recovery credential and real recovery | Separate least-privilege read-only credential, actual off-host encrypted repository, isolated clean-host restore of database, real statement files, and both key rings | Recovery operator |
@@ -45,7 +51,7 @@ The verifier must read branch targeting from the full ruleset detail response; G
 
 Open [FullWorth protected branches](https://github.com/Fullworth/FullWorth/rules/24230011). Preserve its coverage of `master` and `development`, active enforcement, deletion/non-fast-forward restrictions, PR requirement, thread resolution, and empty bypass list.
 
-Require at least one independent approving review and strict up-to-date checks. Configure these exact emitted check-run contexts from GitHub Actions (app ID `15368`):
+The owner approved zero required approving reviews; retain mandatory PRs and strict up-to-date checks. Configure these exact emitted check-run contexts from GitHub Actions (app ID `15368`):
 
 | Workflow | Required check-run context |
 | --- | --- |

@@ -1,5 +1,11 @@
 ## Current release state — 2026-10-14
 
+## Owner-approved release policy — 2026-10-14
+
+On 2026-10-14 the owner explicitly approved removing the independent-review requirement to release as a solo maintainer. The approved policy permits zero required approvals while retaining mandatory pull requests, strict current-branch checks for `Backend build and tests`, `MAUI Android build`, `Linux production container`, and `Dependency review` (GitHub Actions app 15368), thread resolution, deletion/force-push restrictions, and an empty bypass list. Read back the saved ruleset before merging; authorization is not evidence that GitHub saved it. Independent review is no longer a release prerequisite under this decision. Host identity, real recovery, attested exact-master artifacts, and deployed acceptance remain required.
+
+This decision supersedes earlier independent-approval requirements below. It does not mark production as deployed or waive data-recovery gates. Physical-device acceptance follows verified deployment.
+
 **Status:** Deployment remains blocked. No current live release is established. Do not start public services against empty data.
 
 The October 12–13 operator-assisted handoff reports an isolated restore of Restic snapshot `726a1e85` (manifest ReleaseId `f401a591a8abdade557827c09412dc3166fb9de2`) on `vps-32597e02`, with checksum/database/migration/key checks passing. This backup had **zero statement uploads**, so actual statement-file recovery remains unproven. Separate clean-host recovery, trusted host identity, provider immutability, and current least-privilege credentials remain open. This pass did not rerun that drill.
@@ -37,7 +43,7 @@ Current verified live production release marker:
 
 **Next concrete sequence:**
 
-Before promotion, obtain independent approval under the now-configured protected-branch governance and review the prepared release PR. Generate a fresh artifact only through green exact-master CI; do not dispatch an expired artifact.
+Before promotion, verify the owner-approved solo-maintainer ruleset has saved and review the prepared release PR. Generate a fresh artifact only through green exact-master CI; do not dispatch an expired artifact.
 
 1. Verify the separate least-privilege R2 Object Read credential is installed on the trusted recovery host through the approved secret-handling path; the historical AccessDenied report does not establish current credential state. Do not paste its value into chat or write it into source control or shell history.
 2. Complete the separate clean-host exercise against the real off-host repository, including actual statement files, database, and both Data Protection rings. Preserve the snapshot/release relationship and sanitized evidence; the reported zero-statement drill does not close this gate.
@@ -103,13 +109,13 @@ Repository and CI coverage already exercise these controls. The remaining work i
 
 ## GitHub protected-branch governance
 
-**Status:** Administrator configuration complete; independent PR review remains required.
+**Status:** Owner approved zero required approvals; verify saved settings and exact-head CI before merge.
 
 Ruleset 24230011 was saved through the user-approved browser and verified by GitHub API readback on 2026-10-14: active on `master` and `development`, one required approving review, strict up-to-date checks for `Backend build and tests`, `MAUI Android build`, `Linux production container`, and `Dependency review`, all bound to GitHub Actions app 15368. Existing deletion/non-fast-forward/thread restrictions and the empty bypass list are preserved.
 
 The verifier must read branch targeting from the full ruleset detail response; GitHub's list response contains metadata only. This change repairs that false-negative bug with realistic fixtures. Local regression and replay of freshly read GitHub metadata pass; exact-head CI and a live workflow run must still be checked. No independent PR approval or deployment is implied.
 
-**Next:** A different authorized reviewer must review and approve the current PRs. Do not self-approve, add a bypass, or weaken the policy to merge. Verify the governance workflow against the corrected exact source before release promotion.
+**Next:** Verify the approved zero-approval setting, retain mandatory PRs and strict checks, and merge only green exact heads. Do not fabricate reviews or add a bypass. Verify the governance workflow against the corrected exact source before release promotion.
 
 ## Commercial legal/license review
 

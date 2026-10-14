@@ -41,7 +41,6 @@ verify_branch() {
     local rulesets_response
     local ruleset_id
     local ruleset_response
-    local approval_count
     local missing_checks
     local strict_checks
 
@@ -102,16 +101,16 @@ verify_branch() {
         return 1
     fi
 
-    approval_count="$(
-        jq -r '
-            [.rules[]? | select(.type == "pull_request") |
-                (.parameters.required_approving_review_count // 0)] |
-            if length == 0 then 0 else max end
-        ' <<<"$ruleset_response"
-    )"
-
-    if ! [[ "$approval_count" =~ ^[0-9]+$ ]] || (( approval_count < 1 )); then
-        echo "::error title=Review approval required::The active ruleset for ${branch} must require at least one approving review."
+    # Owner approved a solo-maintainer policy on 2026-10-14. A PR remains
+    # mandatory; zero independent approvals is permitted, not a missing rule.
+    if ! jq -e '
+        [.rules[]? | select(.type == "pull_request")] |
+        length > 0 and all(.[];
+            .parameters.required_approving_review_count |
+            type == "number" and . >= 0 and . <= 10 and . == floor
+        )
+    ' <<<"$ruleset_response" >/dev/null; then
+        echo "::error title=Pull request rule required::The active ruleset for ${branch} must require pull requests with a valid approval count."
         return 1
     fi
 
@@ -149,7 +148,7 @@ verify_branch() {
         return 1
     fi
 
-    echo "${branch}: protected; reviewed PR and current CI/security checks required"
+    echo "${branch}: protected; PR and current CI/security checks required (owner-approved solo-maintainer policy)"
 }
 
 failure=0

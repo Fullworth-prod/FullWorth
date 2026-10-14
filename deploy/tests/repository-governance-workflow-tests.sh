@@ -83,13 +83,22 @@ case "$url" in
         if [ "${MOCK_MODE:-valid}" = missing_ruleset ]; then
             printf '%s\n' '[]'
         else
-            printf '%s\n' '[{"id":42,"name":"FullWorth protected branches","enforcement":"active","conditions":{"ref_name":{"include":["refs/heads/master","refs/heads/development"]}}}]'
+            printf '%s\n' '[{"id":42,"name":"FullWorth protected branches","enforcement":"active","target":"branch"}]'
         fi
         ;;
     */rulesets/42)
         # Mirror the shape of the GitHub ruleset response, with actual job contexts.
-        response='{"rules":[{"type":"pull_request","parameters":{"required_approving_review_count":1}},{"type":"required_status_checks","parameters":{"strict_required_status_checks_policy":true,"required_status_checks":[{"context":"Backend build and tests"},{"context":"MAUI Android build"},{"context":"Linux production container"},{"context":"Dependency review"}]}}]}'
+        response='{"name":"FullWorth protected branches","target":"branch","enforcement":"active","conditions":{"ref_name":{"include":["refs/heads/master","refs/heads/development"],"exclude":[]}},"rules":[{"type":"pull_request","parameters":{"required_approving_review_count":1}},{"type":"required_status_checks","parameters":{"strict_required_status_checks_policy":true,"required_status_checks":[{"context":"Backend build and tests"},{"context":"MAUI Android build"},{"context":"Linux production container"},{"context":"Dependency review"}]}}]}'
         case "${MOCK_MODE:-valid}" in
+            missing_branch_target)
+                printf '%s\n' "$response" | jq '.conditions.ref_name.include = ["refs/heads/master"]'
+                ;;
+            excluded_target)
+                printf '%s\n' "$response" | jq '.conditions.ref_name.exclude = ["refs/heads/*"]'
+                ;;
+            inactive_detail)
+                printf '%s\n' "$response" | jq '.enforcement = "disabled"'
+                ;;
             missing_approval)
                 printf '%s\n' "$response" | jq '.rules[0].parameters.required_approving_review_count = 0'
                 ;;
@@ -134,7 +143,7 @@ run_verifier()
 run_verifier valid >/dev/null ||
     fail "valid reviewed-PR and current-check rules were rejected."
 
-for mode in unprotected missing_ruleset missing_approval missing_backend_check missing_maui_check missing_container_check missing_dependency_check workflow_names_only non_strict_checks; do
+for mode in unprotected missing_ruleset missing_branch_target excluded_target inactive_detail missing_approval missing_backend_check missing_maui_check missing_container_check missing_dependency_check workflow_names_only non_strict_checks; do
     if run_verifier "$mode" >/dev/null 2>&1; then
         fail "unsafe governance fixture '$mode' was accepted."
     fi
@@ -147,4 +156,5 @@ case "$output" in
 esac
 
 printf '%s\n' "Repository governance workflow regression passed."
+
 

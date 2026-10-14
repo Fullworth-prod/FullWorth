@@ -7,7 +7,7 @@
 - Integration PR [#739](https://github.com/Fullworth/FullWorth/pull/739) merged as `b425fc39bd28a333a73d9aca46c7d0367752b951`.
 - Exact integration head `ccac12913064599b6f909cf0656510150f6bdca2` passed [FullWorth CI #1775](https://github.com/Fullworth/FullWorth/actions/runs/38507907171), [Dependency Security #865](https://github.com/Fullworth/FullWorth/actions/runs/38507907139), [Android internal #78](https://github.com/Fullworth/FullWorth/actions/runs/38507907153), and [iOS internal #72](https://github.com/Fullworth/FullWorth/actions/runs/38507907191). Backend: 1,346 tests, zero failed/skipped. Container validation included native OCR, parser containment, encrypted backup, and isolated restore.
 - PR [#740](https://github.com/Fullworth/FullWorth/pull/740) merged as `6c9cdd0d577e8945acee9949e577f8c6d4439e99`. Exact head `16bdda005d4d9d8f00ac28a9604a2fe0faed6d42` passed [FullWorth CI #1778](https://github.com/Fullworth/FullWorth/actions/runs/38509229578) and [Dependency Security #868](https://github.com/Fullworth/FullWorth/actions/runs/38509229591). All 1,348 backend tests passed, none failed/skipped; both backend builds report zero warnings/errors. Linux production-container validation passed.
-- PR #741 merged as `a48183d44582e79985c332f6f59125127b9001e3`. Exact head `a252cf71b0398d81b036f9aaab31f11902e44aef` passed [FullWorth CI #1779](https://github.com/Fullworth/FullWorth/actions/runs/38509349648) and [Dependency Security #869](https://github.com/Fullworth/FullWorth/actions/runs/38509349672). The verifier requires actual emitted job contexts; behavioral tests reject workflow-name-only settings and each missing required job. The actual administrator settings remain unchanged and fail the intended governance policy.
+- PR #741 merged as `a48183d44582e79985c332f6f59125127b9001e3`. Exact head `a252cf71b0398d81b036f9aaab31f11902e44aef` passed [FullWorth CI #1779](https://github.com/Fullworth/FullWorth/actions/runs/38509349648) and [Dependency Security #869](https://github.com/Fullworth/FullWorth/actions/runs/38509349672). The verifier requires actual emitted job contexts; behavioral tests reject workflow-name-only settings and each missing required job. The administrator configuration gap is now closed; see the verified policy below.
 - Current master remains `c8858a38b38d7eb0888d273b9a1a409308e565b4`. Its artifact `11435103773` expired on 2026-10-13 at 18:30 UTC. It is historical evidence, not a deployable fallback.
 - Read fresh branch refs and PR check-runs before promotion. The final master merge SHA, not a PR head or a CI synthetic merge SHA, is the release identity used by image attestations and deployed evidence.
 
@@ -24,7 +24,7 @@ Calendar coverage is not proof a charge recurs. Annualized impact remains a proj
 | Order | Gate | Current evidence / closure condition | Responsible role |
 | --- | --- | --- | --- |
 | 1 | Final repository candidate | Exact-head backend, container, dependency/security and applicable mobile checks pass; promotion diff reviewed | Engineering |
-| 2 | Protected-branch governance | Active ruleset currently has 0 required approvals and no required checks; configure the real job contexts below and verify readback | Repository administrator + independent reviewer |
+| 2 | Protected-branch governance | Configuration verified: one approval, four GitHub Actions checks, strict current-branch policy, no bypass actors; independent review and verifier-detail fix remain | Repository administrator + independent reviewer |
 | 3 | Master artifact | Merge the verified promotion through a PR; exact master CI, CodeQL, governance and signed image/SBOM publication must pass; retain artifact ID, digest and expiry | Engineering |
 | 4 | Trusted target | Reconcile OVH inventory with failed run #15; independently verify configured host and pinned SSH key | Infrastructure operator |
 | 5 | Recovery credential and real recovery | Separate least-privilege read-only credential, actual off-host encrypted repository, isolated clean-host restore of database, real statement files, and both key rings | Recovery operator |
@@ -37,7 +37,11 @@ Calendar coverage is not proof a charge recurs. Annualized impact remains a proj
 
 Do not replace a missing gate with an unchecked claim, a simulator result, a local CI restore, or evidence from another release.
 
-## Concrete repository-administrator handoff
+## Verified repository governance
+
+Ruleset 24230011 was saved through the user-approved browser and verified by GitHub API readback on 2026-10-14: active on `master` and `development`, one required approving review, strict up-to-date checks for `Backend build and tests`, `MAUI Android build`, `Linux production container`, and `Dependency review`, all bound to GitHub Actions app 15368. Existing deletion/non-fast-forward/thread restrictions and the empty bypass list are preserved.
+
+The verifier must read branch targeting from the full ruleset detail response; GitHub's list response contains metadata only. This change repairs that false-negative bug with realistic fixtures. Local regression and replay of freshly read GitHub metadata pass; exact-head CI and a live workflow run must still be checked. No independent PR approval or deployment is implied.
 
 Open [FullWorth protected branches](https://github.com/Fullworth/FullWorth/rules/24230011). Preserve its coverage of `master` and `development`, active enforcement, deletion/non-fast-forward restrictions, PR requirement, thread resolution, and empty bypass list.
 
@@ -52,7 +56,7 @@ Require at least one independent approving review and strict up-to-date checks. 
 
 The workflow display names `FullWorth CI` and `FullWorth Dependency Security` are not the emitted job contexts. Requiring only those names can wait forever for nonexistent checks and omit the actual jobs.
 
-After saving, read back the ruleset and run `bash deploy/verify-github-branch-governance.sh` through the protected GitHub workflow or the documented authenticated operator environment. Do not expose its token. The available connected tooling can inspect these settings but cannot change repository administration. A code merge does not close this gate.
+After saving, read back the ruleset and run `bash deploy/verify-github-branch-governance.sh` through the protected GitHub workflow or the documented authenticated operator environment. Do not expose its token. The connector remains read-only for administration; the configuration was saved through the authorized browser session. A successful settings save is not an independent review of the release PR.
 
 ## Same-release financial acceptance
 

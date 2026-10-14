@@ -256,7 +256,7 @@ Current state as of 2026-10-14: see the authoritative continuation checkpoint in
 
 Latest verified repository milestone: integration #739 and cleanup #740 are merged. FullWorth CI #1775/#1778 and Dependency Security #865/#868 passed; Android internal #78 and iOS internal #72 passed on the integration head. Cleanup passed all 1,348 backend tests with zero build warnings/errors. Governance verifier correction #741 also merged after exact-head FullWorth CI #1779 and Dependency Security #869 passed. Administrator settings remain incomplete; the verifier correction is not policy enforcement.
 
-Use [RELEASE_CANDIDATE.md](RELEASE_CANDIDATE.md) as the release gate matrix and financial acceptance checklist. Governance readback still shows 0 required approvals and no required status checks; a prepared promotion is not launch approval.
+Use [RELEASE_CANDIDATE.md](RELEASE_CANDIDATE.md) as the release gate matrix and financial acceptance checklist. Governance configuration is now verified: one required approval, strict current-branch policy, four required GitHub Actions job contexts and no bypass actors. Independent review remains required; a prepared promotion is not launch approval. The verifier-detail correction in this change must pass exact-head CI and live workflow verification.
 
 Historical repository snapshot as of 2026-10-06:
 

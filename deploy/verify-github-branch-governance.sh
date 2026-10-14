@@ -66,13 +66,13 @@ verify_branch() {
     fi
 
     ruleset_id="$(
-        jq -r --arg ref "refs/heads/${branch}" '
+        jq -r '
             [
                 .[] |
                 select(
                     .name == "FullWorth protected branches" and
                     .enforcement == "active" and
-                    ((.conditions.ref_name.include // []) | index($ref) != null)
+                    .target == "branch"
                 )
             ] |
             if length == 1 then .[0].id else "" end
@@ -86,6 +86,19 @@ verify_branch() {
 
     if ! ruleset_response="$(request_public_json "${api_url}/repos/${repository}/rulesets/${ruleset_id}")"; then
         echo "::error title=Branch governance unavailable::Could not read the active public ruleset for ${branch}."
+        return 1
+    fi
+
+    # The collection response contains metadata only. Read targeting from the
+    # full detail response, and fail closed on exclusions we do not interpret.
+    if ! jq -e --arg ref "refs/heads/${branch}" '
+        .name == "FullWorth protected branches" and
+        .target == "branch" and
+        .enforcement == "active" and
+        ((.conditions.ref_name.include // []) | index($ref) != null) and
+        ((.conditions.ref_name.exclude // []) | length == 0)
+    ' <<<"$ruleset_response" >/dev/null; then
+        echo "::error title=Missing FullWorth branch ruleset::The full active ruleset must explicitly include ${branch} without exclusions."
         return 1
     fi
 
@@ -152,4 +165,5 @@ if (( failure != 0 )); then
 fi
 
 echo "FullWorth branch-governance verification passed."
+
 

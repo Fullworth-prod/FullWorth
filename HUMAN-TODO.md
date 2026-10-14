@@ -37,7 +37,7 @@ Current verified live production release marker:
 
 **Next concrete sequence:**
 
-Before promotion, configure the protected-branch governance described below and review the prepared release PR. Generate a fresh artifact only through green exact-master CI; do not dispatch an expired artifact.
+Before promotion, obtain independent approval under the now-configured protected-branch governance and review the prepared release PR. Generate a fresh artifact only through green exact-master CI; do not dispatch an expired artifact.
 
 1. Verify the separate least-privilege R2 Object Read credential is installed on the trusted recovery host through the approved secret-handling path; the historical AccessDenied report does not establish current credential state. Do not paste its value into chat or write it into source control or shell history.
 2. Complete the separate clean-host exercise against the real off-host repository, including actual statement files, database, and both Data Protection rings. Preserve the snapshot/release relationship and sanitized evidence; the reported zero-statement drill does not close this gate.
@@ -103,32 +103,13 @@ Repository and CI coverage already exercise these controls. The remaining work i
 
 ## GitHub protected-branch governance
 
-**Status:** Human repository-administrator action required.
+**Status:** Administrator configuration complete; independent PR review remains required.
 
-The active repository ruleset **FullWorth protected branches** targets both `master` and `development`. Current verified configuration:
+Ruleset 24230011 was saved through the user-approved browser and verified by GitHub API readback on 2026-10-14: active on `master` and `development`, one required approving review, strict up-to-date checks for `Backend build and tests`, `MAUI Android build`, `Linux production container`, and `Dependency review`, all bound to GitHub Actions app 15368. Existing deletion/non-fast-forward/thread restrictions and the empty bypass list are preserved.
 
-- active enforcement;
-- pull requests required;
-- deletion blocked;
-- non-fast-forward updates blocked;
-- review-thread resolution required;
-- extra approval required for unattributed changes;
-- no bypass actors;
-- current connection cannot bypass;
-- required approving review count: **0**;
-- required status-check rule: **not configured**.
+The verifier must read branch targeting from the full ruleset detail response; GitHub's list response contains metadata only. This change repairs that false-negative bug with realistic fixtures. Local regression and replay of freshly read GitHub metadata pass; exact-head CI and a live workflow run must still be checked. No independent PR approval or deployment is implied.
 
-**Why a human is needed:** Current connected GitHub tooling can inspect the ruleset but cannot mutate the repository-administration settings.
-
-**Action:**
-
-1. Open **GitHub → FullWorth repository → Settings → Rules → Rulesets → FullWorth protected branches**.
-2. Preserve the existing protections for both `master` and `development`.
-3. Require strict current-branch checks for the actual GitHub Actions contexts: `Backend build and tests`, `MAUI Android build`, `Linux production container`, and `Dependency review`. Use GitHub Actions app ID `15368`; workflow display names alone are not check-run contexts.
-4. Require at least one independent approving review, as enforced by the repository governance verifier. An author cannot supply their own independent approval.
-5. Keep bypass actors empty unless a deliberate, documented emergency policy is later approved.
-
-**Verify:** GitHub ruleset readback shows the intended approval policy and required status checks for both protected branches.
+**Next:** A different authorized reviewer must review and approve the current PRs. Do not self-approve, add a bypass, or weaken the policy to merge. Verify the governance workflow against the corrected exact source before release promotion.
 
 ## Commercial legal/license review
 

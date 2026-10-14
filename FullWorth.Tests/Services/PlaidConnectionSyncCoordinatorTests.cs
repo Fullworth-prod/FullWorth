@@ -99,11 +99,11 @@ public sealed class PlaidConnectionSyncCoordinatorTests
             securityEvent.Message,
             StringComparison.Ordinal);
         Assert.DoesNotContain(
-            connection.PlaidItemId,
+            Assert.IsType<string>(connection.PlaidItemId),
             securityEvent.Message,
             StringComparison.Ordinal);
         Assert.DoesNotContain(
-            connection.InstitutionName,
+            Assert.IsType<string>(connection.InstitutionName),
             securityEvent.Message,
             StringComparison.Ordinal);
         Assert.DoesNotContain(

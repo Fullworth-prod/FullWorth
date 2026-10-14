@@ -1,6 +1,27 @@
-## Current continuation checkpoint — 2026-10-10
+## Current continuation checkpoint — 2026-10-13
 
-This section supersedes older branch/release snapshots elsewhere in this file. Verify current source, CI, and GitHub refs before acting.
+This section supersedes historical release snapshots and resume instructions below. Read fresh branch refs and exact-head checks before further repository work.
+
+### Production and recovery boundary
+- current release candidate on `master`: `c8858a38b38d7eb0888d273b9a1a409308e565b4`; no deployment of this candidate is established.
+- Verified live production release: `none`. The operator reports no production server is running. Historical SHA `7e8571a26447538db249c862ad009487cce119bc` must not be presented as current live production.
+- Candidate artifact `11435103773` had a recorded expiry of 2026-10-13 18:30 UTC, now elapsed. Obtain a fresh exact-release artifact through the normal verified release process before deployment; never substitute an artifact from another SHA.
+- The October 12–13 operator-assisted handoff reports an isolated restore of snapshot `726a1e85`, manifest ReleaseId `f401a591a8abdade557827c09412dc3166fb9de2`, on `vps-32597e02`, with checksum, database/migration, and key checks passing. This is reported historical drill evidence, not a newly executed verification.
+- That backup contained **zero statement uploads**. It does not prove restoration of actual statement files, and it does not establish separate clean-host/compromised-host recovery, provider-enforced immutability, current read-only credential state, or production acceptance.
+- Confirm trusted host identity and pinned GitHub SSH host-key configuration, separate clean-host recovery requirements, statement-file recovery, and least-privilege recovery credentials before any deployment. Preserve existing data.
+
+### Repository continuation
+- PR #728 merged as `715fe39459faf777b0fb182b6c2115fac71bd1a1` after exact head `f8ff06dde60c573249f5d202bcd87a14136e7bc1` passed FullWorth CI #1756, Dependency Security #846, Android internal #73, and iOS internal #67.
+- PR #729 repairs the Linux OCR native-loader mismatch in the pending TesseractOCR 5.5.2 update and adds a fixed-image native OCR build probe alongside the .NET image, test SDK, and QR dependencies. Inspect current CI/merge state before continuing.
+- PR #730 reapplies artifact/SBOM action updates on current immutable-pin contracts. Inspect current CI/merge state before continuing.
+- PR #724's saved-host dispatch change remains separate: it removes independent typed-host confirmation. This documentation correction does not accept that security behavior change or authorize production deployment.
+- Keep AI-derived persistence and subscription enforcement disabled. Continue through development PRs and exact-head CI; no production action was performed in this pass.
+
+---
+
+## Historical continuation checkpoint — 2026-10-10
+
+This historical section is superseded by the October 13 checkpoint above. Retain it only as prior repository/CI evidence.
 
 ### Repository development state
 - Runtime development head immediately before the handoff-only PR #720: `5b358d3b8a16f099504a61a9ea68efa2c50f9b70`. PR #720 then merged this documentation checkpoint as `d587d075ee69f28753120b9c7406d7b9a6b0bc07`.
@@ -11,7 +32,7 @@ This section supersedes older branch/release snapshots elsewhere in this file. V
 
 ### Release boundary
 - Current `master` candidate: `c8858a38b38d7eb0888d273b9a1a409308e565b4`. The earlier `f401a591a8abdade557827c09412dc3166fb9de2` candidate is superseded.
-- Verified live production remains `7e8571a26447538db249c862ad009487cce119bc`. Candidate `c8858a38` is not deployed; no production deployment was performed during this work.
+- Historical verified release was `7e8571a26447538db249c862ad009487cce119bc`; no current live release is established. Candidate `c8858a38` is not deployed; no production deployment was performed during this work.
 - Guarded run #15 failed closed on the earlier candidate before candidate startup. Host state and backup readiness still require operator reconciliation. Do not start the public stack against an empty database or treat CI restore tests as proof of the real off-host repository.
 - Remaining release/security evidence includes provider-enforced immutable off-host backup, a separate read-only R2 recovery credential, a verified clean-host/compromised-host restore, reconciling the SSH target with the inspected host, independent-review policy decision/settings, exact deployed-release evidence, physical Android/PWA checks, and Plaid acceptance.
 - Production deployment remains explicitly outside this continuation. Repository changes and CI do not authorize or prove production acceptance.
@@ -47,7 +68,7 @@ Current branch/release position:
 - Current `development` head: `0168093384961e4d2e9838c495fbaf5bfb2c279a`, promoted to master by PR #711 after PR #710 refreshed the handoff. FullWorth CI #1707 and Dependency Security #798 passed on this head. PR #707's recovery passfile fix and PR #709's host-confirmation gate are included; these do not establish remote R2 access or production recovery, and no deployment occurred.
 - Guarded deploy run #15 reported partial API/Web/edge services and failed before candidate startup. Follow-up read-only inventory found: OVH 40.160.137.55 read-only inventory found zero Docker containers, zero Docker volumes, and a missing release marker; this conflicts with run #15's partial-runtime report.
 - Remote R2 recovery returned AccessDenied with the host's configured backup credential; a separate read-only recovery credential is required. The recovery-wiring change does not grant provider access. The same-host object copy has not passed encrypted Restic integrity or clean-host restore verification.
-- Verified live production remains `7e8571a26447538db249c862ad009487cce119bc`; the candidate did not advance the marker. The inspected OVH host has no Docker volumes or release marker, so do not start the public stack against an empty database.
+- Historical verified release was `7e8571a26447538db249c862ad009487cce119bc`; no current live release is established; the candidate did not advance the marker. The inspected OVH host has no Docker volumes or release marker, so do not start the public stack against an empty database.
 - Reconcile the guarded workflow's SSH target with the inspected OVH host, install the separate least-privilege recovery credential through the approved secret-handling path, and complete isolated restore verification before deployment. Do not change services or broaden backup credentials to bypass these blockers.
 - Issue #291 remains 61/65: provider-enforced immutable/off-host storage, compromised-host clean restore, independent-review policy, and exact deployed-release evidence are still open.
 - Do not infer production security from CI, combine evidence across releases, or deploy until the target mismatch and recovery gates are resolved.
@@ -526,7 +547,7 @@ Next: on an authorized evaluation host, start the pinned local runtime and compl
 
 ## Guarded production deployment checkpoint — 2026-09-25
 
-GitHub Actions production deploy run #7 (`36221860082`) completed successfully for exact `master` release `7e8571a26447538db249c862ad009487cce119bc`. This is the current verified live production release.
+GitHub Actions production deploy run #7 (`36221860082`) completed successfully for exact `master` release `7e8571a26447538db249c862ad009487cce119bc`. This is historical deployment evidence, not evidence that any production server is currently running.
 
 The guarded workflow verified the requested SHA against current `master`, used pinned SSH host verification, passed production configuration preflight, built release-tagged API/Web/backup images, created a verified encrypted pre-replacement recovery snapshot beginning `15a529e1844b...`, and completed the guarded deployment without bypassing the repository deployment script.
 
@@ -825,9 +846,9 @@ Production path: `/opt/billwatch`
 - Never log raw statements, full account numbers, auth/Plaid/provider tokens, passwords, recovery codes, provider/database/Restic secrets, or private operations webhooks.
 - AI-derived persistence remains disabled; deterministic extraction remains production persistence.
 
-## Current production state
+## Historical production state — September 2026
 
-The current operator-reported live production release is:
+The operator-reported live production release at that time was:
 
 `81a74f11941f6ed67ba5de61b9ef186ef09bae3c`
 
@@ -917,7 +938,7 @@ In particular:
 
 Before trusted external beta invitations:
 
-1. Run objective cross-user Web/BFF ownership proof with a second controlled identity and controlled foreign-owned resource/statement fixture against deployed release `7e8571a26447538db249c862ad009487cce119bc`.
+1. Run objective cross-user Web/BFF ownership proof with a second controlled identity and controlled foreign-owned resource/statement fixture against the next exact release verified through guarded deployment; do not reuse historical release evidence.
 2. Run disposable account-deletion proof and feed same-release evidence into Internal Beta 0.
 3. Exercise the controlled Plaid connect/update lifecycle with a suitable account and complete the Hosted Link human-interaction observation.
 4. With explicit approval, upload controlled representative PDF/scanned-PDF/JPG/PNG fixtures and review extraction/OCR fields plus bill-change explanations against operator-known facts.
@@ -930,11 +951,11 @@ Before trusted external beta invitations:
 11. Obtain qualified review of the exact deployed Terms/Privacy version.
 12. Run the trusted-beta launch evidence verifier only after every underlying real-world fact is genuinely complete.
 
-## Immediate resume point
+## Historical resume point — superseded by October 13
 
 1. Read current GitHub heads, open PRs, issue #291, issue #669, this context, `HUMAN-TODO.md`, and the roadmap before changing release state.
 2. Master candidate `c8858a38b38d7eb0888d273b9a1a409308e565b4` was promoted by PR #711 from development head `0168093384961e4d2e9838c495fbaf5bfb2c279a`. Exact PR checks passed (FullWorth CI #1707, Dependency Security #798, PR workflow #59); master FullWorth CI #1708, Repository Governance #20, and CodeQL #60 passed. Artifact `fullworth-production-image-artifacts-c8858a38b38d7eb0888d273b9a1a409308e565b4` (ID `11435103773`, digest `sha256:39d566b68cdbef5dfd52ef616ce23642b8aa33e77fe26026f4f1c2ea135db823`) expires 2026-10-13. None of this proves deployment.
-3. Development remains at `0168093384961e4d2e9838c495fbaf5bfb2c279a`; exact FullWorth CI #1707 and Dependency Security #798 passed. The release candidate is not deployed; verified live production remains `7e8571a26447538db249c862ad009487cce119bc`.
+3. Development remains at `0168093384961e4d2e9838c495fbaf5bfb2c279a`; exact FullWorth CI #1707 and Dependency Security #798 passed. The release candidate is not deployed; the historical live SHA does not establish any currently running production release.
 4. Deploy run #15 failed closed, and its partial-runtime report conflicts with the later read-only OVH inventory showing no containers, volumes, or release marker. Do not restart services or start the public stack against the empty inspected host.
 5. R2 recovery returned AccessDenied for the configured backup credential. Obtain the separate least-privilege read-only credential through the approved secret path, then prove encrypted-repository integrity and a clean isolated restore.
 6. Reconcile the workflow's pinned SSH target with the inspected OVH host before any repair or deployment. Only after target identity and recovery pass should the exact-master guarded deployment be considered.

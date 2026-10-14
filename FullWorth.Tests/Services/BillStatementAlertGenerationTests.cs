@@ -334,6 +334,14 @@ public sealed class BillStatementAlertGenerationTests
     [InlineData(14, 14)]
     [InlineData(22, 31)]
     [InlineData(31, 22)]
+    [InlineData(23, 31)]
+    [InlineData(31, 23)]
+    [InlineData(27, 31)]
+    [InlineData(31, 27)]
+    [InlineData(32, 31)]
+    [InlineData(31, 32)]
+    [InlineData(38, 31)]
+    [InlineData(31, 38)]
     [InlineData(39, 31)]
     [InlineData(31, 39)]
     [InlineData(90, 91)]
@@ -368,11 +376,12 @@ public sealed class BillStatementAlertGenerationTests
     }
 
     [Theory]
-    [InlineData(23, 38)]
+    [InlineData(28, 28)]
     [InlineData(28, 31)]
     [InlineData(29, 31)]
     [InlineData(30, 31)]
-    [InlineData(38, 23)]
+    [InlineData(31, 29)]
+    [InlineData(31, 28)]
     public async Task MonthlyPeriodLengths_PreserveDeterministicAnnualImpact(
         int previousDays,
         int currentDays)

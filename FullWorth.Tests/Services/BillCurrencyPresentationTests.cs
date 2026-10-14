@@ -66,3 +66,4 @@ public sealed class BillCurrencyPresentationTests
         new("Example Provider", new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 31),
             new BillAmount(amount), [new BillLineItem("Service", amount)], currency);
 }
+

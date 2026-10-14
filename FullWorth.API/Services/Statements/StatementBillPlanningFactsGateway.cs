@@ -98,3 +98,4 @@ public sealed class StatementBillPlanningFactsGateway(
                     group.First());
     }
 }
+

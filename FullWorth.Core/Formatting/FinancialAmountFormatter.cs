@@ -25,3 +25,4 @@ public static class FinancialAmountFormatter
         return currency == "USD" ? "$" + number : currency + " " + number;
     }
 }
+

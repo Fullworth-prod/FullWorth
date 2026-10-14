@@ -376,27 +376,26 @@ public sealed class BillStatementAlertGenerationTests
     }
 
     [Theory]
-    [InlineData(28, 28)]
-    [InlineData(28, 31)]
-    [InlineData(29, 31)]
-    [InlineData(30, 31)]
-    [InlineData(31, 29)]
-    [InlineData(31, 28)]
-    public async Task MonthlyPeriodLengths_PreserveDeterministicAnnualImpact(
-        int previousDays,
-        int currentDays)
+    [InlineData(2024, 1, 1)]
+    [InlineData(2024, 1, 31)]
+    [InlineData(2025, 1, 31)]
+    [InlineData(2026, 6, 1)]
+    [InlineData(2026, 12, 1)]
+    public async Task CalendarMonthlyPeriods_PreserveDeterministicAnnualImpact(
+        int year, int month, int day)
     {
         await using var dbContext = CreateDbContext();
         var userId = Guid.NewGuid();
         var stream = CreateBillStream(userId);
-        var previousStart = new DateOnly(2024, 1, 1);
-        var currentStart = previousStart.AddDays(previousDays);
+        var previousStart = new DateOnly(year, month, day);
+        var currentStart = previousStart.AddMonths(1);
+        var nextStart = previousStart.AddMonths(2);
         dbContext.BillStreams.Add(stream);
         dbContext.BillStatements.AddRange(
             CreateStatement(userId, stream.Id, previousStart,
                 currentStart.AddDays(-1), 100m),
             CreateStatement(userId, stream.Id, currentStart,
-                currentStart.AddDays(currentDays - 1), 125m));
+                nextStart.AddDays(-1), 125m));
         await dbContext.SaveChangesAsync();
 
         await CreateChangeService(dbContext).ReconcileAsync(userId, stream.Id);
@@ -405,8 +404,34 @@ public sealed class BillStatementAlertGenerationTests
         var change = Assert.Single(await dbContext.BillChanges.ToListAsync());
         Assert.Equal(25m, change.AmountDifference);
         Assert.Equal(300m, change.AnnualizedImpact);
-        var alert = Assert.Single(await dbContext.BillAlerts.ToListAsync());
-        Assert.Contains("$300.00/year", alert.Message);
+        Assert.Contains("$300.00/year",
+            Assert.Single(await dbContext.BillAlerts.ToListAsync()).Message);
+    }
+
+    [Theory]
+    [InlineData(2026, 1, 1, 2026, 1, 28, 2026, 1, 29, 2026, 2, 25)]
+    [InlineData(2026, 1, 1, 2026, 1, 31, 2027, 1, 1, 2027, 1, 31)]
+    [InlineData(2026, 1, 1, 2026, 1, 31, 2026, 3, 1, 2026, 3, 31)]
+    public async Task NonconsecutiveOrFourWeeklyCoverage_DoesNotAnnualize(
+        int py, int pm, int pd, int pey, int pem, int ped,
+        int cy, int cm, int cd, int cey, int cem, int ced)
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = Guid.NewGuid();
+        var stream = CreateBillStream(userId);
+        dbContext.BillStreams.Add(stream);
+        dbContext.BillStatements.AddRange(
+            CreateStatement(userId, stream.Id,
+                new DateOnly(py, pm, pd), new DateOnly(pey, pem, ped), 100m),
+            CreateStatement(userId, stream.Id,
+                new DateOnly(cy, cm, cd), new DateOnly(cey, cem, ced), 125m));
+        await dbContext.SaveChangesAsync();
+
+        await CreateChangeService(dbContext).ReconcileAsync(userId, stream.Id);
+        await dbContext.SaveChangesAsync();
+
+        Assert.Empty(await dbContext.BillChanges.ToListAsync());
+        Assert.Empty(await dbContext.BillAlerts.ToListAsync());
     }
 
     [Theory]

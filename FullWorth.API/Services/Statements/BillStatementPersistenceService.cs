@@ -97,6 +97,13 @@ public sealed class BillStatementPersistenceService
                 "The parsed statement currency code is invalid.");
         }
 
+        if (!StatementMoneyStoragePolicy.IsSupportedTotal(totalAmount) ||
+            parsedLineItems.Any(item => !StatementMoneyStoragePolicy.IsSupportedSigned(item.Amount)))
+        {
+            throw new InvalidOperationException(
+                "Statement amounts are outside the supported storage range or precision.");
+        }
+
         var existingStatement =
             await _dbContext.BillStatements
                 .Where(

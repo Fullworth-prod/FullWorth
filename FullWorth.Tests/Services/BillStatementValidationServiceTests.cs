@@ -229,6 +229,28 @@ public sealed class BillStatementValidationServiceTests
                 "statement_date_future");
     }
 
+    [Theory]
+    [InlineData("10000000000000000.00", "total_out_of_range")]
+    [InlineData("79228162514264337593543950335", "total_out_of_range")]
+    [InlineData("104.999", "total_precision")]
+    public void UnsupportedMoney_IsRejectedBeforePersistence(string value, string code)
+    {
+        var amount = decimal.Parse(value, System.Globalization.CultureInfo.InvariantCulture);
+        var result = _service.Validate(CreateValidInput() with { TotalAmount = amount }, Today);
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Issues, issue => issue.Code == code);
+    }
+
+    [Fact]
+    public void LargestStorableCentAmount_IsAcceptedWithoutRounding()
+    {
+        var result = _service.Validate(CreateValidInput() with
+        {
+            TotalAmount = 9_999_999_999_999_999.99m
+        }, Today);
+        Assert.True(result.IsValid);
+    }
+
     private static BillStatementValidationInput
         CreateValidInput()
     {

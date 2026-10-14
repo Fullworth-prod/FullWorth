@@ -549,6 +549,12 @@ public sealed class BillStatementChangeDetectionService
                 continue;
             }
 
+            if (!StatementMoneyStoragePolicy.IsSupportedTotal(previous.TotalAmount) ||
+                !StatementMoneyStoragePolicy.IsSupportedTotal(current.TotalAmount))
+            {
+                continue;
+            }
+
             lineItemsByStatement.TryGetValue(
                 previous.Id,
                 out var previousLineItems);
@@ -580,8 +586,8 @@ public sealed class BillStatementChangeDetectionService
                 analysis.Comparison
                     .TotalComparison;
 
-            if (totalComparison.MonthlyChange ==
-                0m)
+            if (totalComparison.MonthlyChange == 0m ||
+                !StatementMoneyStoragePolicy.IsSupportedSigned(totalComparison.AnnualChange))
             {
                 continue;
             }

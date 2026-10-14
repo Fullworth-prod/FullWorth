@@ -638,7 +638,7 @@ jobs:
 
       - name: Generate API image SBOM
         if: steps.container_changes.outputs.required == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: anchore/sbom-action@da167eac915b4e86f08b264dbdbc867b61be6f0c
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c
         with:
           image: billwatch-api:${{ github.sha }}
           format: spdx-json
@@ -649,7 +649,7 @@ jobs:
 
       - name: Generate parser worker image SBOM
         if: steps.container_changes.outputs.required == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: anchore/sbom-action@da167eac915b4e86f08b264dbdbc867b61be6f0c
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c
         with:
           image: billwatch-parser-worker:${{ github.sha }}
           format: spdx-json
@@ -660,7 +660,7 @@ jobs:
 
       - name: Generate web image SBOM
         if: steps.container_changes.outputs.required == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: anchore/sbom-action@da167eac915b4e86f08b264dbdbc867b61be6f0c
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c
         with:
           image: billwatch-web:${{ github.sha }}
           format: spdx-json
@@ -681,21 +681,21 @@ jobs:
 
       - name: Attest API image SBOM
         if: steps.container_changes.outputs.required == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: actions/attest-sbom@4651f806c01d8637787e274ac3bdf724ef169f34
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e
         with:
           subject-path: provenance/billwatch-api.tar
           sbom-path: provenance/billwatch-api.spdx.json
 
       - name: Attest parser worker image SBOM
         if: steps.container_changes.outputs.required == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: actions/attest-sbom@4651f806c01d8637787e274ac3bdf724ef169f34
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e
         with:
           subject-path: provenance/billwatch-parser-worker.tar
           sbom-path: provenance/billwatch-parser-worker.spdx.json
 
       - name: Attest web image SBOM
         if: steps.container_changes.outputs.required == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: actions/attest-sbom@4651f806c01d8637787e274ac3bdf724ef169f34
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e
         with:
           subject-path: provenance/billwatch-web.tar
           sbom-path: provenance/billwatch-web.spdx.json
@@ -708,7 +708,7 @@ jobs:
 
       - name: Upload attested production image artifacts
         if: steps.container_changes.outputs.required == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: fullworth-production-image-artifacts-${{ github.sha }}
           path: |
@@ -1393,7 +1393,7 @@ jobs:
 
       - name: Upload visual acceptance screenshots
         if: always() && steps.visual_changes.outputs.required == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: fullworth-visual-${{ github.run_id }}
           path: FullWorth.VisualTests/artifacts

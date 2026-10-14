@@ -23,8 +23,8 @@ public sealed class WebBffStatementUploadBodyLimitTests
         var endpoint =
             Assert.Single(
                 endpointDataSource.Endpoints
-                    .OfType<RouteEndpoint>()
-                    .Where(candidate =>
+                    .OfType<RouteEndpoint>(),
+                    candidate =>
                         candidate.RoutePattern.RawText?
                             .Contains(
                                 "/bill-streams/{billStreamId:guid}/statement-uploads",
@@ -36,7 +36,7 @@ public sealed class WebBffStatementUploadBodyLimitTests
                             .Contains(
                                 HttpMethods.Post,
                                 StringComparer.OrdinalIgnoreCase) ==
-                            true));
+                            true);
 
         const long expectedLimit =
             16L * 1024 * 1024;

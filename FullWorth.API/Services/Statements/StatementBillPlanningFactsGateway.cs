@@ -68,7 +68,7 @@ public sealed class StatementBillPlanningFactsGateway(
                         statement.PeriodEnd)
                 .ThenByDescending(
                     statement =>
-                        statement.StatementDate)
+                        statement.RetrievedAtUtc)
                 .ThenByDescending(
                     statement =>
                         statement.CreatedAtUtc)

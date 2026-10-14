@@ -61,15 +61,18 @@ public sealed class BillStatementPaymentDueAlertService
                 nameof(billStreamId));
         }
 
-        if (!dueDate.HasValue)
-        {
-            return;
-        }
+        var billStream =
+            await _billStreamGateway.GetOwnedAsync(
+                userId,
+                billStreamId,
+                cancellationToken);
 
-        if (dueDate.Value <
-            today)
+        if (billStream is null ||
+            string.IsNullOrWhiteSpace(
+                billStream.ProviderName))
         {
-            return;
+            throw new InvalidOperationException(
+                "The owned bill stream could not be found.");
         }
 
         if (totalAmount <
@@ -91,6 +94,17 @@ public sealed class BillStatementPaymentDueAlertService
                 "Payment-due alert currency is invalid.");
         }
 
+        if (!dueDate.HasValue || dueDate.Value < today || totalAmount == 0m)
+        {
+            await _billAlertGateway.StageReconciliationAsync(
+                userId, billStreamId,
+                [new BillAlertReconciliationScope(
+                    null, [BillAlertContractType.PaymentDue], [],
+                    BillAlertReconciliationMode.SingleManagedSlot)],
+                [], now, cancellationToken);
+            return;
+        }
+
         var daysUntilDue =
             dueDate.Value.DayNumber -
             today.DayNumber;
@@ -105,20 +119,6 @@ public sealed class BillStatementPaymentDueAlertService
             dueDate.Value.ToString(
                 "MMM d, yyyy",
                 CultureInfo.InvariantCulture);
-
-        var billStream =
-            await _billStreamGateway.GetOwnedAsync(
-                userId,
-                billStreamId,
-                cancellationToken);
-
-        if (billStream is null ||
-            string.IsNullOrWhiteSpace(
-                billStream.ProviderName))
-        {
-            throw new InvalidOperationException(
-                "The owned bill stream could not be found.");
-        }
 
         var providerName =
             billStream.ProviderName;
@@ -175,7 +175,7 @@ public sealed class BillStatementPaymentDueAlertService
                             ],
 
                         Mode:
-                            BillAlertReconciliationMode.UpsertDesiredIdentities)
+                            BillAlertReconciliationMode.SingleManagedSlot)
                 ],
                 removeBillChangeIds:
                     [],

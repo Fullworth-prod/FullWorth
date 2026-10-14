@@ -1,4 +1,5 @@
 ﻿using FullWorth.Core.Models;
+using FullWorth.Core.Formatting;
 
 namespace FullWorth.Core.Services;
 
@@ -14,7 +15,7 @@ public sealed class BillExplanationService
                 change.ChangeType != BillLineItemChangeType.Unchanged)
             .OrderByDescending(change =>
                 Math.Abs(change.Difference))
-            .Select(CreateLineItemExplanation)
+            .Select(change => CreateLineItemExplanation(change, comparison.CurrencyCode))
             .ToList()
             .AsReadOnly();
 
@@ -27,13 +28,17 @@ public sealed class BillExplanationService
             AnnualChange: comparison.TotalComparison.AnnualChange,
             Confidence: comparison.Confidence,
             Changes: meaningfulChanges,
-            UnexplainedChange: comparison.UnexplainedChange);
+            UnexplainedChange: comparison.UnexplainedChange)
+        {
+            CurrencyCode = comparison.CurrencyCode
+        };
     }
 
     private static BillExplanationItem CreateLineItemExplanation(
-        BillLineItemChange change)
+        BillLineItemChange change,
+        string currencyCode)
     {
-        string impactText = FormatImpact(change.Difference);
+        string impactText = FormatImpact(change.Difference, currencyCode);
 
         string description = change.ChangeType switch
         {
@@ -72,41 +77,39 @@ public sealed class BillExplanationService
         {
             return
                 $"Your {comparison.ProviderName} bill increased by " +
-                $"{FormatCurrency(monthlyChange)} per month, " +
-                $"or {FormatCurrency(comparison.TotalComparison.AnnualChange)} per year.";
+                $"{FormatCurrency(monthlyChange, comparison.CurrencyCode)} per month, " +
+                $"or {FormatCurrency(comparison.TotalComparison.AnnualChange, comparison.CurrencyCode)} per year.";
         }
 
         if (monthlyChange < 0m)
         {
             return
                 $"Your {comparison.ProviderName} bill decreased by " +
-                $"{FormatCurrency(Math.Abs(monthlyChange))} per month, " +
-                $"or {FormatCurrency(Math.Abs(comparison.TotalComparison.AnnualChange))} per year.";
+                $"{FormatCurrency(Math.Abs(monthlyChange), comparison.CurrencyCode)} per month, " +
+                $"or {FormatCurrency(Math.Abs(comparison.TotalComparison.AnnualChange), comparison.CurrencyCode)} per year.";
         }
 
         return
             $"Your {comparison.ProviderName} bill did not change.";
     }
 
-    private static string FormatImpact(decimal amount)
+    private static string FormatImpact(decimal amount, string currencyCode)
     {
         if (amount > 0m)
         {
-            return $"+{FormatCurrency(amount)}";
+            return $"+{FormatCurrency(amount, currencyCode)}";
         }
 
         if (amount < 0m)
         {
-            return $"-{FormatCurrency(Math.Abs(amount))}";
+            return $"-{FormatCurrency(Math.Abs(amount), currencyCode)}";
         }
 
-        return FormatCurrency(0m);
+        return FormatCurrency(0m, currencyCode);
     }
 
-    private static string FormatCurrency(decimal amount)
-    {
-        return $"${amount:0.00}";
-    }
+    private static string FormatCurrency(decimal amount, string currencyCode) =>
+        FinancialAmountFormatter.Format(amount, currencyCode);
 }
 
 public sealed record BillExplanation(
@@ -116,7 +119,10 @@ public sealed record BillExplanation(
     decimal AnnualChange,
     BillExplanationConfidence Confidence,
     IReadOnlyList<BillExplanationItem> Changes,
-    decimal UnexplainedChange);
+    decimal UnexplainedChange)
+{
+    public string CurrencyCode { get; init; } = "USD";
+}
 
 public sealed record BillExplanationItem(
     string Name,

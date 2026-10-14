@@ -465,6 +465,59 @@ public sealed class BillStatementAlertGenerationTests
         Assert.Equal(2, await dbContext.BillStatements.CountAsync());
     }
 
+    [Theory]
+    [InlineData("EUR", "de-DE")]
+    [InlineData("GBP", "fr-FR")]
+    [InlineData("CAD", "en-CA")]
+    public async Task NonUsdChangeAndEvidenceAlerts_RetainStatementCurrency(
+        string currencyCode, string cultureName)
+    {
+        var originalCulture = System.Globalization.CultureInfo.CurrentCulture;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentCulture =
+                System.Globalization.CultureInfo.GetCultureInfo(cultureName);
+            await using var db = CreateDbContext();
+            var userId = Guid.NewGuid();
+            var stream = CreateBillStream(userId);
+            var previous = CreateStatement(userId, stream.Id,
+                new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 30), 80m);
+            var current = CreateStatement(userId, stream.Id,
+                new DateOnly(2026, 7, 1), new DateOnly(2026, 7, 31), 105m);
+            previous.CurrencyCode = current.CurrencyCode = currencyCode;
+            db.BillStreams.Add(stream);
+            db.BillStatements.AddRange(previous, current);
+            db.BillLineItems.Add(new BillLineItemEntity
+            {
+                UserId = userId,
+                BillStatementId = current.Id,
+                Description = "Network fee",
+                Amount = 25m,
+                Category = "Fee"
+            });
+            await db.SaveChangesAsync();
+
+            await CreateChangeService(db).ReconcileAsync(userId, stream.Id);
+            await db.SaveChangesAsync();
+
+            var alerts = await db.BillAlerts.ToListAsync();
+            Assert.Equal(2, alerts.Count);
+            foreach (var alert in alerts)
+            {
+                Assert.DoesNotContain("$", alert.Message);
+                Assert.Contains(currencyCode + " 25.00", alert.Message);
+            }
+            var totalAlert = Assert.Single(alerts, item => item.AlertType == BillAlertType.BillIncrease);
+            Assert.Contains(currencyCode + " 300.00/year", totalAlert.Message);
+            Assert.DoesNotContain("$",
+                Assert.Single(await db.BillChanges.ToListAsync()).Description);
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentCulture = originalCulture;
+        }
+    }
+
     private static BillStatementChangeDetectionService CreateChangeService(
         FullWorthDbContext dbContext) =>
         new(dbContext,

@@ -1,4 +1,5 @@
 using System.Globalization;
+using FullWorth.Core.Formatting;
 using FullWorth.API.Services.Contracts;
 
 namespace FullWorth.API.Services.Statements;
@@ -84,7 +85,7 @@ public sealed class BillStatementPaymentDueAlertService
                 .ToUpperInvariant();
 
         if (normalizedCurrency.Length !=
-            3)
+            3 || normalizedCurrency.Any(character => character is < 'A' or > 'Z'))
         {
             throw new InvalidOperationException(
                 "Payment-due alert currency is invalid.");
@@ -182,25 +183,8 @@ public sealed class BillStatementPaymentDueAlertService
                 cancellationToken);
     }
 
-    private static string FormatAmount(
-        decimal amount,
-        string currencyCode)
-    {
-        if (string.Equals(
-                currencyCode,
-                "USD",
-                StringComparison.Ordinal))
-        {
-            return
-                "$" +
-                amount.ToString(
-                    "0.00",
-                    CultureInfo.InvariantCulture);
-        }
-
-        return
-            $"{currencyCode} {amount:0.00}";
-    }
+    private static string FormatAmount(decimal amount, string currencyCode) =>
+        FinancialAmountFormatter.Format(amount, currencyCode);
 
     private static string Truncate(
         string value,

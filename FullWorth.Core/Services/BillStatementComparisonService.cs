@@ -22,6 +22,12 @@ public sealed class BillStatementComparisonService
                 "Statements from different providers cannot be compared.");
         }
 
+        if (!string.Equals(previousStatement.CurrencyCode, currentStatement.CurrencyCode,
+                StringComparison.Ordinal))
+        {
+            throw new ArgumentException("Statements in different currencies cannot be compared.");
+        }
+
         var totalComparison = _billComparisonService.Compare(
             previousStatement.TotalAmount,
             currentStatement.TotalAmount);
@@ -84,7 +90,10 @@ public sealed class BillStatementComparisonService
             ExplainedChange: explainedChange,
             UnexplainedChange: unexplainedChange,
             IsFullyExplained: isFullyExplained,
-            Confidence: confidence);
+            Confidence: confidence)
+        {
+            CurrencyCode = currentStatement.CurrencyCode
+        };
     }
 
     private static BillExplanationConfidence DetermineConfidence(
@@ -160,4 +169,7 @@ public sealed record BillStatementComparisonResult(
     decimal ExplainedChange,
     decimal UnexplainedChange,
     bool IsFullyExplained,
-    BillExplanationConfidence Confidence);
+    BillExplanationConfidence Confidence)
+{
+    public string CurrencyCode { get; init; } = "USD";
+}

@@ -1,4 +1,5 @@
 using FullWorth.API.Data.Entities;
+using FullWorth.Core.Formatting;
 using FullWorth.API.Services.Contracts;
 
 namespace FullWorth.API.Services.Statements;
@@ -18,7 +19,8 @@ public sealed class BillStatementEvidenceAlertService
             string providerName,
             BillChangeEntity change,
             IReadOnlyList<BillLineItemEntity> previousLineItems,
-            IReadOnlyList<BillLineItemEntity> currentLineItems)
+            IReadOnlyList<BillLineItemEntity> currentLineItems,
+            string currencyCode = "USD")
     {
         if (userId ==
             Guid.Empty)
@@ -70,14 +72,16 @@ public sealed class BillStatementEvidenceAlertService
         return BuildDesiredAlertsCore(
             providerName.Trim(),
             previousLineItems,
-            currentLineItems);
+            currentLineItems,
+            FinancialAmountFormatter.NormalizeCurrency(currencyCode));
     }
 
     private static IReadOnlyList<BillAlertDesiredState>
         BuildDesiredAlertsCore(
             string providerName,
             IReadOnlyList<BillLineItemEntity> previousLineItems,
-            IReadOnlyList<BillLineItemEntity> currentLineItems)
+            IReadOnlyList<BillLineItemEntity> currentLineItems,
+            string currencyCode)
     {
         var previous =
             Aggregate(
@@ -126,7 +130,7 @@ public sealed class BillStatementEvidenceAlertService
 
             var message =
                 Truncate(
-                    $"{FormatMoney(currentItem.Amount)} labeled \"{currentItem.Description}\" appeared on the latest provider statement. FullWorth is not assuming this fee will recur.",
+                    $"{FormatMoney(currentItem.Amount, currencyCode)} labeled \"{currentItem.Description}\" appeared on the latest provider statement. FullWorth is not assuming this fee will recur.",
                     MaxMessageLength);
 
             results.Add(
@@ -177,7 +181,7 @@ public sealed class BillStatementEvidenceAlertService
 
             var message =
                 Truncate(
-                    $"A {FormatMoney(discountAmount)} discount labeled \"{previousItem.Description}\" was present on the previous provider statement but is absent from the latest statement. FullWorth has not assumed why the discount ended.",
+                    $"A {FormatMoney(discountAmount, currencyCode)} discount labeled \"{previousItem.Description}\" was present on the previous provider statement but is absent from the latest statement. FullWorth has not assumed why the discount ended.",
                     MaxMessageLength);
 
             results.Add(
@@ -277,12 +281,8 @@ public sealed class BillStatementEvidenceAlertService
         }
     }
 
-    private static string FormatMoney(
-        decimal amount)
-    {
-        return
-            $"${Math.Abs(amount):0.00}";
-    }
+    private static string FormatMoney(decimal amount, string currencyCode) =>
+        FinancialAmountFormatter.Format(Math.Abs(amount), currencyCode);
 
     private static string Truncate(
         string value,

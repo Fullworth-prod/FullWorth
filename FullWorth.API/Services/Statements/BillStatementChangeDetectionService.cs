@@ -2,6 +2,7 @@
 using FullWorth.API.Data.Entities;
 using FullWorth.API.Services.Contracts;
 using FullWorth.Core.Models;
+using FullWorth.Core.Formatting;
 using FullWorth.Core.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -386,13 +387,16 @@ public sealed class BillStatementChangeDetectionService
             new List<BillAlertReconciliationScope>(
                 activeChanges.Count * 2);
 
+        var statementsById = canonicalStatements.ToDictionary(statement => statement.Id);
+
         foreach (var activeChange in
                  activeChanges)
         {
             var changeAlert =
                 BuildDesiredAlert(
                     providerName,
-                    activeChange);
+                    activeChange,
+                    statementsById[activeChange.CurrentStatementId].CurrencyCode);
 
             alertScopes.Add(
                 new BillAlertReconciliationScope(
@@ -450,7 +454,8 @@ public sealed class BillStatementChangeDetectionService
                         providerName,
                         activeChange,
                         previousEvidence,
-                        currentEvidence);
+                        currentEvidence,
+                        statementsById[activeChange.CurrentStatementId].CurrencyCode);
 
             alertScopes.Add(
                 new BillAlertReconciliationScope(
@@ -660,7 +665,8 @@ public sealed class BillStatementChangeDetectionService
                     lineItem =>
                         new BillLineItem(
                             lineItem.Description,
-                            lineItem.Amount)));
+                            lineItem.Amount)),
+            currencyCode: statement.CurrencyCode);
     }
 
     private static string BuildDescription(
@@ -706,13 +712,14 @@ public sealed class BillStatementChangeDetectionService
                     .UnexplainedChange);
 
         return TruncateDescription(
-            $"{summary} Evidence found: {evidence} {FormatMoney(unexplainedAmount)}/month remains unexplained.");
+            $"{summary} Evidence found: {evidence} {FormatMoney(unexplainedAmount, analysis.Comparison.CurrencyCode)}/month remains unexplained.");
     }
 
     private static BillAlertDesiredState?
         BuildDesiredAlert(
             string providerName,
-            BillChangeEntity change)
+            BillChangeEntity change,
+            string currencyCode)
     {
         var monthlyImpact =
             Math.Abs(
@@ -728,12 +735,12 @@ public sealed class BillStatementChangeDetectionService
                 {
                     var title =
                         TruncateAlertValue(
-                            $"{providerName} increased by {FormatMoney(monthlyImpact)}/month",
+                            $"{providerName} increased by {FormatMoney(monthlyImpact, currencyCode)}/month",
                             MaxAlertTitleLength);
 
                     var message =
                         TruncateAlertValue(
-                            $"{FormatMoney(change.PreviousAmount)} → {FormatMoney(change.CurrentAmount)}. +{FormatMoney(monthlyImpact)}/month · +{FormatMoney(annualImpact)}/year. {change.Description}",
+                            $"{FormatMoney(change.PreviousAmount, currencyCode)} → {FormatMoney(change.CurrentAmount, currencyCode)}. +{FormatMoney(monthlyImpact, currencyCode)}/month · +{FormatMoney(annualImpact, currencyCode)}/year. {change.Description}",
                             MaxAlertMessageLength);
 
                     return new BillAlertDesiredState(
@@ -754,12 +761,12 @@ public sealed class BillStatementChangeDetectionService
                 {
                     var title =
                         TruncateAlertValue(
-                            $"{providerName} decreased by {FormatMoney(monthlyImpact)}/month",
+                            $"{providerName} decreased by {FormatMoney(monthlyImpact, currencyCode)}/month",
                             MaxAlertTitleLength);
 
                     var message =
                         TruncateAlertValue(
-                            $"{FormatMoney(change.PreviousAmount)} → {FormatMoney(change.CurrentAmount)}. {FormatMoney(monthlyImpact)}/month less · {FormatMoney(annualImpact)}/year less. {change.Description}",
+                            $"{FormatMoney(change.PreviousAmount, currencyCode)} → {FormatMoney(change.CurrentAmount, currencyCode)}. {FormatMoney(monthlyImpact, currencyCode)}/month less · {FormatMoney(annualImpact, currencyCode)}/year less. {change.Description}",
                             MaxAlertMessageLength);
 
                     return new BillAlertDesiredState(
@@ -943,12 +950,8 @@ public sealed class BillStatementChangeDetectionService
         return true;
     }
 
-    private static string FormatMoney(
-        decimal amount)
-    {
-        return
-            $"${amount:0.00}";
-    }
+    private static string FormatMoney(decimal amount, string currencyCode) =>
+        FinancialAmountFormatter.Format(amount, currencyCode);
 
     private static string TruncateDescription(
         string value)

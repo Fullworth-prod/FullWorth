@@ -34,6 +34,20 @@ public sealed class BillStatementValidationService
                 "The statement total cannot be negative.");
         }
 
+        if (input.TotalAmount is decimal total)
+        {
+            if (total > StatementMoneyStoragePolicy.MaximumAmount)
+            {
+                AddError(issues, "total_out_of_range",
+                    "The statement total exceeds the supported financial storage range.");
+            }
+            else if (decimal.Round(total, 2, MidpointRounding.AwayFromZero) != total)
+            {
+                AddError(issues, "total_precision",
+                    "The statement total must have no more than two decimal places.");
+            }
+        }
+
         if (!input.PeriodStart.HasValue)
         {
             AddError(

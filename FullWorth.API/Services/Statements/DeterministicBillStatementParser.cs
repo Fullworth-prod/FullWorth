@@ -44,23 +44,24 @@ public sealed partial class DeterministicBillStatementParser
             return CreateEmptyResult();
         }
 
-        var totalAmount =
-            TryExtractTotalAmount(
-                extractedText);
+        var conflicts = new List<string>();
+        var totalAmount = TryExtractTotalAmount(extractedText, out var totalConflict);
+        if (totalConflict) conflicts.Add(nameof(BillStatementStructuredData.TotalAmount));
 
-        var billingPeriod =
-            TryExtractBillingPeriod(
-                extractedText);
+        var billingPeriod = TryExtractBillingPeriod(extractedText, out var periodConflict);
+        if (periodConflict)
+        {
+            conflicts.Add(nameof(BillStatementStructuredData.BillingPeriodStart));
+            conflicts.Add(nameof(BillStatementStructuredData.BillingPeriodEnd));
+        }
 
-        var statementDate =
-            TryExtractDate(
-                StatementDateRegex(),
-                extractedText);
+        var statementDate = TryExtractDate(
+            StatementDateRegex(), extractedText, out var statementConflict);
+        if (statementConflict) conflicts.Add(nameof(BillStatementStructuredData.StatementDate));
 
-        var dueDate =
-            TryExtractDate(
-                DueDateRegex(),
-                extractedText);
+        var dueDate = TryExtractDate(
+            DueDateRegex(), extractedText, out var dueConflict);
+        if (dueConflict) conflicts.Add(nameof(BillStatementStructuredData.DueDate));
 
         var missingRequiredFields =
             new List<string>(
@@ -88,8 +89,9 @@ public sealed partial class DeterministicBillStatementParser
                     BillStatementStructuredData.BillingPeriodEnd));
         }
 
-        var confidence =
-            DetermineConfidence(
+        var confidence = conflicts.Count > 0
+            ? BillStatementStructuredDataConfidence.InsufficientEvidence
+            : DetermineConfidence(
                 missingRequiredFields.Count,
                 statementDate,
                 dueDate);
@@ -117,117 +119,55 @@ public sealed partial class DeterministicBillStatementParser
                 confidence,
 
             MissingRequiredFields:
-                missingRequiredFields.AsReadOnly());
+                missingRequiredFields.AsReadOnly())
+        {
+            ConflictingFields = conflicts.AsReadOnly()
+        };
     }
 
-    private static decimal? TryExtractTotalAmount(
-        string text)
+    private static decimal? TryExtractTotalAmount(string text, out bool conflicting)
     {
-        Match? bestMatch =
-            null;
-
-        var bestRank =
-            int.MaxValue;
-
-        foreach (Match match in
-                 TotalAmountRegex()
-                     .Matches(text))
-        {
-            if (!match.Success)
+        var ranked = TotalAmountRegex().Matches(text).Cast<Match>()
+            .Select(match => new
             {
-                continue;
-            }
+                Rank = RankAmountLabel(match.Groups["label"].Value),
+                Amount = TryParseMoney(match.Groups["amount"].Value)
+            })
+            .ToArray();
+        conflicting = false;
+        if (ranked.Length == 0) return null;
 
-            var label =
-                match.Groups["label"]
-                    .Value;
+        var bestRank = ranked.Min(candidate => candidate.Rank);
+        var amounts = ranked.Where(candidate => candidate.Rank == bestRank)
+            .Select(candidate => candidate.Amount).Distinct().ToArray();
+        conflicting = amounts.Length > 1;
+        return conflicting ? null : amounts[0];
+    }
 
-            var rank =
-                RankAmountLabel(
-                    label);
-
-            if (rank >=
-                bestRank)
+    private static (DateOnly? Start, DateOnly? End) TryExtractBillingPeriod(
+        string text, out bool conflicting)
+    {
+        var periods = BillingPeriodRegex().Matches(text).Cast<Match>()
+            .Select(match =>
             {
-                continue;
-            }
-
-            bestMatch =
-                match;
-
-            bestRank =
-                rank;
-        }
-
-        if (bestMatch is null)
-        {
-            return null;
-        }
-
-        return TryParseMoney(
-            bestMatch
-                .Groups["amount"]
-                .Value);
+                var start = TryParseDate(match.Groups["start"].Value);
+                var end = TryParseDate(match.Groups["end"].Value);
+                return !start.HasValue || !end.HasValue || end < start
+                    ? (Start: (DateOnly?)null, End: (DateOnly?)null)
+                    : (Start: start, End: end);
+            })
+            .Distinct().ToArray();
+        conflicting = periods.Length > 1;
+        return periods.Length == 1 ? periods[0] : (null, null);
     }
 
-    private static (
-        DateOnly? Start,
-        DateOnly? End)
-        TryExtractBillingPeriod(
-            string text)
+    private static DateOnly? TryExtractDate(Regex regex, string text, out bool conflicting)
     {
-        var match =
-            BillingPeriodRegex()
-                .Match(text);
-
-        if (!match.Success)
-        {
-            return (
-                null,
-                null);
-        }
-
-        var start =
-            TryParseDate(
-                match.Groups["start"]
-                    .Value);
-
-        var end =
-            TryParseDate(
-                match.Groups["end"]
-                    .Value);
-
-        if (!start.HasValue ||
-            !end.HasValue ||
-            end.Value <
-                start.Value)
-        {
-            return (
-                null,
-                null);
-        }
-
-        return (
-            start,
-            end);
-    }
-
-    private static DateOnly? TryExtractDate(
-        Regex regex,
-        string text)
-    {
-        var match =
-            regex.Match(
-                text);
-
-        if (!match.Success)
-        {
-            return null;
-        }
-
-        return TryParseDate(
-            match.Groups["date"]
-                .Value);
+        var dates = regex.Matches(text).Cast<Match>()
+            .Select(match => TryParseDate(match.Groups["date"].Value))
+            .Distinct().ToArray();
+        conflicting = dates.Length > 1;
+        return dates.Length == 1 ? dates[0] : null;
     }
 
     private static decimal? TryParseMoney(
@@ -280,7 +220,7 @@ public sealed partial class DeterministicBillStatementParser
         if (isParenthesized)
         {
             amount =
-                -amount;
+                -Math.Abs(amount);
         }
 
         if (amount <
@@ -460,7 +400,11 @@ public sealed record BillStatementStructuredData(
     BillStatementStructuredDataConfidence Confidence,
     IReadOnlyList<string> MissingRequiredFields)
 {
+    // Field names only: never retain document text or competing raw values here.
+    public IReadOnlyList<string> ConflictingFields { get; init; } = [];
+
     public bool IsReadyForPersistence =>
+        ConflictingFields.Count == 0 &&
         TotalAmount.HasValue &&
         BillingPeriodStart.HasValue &&
         BillingPeriodEnd.HasValue &&
@@ -474,3 +418,4 @@ public enum BillStatementStructuredDataConfidence
     Partial = 1,
     StrongEvidence = 2
 }
+

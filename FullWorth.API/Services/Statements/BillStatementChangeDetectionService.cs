@@ -2,6 +2,7 @@
 using FullWorth.API.Data.Entities;
 using FullWorth.API.Services.Contracts;
 using FullWorth.Core.Models;
+using FullWorth.Core.Formatting;
 using FullWorth.Core.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -386,13 +387,16 @@ public sealed class BillStatementChangeDetectionService
             new List<BillAlertReconciliationScope>(
                 activeChanges.Count * 2);
 
+        var statementsById = canonicalStatements.ToDictionary(statement => statement.Id);
+
         foreach (var activeChange in
                  activeChanges)
         {
             var changeAlert =
                 BuildDesiredAlert(
                     providerName,
-                    activeChange);
+                    activeChange,
+                    statementsById[activeChange.CurrentStatementId].CurrencyCode);
 
             alertScopes.Add(
                 new BillAlertReconciliationScope(
@@ -450,7 +454,8 @@ public sealed class BillStatementChangeDetectionService
                         providerName,
                         activeChange,
                         previousEvidence,
-                        currentEvidence);
+                        currentEvidence,
+                        statementsById[activeChange.CurrentStatementId].CurrencyCode);
 
             alertScopes.Add(
                 new BillAlertReconciliationScope(
@@ -542,9 +547,15 @@ public sealed class BillStatementChangeDetectionService
             // delta and multiply it by twelve. Do not apply those contracts to
             // annual/quarterly/partial periods or overlapping statement coverage.
             // Keep the statements as evidence until cadence-aware comparison exists.
-            if (!HasMonthlyPeriod(previous) ||
-                !HasMonthlyPeriod(current) ||
-                current.PeriodStart <= previous.PeriodEnd)
+            if (!MonthlyStatementPeriodPolicy.CanCompare(
+                    previous.PeriodStart, previous.PeriodEnd,
+                    current.PeriodStart, current.PeriodEnd))
+            {
+                continue;
+            }
+
+            if (!StatementMoneyStoragePolicy.IsSupportedTotal(previous.TotalAmount) ||
+                !StatementMoneyStoragePolicy.IsSupportedTotal(current.TotalAmount))
             {
                 continue;
             }
@@ -580,8 +591,8 @@ public sealed class BillStatementChangeDetectionService
                 analysis.Comparison
                     .TotalComparison;
 
-            if (totalComparison.MonthlyChange ==
-                0m)
+            if (totalComparison.MonthlyChange == 0m ||
+                !StatementMoneyStoragePolicy.IsSupportedSigned(totalComparison.AnnualChange))
             {
                 continue;
             }
@@ -623,18 +634,6 @@ public sealed class BillStatementChangeDetectionService
         return desiredChanges.AsReadOnly();
     }
 
-    private static bool HasMonthlyPeriod(BillStatementEntity statement)
-    {
-        var days = statement.PeriodEnd.DayNumber -
-                   statement.PeriodStart.DayNumber + 1;
-
-        // A recurring-transaction date window is not proof that a statement
-        // total represents a complete monthly period. Shorter/longer periods
-        // can be prorated, and annualizing their total delta is misleading.
-        // Be conservative until explicit billing-cadence evidence is available.
-        return days is >= 28 and <= 31;
-    }
-
     private static BillStatement
         CreateDomainStatement(
             string providerName,
@@ -660,7 +659,8 @@ public sealed class BillStatementChangeDetectionService
                     lineItem =>
                         new BillLineItem(
                             lineItem.Description,
-                            lineItem.Amount)));
+                            lineItem.Amount)),
+            currencyCode: statement.CurrencyCode);
     }
 
     private static string BuildDescription(
@@ -706,13 +706,14 @@ public sealed class BillStatementChangeDetectionService
                     .UnexplainedChange);
 
         return TruncateDescription(
-            $"{summary} Evidence found: {evidence} {FormatMoney(unexplainedAmount)}/month remains unexplained.");
+            $"{summary} Evidence found: {evidence} {FormatMoney(unexplainedAmount, analysis.Comparison.CurrencyCode)}/month remains unexplained.");
     }
 
     private static BillAlertDesiredState?
         BuildDesiredAlert(
             string providerName,
-            BillChangeEntity change)
+            BillChangeEntity change,
+            string currencyCode)
     {
         var monthlyImpact =
             Math.Abs(
@@ -728,12 +729,12 @@ public sealed class BillStatementChangeDetectionService
                 {
                     var title =
                         TruncateAlertValue(
-                            $"{providerName} increased by {FormatMoney(monthlyImpact)}/month",
+                            $"{providerName} increased by {FormatMoney(monthlyImpact, currencyCode)}/month",
                             MaxAlertTitleLength);
 
                     var message =
                         TruncateAlertValue(
-                            $"{FormatMoney(change.PreviousAmount)} → {FormatMoney(change.CurrentAmount)}. +{FormatMoney(monthlyImpact)}/month · +{FormatMoney(annualImpact)}/year. {change.Description}",
+                            $"{FormatMoney(change.PreviousAmount, currencyCode)} → {FormatMoney(change.CurrentAmount, currencyCode)}. +{FormatMoney(monthlyImpact, currencyCode)}/month · +{FormatMoney(annualImpact, currencyCode)}/year. {change.Description}",
                             MaxAlertMessageLength);
 
                     return new BillAlertDesiredState(
@@ -754,12 +755,12 @@ public sealed class BillStatementChangeDetectionService
                 {
                     var title =
                         TruncateAlertValue(
-                            $"{providerName} decreased by {FormatMoney(monthlyImpact)}/month",
+                            $"{providerName} decreased by {FormatMoney(monthlyImpact, currencyCode)}/month",
                             MaxAlertTitleLength);
 
                     var message =
                         TruncateAlertValue(
-                            $"{FormatMoney(change.PreviousAmount)} → {FormatMoney(change.CurrentAmount)}. {FormatMoney(monthlyImpact)}/month less · {FormatMoney(annualImpact)}/year less. {change.Description}",
+                            $"{FormatMoney(change.PreviousAmount, currencyCode)} → {FormatMoney(change.CurrentAmount, currencyCode)}. {FormatMoney(monthlyImpact, currencyCode)}/month less · {FormatMoney(annualImpact, currencyCode)}/year less. {change.Description}",
                             MaxAlertMessageLength);
 
                     return new BillAlertDesiredState(
@@ -943,12 +944,8 @@ public sealed class BillStatementChangeDetectionService
         return true;
     }
 
-    private static string FormatMoney(
-        decimal amount)
-    {
-        return
-            $"${amount:0.00}";
-    }
+    private static string FormatMoney(decimal amount, string currencyCode) =>
+        FinancialAmountFormatter.Format(amount, currencyCode);
 
     private static string TruncateDescription(
         string value)

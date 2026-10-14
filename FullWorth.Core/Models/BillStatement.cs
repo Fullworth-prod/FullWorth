@@ -1,4 +1,6 @@
-﻿namespace FullWorth.Core.Models;
+﻿using FullWorth.Core.Formatting;
+
+namespace FullWorth.Core.Models;
 
 public sealed record BillStatement
 {
@@ -10,6 +12,8 @@ public sealed record BillStatement
 
     public BillAmount TotalAmount { get; }
 
+    public string CurrencyCode { get; }
+
     public IReadOnlyList<BillLineItem> LineItems { get; }
 
     public BillStatement(
@@ -17,7 +21,8 @@ public sealed record BillStatement
         DateOnly billingPeriodStart,
         DateOnly billingPeriodEnd,
         BillAmount totalAmount,
-        IEnumerable<BillLineItem> lineItems)
+        IEnumerable<BillLineItem> lineItems,
+        string currencyCode = "USD")
     {
         if (string.IsNullOrWhiteSpace(providerName))
         {
@@ -39,6 +44,7 @@ public sealed record BillStatement
         BillingPeriodStart = billingPeriodStart;
         BillingPeriodEnd = billingPeriodEnd;
         TotalAmount = totalAmount;
+        CurrencyCode = FinancialAmountFormatter.NormalizeCurrency(currencyCode);
         LineItems = lineItems.ToList().AsReadOnly();
     }
 }

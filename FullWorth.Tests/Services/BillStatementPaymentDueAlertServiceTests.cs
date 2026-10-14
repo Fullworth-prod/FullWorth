@@ -356,6 +356,89 @@ public sealed class BillStatementPaymentDueAlertServiceTests
                 .ToListAsync());
     }
 
+    [Fact]
+    public async Task CorrectedDueDate_ReplacesTheManagedReminder()
+    {
+        await using var db = CreateDbContext();
+        var user = Guid.NewGuid();
+        var stream = CreateBillStream(user);
+        db.BillStreams.Add(stream);
+        await db.SaveChangesAsync();
+        var service = new BillStatementPaymentDueAlertService(
+            new BillStreamReadGateway(db), new BillAlertReconciliationGateway(db));
+        var today = new DateOnly(2026, 8, 1);
+        await service.ReconcileAsync(user, stream.Id, today.AddDays(10),
+            100m, "USD", today, DateTimeOffset.UtcNow);
+        await db.SaveChangesAsync();
+        var original = Assert.Single(await db.BillAlerts.ToListAsync());
+        original.IsRead = original.IsDismissed = true;
+        await db.SaveChangesAsync();
+
+        await service.ReconcileAsync(user, stream.Id, today.AddDays(20),
+            125m, "USD", today, DateTimeOffset.UtcNow);
+        await db.SaveChangesAsync();
+
+        var updated = Assert.Single(await db.BillAlerts.ToListAsync());
+        Assert.Equal(original.Id, updated.Id);
+        Assert.Contains("Aug 21, 2026", updated.Title);
+        Assert.Contains("$125.00", updated.Message);
+        Assert.False(updated.IsRead);
+        Assert.False(updated.IsDismissed);
+    }
+
+    [Theory]
+    [InlineData("missing")]
+    [InlineData("past")]
+    [InlineData("zero")]
+    public async Task NoCurrentDueObligation_ClearsOnlyOwnedPaymentReminder(string reason)
+    {
+        await using var db = CreateDbContext();
+        var user = Guid.NewGuid();
+        var stream = CreateBillStream(user);
+        db.BillStreams.Add(stream);
+        await db.SaveChangesAsync();
+        var service = new BillStatementPaymentDueAlertService(
+            new BillStreamReadGateway(db), new BillAlertReconciliationGateway(db));
+        var today = new DateOnly(2026, 8, 1);
+        await service.ReconcileAsync(user, stream.Id, today.AddDays(10),
+            100m, "USD", today, DateTimeOffset.UtcNow);
+        await db.SaveChangesAsync();
+        var untouched = new[]
+        {
+            new BillAlertEntity { UserId = Guid.NewGuid(), BillStreamId = stream.Id,
+                AlertType = BillAlertType.PaymentDue, Title = "Foreign reminder", Message = "Foreign" },
+            new BillAlertEntity { UserId = user, BillStreamId = stream.Id,
+                AlertType = BillAlertType.NewFee, Title = "Owned fee", Message = "Keep" }
+        };
+        db.BillAlerts.AddRange(untouched);
+        await db.SaveChangesAsync();
+
+        DateOnly? due = reason == "missing" ? null :
+            reason == "past" ? today.AddDays(-1) : today.AddDays(10);
+        await service.ReconcileAsync(user, stream.Id, due,
+            reason == "zero" ? 0m : 100m, "USD", today, DateTimeOffset.UtcNow);
+        await db.SaveChangesAsync();
+
+        var remaining = await db.BillAlerts.ToListAsync();
+        Assert.Equal(2, remaining.Count);
+        Assert.All(untouched, item => Assert.Contains(remaining, actual => actual.Id == item.Id));
+    }
+
+    [Fact]
+    public async Task ForeignStream_CannotClearRemindersWithMissingDueDate()
+    {
+        await using var db = CreateDbContext();
+        var owner = Guid.NewGuid();
+        var stream = CreateBillStream(owner);
+        db.BillStreams.Add(stream);
+        await db.SaveChangesAsync();
+        var service = new BillStatementPaymentDueAlertService(
+            new BillStreamReadGateway(db), new BillAlertReconciliationGateway(db));
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.ReconcileAsync(Guid.NewGuid(), stream.Id, null, 100m, "USD",
+                new DateOnly(2026, 8, 1), DateTimeOffset.UtcNow));
+    }
+
     private static FullWorthDbContext
         CreateDbContext()
     {

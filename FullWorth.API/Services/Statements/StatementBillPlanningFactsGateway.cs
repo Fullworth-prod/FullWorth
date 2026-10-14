@@ -68,7 +68,7 @@ public sealed class StatementBillPlanningFactsGateway(
                         statement.PeriodEnd)
                 .ThenByDescending(
                     statement =>
-                        statement.StatementDate)
+                        statement.RetrievedAtUtc)
                 .ThenByDescending(
                     statement =>
                         statement.CreatedAtUtc)
@@ -98,3 +98,4 @@ public sealed class StatementBillPlanningFactsGateway(
                     group.First());
     }
 }
+

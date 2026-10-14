@@ -1,4 +1,4 @@
-## Current release state
+## Current release state — 2026-10-14
 
 **Status:** Deployment remains blocked. No current live release is established. Do not start public services against empty data.
 
@@ -8,6 +8,12 @@ The recorded artifact expiry, **2026-10-13 18:30 UTC**, has elapsed. Require a f
 
 The checked items immediately below retain historical repository evidence; they do not establish a currently downloadable artifact or current development head.
 
+### Repository release preparation
+
+Integration #739 and cleanup #740 are merged and verified: FullWorth CI #1775/#1778, Dependency Security #865/#868, Android internal #78, and iOS internal #72. Cleanup head `16bdda005d4d9d8f00ac28a9604a2fe0faed6d42` passed all 1,348 backend tests with zero build warnings/errors. PR #741 also merged after exact-head FullWorth CI #1779 and Dependency Security #869 passed. It corrects governance verification to require actual job contexts; it does not configure administrator settings.
+
+Use [RELEASE_CANDIDATE.md](RELEASE_CANDIDATE.md) for the ordered go/no-go matrix, exact required check contexts, and controlled financial acceptance scenarios. Repository checks do not close the real host/recovery/provider/device/legal gates below.
+
 Current release candidate on `master`:
 
 `c8858a38b38d7eb0888d273b9a1a409308e565b4`
@@ -15,7 +21,7 @@ Current release candidate on `master`:
 - [x] PR #711 promoted the candidate to `master`.
 - [x] Exact PR checks passed on development head `0168093384961e4d2e9838c495fbaf5bfb2c279a`: FullWorth CI #1707, Dependency Security #798, and PR workflow #59. After promotion, master FullWorth CI #1708, Repository Governance #20, and CodeQL via Push on master #60 passed.
 - [x] Exact attested artifact: `fullworth-production-image-artifacts-c8858a38b38d7eb0888d273b9a1a409308e565b4` (artifact ID `11435103773`, digest `sha256:39d566b68cdbef5dfd52ef616ce23642b8aa33e77fe26026f4f1c2ea135db823`; expires 2026-10-13).
-- [x] Current development head `0168093384961e4d2e9838c495fbaf5bfb2c279a` includes PR #710's release-handoff refresh, PR #707's recovery passfile fix, and PR #709's host-confirmation gate. Exact current-head FullWorth CI #1707 and Dependency Security #798 passed. These changes do not grant remote R2 access or prove recovery.
+- [x] Historical development head `0168093384961e4d2e9838c495fbaf5bfb2c279a` includes PR #710's release-handoff refresh, PR #707's recovery passfile fix, and PR #709's host-confirmation gate. Exact current-head FullWorth CI #1707 and Dependency Security #798 passed. These changes do not grant remote R2 access or prove recovery.
 - [ ] Run #15 failed closed before candidate startup. Its partial API/Web/edge report conflicts with subsequent host inspection: OVH 40.160.137.55 read-only inventory found zero Docker containers, zero Docker volumes, and a missing release marker; this conflicts with run #15's partial-runtime report.
 - [ ] Remote R2 recovery returned AccessDenied with the host's configured backup credential; a separate read-only recovery credential is required. The development fix does not supply this credential; do not broaden the production backup key.
 - [ ] Reconcile the reported isolated snapshot restore with the required separate clean-host and actual statement-file recovery evidence; do not treat a zero-statement drill as complete recovery proof.
@@ -30,6 +36,8 @@ Current verified live production release marker:
 ## Guarded production deployment and same-release acceptance — issue #669
 
 **Next concrete sequence:**
+
+Before promotion, configure the protected-branch governance described below and review the prepared release PR. Generate a fresh artifact only through green exact-master CI; do not dispatch an expired artifact.
 
 1. Verify the separate least-privilege R2 Object Read credential is installed on the trusted recovery host through the approved secret-handling path; the historical AccessDenied report does not establish current credential state. Do not paste its value into chat or write it into source control or shell history.
 2. Complete the separate clean-host exercise against the real off-host repository, including actual statement files, database, and both Data Protection rings. Preserve the snapshot/release relationship and sanitized evidence; the reported zero-statement drill does not close this gate.
@@ -116,8 +124,8 @@ The active repository ruleset **FullWorth protected branches** targets both `mas
 
 1. Open **GitHub → FullWorth repository → Settings → Rules → Rulesets → FullWorth protected branches**.
 2. Preserve the existing protections for both `master` and `development`.
-3. Add the actual CI/security check contexts that must block merge when failing.
-4. Decide whether at least one independent approving review is required and set the approval count accordingly.
+3. Require strict current-branch checks for the actual GitHub Actions contexts: `Backend build and tests`, `MAUI Android build`, `Linux production container`, and `Dependency review`. Use GitHub Actions app ID `15368`; workflow display names alone are not check-run contexts.
+4. Require at least one independent approving review, as enforced by the repository governance verifier. An author cannot supply their own independent approval.
 5. Keep bypass actors empty unless a deliberate, documented emergency policy is later approved.
 
 **Verify:** GitHub ruleset readback shows the intended approval policy and required status checks for both protected branches.

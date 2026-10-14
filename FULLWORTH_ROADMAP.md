@@ -1,6 +1,6 @@
 # FullWorth Product & Engineering Roadmap
 
-Last updated: 2026-10-13
+Last updated: 2026-10-14
 
 Status: Active planning document
 
@@ -252,7 +252,11 @@ This section is the current release-readiness snapshot. It must be refreshed whe
 
 ## 4.1 Branch and release position
 
-Current state as of 2026-10-13: see the authoritative continuation checkpoint in `FULLWORTH_CONTEXT.md` for repository work and recovery evidence. The operator reports no running production server. The recorded candidate artifact expiry has elapsed. The reported snapshot `726a1e85` restore had zero statement uploads and does not prove statement-file recovery or a separate clean-host exercise. PR #724's dispatch behavior is not approved by this documentation change.
+Current state as of 2026-10-14: see the authoritative continuation checkpoint in `FULLWORTH_CONTEXT.md` for repository work and recovery evidence. The operator reports no running production server. The recorded candidate artifact expiry has elapsed. The reported snapshot `726a1e85` restore had zero statement uploads and does not prove statement-file recovery or a separate clean-host exercise. PR #724's dispatch behavior is not approved by this documentation change.
+
+Latest verified repository milestone: integration #739 and cleanup #740 are merged. FullWorth CI #1775/#1778 and Dependency Security #865/#868 passed; Android internal #78 and iOS internal #72 passed on the integration head. Cleanup passed all 1,348 backend tests with zero build warnings/errors. Governance verifier correction #741 also merged after exact-head FullWorth CI #1779 and Dependency Security #869 passed. Administrator settings remain incomplete; the verifier correction is not policy enforcement.
+
+Use [RELEASE_CANDIDATE.md](RELEASE_CANDIDATE.md) as the release gate matrix and financial acceptance checklist. Governance readback still shows 0 required approvals and no required status checks; a prepared promotion is not launch approval.
 
 Historical repository snapshot as of 2026-10-06:
 
@@ -267,7 +271,7 @@ Historical repository snapshot as of 2026-10-06:
 - Issue #291 remains 61/65, with four real-evidence/governance gates: provider-enforced immutable/off-host storage, compromised-host clean restore, independent-review policy, and exact deployed-release evidence.
 ### Release-readiness estimate
 
-The candidate has repository/CI release evidence and an attested artifact, but guarded deployment failed before candidate startup. Production deployment and same-release acceptance are incomplete. Public-release readiness remains blocked by the live host state and the remaining provider, recovery, device, legal, and governance evidence—not by the candidate's CI status.
+The earlier master candidate has historical repository/CI evidence, but its attested artifact has expired and guarded deployment failed before candidate startup. The updated development milestone still needs a verified promotion and a fresh exact-master artifact. Production deployment and same-release acceptance are incomplete. Public-release readiness remains blocked by the live host state and the remaining provider, recovery, device, legal, and governance evidence—not by the candidate's CI status.
 
 ### Security hardening program — issue #291
 

@@ -1,4 +1,4 @@
-## Current continuation checkpoint — 2026-10-13
+## Current continuation checkpoint — 2026-10-14
 
 This section supersedes historical release snapshots and resume instructions below. Read fresh branch refs and exact-head checks before further repository work.
 
@@ -10,8 +10,17 @@ This section supersedes historical release snapshots and resume instructions bel
 - That backup contained **zero statement uploads**. It does not prove restoration of actual statement files, and it does not establish separate clean-host/compromised-host recovery, provider-enforced immutability, current read-only credential state, or production acceptance.
 - Confirm trusted host identity and pinned GitHub SSH host-key configuration, separate clean-host recovery requirements, statement-file recovery, and least-privilege recovery credentials before any deployment. Preserve existing data.
 
-### Repository continuation — post-integration baseline
-- Verified `development` integration baseline before this documentation update: `8370678cbc57b3aa88d98b7f501811fe2643460c`. Read the actual branch head before further writes.
+### Repository continuation — release preparation
+- Verified integration PR #739 merged as `b425fc39bd28a333a73d9aca46c7d0367752b951`. Exact head `ccac12913064599b6f909cf0656510150f6bdca2` passed FullWorth CI #1775, Dependency Security #865, Android internal #78 (including emulator launch), and iOS internal #72. Backend: 1,346 passing tests; Linux production images, real OCR, containment, encrypted backup and isolated restore passed.
+- PR #739 retains component #734–#738 and Docker digest #700/#701 ancestry. These are integrated, not pending independent work; stacked #736 was closed as superseded.
+- PR #740 merged as `6c9cdd0d577e8945acee9949e577f8c6d4439e99`. Exact head `16bdda005d4d9d8f00ac28a9604a2fe0faed6d42` passed FullWorth CI #1778 and Dependency Security #868. Both backend builds report zero warnings/errors; all 1,348 tests pass, none failed/skipped. Parenthesized decimal-endpoint credits no longer overflow; the assertions remain strict without diagnostic suppression.
+- PR #741 merged as `a48183d44582e79985c332f6f59125127b9001e3`. Exact head `a252cf71b0398d81b036f9aaab31f11902e44aef` passed [FullWorth CI #1779](https://github.com/Fullworth/FullWorth/actions/runs/38509349648) and [Dependency Security #869](https://github.com/Fullworth/FullWorth/actions/runs/38509349672). The verifier requires actual emitted job contexts; behavioral tests reject workflow-name-only settings and each missing required job. The actual administrator settings remain unchanged and fail the intended governance policy.
+- Financial changes: consecutive calendar-month coverage (including leap/month-end anchors), owned/consistent planning evidence, preserved source currencies in generated text, latest-statement reminder reconciliation, conflicting extraction review, and numeric(18,2) range/cent precision. Calendar coverage does not prove provider recurrence. No FX conversion, debt ledger, scheduled reminder expiry, or real-provider acceptance is implied. Deterministic extractor is v2; AI persistence and subscription enforcement remain disabled.
+- Release work is tracked in `RELEASE_CANDIDATE.md` and issue #669. Protected-branch settings were re-read on October 14: active ruleset 24230011 still requires zero approvals and has no status-check rule. Administrator must configure independent approval and strict actual job contexts; connected tooling has no administration mutation capability.
+- Prepare the development-to-master promotion as a reviewable PR after exact-head verification. Do not merge a release promotion around known governance failure or dispatch production before trusted-host/recovery gates close. Fresh exact-master images, SBOMs, attestations, CodeQL and governance evidence remain required; no current downloadable candidate or live deployment is claimed.
+
+### Earlier repository verification — historical
+- Earlier `development` integration baseline before the October 13 documentation update: `8370678cbc57b3aa88d98b7f501811fe2643460c`. Read the actual branch head before further writes.
 - PR #728 merged earlier as `715fe39459faf777b0fb182b6c2115fac71bd1a1` after exact-head FullWorth CI #1756, Dependency Security #846, Android internal #73, and iOS internal #67 passed.
 - PR #729 merged as `04386e5110a638f82f39cec2ea9c00de062ceb3d`: TesseractOCR 5.5.2 Linux native aliases, build-time real OCR self-test, pinned .NET images, test SDK and QR updates. Exact head `f662a3f1105f5ec34b88f2d692e500b5b2c89ffd` passed FullWorth CI #1757 and Dependency Security #847, including all three production images, OCR readiness, memory containment, backup and isolated restore.
 - PR #730 merged as `209658aba34fb1a6be8795156a71cbf926bb7c07`: pinned artifact and SBOM action updates. Exact head `46b12aa94caf80b48d4b387db5afd70ec487f334` passed FullWorth CI #1758, Dependency Security #848, Android internal #74 and iOS internal #68. Master-only SBOM attestation publishing still requires an exact master release build.

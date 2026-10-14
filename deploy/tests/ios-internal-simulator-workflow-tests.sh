@@ -74,8 +74,14 @@ if grep -Fq 'mapfile ' "$workflow"; then
 fi
 grep -Fq 'ios-simulator-smoke.sh' "$workflow" ||
     fail "workflow does not install and launch the built app in Simulator."
-grep -Fq 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' "$workflow" ||
-    fail "workflow does not publish a simulator artifact."
+awk '
+    $1 == "uses:" && $2 ~ /^actions\/upload-artifact@/ {
+        count++
+        if ($2 !~ /^actions\/upload-artifact@[0-9a-f]{40}$/) invalid = 1
+    }
+    END { exit !(count > 0 && !invalid) }
+' "$workflow" ||
+    fail "workflow does not publish a simulator artifact with an immutable action pin."
 grep -Fq 'retention-days: 14' "$workflow" ||
     fail "iOS simulator artifact retention is not bounded."
 grep -Fq 'shasum -a 256' "$workflow" ||

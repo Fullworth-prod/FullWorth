@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:35d40304542c8689331f8cab17c65926cdf48fe711e289321d71924b230a7d29 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa AS build
 
 WORKDIR /src
 
@@ -23,7 +23,7 @@ RUN dotnet publish FullWorth.API/FullWorth.API.csproj \
     --output /app/parser-worker-publish \
     /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:2d584d8147faddb0d678c5748d47953e5b8e18621ed4fb7049a91381d9d7746f AS parser-worker-final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac AS parser-worker-final
 
 ARG BILLWATCH_RELEASE_ID=unknown
 
@@ -54,12 +54,13 @@ RUN chmod 0755 /usr/local/bin/fullworth-parser-worker-entrypoint \
     && test -n "$english_model" \
     && test -n "$leptonica_library" \
     && test -n "$tesseract_library" \
-    && ln --symbolic "$leptonica_library" /app/x64/libleptonica-1.83.1.dll.so \
-    && ln --symbolic "$tesseract_library" /app/x64/libtesseract53.dll.so \
+    && ln --symbolic "$leptonica_library" /app/x64/libleptonica-1.85.0.dll.so \
+    && ln --symbolic "$tesseract_library" /app/x64/libtesseract55.dll.so \
     && ln --symbolic --force "$english_model" /app/tessdata/eng.traineddata \
     && chown --recursive "$APP_UID:$APP_UID" \
         /app \
-        /var/run/fullworth-parser-tls
+        /var/run/fullworth-parser-tls \
+    && dotnet FullWorth.ParserWorker.dll --ocr-native-self-test
 
 ENV ASPNETCORE_HTTP_PORTS=8081 \
     DOTNET_EnableDiagnostics=0
@@ -71,7 +72,7 @@ HEALTHCHECK NONE
 ENTRYPOINT ["/usr/local/bin/fullworth-parser-worker-entrypoint"]
 CMD ["dotnet", "FullWorth.ParserWorker.dll"]
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:2d584d8147faddb0d678c5748d47953e5b8e18621ed4fb7049a91381d9d7746f AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac AS final
 
 ARG BILLWATCH_RELEASE_ID=unknown
 

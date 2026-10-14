@@ -1,3 +1,63 @@
+## Current continuation checkpoint — 2026-10-14
+
+## Owner-approved release policy — 2026-10-14
+
+On 2026-10-14 the owner explicitly approved removing the independent-review requirement to release as a solo maintainer. The approved policy permits zero required approvals while retaining mandatory pull requests, strict current-branch checks for `Backend build and tests`, `MAUI Android build`, `Linux production container`, and `Dependency review` (GitHub Actions app 15368), thread resolution, deletion/force-push restrictions, and an empty bypass list. Read back the saved ruleset before merging; authorization is not evidence that GitHub saved it. Independent review is no longer a release prerequisite under this decision. Host identity, real recovery, attested exact-master artifacts, and deployed acceptance remain required.
+
+This decision supersedes earlier independent-approval requirements below. It does not mark production as deployed or waive data-recovery gates. Physical-device acceptance follows verified deployment.
+
+This section supersedes historical release snapshots and resume instructions below. Read fresh branch refs and exact-head checks before further repository work.
+
+### Production and recovery boundary
+- current release candidate on `master`: `c8858a38b38d7eb0888d273b9a1a409308e565b4`; no deployment of this candidate is established.
+- Verified live production release: `none`. The operator reports no production server is running. Historical SHA `7e8571a26447538db249c862ad009487cce119bc` must not be presented as current live production.
+- Candidate artifact `11435103773` had a recorded expiry of 2026-10-13 18:30 UTC, now elapsed. Obtain a fresh exact-release artifact through the normal verified release process before deployment; never substitute an artifact from another SHA.
+- The October 12–13 operator-assisted handoff reports an isolated restore of snapshot `726a1e85`, manifest ReleaseId `f401a591a8abdade557827c09412dc3166fb9de2`, on `vps-32597e02`, with checksum, database/migration, and key checks passing. This is reported historical drill evidence, not a newly executed verification.
+- That backup contained **zero statement uploads**. It does not prove restoration of actual statement files, and it does not establish separate clean-host/compromised-host recovery, provider-enforced immutability, current read-only credential state, or production acceptance.
+- Confirm trusted host identity and pinned GitHub SSH host-key configuration, separate clean-host recovery requirements, statement-file recovery, and least-privilege recovery credentials before any deployment. Preserve existing data.
+
+### Repository continuation — release preparation
+- Verified integration PR #739 merged as `b425fc39bd28a333a73d9aca46c7d0367752b951`. Exact head `ccac12913064599b6f909cf0656510150f6bdca2` passed FullWorth CI #1775, Dependency Security #865, Android internal #78 (including emulator launch), and iOS internal #72. Backend: 1,346 passing tests; Linux production images, real OCR, containment, encrypted backup and isolated restore passed.
+- PR #739 retains component #734–#738 and Docker digest #700/#701 ancestry. These are integrated, not pending independent work; stacked #736 was closed as superseded.
+- PR #740 merged as `6c9cdd0d577e8945acee9949e577f8c6d4439e99`. Exact head `16bdda005d4d9d8f00ac28a9604a2fe0faed6d42` passed FullWorth CI #1778 and Dependency Security #868. Both backend builds report zero warnings/errors; all 1,348 tests pass, none failed/skipped. Parenthesized decimal-endpoint credits no longer overflow; the assertions remain strict without diagnostic suppression.
+- PR #741 merged as `a48183d44582e79985c332f6f59125127b9001e3`. Exact head `a252cf71b0398d81b036f9aaab31f11902e44aef` passed [FullWorth CI #1779](https://github.com/Fullworth/FullWorth/actions/runs/38509349648) and [Dependency Security #869](https://github.com/Fullworth/FullWorth/actions/runs/38509349672). The verifier requires actual emitted job contexts; behavioral tests reject workflow-name-only settings and each missing required job. The administrator configuration gap is now closed; see the verified policy below.
+- Financial changes: consecutive calendar-month coverage (including leap/month-end anchors), owned/consistent planning evidence, preserved source currencies in generated text, latest-statement reminder reconciliation, conflicting extraction review, and numeric(18,2) range/cent precision. Calendar coverage does not prove provider recurrence. No FX conversion, debt ledger, scheduled reminder expiry, or real-provider acceptance is implied. Deterministic extractor is v2; AI persistence and subscription enforcement remain disabled.
+- Release work is tracked in `RELEASE_CANDIDATE.md` and issue #669. Ruleset 24230011 was saved through the user-approved browser and verified by GitHub API readback on 2026-10-14: active on `master` and `development`, one required approving review, strict up-to-date checks for `Backend build and tests`, `MAUI Android build`, `Linux production container`, and `Dependency review`, all bound to GitHub Actions app 15368. Existing deletion/non-fast-forward/thread restrictions and the empty bypass list are preserved.
+- The verifier must read branch targeting from the full ruleset detail response; GitHub's list response contains metadata only. This change repairs that false-negative bug with realistic fixtures. Local regression and replay of freshly read GitHub metadata pass; exact-head CI and a live workflow run must still be checked. No independent PR approval or deployment is implied.
+- Promotion PR #743 is open at `2b506f76f8764a1569a2117ee5d5d577d0145674`; exact-head CI #1781, Dependency Security #871, CodeQL PR #78, Android internal #79, and iOS internal #73 passed. Independent approval is still required. Incorporate the verifier-detail fix through reviewed development before updating and revalidating the promotion. Do not merge a release promotion around known governance failure or dispatch production before trusted-host/recovery gates close. Fresh exact-master images, SBOMs, attestations, CodeQL and governance evidence remain required; no current downloadable candidate or live deployment is claimed.
+
+### Earlier repository verification — historical
+- Earlier `development` integration baseline before the October 13 documentation update: `8370678cbc57b3aa88d98b7f501811fe2643460c`. Read the actual branch head before further writes.
+- PR #728 merged earlier as `715fe39459faf777b0fb182b6c2115fac71bd1a1` after exact-head FullWorth CI #1756, Dependency Security #846, Android internal #73, and iOS internal #67 passed.
+- PR #729 merged as `04386e5110a638f82f39cec2ea9c00de062ceb3d`: TesseractOCR 5.5.2 Linux native aliases, build-time real OCR self-test, pinned .NET images, test SDK and QR updates. Exact head `f662a3f1105f5ec34b88f2d692e500b5b2c89ffd` passed FullWorth CI #1757 and Dependency Security #847, including all three production images, OCR readiness, memory containment, backup and isolated restore.
+- PR #730 merged as `209658aba34fb1a6be8795156a71cbf926bb7c07`: pinned artifact and SBOM action updates. Exact head `46b12aa94caf80b48d4b387db5afd70ec487f334` passed FullWorth CI #1758, Dependency Security #848, Android internal #74 and iOS internal #68. Master-only SBOM attestation publishing still requires an exact master release build.
+- PR #731 merged as `bb52350d4ec3b0bdd79c38d0ceaaa18aabcd8126`: corrected historical live-release, expired-artifact and reported zero-statement restore evidence. Fresh integrated head `d3c6145e3a92d17661cd9e56257a98dceb782c1e` passed FullWorth CI #1762 and Dependency Security #852. Earlier master-targeting docs PR #723 was closed as superseded.
+- PR #732 merged as `8370678cbc57b3aa88d98b7f501811fe2643460c`: automatic statement-change alerts now decline to annualize unmatched periods or periods outside the conservative 28–31 day length window; overlapping periods remain rejected. Added negative tests for short/long prorated periods, quarterly/annual statements and stale managed-alert cleanup. Fresh integrated head `7d12dbb157bf20bf483d6a53e8efb37db6050d29` passed FullWorth CI #1766 and Dependency Security #856. Period length is **not** definitive billing cadence evidence: cadence-aware matching remains future work, and this guard does not validate a real provider.
+- PR #724 remains a separate unmerged production-deploy proposal that removes the independent typed-host confirmation introduced by #709. No change here accepts that safety tradeoff or authorizes a dispatch.
+- Next: prioritize provider/stream billing-cadence evidence, real statement extraction and Plaid acceptance, and operator-verified off-host/clean-host recovery and production target identity. Do not claim a live deployment or general-release readiness from CI. AI-derived persistence and subscription enforcement remain disabled; preserve current source authority and exact-head CI.
+
+---
+
+## Historical continuation checkpoint — 2026-10-10
+
+This historical section is superseded by the October 13 checkpoint above. Retain it only as prior repository/CI evidence.
+
+### Repository development state
+- Runtime development head immediately before the handoff-only PR #720: `5b358d3b8a16f099504a61a9ea68efa2c50f9b70`. PR #720 then merged this documentation checkpoint as `d587d075ee69f28753120b9c7406d7b9a6b0bc07`.
+- PR #716 merged recovery credentials as a file-backed Compose secret. Exact head `6cb87266bdfa9da72075dc4804ba092e0127072e` passed FullWorth CI #1733 and Dependency Security #823; merge commit `c5619f6d82bcd45ebfa6762a1e0d2e541dd9f1a8`.
+- PR #717 merged the protected-branch governance verifier. Exact head `e1f47b57129ef0e594f13cac67113238ccaa1d9e` passed FullWorth CI #1734 and Dependency Security #824; merge commit `10bc2666d88e626d3288628e91414dff477d1649`. This verifies repository settings and reports gaps; it does not change GitHub ruleset settings or create independent approvals.
+- PR #719 merged the version-flexible signed-provenance action-pin regression. Exact head `974b710650fcf28c90b665ef00c325de16bbb4a4` passed FullWorth CI #1736 and Dependency Security #826; merge commit: `5b358d3b8a16f099504a61a9ea68efa2c50f9b70`. The Android workflow completed successfully with its build step skipped because this was a script-only change. Linux production-container validation, including encrypted backup and isolated restore, and backend tests passed.
+- PR #718 was closed as superseded by #719 after its base advanced. Six Dependabot PRs were open at this checkpoint; inspect their current state before selecting dependency updates.
+
+### Release boundary
+- Current `master` candidate: `c8858a38b38d7eb0888d273b9a1a409308e565b4`. The earlier `f401a591a8abdade557827c09412dc3166fb9de2` candidate is superseded.
+- Historical verified release was `7e8571a26447538db249c862ad009487cce119bc`; no current live release is established. Candidate `c8858a38` is not deployed; no production deployment was performed during this work.
+- Guarded run #15 failed closed on the earlier candidate before candidate startup. Host state and backup readiness still require operator reconciliation. Do not start the public stack against an empty database or treat CI restore tests as proof of the real off-host repository.
+- Remaining release/security evidence includes provider-enforced immutable off-host backup, a separate read-only R2 recovery credential, a verified clean-host/compromised-host restore, reconciling the SSH target with the inspected host, independent-review policy decision/settings, exact deployed-release evidence, physical Android/PWA checks, and Plaid acceptance.
+- Production deployment remains explicitly outside this continuation. Repository changes and CI do not authorize or prove production acceptance.
+
+---
+
 ## Repository-side security closure checkpoint — 2026-10-03
 
 The October 3 repository-side security program has advanced to **61 completed checks and 4 open checks** on issue #291. The remaining items are real-environment/provider/governance gates rather than missing generic application code.
@@ -23,11 +83,11 @@ Branch-governance evidence currently shows active repository ruleset `FullWorth 
 
 Current branch/release position:
 
-- current release candidate on `master`: `f401a591a8abdade557827c09412dc3166fb9de2`; it is not deployed. Candidate checks remain those listed in the release evidence below.
-- Current `development` head: `ae84e5f0b91fadfd8e0d41b3786c9af94c793fe1`. PR #707 fixed PostgreSQL passfile escaping for recovery and merged with exact-head FullWorth CI #1703 and Dependency Security #794 passing. This does not establish remote R2 access or production recovery. PR #709's production-host confirmation gate is also merged; neither change deploys production.
+- current release candidate on `master`: `c8858a38b38d7eb0888d273b9a1a409308e565b4`, promoted by PR #711; it is not deployed. Exact PR checks passed (FullWorth CI #1707, Dependency Security #798, PR workflow #59); master FullWorth CI #1708, Repository Governance #20, and CodeQL #60 passed. Attested artifact `fullworth-production-image-artifacts-c8858a38b38d7eb0888d273b9a1a409308e565b4` (ID `11435103773`, digest `sha256:39d566b68cdbef5dfd52ef616ce23642b8aa33e77fe26026f4f1c2ea135db823`; expires 2026-10-13).
+- Current `development` head: `0168093384961e4d2e9838c495fbaf5bfb2c279a`, promoted to master by PR #711 after PR #710 refreshed the handoff. FullWorth CI #1707 and Dependency Security #798 passed on this head. PR #707's recovery passfile fix and PR #709's host-confirmation gate are included; these do not establish remote R2 access or production recovery, and no deployment occurred.
 - Guarded deploy run #15 reported partial API/Web/edge services and failed before candidate startup. Follow-up read-only inventory found: OVH 40.160.137.55 read-only inventory found zero Docker containers, zero Docker volumes, and a missing release marker; this conflicts with run #15's partial-runtime report.
 - Remote R2 recovery returned AccessDenied with the host's configured backup credential; a separate read-only recovery credential is required. The recovery-wiring change does not grant provider access. The same-host object copy has not passed encrypted Restic integrity or clean-host restore verification.
-- Verified live production remains `7e8571a26447538db249c862ad009487cce119bc`; the candidate did not advance the marker. The inspected OVH host has no Docker volumes or release marker, so do not start the public stack against an empty database.
+- Historical verified release was `7e8571a26447538db249c862ad009487cce119bc`; no current live release is established; the candidate did not advance the marker. The inspected OVH host has no Docker volumes or release marker, so do not start the public stack against an empty database.
 - Reconcile the guarded workflow's SSH target with the inspected OVH host, install the separate least-privilege recovery credential through the approved secret-handling path, and complete isolated restore verification before deployment. Do not change services or broaden backup credentials to bypass these blockers.
 - Issue #291 remains 61/65: provider-enforced immutable/off-host storage, compromised-host clean restore, independent-review policy, and exact deployed-release evidence are still open.
 - Do not infer production security from CI, combine evidence across releases, or deploy until the target mismatch and recovery gates are resolved.
@@ -506,7 +566,7 @@ Next: on an authorized evaluation host, start the pinned local runtime and compl
 
 ## Guarded production deployment checkpoint — 2026-09-25
 
-GitHub Actions production deploy run #7 (`36221860082`) completed successfully for exact `master` release `7e8571a26447538db249c862ad009487cce119bc`. This is the current verified live production release.
+GitHub Actions production deploy run #7 (`36221860082`) completed successfully for exact `master` release `7e8571a26447538db249c862ad009487cce119bc`. This is historical deployment evidence, not evidence that any production server is currently running.
 
 The guarded workflow verified the requested SHA against current `master`, used pinned SSH host verification, passed production configuration preflight, built release-tagged API/Web/backup images, created a verified encrypted pre-replacement recovery snapshot beginning `15a529e1844b...`, and completed the guarded deployment without bypassing the repository deployment script.
 
@@ -805,9 +865,9 @@ Production path: `/opt/billwatch`
 - Never log raw statements, full account numbers, auth/Plaid/provider tokens, passwords, recovery codes, provider/database/Restic secrets, or private operations webhooks.
 - AI-derived persistence remains disabled; deterministic extraction remains production persistence.
 
-## Current production state
+## Historical production state — September 2026
 
-The current operator-reported live production release is:
+The operator-reported live production release at that time was:
 
 `81a74f11941f6ed67ba5de61b9ef186ef09bae3c`
 
@@ -897,7 +957,7 @@ In particular:
 
 Before trusted external beta invitations:
 
-1. Run objective cross-user Web/BFF ownership proof with a second controlled identity and controlled foreign-owned resource/statement fixture against deployed release `7e8571a26447538db249c862ad009487cce119bc`.
+1. Run objective cross-user Web/BFF ownership proof with a second controlled identity and controlled foreign-owned resource/statement fixture against the next exact release verified through guarded deployment; do not reuse historical release evidence.
 2. Run disposable account-deletion proof and feed same-release evidence into Internal Beta 0.
 3. Exercise the controlled Plaid connect/update lifecycle with a suitable account and complete the Hosted Link human-interaction observation.
 4. With explicit approval, upload controlled representative PDF/scanned-PDF/JPG/PNG fixtures and review extraction/OCR fields plus bill-change explanations against operator-known facts.
@@ -910,20 +970,18 @@ Before trusted external beta invitations:
 11. Obtain qualified review of the exact deployed Terms/Privacy version.
 12. Run the trusted-beta launch evidence verifier only after every underlying real-world fact is genuinely complete.
 
-## Immediate resume point
+## Historical resume point — superseded by October 13
 
-1. Read current GitHub branch heads, open PRs, issue #291, issue #669, this context, `HUMAN-TODO.md`, and the roadmap snapshot before changing release state.
-2. Current master candidate: `f401a591a8abdade557827c09412dc3166fb9de2`. Its exact PR/master CI, dependency, governance, CodeQL, and attested-artifact checks passed; see the current release section above.
-3. Guarded production deploy run #15 failed closed before candidate containers started because API, Web, and edge were only partially running. The workflow did not record per-service state; public API readiness refuses connections.
-4. The host checkout and configured release ID advanced to the candidate, but running containers were unchanged and the verified live marker remains `7e8571a26447538db249c862ad009487cce119bc`. Auth smoke #7 was skipped.
-5. Next action: inspect the production host's read-only Compose service status and establish which public services are running/healthy. Do not restart services or retry deployment based on assumption.
-6. PR #705 adds a sanitized `api/web/edge` state summary to future partial-runtime refusals. It does not repair the current host; merge only after current-head CI and dependency checks pass.
-7. After the current host state is understood, safely restore a consistent healthy runtime or stop the public services according to the guarded runbook, then perform a fresh guarded deploy of the exact current master SHA only if all preflight gates pass.
-8. After a successful deploy, gather same-release production, provider, device, backup immutability, and clean-host recovery evidence. Do not combine evidence from unrelated releases.
-9. Issue #291 remains 61/65: immutable/off-host storage, compromised-host clean restore, independent-review policy, and direct same-release deployed evidence are open.
-10. Android physical-device acceptance, Plaid acceptance, iOS re-test, and admin-only branch-governance settings remain separate real-world/admin gates.
-11. Preserve all authentication, session, ownership, parser containment, secret scoping, database-role, backup, and recovery boundaries.
-
+1. Read current GitHub heads, open PRs, issue #291, issue #669, this context, `HUMAN-TODO.md`, and the roadmap before changing release state.
+2. Master candidate `c8858a38b38d7eb0888d273b9a1a409308e565b4` was promoted by PR #711 from development head `0168093384961e4d2e9838c495fbaf5bfb2c279a`. Exact PR checks passed (FullWorth CI #1707, Dependency Security #798, PR workflow #59); master FullWorth CI #1708, Repository Governance #20, and CodeQL #60 passed. Artifact `fullworth-production-image-artifacts-c8858a38b38d7eb0888d273b9a1a409308e565b4` (ID `11435103773`, digest `sha256:39d566b68cdbef5dfd52ef616ce23642b8aa33e77fe26026f4f1c2ea135db823`) expires 2026-10-13. None of this proves deployment.
+3. Development remains at `0168093384961e4d2e9838c495fbaf5bfb2c279a`; exact FullWorth CI #1707 and Dependency Security #798 passed. The release candidate is not deployed; the historical live SHA does not establish any currently running production release.
+4. Deploy run #15 failed closed, and its partial-runtime report conflicts with the later read-only OVH inventory showing no containers, volumes, or release marker. Do not restart services or start the public stack against the empty inspected host.
+5. R2 recovery returned AccessDenied for the configured backup credential. Obtain the separate least-privilege read-only credential through the approved secret path, then prove encrypted-repository integrity and a clean isolated restore.
+6. Reconcile the workflow's pinned SSH target with the inspected OVH host before any repair or deployment. Only after target identity and recovery pass should the exact-master guarded deployment be considered.
+7. After any deployment, gather same-release production, backup, recovery, provider, device, and acceptance evidence; do not combine evidence from other releases.
+8. Issue #291 remains 61/65: provider-enforced immutable/off-host storage, compromised-host clean restore, independent-review policy, and exact deployed-release evidence are open.
+9. Android installed-PWA acceptance, Plaid acceptance, iOS re-test, and admin-only branch-governance settings remain separate real-world/admin gates.
+10. Preserve the authentication, session, ownership, parser containment, secret scoping, database-role, backup, and recovery boundaries.
 ---
 
 ## Backup migration operational instruction (2026-10-05)

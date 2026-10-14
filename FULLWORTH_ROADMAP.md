@@ -1,6 +1,12 @@
 # FullWorth Product & Engineering Roadmap
 
-Last updated: 2026-10-06
+## Owner-approved release policy — 2026-10-14
+
+On 2026-10-14 the owner explicitly approved removing the independent-review requirement to release as a solo maintainer. The approved policy permits zero required approvals while retaining mandatory pull requests, strict current-branch checks for `Backend build and tests`, `MAUI Android build`, `Linux production container`, and `Dependency review` (GitHub Actions app 15368), thread resolution, deletion/force-push restrictions, and an empty bypass list. Read back the saved ruleset before merging; authorization is not evidence that GitHub saved it. Independent review is no longer a release prerequisite under this decision. Host identity, real recovery, attested exact-master artifacts, and deployed acceptance remain required.
+
+This decision supersedes earlier independent-approval requirements below. It does not mark production as deployed or waive data-recovery gates. Physical-device acceptance follows verified deployment.
+
+Last updated: 2026-10-14
 
 Status: Active planning document
 
@@ -252,20 +258,26 @@ This section is the current release-readiness snapshot. It must be refreshed whe
 
 ## 4.1 Branch and release position
 
-As of 2026-10-06:
+Current state as of 2026-10-14: see the authoritative continuation checkpoint in `FULLWORTH_CONTEXT.md` for repository work and recovery evidence. The operator reports no running production server. The recorded candidate artifact expiry has elapsed. The reported snapshot `726a1e85` restore had zero statement uploads and does not prove statement-file recovery or a separate clean-host exercise. PR #724's dispatch behavior is not approved by this documentation change.
 
-- The `master` release branch at candidate `f401a591a8abdade557827c09412dc3166fb9de2` was promoted by PR #704; it is not a deployed release.
-- The candidate's exact PR FullWorth CI #1679, Dependency Security #771, master FullWorth CI #1680, Repository Governance #18, CodeQL #58, and attested artifact checks passed. Artifact `fullworth-production-image-artifacts-f401a591a8abdade557827c09412dc3166fb9de2` (ID `11374998766`, digest `sha256:0f24594dc289350487574f757956c7cd325c68b3a07e2d58bd4ce5f411a7052b`) expires 2026-10-12.
-- Current `development` head is `ae84e5f0b91fadfd8e0d41b3786c9af94c793fe1`, the squash merge for PR #707. PR #707 corrected PostgreSQL passfile escaping for recovery; exact-head FullWorth CI #1703 and Dependency Security #794 passed before merge. PR #709's host-confirmation guard is also merged. These changes do not establish remote R2 access or production recovery. No deployment occurred.
+Latest verified repository milestone: integration #739 and cleanup #740 are merged. FullWorth CI #1775/#1778 and Dependency Security #865/#868 passed; Android internal #78 and iOS internal #72 passed on the integration head. Cleanup passed all 1,348 backend tests with zero build warnings/errors. Governance verifier correction #741 also merged after exact-head FullWorth CI #1779 and Dependency Security #869 passed. Administrator settings remain incomplete; the verifier correction is not policy enforcement.
+
+Use [RELEASE_CANDIDATE.md](RELEASE_CANDIDATE.md) as the release gate matrix and financial acceptance checklist. Governance configuration is now verified: one required approval, strict current-branch policy, four required GitHub Actions job contexts and no bypass actors. Independent review remains required; a prepared promotion is not launch approval. The verifier-detail correction in this change must pass exact-head CI and live workflow verification.
+
+Historical repository snapshot as of 2026-10-06:
+
+- The `master` release branch at candidate `c8858a38b38d7eb0888d273b9a1a409308e565b4` was promoted by PR #711; it is not a deployed release.
+- Exact PR #711 checks passed on development head `0168093384961e4d2e9838c495fbaf5bfb2c279a`: FullWorth CI #1707, Dependency Security #798, and PR workflow #59. After promotion, master FullWorth CI #1708, Repository Governance #20, and CodeQL via Push on master #60 passed. The attested artifact is `fullworth-production-image-artifacts-c8858a38b38d7eb0888d273b9a1a409308e565b4` (ID `11435103773`, digest `sha256:39d566b68cdbef5dfd52ef616ce23642b8aa33e77fe26026f4f1c2ea135db823`; expires 2026-10-13).
+- Current `development` head is `0168093384961e4d2e9838c495fbaf5bfb2c279a`, the squash merge for PR #710 and exact head promoted by PR #711. FullWorth CI #1707 and Dependency Security #798 passed on this head. PR #707's recovery passfile fix and PR #709's host-confirmation gate are included; none establishes remote R2 access or recovery. No deployment occurred.
 - Guarded production deploy run #15 for the candidate failed closed before candidate startup. Its partial API/Web/edge report conflicts with follow-up read-only inventory of the OVH target: OVH 40.160.137.55 read-only inventory found zero Docker containers, zero Docker volumes, and a missing release marker; this conflicts with run #15's partial-runtime report.
 - Remote R2 recovery returned AccessDenied with the host's configured backup credential; a separate read-only recovery credential is required. PR #708 fixes the verifier secret wiring but does not grant R2 access. Do not broaden the production backup credential or put secret values in chat, source control, command history, or logs.
 - The copied backup tree on the OVH host has object-level parity only. It is not an off-host copy, verified encrypted Restic repository, or successful clean-host recovery.
-- The candidate is not deployed. The currently verified live production release remains `7e8571a26447538db249c862ad009487cce119bc`. Do not start the public stack against an empty database: the OVH inspection found no Docker volumes and no release marker.
+- The candidate is not deployed. The historically verified release was `7e8571a26447538db249c862ad009487cce119bc`; it is not current live evidence. Do not start the public stack against an empty database: the OVH inspection found no Docker volumes and no release marker.
 - Before deployment, reconcile which SSH target the guarded workflow addresses, install the separate read-only recovery credential through the approved secret-handling path, and complete isolated encrypted-repository integrity and restore checks. Keep the conflicting host observations unresolved until verified against the actual workflow target.
 - Issue #291 remains 61/65, with four real-evidence/governance gates: provider-enforced immutable/off-host storage, compromised-host clean restore, independent-review policy, and exact deployed-release evidence.
 ### Release-readiness estimate
 
-The candidate has repository/CI release evidence and an attested artifact, but guarded deployment failed before candidate startup. Production deployment and same-release acceptance are incomplete. Public-release readiness remains blocked by the live host state and the remaining provider, recovery, device, legal, and governance evidence—not by the candidate's CI status.
+The earlier master candidate has historical repository/CI evidence, but its attested artifact has expired and guarded deployment failed before candidate startup. The updated development milestone still needs a verified promotion and a fresh exact-master artifact. Production deployment and same-release acceptance are incomplete. Public-release readiness remains blocked by the live host state and the remaining provider, recovery, device, legal, and governance evidence—not by the candidate's CI status.
 
 ### Security hardening program — issue #291
 
@@ -391,13 +403,9 @@ AI-derived persistence remains disabled. Deterministic extraction remains the pr
 
 ## 4.4 Production state
 
-The current verified live production release is:
+Currently verified live production release: `none`.
 
-`7e8571a26447538db249c862ad009487cce119bc`
-
-It was proven by successful guarded production deploy run #7 (`36221860082`).
-
-That evidence establishes the release actually deployed through the guarded path. It does **not** silently extend to newer code on `master` or `development`.
+The operator reports no production server is running. Guarded deployment run #7 (`36221860082`) proved a historical deployment of `7e8571a26447538db249c862ad009487cce119bc`; it does not establish current runtime state.
 
 The current release/acceptance model must continue to distinguish:
 
@@ -2328,9 +2336,11 @@ Do not manufacture CI substitutes for provider-enforced immutability, clean-host
 
 ## Step 6 — Guarded-deploy the exact `master` release
 
-**Current state:** Candidate `f401a591a8abdade557827c09412dc3166fb9de2` is not deployed. Run #15 failed closed before candidate startup. Its report of a partially running public runtime conflicts with a later read-only inventory of the OVH host:
+**Current state:** Candidate `c8858a38b38d7eb0888d273b9a1a409308e565b4` is not deployed. The exact PR #711 head checks and current master CI, governance, CodeQL, and attested artifact passed; this is repository release evidence only.
 
-OVH 40.160.137.55 read-only inventory found zero Docker containers, zero Docker volumes, and a missing release marker; this conflicts with run #15's partial-runtime report.
+Run #15 failed closed before candidate startup. Its report of a partially running public runtime conflicts with the later read-only inventory of OVH 40.160.137.55, which found zero Docker containers, zero Docker volumes, and a missing release marker.
+
+Recovery and target identity remain unresolved: remote R2 access returned AccessDenied for the configured backup credential, and the copied objects have not passed encrypted Restic integrity or clean-host restore verification. Do not start public services against the empty inspected host or dispatch deployment until the guarded workflow target is reconciled and isolated recovery succeeds.
 
 Do not assume the workflow and interactive SSH inspection reached the same machine or Compose project. Do not start the application against an empty database. The copied backup objects on this host have not passed encrypted Restic integrity or clean-host recovery verification.
 
@@ -2344,7 +2354,7 @@ Do not assume the workflow and interactive SSH inspection reached the same machi
 4. Preserve the existing live release and data. Do not deploy until the actual target is identified, recovery succeeds, the exact-master artifact remains valid, and every guarded preflight passes.
 5. Only then use the guarded production workflow for the current exact `master` SHA. Require its automatic auth smoke, public API/Web readiness, and release marker to confirm the same deployed SHA.
 
-The current verified live production release remains `7e8571a26447538db249c862ad009487cce119bc`. CI, an attested image, a source checkout, or the same-host object copy does not prove deployment or recovery.
+No current live production release is established. CI, an attested image, a source checkout, or the same-host object copy does not prove deployment or recovery.
 ## Step 7 — Build one same-release private-beta evidence bundle
 
 Against the exact deployed candidate, complete and correlate:

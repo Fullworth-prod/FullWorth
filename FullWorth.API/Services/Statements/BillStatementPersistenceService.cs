@@ -97,6 +97,13 @@ public sealed class BillStatementPersistenceService
                 "The parsed statement currency code is invalid.");
         }
 
+        if (!StatementMoneyStoragePolicy.IsSupportedTotal(totalAmount) ||
+            parsedLineItems.Any(item => !StatementMoneyStoragePolicy.IsSupportedSigned(item.Amount)))
+        {
+            throw new InvalidOperationException(
+                "Statement amounts are outside the supported storage range or precision.");
+        }
+
         var existingStatement =
             await _dbContext.BillStatements
                 .Where(
@@ -173,16 +180,9 @@ public sealed class BillStatementPersistenceService
                             cancellationToken);
             }
 
-            await _paymentDueAlertService
-                .ReconcileAsync(
-                    upload.UserId,
-                    upload.BillStreamId,
-                    existingStatement.DueDate,
-                    existingStatement.TotalAmount,
-                    existingStatement.CurrencyCode,
-                    today,
-                    now,
-                    cancellationToken);
+            await ReconcileLatestPaymentDueAsync(
+                upload.UserId, upload.BillStreamId, existingStatement,
+                today, now, cancellationToken);
 
             upload.BillStatementId =
                 existingStatement.Id;
@@ -271,16 +271,9 @@ public sealed class BillStatementPersistenceService
                 cancellationToken:
                     cancellationToken);
 
-        await _paymentDueAlertService
-            .ReconcileAsync(
-                upload.UserId,
-                upload.BillStreamId,
-                statement.DueDate,
-                statement.TotalAmount,
-                statement.CurrencyCode,
-                today,
-                now,
-                cancellationToken);
+        await ReconcileLatestPaymentDueAsync(
+            upload.UserId, upload.BillStreamId, statement,
+            today, now, cancellationToken);
 
         upload.BillStatementId =
             statement.Id;
@@ -304,6 +297,42 @@ public sealed class BillStatementPersistenceService
 
             WasCreated:
                 true);
+    }
+
+    private async Task ReconcileLatestPaymentDueAsync(
+        Guid userId,
+        Guid billStreamId,
+        BillStatementEntity pendingStatement,
+        DateOnly today,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var persistedLatest = await _dbContext.BillStatements
+            .Where(item => item.UserId == userId && item.BillStreamId == billStreamId)
+            .OrderByDescending(item => item.PeriodEnd)
+            .ThenByDescending(item => item.RetrievedAtUtc)
+            .ThenByDescending(item => item.CreatedAtUtc)
+            .ThenByDescending(item => item.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        // Include the new unsaved statement in the same transaction. Uploading
+        // old history must never replace the current statement's due reminder.
+        var candidates = new List<BillStatementEntity> { pendingStatement };
+        if (persistedLatest is not null)
+        {
+            candidates.Add(persistedLatest);
+        }
+
+        var latest = candidates
+            .OrderByDescending(item => item.PeriodEnd)
+            .ThenByDescending(item => item.RetrievedAtUtc)
+            .ThenByDescending(item => item.CreatedAtUtc)
+            .ThenByDescending(item => item.Id)
+            .First();
+
+        await _paymentDueAlertService.ReconcileAsync(
+            userId, billStreamId, latest.DueDate, latest.TotalAmount,
+            latest.CurrencyCode, today, now, cancellationToken);
     }
 
     private static IReadOnlyList<BillLineItemEntity>

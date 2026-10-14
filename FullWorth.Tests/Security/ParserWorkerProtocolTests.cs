@@ -220,13 +220,14 @@ public sealed class ParserWorkerProtocolTests
 
     private sealed class GeneratedDiagnosticStream(int length) : Stream
     {
+        private readonly int _length = length;
         private int _remaining = length;
 
         public int BytesRead { get; private set; }
         public override bool CanRead => true;
         public override bool CanSeek => false;
         public override bool CanWrite => false;
-        public override long Length => length;
+        public override long Length => _length;
         public override long Position
         {
             get => BytesRead;

@@ -43,10 +43,10 @@ grep -Fq 'FullWorth protected branches' "$verifier" ||
     fail "verifier does not require the named active ruleset."
 grep -Fq 'required_approving_review_count' "$verifier" ||
     fail "verifier does not require an approving review."
-grep -Fq 'FullWorth CI' "$verifier" ||
-    fail "verifier does not require FullWorth CI."
-grep -Fq 'FullWorth Dependency Security' "$verifier" ||
-    fail "verifier does not require dependency/security checks."
+for check in 'Backend build and tests' 'MAUI Android build' 'Linux production container' 'Dependency review'; do
+    grep -Fq "$check" "$verifier" ||
+        fail "verifier does not require actual check-run context '$check'."
+done
 grep -Fq 'strict_required_status_checks_policy' "$verifier" ||
     fail "verifier does not require checks to match the current target branch."
 grep -Fq 'if [[ "$protected" != "true" ]]' "$verifier" ||
@@ -87,18 +87,29 @@ case "$url" in
         fi
         ;;
     */rulesets/42)
+        # Mirror the shape of the GitHub ruleset response, with actual job contexts.
+        response='{"rules":[{"type":"pull_request","parameters":{"required_approving_review_count":1}},{"type":"required_status_checks","parameters":{"strict_required_status_checks_policy":true,"required_status_checks":[{"context":"Backend build and tests"},{"context":"MAUI Android build"},{"context":"Linux production container"},{"context":"Dependency review"}]}}]}'
         case "${MOCK_MODE:-valid}" in
             missing_approval)
-                printf '%s\n' '{"rules":[{"type":"pull_request","parameters":{"required_approving_review_count":0}},{"type":"required_status_checks","parameters":{"strict_required_status_checks_policy":true,"required_status_checks":[{"context":"FullWorth CI"},{"context":"FullWorth Dependency Security"}]}}]}'
+                printf '%s\n' "$response" | jq '.rules[0].parameters.required_approving_review_count = 0'
                 ;;
-            missing_dependency_check)
-                printf '%s\n' '{"rules":[{"type":"pull_request","parameters":{"required_approving_review_count":1}},{"type":"required_status_checks","parameters":{"strict_required_status_checks_policy":true,"required_status_checks":[{"context":"FullWorth CI"}]}}]}'
+            missing_backend_check|missing_maui_check|missing_container_check|missing_dependency_check)
+                case "$MOCK_MODE" in
+                    missing_backend_check) missing='Backend build and tests' ;;
+                    missing_maui_check) missing='MAUI Android build' ;;
+                    missing_container_check) missing='Linux production container' ;;
+                    missing_dependency_check) missing='Dependency review' ;;
+                esac
+                printf '%s\n' "$response" | jq --arg missing "$missing" '.rules[1].parameters.required_status_checks |= map(select(.context != $missing))'
+                ;;
+            workflow_names_only)
+                printf '%s\n' "$response" | jq '.rules[1].parameters.required_status_checks = [{"context":"FullWorth CI"},{"context":"FullWorth Dependency Security"}]'
                 ;;
             non_strict_checks)
-                printf '%s\n' '{"rules":[{"type":"pull_request","parameters":{"required_approving_review_count":1}},{"type":"required_status_checks","parameters":{"strict_required_status_checks_policy":false,"required_status_checks":[{"context":"FullWorth CI"},{"context":"FullWorth Dependency Security"}]}}]}'
+                printf '%s\n' "$response" | jq '.rules[1].parameters.strict_required_status_checks_policy = false'
                 ;;
             *)
-                printf '%s\n' '{"rules":[{"type":"pull_request","parameters":{"required_approving_review_count":1}},{"type":"required_status_checks","parameters":{"strict_required_status_checks_policy":true,"required_status_checks":[{"context":"FullWorth CI"},{"context":"FullWorth Dependency Security"}]}}]}'
+                printf '%s\n' "$response"
                 ;;
         esac
         ;;
@@ -123,7 +134,7 @@ run_verifier()
 run_verifier valid >/dev/null ||
     fail "valid reviewed-PR and current-check rules were rejected."
 
-for mode in unprotected missing_ruleset missing_approval missing_dependency_check non_strict_checks; do
+for mode in unprotected missing_ruleset missing_approval missing_backend_check missing_maui_check missing_container_check missing_dependency_check workflow_names_only non_strict_checks; do
     if run_verifier "$mode" >/dev/null 2>&1; then
         fail "unsafe governance fixture '$mode' was accepted."
     fi
@@ -136,3 +147,4 @@ case "$output" in
 esac
 
 printf '%s\n' "Repository governance workflow regression passed."
+

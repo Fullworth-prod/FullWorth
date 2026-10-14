@@ -4,7 +4,8 @@ set -euo pipefail
 repository="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required}"
 token="${GITHUB_TOKEN:?GITHUB_TOKEN is required}"
 api_url="${GITHUB_API_URL:-https://api.github.com}"
-required_checks_json='["FullWorth CI","FullWorth Dependency Security"]'
+# Rulesets require check-run names emitted by jobs, not workflow display names.
+required_checks_json='["Backend build and tests","MAUI Android build","Linux production container","Dependency review"]'
 
 request_json() {
     local url="$1"
@@ -151,3 +152,4 @@ if (( failure != 0 )); then
 fi
 
 echo "FullWorth branch-governance verification passed."
+

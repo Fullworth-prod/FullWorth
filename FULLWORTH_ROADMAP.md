@@ -1,14 +1,15 @@
 ## Release checkpoint — 2026-10-15 UTC
 
-- The `master` release branch at candidate `6f0458976747191deb32084e49c5a6bb70144074` is not verified live.
+- The `master` release branch at candidate `457e7e4b77a88714e8870e369a1aaf17e76e2de2` is verified live.
 
-Currently verified live production release: `none`.
+Currently verified live production release: `457e7e4b77a88714e8870e369a1aaf17e76e2de2`.
 
-- Exact-master FullWorth CI #1792, Repository Governance #35, and CodeQL #85 passed; attested image artifact `11946325166` expires 2026-10-22 03:13 UTC.
-- [Production deploy #22](https://github.com/Fullworth/FullWorth/actions/runs/38678349080) passed image attestation, SSH, DB separation, migration and service health, but failed verifying the 384 MiB per-image OCR cgroup limit. The guard stopped public services; verified-release marker was not advanced.
-- [PR #748](https://github.com/Fullworth/FullWorth/pull/748) repairs a suspected cgroup-observer timing race without relaxing strict limits; its first CI run #1793 also caught the old master SHA in these handoff documents. CI and dependency-security verification of the updated PR head are required before merge and release promotion.
-- Fresh backup `8c51d6ac2dd8632284faf4cab9b11e5fced40834eca1e5cfb9783ae4340b8c08` and same-host isolated restore passed historically; separate clean-host recovery and provider-enforced immutability remain unproven.
-- Next: merge exact-head green #748 into development, promote through master PR, obtain green new-master CI/security and signed artifacts, perform guarded deploy and acceptance checks. Payments remain disabled and general public launch requires separate recovery/provider acceptance.
+- [Guarded production deploy #23](https://github.com/Fullworth/FullWorth/actions/runs/38690114274) succeeded on 2026-10-15 at 06:05 UTC. Pinned SSH, exact-release provenance/SBOM attestations, image identity, database-role separation/migrations, native OCR and kernel containment, file-backed secrets/non-disclosure, permissions, runtime/exposure, and public API/Web readiness passed. The host's verified release marker matches `457e7e4b77a88714e8870e369a1aaf17e76e2de2`.
+- [Production Auth Smoke](https://github.com/Fullworth/FullWorth/actions/runs/38690396582) passed on the same release: API login/refresh, protected read endpoints, non-admin denial, export secret/storage boundaries, Web cookie login, authenticated app/BFF, antiforgery issuance, and logout invalidation. Mutation probes were disabled; this does not prove two-user ownership or statement/provider acceptance.
+- [Exact-master CI #1797](https://github.com/Fullworth/FullWorth/actions/runs/38681858810), [Governance #36](https://github.com/Fullworth/FullWorth/actions/runs/38681858771), and all three exact-master CodeQL analyses passed. Attested production image artifact `11948796248` expires 2026-10-22 04:32 UTC. PR #748 fixed the OCR cgroup observer race without relaxing limits; PR #749 promoted it.
+- Direct post-deployment verification confirmed release identity, public HTTPS readiness, private exposure boundaries, the Owner role, disabled subscription enforcement, active backup/readiness timers, configured alerting, and append-only backup-client policy. Snapshot availability is verified; a new post-deployment snapshot, separate clean-host recovery, provider immutability, and external alert delivery are not established by these checks.
+- Keep payments/subscription enforcement and AI-derived persistence disabled. Broader launch remains gated by controlled statement and two-user ownership acceptance, Plaid lifecycle/payroll acceptance, physical-device checks, actual reboot recovery, clean-host recovery with real statements and both key rings, provider-enforced immutability, external alert delivery, and qualified legal/license review.
+- Next: collect those remaining acceptance results against this deployed release. Preserve production data and the existing manual guarded deployment path; do not redeploy merely to publish handoff documentation.
 
 ## Previous handoff snapshots (historical; superseded by checkpoint above)
 

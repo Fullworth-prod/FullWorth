@@ -161,6 +161,50 @@ with tempfile.TemporaryDirectory() as directory:
         input=body, env=environment, capture_output=True,
     )
     assert failed.returncode != 0 and not capture.exists(), "short secret must fail closed"
+# Execute the actual cgroup membership observer with a simulated kernel
+# creation/configuration race. Do not replace strict production limit checks
+# with a permissive wait or increase the OCR memory ceiling.
+observer = re.search(
+    r"(?ms)^await_image_process_membership\(\)\n\{\n.*?^\}\n",
+    source,
+)
+assert observer, "image cgroup membership observer not found"
+assert source.index('image_pid="$(await_image_process_membership') < source.index(
+    '[ "$(cat "$image_cgroup/memory.max")" = "402653184" ]'
+), "the memory check must follow confirmed cgroup process membership"
+assert '[ "$(cat "$image_cgroup/memory.swap.max")" = "0" ]' in source
+assert '[ "$1" = "100000" ]' in source and '[ "$2" = "100000" ]' in source
+
+with tempfile.TemporaryDirectory() as directory:
+    scope = Path(directory)
+    members = scope / "cgroup.procs"
+    members.write_text("")
+    invocation = observer.group() + '\nawait_image_process_membership "$1" "$2"\n'
+    command = ["sh", "-c", invocation, "observer", str(scope), str(os.getpid())]
+    # The cgroup exists, but membership (which the worker writes last) is
+    # intentionally published only after the verifier begins observing it.
+    process = subprocess.Popen(command, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, text=True)
+    import time
+    time.sleep(0.07)
+    members.write_text("123456\n")
+    output, errors = process.communicate(timeout=3)
+    assert process.returncode == 0 and output.strip() == "123456", (
+        "observer must wait for configured cgroup membership", errors
+    )
+    members.write_text("not-a-pid\n")
+    invalid = subprocess.run(command, capture_output=True, text=True,
+                             timeout=3)
+    assert invalid.returncode != 0, "invalid membership must fail closed"
+    members.write_text("")
+    missing = subprocess.run(
+        ["sh", "-c", invocation, "observer", str(scope), "2147483647"],
+        capture_output=True, text=True, timeout=3,
+    )
+    assert missing.returncode != 0, "missing membership must fail closed"
+
+print("Parser image cgroup observation race regression passed.")
+
 print("Parser proof signing and file-backed authentication regression passed.")
 PY
 

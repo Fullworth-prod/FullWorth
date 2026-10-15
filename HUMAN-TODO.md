@@ -2,18 +2,17 @@
 
 Current release candidate on `master`:
 
-`6742bb51d286bf05f9e30140d3f2e44d8cfed341`
+`6f0458976747191deb32084e49c5a6bb70144074`
 
 Current verified live production release marker:
 
 `none`.
 
-- Exact master CI #1786, Repository Governance #34, and CodeQL #82 passed. Signed artifact ID `11933316504` expires 2026-10-21 22:27 UTC.
-- Production deploy [#21 attempt 4](https://github.com/Fullworth/FullWorth/actions/runs/38671815460) passed release attestation, pinned SSH, database role separation, and container health, then failed the parser proof with HTTP 401. Public application services were stopped by the guard; the verified-release marker was not advanced.
-- [PR #745](https://github.com/Fullworth/FullWorth/pull/745) fixes the verifier's removed environment-variable credential and escaped HMAC separators. Its corrected proof passed a separate edge-off diagnostic on the approved release binaries: document/image cgroups observed and removed, 384 MiB kernel limit, OOM-kill delta 2, parser readiness survived. This diagnostic is not a successful guarded deployment.
-- The owner-approved Cloudflare backup-token IP correction is saved. Fresh complete backup `8c51d6ac2dd8632284faf4cab9b11e5fced40834eca1e5cfb9783ae4340b8c08` and same-VPS isolated restore passed. Separate clean-host recovery and provider immutability remain open; the bucket has no lock rules.
-- Dedicated `deploy` SSH account now accepts the exact GitHub deployment key. Root/password SSH remain disabled. Backup/readiness timers are installed.
-- Next: review and merge #745 into development, promote through the required master PR/checks, then redeploy the new exact approved master artifact. Do not bypass verification or claim public launch acceptance.
+- Exact-master FullWorth CI #1792, Repository Governance #35, and CodeQL #85 passed. Signed production image artifact `11946325166` expires 2026-10-22 03:13 UTC.
+- [Production deploy #22](https://github.com/Fullworth/FullWorth/actions/runs/38678349080) passed artifact/SSH/DB/service readiness but failed verifying the exact 384 MiB OCR image cgroup memory ceiling. The fail-closed deploy stopped public application services without updating the verified marker.
+- [PR #748](https://github.com/Fullworth/FullWorth/pull/748) contains a bounded wait for native OCR cgroup process membership before checking strict unchanged CPU/memory/swap boundaries and a race regression. The first CI #1793 caught the previously stale documented master release SHA; this checkpoint synchronizes all three release handoff files. Reverify the new exact head.
+- Fresh encrypted backup `8c51d6ac2dd8632284faf4cab9b11e5fced40834eca1e5cfb9783ae4340b8c08` and same-VPS restore passed historically, but separate clean-host restore and bucket immutability remain open.
+- Next: merge #748 only after required checks pass, promote by master PR, wait for exact-master security/CI/signed artifacts and guarded deployment. Never restart an unverified public runtime or bypass the parser proof. Keep payments disabled.
 
 ## Previous handoff snapshots (historical; superseded by checkpoint above)
 

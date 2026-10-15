@@ -60,13 +60,13 @@ public sealed class WebPwaBoundaryTests
                 .GetString());
 
         Assert.Equal(
-            "#0B1F3B",
+            "#060910",
             root.GetProperty(
                     "theme_color")
                 .GetString());
 
         Assert.Equal(
-            "#0B1F3B",
+            "#060910",
             root.GetProperty(
                     "background_color")
                 .GetString());
@@ -191,7 +191,16 @@ public sealed class WebPwaBoundaryTests
                     "js",
                     "theme.js"));
 
-        foreach (var script in new[] { bootstrap, theme })
+        var localTime =
+            File.ReadAllText(
+                Path.Combine(
+                    repositoryRoot,
+                    "FullWorth.Web",
+                    "wwwroot",
+                    "js",
+                    "local-time.js"));
+
+        foreach (var script in new[] { bootstrap, theme, localTime })
         {
             Assert.Contains(
                 "meta[name=\"theme-color\"]",
@@ -199,12 +208,12 @@ public sealed class WebPwaBoundaryTests
                 StringComparison.Ordinal);
 
             Assert.Contains(
-                "#0B1F3B",
+                "#060910",
                 script,
                 StringComparison.Ordinal);
 
             Assert.Contains(
-                "#F7F8FB",
+                "#F4F6FB",
                 script,
                 StringComparison.Ordinal);
         }

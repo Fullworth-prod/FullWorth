@@ -1,0 +1,487 @@
+/*
+ * FullWorth hybrid experience · first production-safe design pass.
+ * Loaded AFTER fullworth-v2.css; presentation only, no financial behavior changes.
+ * Uses the existing data-theme switch, navigation, and evidence-backed views.
+ */
+
+/* The light theme is intentionally preserved and tuned to share the same system. */
+.app-shell {
+    --fw-canvas: #f4f6fb;
+    --fw-panel: rgba(255, 255, 255, 0.95);
+    --fw-panel-solid: #ffffff;
+    --fw-panel-muted: #eff3fa;
+    --fw-line: rgba(30, 50, 90, 0.10);
+    --fw-line-strong: rgba(30, 50, 90, 0.18);
+    --fw-ink: #17223a;
+    --fw-ink-soft: #35435f;
+    --fw-muted: #5c6b85;
+    --fw-faint: #667590;
+    --fw-accent: #3269f5;
+    --fw-accent-strong: #2054d9;
+    --fw-accent-soft: rgba(50, 105, 245, 0.11);
+    --fw-positive: #137f5d;
+    --fw-positive-soft: rgba(19, 127, 93, 0.1);
+    --fw-negative: #b94e60;
+    --fw-negative-soft: rgba(185, 78, 96, 0.1);
+    --fw-shadow-soft: 0 12px 40px rgba(20, 43, 91, 0.065);
+    --fw-shadow-mid: 0 28px 72px rgba(20, 43, 91, 0.11);
+    --premium-accent: var(--fw-accent);
+    --premium-accent-strong: var(--fw-accent-strong);
+    --premium-accent-soft: var(--fw-accent-soft);
+    --bw-bg: #f4f6fb;
+    --bw-surface: #ffffff;
+    --bw-surface-soft: rgba(255, 255, 255, 0.93);
+    --bw-surface-hover: #f1f5fd;
+    --bw-text: #17223a;
+    --bw-text-secondary: #35435f;
+    --bw-text-muted: #5c6b85;
+    --bw-text-subtle: #667590;
+    --bw-border: rgba(30, 50, 90, 0.10);
+    --bw-border-strong: rgba(30, 50, 90, 0.18);
+    background:
+        radial-gradient(ellipse 72rem 40rem at 104% -20%, rgba(65, 115, 252, 0.13), transparent 69%),
+        var(--fw-canvas);
+}
+
+/* OLED-black canvas + blue-navy surfaces: the agreed hybrid, not pure navy. */
+html:not([data-theme="light"]) .app-shell,
+html[data-theme="dark"] .app-shell {
+    --fw-canvas: #060910;
+    --fw-panel: rgba(15, 23, 38, 0.96);
+    --fw-panel-solid: #101a2a;
+    --fw-panel-muted: #0b1321;
+    --fw-line: rgba(149, 177, 231, 0.12);
+    --fw-line-strong: rgba(149, 177, 231, 0.23);
+    --fw-ink: #f5f8ff;
+    --fw-ink-soft: #d7e1f4;
+    --fw-muted: #a5b3ce;
+    --fw-faint: #92a2c0;
+    --fw-accent: #70a0ff;
+    --fw-accent-strong: #85adff;
+    --fw-accent-soft: rgba(72, 120, 252, 0.17);
+    --fw-positive: #61d9ae;
+    --fw-positive-soft: rgba(80, 203, 161, 0.13);
+    --fw-negative: #ff9aa5;
+    --fw-negative-soft: rgba(239, 112, 134, 0.13);
+    --fw-shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.24);
+    --fw-shadow-mid: 0 28px 80px rgba(0, 0, 0, 0.35);
+    --premium-accent: #70a0ff;
+    --premium-accent-strong: #85adff;
+    --premium-accent-soft: rgba(72, 120, 252, 0.17);
+    --premium-success: #61d9ae;
+    --premium-success-soft: rgba(80, 203, 161, 0.13);
+    --premium-danger: #ff9aa5;
+    --premium-danger-soft: rgba(239, 112, 134, 0.13);
+    --bw-bg: #060910;
+    --bw-bg-elevated: #101a2a;
+    --bw-surface: #101a2a;
+    --bw-surface-soft: rgba(15, 23, 38, 0.96);
+    --bw-surface-hover: #19283d;
+    --bw-text: #f5f8ff;
+    --bw-text-secondary: #d7e1f4;
+    --bw-text-muted: #a5b3ce;
+    --bw-text-subtle: #92a2c0;
+    --bw-border: rgba(149, 177, 231, 0.12);
+    --bw-border-strong: rgba(149, 177, 231, 0.23);
+    --bw-card-shadow: 0 18px 45px rgba(0, 0, 0, 0.24);
+    background:
+        radial-gradient(ellipse 54rem 36rem at 102% -15%, rgba(38, 78, 187, 0.25), transparent 75%),
+        radial-gradient(ellipse 38rem 32rem at 3% 78%, rgba(31, 63, 126, 0.11), transparent 78%),
+        #060910;
+}
+
+.app-shell .app-sidebar {
+    border-color: var(--fw-line);
+    border-radius: 26px;
+    box-shadow: var(--fw-shadow-soft);
+    background: var(--fw-panel);
+}
+
+html:not([data-theme="light"]) .app-shell .app-sidebar,
+html[data-theme="dark"] .app-shell .app-sidebar {
+    background:
+        linear-gradient(170deg, rgba(31, 52, 89, 0.38), rgba(10, 15, 27, 0) 40%),
+        #0b1220;
+}
+
+.app-shell .app-brand-mark.fw-brand-mark img {
+    filter: drop-shadow(0 8px 14px rgba(45, 99, 241, 0.24));
+}
+
+.app-shell .fw-nav-label,
+.app-shell .fw-brand-copy small {
+    color: var(--fw-faint);
+}
+
+.app-shell .app-nav-link {
+    color: var(--fw-muted);
+    border-radius: 13px;
+}
+
+.app-shell .app-nav-link:hover {
+    color: var(--fw-ink);
+    background: var(--fw-accent-soft);
+}
+
+.app-shell .app-nav-link.active {
+    border: 1px solid rgba(81, 135, 243, 0.24);
+    color: var(--fw-ink);
+    background: linear-gradient(100deg, rgba(63, 116, 250, 0.22), rgba(63, 116, 250, 0.07));
+    box-shadow: inset 0 1px 0 rgba(155, 185, 255, 0.07);
+}
+
+.app-shell .app-nav-link.active::before {
+    background: #76a5ff;
+    box-shadow: 0 0 12px rgba(90, 144, 250, 0.3);
+}
+
+.app-shell .app-nav-link.active .nav-icon {
+    color: var(--fw-accent);
+}
+
+.app-shell .sidebar-account {
+    border-color: var(--fw-line);
+}
+
+.app-shell .account-avatar {
+    color: var(--fw-accent);
+    background: var(--fw-accent-soft);
+    border: 1px solid var(--fw-line);
+    border-radius: 12px;
+}
+
+.app-shell .app-main {
+    min-width: 0;
+    background: transparent;
+}
+
+.app-shell .app-topbar {
+    min-height: 70px;
+    background: rgba(244, 246, 251, 0.86);
+    border-bottom: 1px solid var(--fw-line);
+}
+
+html:not([data-theme="light"]) .app-shell .app-topbar,
+html[data-theme="dark"] .app-shell .app-topbar {
+    background: rgba(6, 9, 16, 0.88);
+}
+
+.app-shell .topbar-status,
+.app-shell .theme-toggle {
+    border: 1px solid var(--fw-line-strong);
+    background: var(--fw-panel-solid);
+    color: var(--fw-ink-soft);
+    box-shadow: none;
+}
+
+.app-shell .topbar-status .watch-dot {
+    background: var(--fw-positive);
+}
+
+.app-shell .theme-toggle:hover {
+    background: var(--fw-accent-soft);
+    border-color: var(--fw-accent);
+    color: var(--fw-ink);
+}
+
+.app-shell .app-content {
+    width: min(1400px, calc(100% - 64px));
+    padding-top: 32px;
+}
+
+.app-shell .app-page {
+    gap: 25px;
+}
+
+.app-shell .page-heading h1 {
+    color: var(--fw-ink);
+    font-weight: 790;
+    letter-spacing: -0.055em;
+    line-height: 1.04;
+}
+
+.app-shell .page-heading p {
+    color: var(--fw-muted);
+    font-size: 0.88rem;
+    line-height: 1.55;
+}
+
+.app-shell .page-kicker,
+.app-shell .panel-kicker {
+    color: var(--fw-accent);
+    letter-spacing: 0.11em;
+}
+
+.app-shell .fw-pulse,
+.app-shell .overview-intro,
+.app-shell .fw-detail-provider-pane,
+.app-shell .fw-transactions-total {
+    background:
+        radial-gradient(circle at 94% 0%, rgba(67, 119, 245, 0.30), transparent 36%),
+        radial-gradient(circle at 7% 108%, rgba(56, 168, 204, 0.10), transparent 35%),
+        linear-gradient(125deg, #0d1a30 0%, #0d1b33 49%, #172d53 100%);
+    border-color: rgba(131, 169, 245, 0.20);
+    box-shadow: 0 18px 52px rgba(0, 0, 0, 0.20);
+}
+
+.app-shell .fw-pulse {
+    border-radius: 28px;
+}
+
+.app-shell .fw-pulse-amount {
+    letter-spacing: -0.068em;
+    font-weight: 760;
+}
+
+.app-shell .fw-pulse-stat {
+    border-color: rgba(160, 190, 249, 0.13);
+}
+
+.app-shell .fw-quiet-action,
+.app-shell .status-check-button {
+    color: var(--fw-ink-soft);
+    border-color: var(--fw-line-strong);
+    background: var(--fw-panel-solid);
+}
+
+.app-shell .fw-primary-action,
+.app-shell .connect-bank-button,
+.app-shell .overview-intro-action {
+    background: linear-gradient(110deg, #3974f8, #5b8bff);
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 10px 24px rgba(35, 86, 214, 0.18);
+}
+
+.app-shell .fw-primary-action:hover,
+.app-shell .connect-bank-button:hover:not(:disabled),
+.app-shell .overview-intro-action:hover {
+    background: linear-gradient(110deg, #2c61e4, #4b78f0);
+    color: #ffffff;
+}
+
+/* Actual data-backed overview, bill, account and activity cards. */
+.app-shell .fw-signal-card,
+.app-shell .fw-watchlist,
+.app-shell .metric-card,
+.app-shell .summary-card,
+.app-shell .account-panel,
+.app-shell .bill-card,
+.app-shell .fw-detail-hero,
+.app-shell .fw-detail-change-story,
+.app-shell .fw-transactions-pulse,
+.app-shell .fw-transactions-ledger {
+    border: 1px solid var(--fw-line);
+    border-radius: 23px;
+    background: var(--fw-panel);
+    box-shadow: var(--fw-shadow-soft);
+}
+
+.app-shell .metric-card,
+.app-shell .summary-card {
+    min-height: 140px;
+}
+
+.app-shell .metric-card strong,
+.app-shell .summary-card strong {
+    color: var(--fw-ink);
+    letter-spacing: -0.045em;
+    font-variant-numeric: tabular-nums;
+}
+
+.app-shell .fw-section-heading h2,
+.app-shell .panel-heading h2,
+.app-shell .bills-filter-heading h2 {
+    color: var(--fw-ink);
+    font-weight: 760;
+}
+
+.app-shell .fw-inline-action,
+.app-shell .text-action {
+    color: var(--fw-accent);
+}
+
+.app-shell .fw-bill-row,
+.app-shell .bill-row,
+.app-shell .transaction-row {
+    border-color: var(--fw-line);
+}
+
+.app-shell .fw-bill-row:hover,
+.app-shell .bill-row:hover,
+.app-shell .transaction-row:hover {
+    background: var(--fw-accent-soft);
+}
+
+.app-shell .fw-bill-value strong,
+.app-shell .bill-current strong,
+.app-shell .transaction-amount {
+    font-variant-numeric: tabular-nums;
+}
+
+.app-shell .fw-bill-logo,
+.app-shell .fw-signal-logo,
+.app-shell .bill-provider-avatar,
+.app-shell .detail-provider-avatar {
+    background: var(--fw-panel-muted);
+    border-color: var(--fw-line);
+}
+
+.app-shell .fw-detail-hero,
+.app-shell .fw-detail-change-story,
+.app-shell .fw-transactions-pulse {
+    padding: 12px;
+}
+
+.app-shell .fw-detail-change-story .detected-change-card.increase {
+    border: 1px solid rgba(239, 112, 134, 0.16);
+    background: linear-gradient(145deg, rgba(239, 112, 134, 0.16), rgba(239, 112, 134, 0.05));
+}
+
+.app-shell .fw-detail-change-story .detected-change-card.decrease {
+    border: 1px solid rgba(80, 203, 161, 0.16);
+    background: linear-gradient(145deg, rgba(80, 203, 161, 0.15), rgba(80, 203, 161, 0.05));
+}
+
+.app-shell .fw-detail-change-story .explanation-panel,
+.app-shell .fw-transactions-stats > div,
+.app-shell .fw-detail-evidence-rail > div {
+    border-color: var(--fw-line);
+    background: var(--fw-panel-solid);
+}
+
+.app-shell .bills-change-focus {
+    border: 1px solid rgba(240, 174, 83, 0.22);
+    background: linear-gradient(115deg, rgba(236, 174, 79, 0.12), rgba(236, 174, 79, 0.025)), var(--fw-panel);
+    border-radius: 23px;
+}
+
+.app-shell .bills-change-focus h2 {
+    color: var(--fw-ink);
+}
+
+.app-shell .bills-change-focus p {
+    color: var(--fw-muted);
+}
+
+.app-shell .bills-change-action {
+    border-color: rgba(240, 174, 83, 0.27);
+    color: var(--fw-ink);
+}
+
+/* Keep explicit text contrast for muted data and evidence annotations. */
+.app-shell .fw-bill-copy span,
+.app-shell .fw-bill-value span,
+.app-shell .transaction-copy small,
+.app-shell .transaction-date span,
+.app-shell .fw-detail-change-story .change-eyebrow {
+    color: var(--fw-muted);
+}
+
+.app-shell :is(button, a, input, select, textarea):focus-visible {
+    outline: 3px solid var(--fw-accent);
+    outline-offset: 3px;
+}
+
+html[data-fullworth-high-contrast="true"] .app-shell {
+    --fw-line: rgba(127, 154, 201, 0.30);
+    --fw-line-strong: rgba(127, 154, 201, 0.50);
+}
+
+html[data-fullworth-high-contrast="true"][data-theme="light"] .app-shell {
+    --fw-muted: #40506b;
+    --fw-faint: #40506b;
+    --fw-line: rgba(26, 48, 92, 0.27);
+    --fw-line-strong: rgba(26, 48, 92, 0.42);
+}
+
+/* Mobile retains real nav actions; never hide route or account functionality. */
+@media (max-width: 900px) {
+    .app-shell {
+        padding: 0;
+        gap: 0;
+    }
+
+    .app-shell .app-main {
+        width: 100%;
+    }
+
+    .app-shell .app-topbar {
+        min-height: 64px;
+        height: 64px;
+        padding-inline: 20px;
+    }
+
+    .app-shell .app-content {
+        width: min(100% - 36px, 720px);
+        padding-top: 25px;
+        padding-bottom: max(104px, env(safe-area-inset-bottom));
+    }
+
+    .app-shell .mobile-bottom-nav {
+        background: var(--fw-panel-solid);
+        border-top: 1px solid var(--fw-line-strong);
+        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .app-shell .mobile-bottom-link {
+        color: var(--fw-muted);
+    }
+
+    .app-shell .mobile-bottom-link.active,
+    .app-shell .mobile-bottom-link[aria-current="page"] {
+        color: var(--fw-accent);
+    }
+
+    .app-shell .mobile-menu-sheet {
+        border: 1px solid var(--fw-line-strong);
+        background: var(--fw-panel-solid);
+        box-shadow: var(--fw-shadow-mid);
+    }
+}
+
+@media (max-width: 520px) {
+    .app-shell .app-content {
+        width: calc(100% - 28px);
+        padding-top: 20px;
+    }
+
+    .app-shell .app-page {
+        gap: 18px;
+    }
+
+    .app-shell .page-heading h1 {
+        font-size: clamp(2rem, 9vw, 2.6rem);
+    }
+
+    .app-shell .fw-pulse,
+    .app-shell .overview-intro {
+        border-radius: 22px;
+    }
+
+    .app-shell .fw-signal-card,
+    .app-shell .fw-watchlist,
+    .app-shell .metric-card,
+    .app-shell .summary-card,
+    .app-shell .account-panel,
+    .app-shell .bill-card {
+        border-radius: 19px;
+    }
+
+    .app-shell .fw-detail-hero,
+    .app-shell .fw-detail-change-story,
+    .app-shell .fw-transactions-pulse {
+        padding: 9px;
+        border-radius: 21px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-shell *,
+    .app-shell *::before,
+    .app-shell *::after {
+        scroll-behavior: auto;
+        animation-duration: 0.01ms;
+        transition-duration: 0.01ms;
+    }
+}

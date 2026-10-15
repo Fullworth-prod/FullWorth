@@ -1,8 +1,8 @@
 (() => {
     const storageKey = "billwatch-theme";
     const themeColors = {
-        dark: "#0B1F3B",
-        light: "#F7F8FB"
+        dark: "#060910",
+        light: "#F4F6FB"
     };
     let theme = "dark";
 

@@ -1,14 +1,13 @@
 ## Release checkpoint — 2026-10-15 UTC
 
-- current release candidate on `master`: `6742bb51d286bf05f9e30140d3f2e44d8cfed341`; not verified live.
+- current release candidate on `master`: `6f0458976747191deb32084e49c5a6bb70144074`; not verified live.
 - Verified live production release: `none`.
-
-- Exact master CI #1786, Repository Governance #34, and CodeQL #82 passed. Signed artifact ID `11933316504` expires 2026-10-21 22:27 UTC.
-- Production deploy [#21 attempt 4](https://github.com/Fullworth/FullWorth/actions/runs/38671815460) passed release attestation, pinned SSH, database role separation, and container health, then failed the parser proof with HTTP 401. Public application services were stopped by the guard; the verified-release marker was not advanced.
-- [PR #745](https://github.com/Fullworth/FullWorth/pull/745) fixes the verifier's removed environment-variable credential and escaped HMAC separators. Its corrected proof passed a separate edge-off diagnostic on the approved release binaries: document/image cgroups observed and removed, 384 MiB kernel limit, OOM-kill delta 2, parser readiness survived. This diagnostic is not a successful guarded deployment.
-- The owner-approved Cloudflare backup-token IP correction is saved. Fresh complete backup `8c51d6ac2dd8632284faf4cab9b11e5fced40834eca1e5cfb9783ae4340b8c08` and same-VPS isolated restore passed. Separate clean-host recovery and provider immutability remain open; the bucket has no lock rules.
-- Dedicated `deploy` SSH account now accepts the exact GitHub deployment key. Root/password SSH remain disabled. Backup/readiness timers are installed.
-- Next: review and merge #745 into development, promote through the required master PR/checks, then redeploy the new exact approved master artifact. Do not bypass verification or claim public launch acceptance.
+- Exact-master FullWorth CI #1792, Repository Governance #35, and master CodeQL #85 passed. The exact-master attested production images are in artifact `11946325166` (expires 2026-10-22 03:13 UTC).
+- Guarded production [deploy #22](https://github.com/Fullworth/FullWorth/actions/runs/38678349080) verified signed artifacts, pinned SSH, separated database roles, migration, and all service health checks; parser containment then failed checking the per-image 384 MiB memory ceiling. The guard stopped unverified public services and did not advance the release marker. [Deploy #21](https://github.com/Fullworth/FullWorth/actions/runs/38671815460) previously failed authentication with HTTP 401; that issue was fixed in promoted PR #745/#747.
+- [PR #748](https://github.com/Fullworth/FullWorth/pull/748) addresses a likely verifier observation race: the cgroup is visible before its kernel limits are assigned, while native OCR enters only after configuration. The verifier must wait for process membership before checking strict unchanged limits; regression covers delayed membership and fail-closed cases. Dependency Security succeeded on the first PR head. CI #1793 exposed the stale release SHA in handoff documents; this checkpoint update is part of that fix. PR #748 is not yet verified or merged; no redeployment has been triggered.
+- Fresh encrypted backup `8c51d6ac2dd8632284faf4cab9b11e5fced40834eca1e5cfb9783ae4340b8c08` and same-VPS isolated restore were reported passing. Separate clean-host recovery and provider immutability remain open; no provider lock rules have been established. Do not claim general public launch readiness.
+- Dedicated `deploy` SSH account and pinned production transport worked during deploy #22; root/password SSH remain disabled. Preserve secrets and database state.
+- Next: exact-head green CI and dependency security on #748; merge to development, promote by guarded PR to master, await new signed exact-master artifacts and security checks, then dispatch the existing guarded production workflow. Verify kernel containment and public readiness before advancing a release marker. Never bypass deployment guards.
 
 ## Previous handoff snapshots (historical; superseded by checkpoint above)
 

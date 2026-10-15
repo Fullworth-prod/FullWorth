@@ -65,8 +65,8 @@ function applyThemePreference(preference, force = false) {
         themeColor.setAttribute(
             "content",
             theme === "light"
-                ? "#F7F8FB"
-                : "#0B1F3B");
+                ? "#F4F6FB"
+                : "#060910");
     }
 }
 

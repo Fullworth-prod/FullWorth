@@ -165,7 +165,7 @@ with tempfile.TemporaryDirectory() as directory:
 # creation/configuration race. Do not replace strict production limit checks
 # with a permissive wait or increase the OCR memory ceiling.
 observer = re.search(
-    r"(?ms)^await_image_process_membership\\(\\)\\n\\{\\n.*?^\\}\\n",
+    r"(?ms)^await_image_process_membership\(\)\n\{\n.*?^\}\n",
     source,
 )
 assert observer, "image cgroup membership observer not found"
@@ -187,12 +187,12 @@ with tempfile.TemporaryDirectory() as directory:
                                stderr=subprocess.PIPE, text=True)
     import time
     time.sleep(0.07)
-    members.write_text("123456\\n")
+    members.write_text("123456\n")
     output, errors = process.communicate(timeout=3)
     assert process.returncode == 0 and output.strip() == "123456", (
         "observer must wait for configured cgroup membership", errors
     )
-    members.write_text("not-a-pid\\n")
+    members.write_text("not-a-pid\n")
     invalid = subprocess.run(command, capture_output=True, text=True,
                              timeout=3)
     assert invalid.returncode != 0, "invalid membership must fail closed"

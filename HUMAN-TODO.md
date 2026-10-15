@@ -2,17 +2,18 @@
 
 Current release candidate on `master`:
 
-`6f0458976747191deb32084e49c5a6bb70144074`
+`457e7e4b77a88714e8870e369a1aaf17e76e2de2`
 
 Current verified live production release marker:
 
-`none`.
+`457e7e4b77a88714e8870e369a1aaf17e76e2de2`
 
-- Exact-master FullWorth CI #1792, Repository Governance #35, and CodeQL #85 passed. Signed production image artifact `11946325166` expires 2026-10-22 03:13 UTC.
-- [Production deploy #22](https://github.com/Fullworth/FullWorth/actions/runs/38678349080) passed artifact/SSH/DB/service readiness but failed verifying the exact 384 MiB OCR image cgroup memory ceiling. The fail-closed deploy stopped public application services without updating the verified marker.
-- [PR #748](https://github.com/Fullworth/FullWorth/pull/748) contains a bounded wait for native OCR cgroup process membership before checking strict unchanged CPU/memory/swap boundaries and a race regression. The first CI #1793 caught the previously stale documented master release SHA; this checkpoint synchronizes all three release handoff files. Reverify the new exact head.
-- Fresh encrypted backup `8c51d6ac2dd8632284faf4cab9b11e5fced40834eca1e5cfb9783ae4340b8c08` and same-VPS restore passed historically, but separate clean-host restore and bucket immutability remain open.
-- Next: merge #748 only after required checks pass, promote by master PR, wait for exact-master security/CI/signed artifacts and guarded deployment. Never restart an unverified public runtime or bypass the parser proof. Keep payments disabled.
+- [Guarded production deploy #23](https://github.com/Fullworth/FullWorth/actions/runs/38690114274) succeeded on 2026-10-15 at 06:05 UTC. Pinned SSH, exact-release provenance/SBOM attestations, image identity, database-role separation/migrations, native OCR and kernel containment, file-backed secrets/non-disclosure, permissions, runtime/exposure, and public API/Web readiness passed. The host's verified release marker matches `457e7e4b77a88714e8870e369a1aaf17e76e2de2`.
+- [Production Auth Smoke](https://github.com/Fullworth/FullWorth/actions/runs/38690396582) passed on the same release: API login/refresh, protected read endpoints, non-admin denial, export secret/storage boundaries, Web cookie login, authenticated app/BFF, antiforgery issuance, and logout invalidation. Mutation probes were disabled; this does not prove two-user ownership or statement/provider acceptance.
+- [Exact-master CI #1797](https://github.com/Fullworth/FullWorth/actions/runs/38681858810), [Governance #36](https://github.com/Fullworth/FullWorth/actions/runs/38681858771), and all three exact-master CodeQL analyses passed. Attested production image artifact `11948796248` expires 2026-10-22 04:32 UTC. PR #748 fixed the OCR cgroup observer race without relaxing limits; PR #749 promoted it.
+- Direct post-deployment verification confirmed release identity, public HTTPS readiness, private exposure boundaries, the Owner role, disabled subscription enforcement, active backup/readiness timers, configured alerting, and append-only backup-client policy. Snapshot availability is verified; a new post-deployment snapshot, separate clean-host recovery, provider immutability, and external alert delivery are not established by these checks.
+- Keep payments/subscription enforcement and AI-derived persistence disabled. Broader launch remains gated by controlled statement and two-user ownership acceptance, Plaid lifecycle/payroll acceptance, physical-device checks, actual reboot recovery, clean-host recovery with real statements and both key rings, provider-enforced immutability, external alert delivery, and qualified legal/license review.
+- Next: collect those remaining acceptance results against this deployed release. Preserve production data and the existing manual guarded deployment path; do not redeploy merely to publish handoff documentation.
 
 ## Previous handoff snapshots (historical; superseded by checkpoint above)
 

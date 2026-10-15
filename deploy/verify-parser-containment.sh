@@ -425,6 +425,36 @@ done
 [ -n "$image_cgroup" ] ||
     fail "no per-image OCR cgroup was observed while native OCR was active." 77
 
+# The image cgroup becomes visible as soon as it is created, before its
+# cpu.max, memory.max, swap.max and OOM settings are written. The worker
+# attaches the native OCR process only AFTER all four settings succeed.
+# Wait for that membership instead of reading the default "max" in the
+# just-created cgroup and falsely treating it as an unsafe final limit.
+# Never accept a relaxed limit: all strict checks below remain mandatory.
+await_image_process_membership()
+{
+    observed_cgroup=$1
+    observed_request_pid=$2
+    poll=1
+    while [ "$poll" -le 500 ]
+    do
+        [ -d "$observed_cgroup" ] || return 1
+        observed_pid="$(head -n 1 "$observed_cgroup/cgroup.procs")" || return 1
+        case "$observed_pid" in
+            '') ;;
+            *[!0-9]*) return 1 ;;
+            *) printf '%s\n' "$observed_pid"; return 0 ;;
+        esac
+        kill -0 "$observed_request_pid" 2>/dev/null || return 1
+        sleep 0.01
+        poll=$((poll + 1))
+    done
+    return 1
+}
+
+image_pid="$(await_image_process_membership "$image_cgroup" "$request_pid")" ||
+    fail "the OCR image PID was not present in its cgroup after bounded observation." 77
+
 [ "$(cat "$image_cgroup/memory.max")" = "402653184" ] ||
     fail "the OCR image memory ceiling is not 384 MiB." 77
 
@@ -436,14 +466,6 @@ set -- $(cat "$image_cgroup/cpu.max")
 [ "$1" = "100000" ] &&
 [ "$2" = "100000" ] ||
     fail "the OCR image CPU ceiling is not the expected finite quota." 77
-
-image_pid="$(head -n 1 "$image_cgroup/cgroup.procs")"
-
-case "$image_pid" in
-    ''|*[!0-9]*)
-        fail "the OCR image PID was not present in its cgroup." 77
-        ;;
-esac
 
 image_relative="$(
     awk -F: '$1 == "0" && $2 == "" { print $3; exit }' \

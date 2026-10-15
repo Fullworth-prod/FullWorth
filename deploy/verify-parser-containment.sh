@@ -302,7 +302,7 @@ import hmac
 import sys
 
 key = sys.stdin.buffer.read()
-message = "POST\\n/v1/ocr/extract\\n{}\\n{}\\n{}".format(
+message = "POST\n/v1/ocr/extract\n{}\n{}\n{}".format(
     sys.argv[1],
     sys.argv[2],
     sys.argv[3],
@@ -314,13 +314,15 @@ print(hmac.new(key, message, hashlib.sha256).hexdigest())
 send_ocr_request()
 {
     compose exec -T api \
-        sh -c '
+        sh -ec '
+            parser_token="$(cat /run/secrets/ParserWorker__AuthenticationToken)"
+            [ "${#parser_token}" -ge 32 ]
             exec curl \
                 --cacert /var/run/fullworth-parser-tls/parser-worker.cer.pem \
                 --fail --silent --show-error --request POST \
                 --header "Content-Type: image/png" \
                 --header "X-FullWorth-Ocr-Extension: .png" \
-                --header "Authorization: Bearer ${ParserWorker__AuthenticationToken}" \
+                --header "Authorization: Bearer ${parser_token}" \
                 --header "X-FullWorth-Parser-Timestamp: $1" \
                 --header "X-FullWorth-Parser-Nonce: $2" \
                 --header "X-FullWorth-Parser-Content-SHA256: $3" \

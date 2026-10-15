@@ -76,4 +76,92 @@ do
         fail "review documentation is missing: $heading"
 done
 
+
+# Execute the actual request-signing and transport fragments without Docker,
+# production credentials, or network access. The token exists only as a file.
+python3 - "$verifier" <<'PY'
+import hashlib
+import hmac
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+import tempfile
+
+source = Path(sys.argv[1]).read_text()
+token = "synthetic-parser-proof-token-" + "a" * 32
+timestamp = "1792032000"
+nonce = "0123456789abcdef" * 2
+body = b"synthetic-proof-image"
+digest = hashlib.sha256(body).hexdigest()
+signer = re.search(
+    r"signature=\"\$\([\s\S]*?python3 -c '\n([\s\S]*?)\n' \"\$timestamp\"",
+    source,
+)
+assert signer, "proof signer not found"
+actual = subprocess.run(
+    [sys.executable, "-c", signer[1], timestamp, nonce, digest],
+    input=token, text=True, capture_output=True, check=True,
+).stdout.strip()
+canonical = "\n".join(("POST", "/v1/ocr/extract", timestamp, nonce, digest))
+expected = hmac.new(token.encode(), canonical.encode(), hashlib.sha256).hexdigest()
+assert actual == expected, "proof must sign real LF separators, not literal backslash-n"
+
+transport = re.search(
+    r"send_ocr_request\(\)[\s\S]*?sh -(?:e)?c '\n([\s\S]*?)\n        ' sh ",
+    source,
+)
+assert transport, "proof transport not found"
+with tempfile.TemporaryDirectory() as directory:
+    work = Path(directory)
+    secret = work / "token"
+    secret.write_text(token)
+    capture = work / "capture"
+    fake_cat = work / "cat"
+    fake_cat.write_text(
+        "#!/bin/sh\n"
+        'test "$#" -eq 1 || exit 65\n'
+        'test "$1" = /run/secrets/ParserWorker__AuthenticationToken || exit 66\n'
+        'exec /bin/cat "$TEST_SECRET"\n'
+    )
+    fake_cat.chmod(0o700)
+    fake_curl = work / "curl"
+    fake_curl.write_text(
+        "#!" + sys.executable + "\n"
+        "import json,os,pathlib,sys\n"
+        "pathlib.Path(os.environ['TEST_CAPTURE']).write_text("
+        "json.dumps({'args':sys.argv[1:],'body':sys.stdin.read()}))\n"
+    )
+    fake_curl.chmod(0o700)
+    environment = dict(os.environ, PATH=str(work) + os.pathsep + os.environ["PATH"],
+                       TEST_SECRET=str(secret), TEST_CAPTURE=str(capture))
+    environment.pop("ParserWorker__AuthenticationToken", None)
+    subprocess.run(
+        ["sh", "-ec", transport[1], "sh", timestamp, nonce, digest, actual],
+        input=body, env=environment, check=True,
+    )
+    request = json.loads(capture.read_text())
+    assert "Authorization: Bearer " + token in request["args"]
+    assert "X-FullWorth-Parser-Signature: " + expected in request["args"]
+    assert request["body"] == body.decode()
+    assert request["args"][-1] == "https://parser-worker:8081/v1/ocr/extract"
+    assert "--cacert" in request["args"] and "--insecure" not in request["args"]
+    capture.unlink()
+    secret.unlink()
+    failed = subprocess.run(
+        ["sh", "-ec", transport[1], "sh", timestamp, nonce, digest, actual],
+        input=body, env=environment, capture_output=True,
+    )
+    assert failed.returncode != 0 and not capture.exists(), "missing secret must fail closed"
+    secret.write_text("too-short")
+    failed = subprocess.run(
+        ["sh", "-ec", transport[1], "sh", timestamp, nonce, digest, actual],
+        input=body, env=environment, capture_output=True,
+    )
+    assert failed.returncode != 0 and not capture.exists(), "short secret must fail closed"
+print("Parser proof signing and file-backed authentication regression passed.")
+PY
+
 printf '%s\n' "Parser native boundary regression passed."

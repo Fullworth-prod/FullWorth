@@ -1,3 +1,18 @@
+## Release checkpoint — 2026-10-15 UTC
+
+- The `master` release branch at candidate `6742bb51d286bf05f9e30140d3f2e44d8cfed341` is not verified live.
+
+Currently verified live production release: `none`.
+
+- Exact master CI #1786, Repository Governance #34, and CodeQL #82 passed. Signed artifact ID `11933316504` expires 2026-10-21 22:27 UTC.
+- Production deploy [#21 attempt 4](https://github.com/Fullworth/FullWorth/actions/runs/38671815460) passed release attestation, pinned SSH, database role separation, and container health, then failed the parser proof with HTTP 401. Public application services were stopped by the guard; the verified-release marker was not advanced.
+- [PR #745](https://github.com/Fullworth/FullWorth/pull/745) fixes the verifier's removed environment-variable credential and escaped HMAC separators. Its corrected proof passed a separate edge-off diagnostic on the approved release binaries: document/image cgroups observed and removed, 384 MiB kernel limit, OOM-kill delta 2, parser readiness survived. This diagnostic is not a successful guarded deployment.
+- The owner-approved Cloudflare backup-token IP correction is saved. Fresh complete backup `8c51d6ac2dd8632284faf4cab9b11e5fced40834eca1e5cfb9783ae4340b8c08` and same-VPS isolated restore passed. Separate clean-host recovery and provider immutability remain open; the bucket has no lock rules.
+- Dedicated `deploy` SSH account now accepts the exact GitHub deployment key. Root/password SSH remain disabled. Backup/readiness timers are installed.
+- Next: review and merge #745 into development, promote through the required master PR/checks, then redeploy the new exact approved master artifact. Do not bypass verification or claim public launch acceptance.
+
+## Previous handoff snapshots (historical; superseded by checkpoint above)
+
 # FullWorth Product & Engineering Roadmap
 
 ## Owner-approved release policy — 2026-10-14

@@ -7,8 +7,8 @@
   "start_url": "/app",
   "scope": "/",
   "display": "standalone",
-  "theme_color": "#0B1F3B",
-  "background_color": "#0B1F3B",
+  "theme_color": "#060910",
+  "background_color": "#060910",
   "categories": [
     "finance",
     "utilities"

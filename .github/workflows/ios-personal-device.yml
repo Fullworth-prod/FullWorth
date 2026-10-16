@@ -70,7 +70,7 @@ jobs:
           version=$(
             DEVELOPER_DIR="$developer_dir" \
               xcodebuild -version |
-              awk '/^Xcode / { print $2; exit }'
+              awk '/^Xcode / { print $2 }'
           )
 
           case "$version" in

@@ -22,6 +22,17 @@ namespace FullWorth.API.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserPasskey<System.Guid>", b =>
+            {
+                b.Property<byte[]>("CredentialId").HasMaxLength(1024).HasColumnType("bytea");
+                b.Property<string>("Data").IsRequired().HasColumnType("jsonb");
+                b.Property<Guid>("UserId").HasColumnType("uuid");
+                b.HasKey("CredentialId");
+                b.HasIndex("UserId");
+                b.ToTable("AspNetUserPasskeys");
+            });
+
+
             modelBuilder.Entity("FullWorth.API.Data.Entities.AdminAuditLogEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1887,6 +1898,11 @@ namespace FullWorth.API.Data.Migrations
                 {
                     b.Navigation("AccessKeyRedemptions");
                 });
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserPasskey<System.Guid>", b =>
+            {
+                b.HasOne("FullWorth.API.Data.Entities.ApplicationUser", null)
+                    .WithMany().HasForeignKey("UserId").OnDelete(DeleteBehavior.Cascade).IsRequired();
+            });
 #pragma warning restore 612, 618
         }
     }

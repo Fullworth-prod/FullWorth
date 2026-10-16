@@ -433,6 +433,7 @@ app.MapStaticAssets();
 
 app.MapFullWorthHealthEndpoints();
 app.MapFullWorthAuthEndpoints();
+app.MapFullWorthPasskeys();
 app.MapFullWorthExternalAuthenticationEndpoints();
 app.MapFullWorthExternalIdentityManagementEndpoints();
 app.MapFullWorthBffEndpoints();

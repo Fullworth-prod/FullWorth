@@ -245,6 +245,24 @@ builder.Services
     .AddRoles<IdentityRole<Guid>>()
     .AddEntityFrameworkStores<FullWorthDbContext>();
 
+builder.Services.AddSingleton<PasskeyCeremonyStore>();
+builder.Services.AddOptions<FullWorthPasskeyOptions>()
+    .Bind(builder.Configuration.GetSection("Passkeys"))
+    .Validate(o => FullWorthPasskeyOptions.IsValidOrigin(o.Origin),
+        "Passkeys:Origin must be an exact HTTPS origin without a path.")
+    .ValidateOnStart();
+builder.Services.AddOptions<IdentityPasskeyOptions>()
+    .Configure<Microsoft.Extensions.Options.IOptions<FullWorthPasskeyOptions>>((options, configured) =>
+    {
+        options.ServerDomain = new Uri(configured.Value.Origin).Host;
+        options.UserVerificationRequirement = "required";
+        options.ResidentKeyRequirement = "preferred";
+        options.AuthenticatorAttachment = null; // Platform passkeys AND roaming FIDO2 keys.
+        options.AttestationConveyancePreference = "none";
+        options.AuthenticatorTimeout = PasskeyCeremonyStore.Lifetime;
+        options.ValidateOrigin = context => ValueTask.FromResult(configured.Value.AcceptOrigin(context));
+    });
+
 builder.Services.Configure<BearerTokenOptions>(
     IdentityConstants.BearerScheme,
     options =>

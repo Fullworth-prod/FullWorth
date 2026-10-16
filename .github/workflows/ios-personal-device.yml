@@ -8,6 +8,8 @@ on:
       - "FullWorth.Core/**"
       - "Platforms/iOS/**"
       - "Resources/**"
+      - "Services/**"
+      - "ViewModels/**"
       - "*.xaml"
       - "*.xaml.cs"
       - "*.cs"

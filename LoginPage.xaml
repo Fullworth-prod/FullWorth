@@ -126,6 +126,26 @@
                         </HorizontalStackLayout>
                     </VerticalStackLayout>
 
+                    <VerticalStackLayout IsVisible="{Binding RequiresTwoFactor}" Spacing="8">
+                        <Label Text="Two-step verification" Style="{StaticResource SmallTextStyle}" />
+                        <Label Text="Enter the current code from your authenticator app, or turn on recovery code to use a saved backup code."
+                               Style="{StaticResource SmallTextStyle}" />
+                        <Border Padding="8,0" Stroke="{DynamicResource LightBorder}" StrokeShape="RoundRectangle 13">
+                            <Entry Text="{Binding VerificationCode}"
+                                   Placeholder="Authenticator or recovery code"
+                                   IsPassword="True"
+                                   ReturnType="Done"
+                                   IsSpellCheckEnabled="False"
+                                   IsTextPredictionEnabled="False"
+                                   IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
+                        </Border>
+                        <HorizontalStackLayout Spacing="8">
+                            <Switch IsToggled="{Binding UseRecoveryCode}"
+                                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
+                            <Label Text="Use a recovery code" VerticalOptions="Center" Style="{StaticResource SmallTextStyle}" />
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+
                     <Label
                         Text="{Binding ErrorMessage}"
                         IsVisible="{Binding HasError}"

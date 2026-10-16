@@ -107,26 +107,36 @@ public sealed class AuthenticationService
         response.EnsureSuccessStatusCode();
     }
 
-    public async Task LoginAsync(
-        string email,
-        string password,
+    public Task LoginAsync(
+        string email, string password,
+        CancellationToken cancellationToken = default) =>
+        LoginWithSecondFactorAsync(email, password, null, null, cancellationToken);
+
+    public async Task LoginWithSecondFactorAsync(
+        string email, string password,
+        string? twoFactorCode, string? twoFactorRecoveryCode,
         CancellationToken cancellationToken = default)
     {
-        var initialResult =
-            await _apiClient.LoginAsync(
-                email,
-                password,
-                cancellationToken);
+        var initialResult = await _apiClient.LoginWithSecondFactorAsync(
+            email, password, twoFactorCode, twoFactorRecoveryCode, cancellationToken);
 
         /*
          * Immediately rotate the framework-issued login refresh token so the
          * session is enrolled in FullWorth's bounded refresh-family state
          * before any bearer material is persisted to the device.
          */
-        var enrolledResult =
-            await _apiClient.RefreshAccessTokenAsync(
-                initialResult.RefreshToken,
-                cancellationToken);
+        LoginResult enrolledResult;
+        try
+        {
+            enrolledResult = await _apiClient.RefreshAccessTokenAsync(
+                initialResult.RefreshToken, cancellationToken);
+        }
+        catch (HttpRequestException exception) when (
+            exception.StatusCode is HttpStatusCode.BadRequest or
+                HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            throw new SignInSessionException(exception);
+        }
 
         await SaveTokenResultAsync(
             enrolledResult);
@@ -435,4 +445,10 @@ public sealed class SessionExpiredException : Exception
             innerException)
     {
     }
+}
+
+public sealed class SignInSessionException : Exception
+{
+    public SignInSessionException(Exception innerException)
+        : base("FullWorth could not establish a secure session. Try again shortly.", innerException) { }
 }

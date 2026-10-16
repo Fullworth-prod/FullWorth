@@ -326,8 +326,11 @@ public sealed class BillStreamsController : ControllerBase
                     true;
             }
 
-            if (existingStream.Source ==
-                BillStreamSource.Unknown)
+            // An explicit create request confirms this user's obligation even
+            // when it was first found automatically. Discovery must not later
+            // undo that manual choice merely because imported evidence changes.
+            if (existingStream.Source !=
+                BillStreamSource.Manual)
             {
                 existingStream.Source =
                     BillStreamSource.Manual;

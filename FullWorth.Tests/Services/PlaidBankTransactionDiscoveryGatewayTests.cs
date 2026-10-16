@@ -74,6 +74,48 @@ public sealed class PlaidBankTransactionDiscoveryGatewayTests
                     StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task GetDiscoveryTransactions_UsesFullOwnedHistory_NotLedgerPageSize()
+    {
+        var options = new DbContextOptionsBuilder<FullWorthDbContext>()
+            .UseInMemoryDatabase($"transaction-discovery-history-{Guid.NewGuid():N}")
+            .Options;
+
+        var userId = Guid.NewGuid();
+        var anotherUserId = Guid.NewGuid();
+
+        await using (var seed = new FullWorthDbContext(options))
+        {
+            for (var i = 0; i < 125; i++)
+            {
+                var transaction = CreateTransaction(
+                    userId, $"Synthetic transaction {i}", false, null);
+                transaction.PostedDate = new DateOnly(2026, 1, 1).AddDays(i);
+                seed.BankTransactions.Add(transaction);
+            }
+
+            for (var i = 0; i < 20; i++)
+            {
+                seed.BankTransactions.Add(CreateTransaction(
+                    anotherUserId, $"Unrelated transaction {i}", false, null));
+            }
+
+            seed.BankTransactions.Add(CreateTransaction(
+                userId, "Removed transaction", true, null));
+            await seed.SaveChangesAsync();
+        }
+
+        await using var dbContext = new FullWorthDbContext(options);
+        var gateway = new PlaidBankTransactionDiscoveryGateway(dbContext);
+        var results = await gateway.GetDiscoveryTransactionsAsync(userId);
+
+        Assert.Equal(125, results.Count);
+        Assert.Equal(new DateOnly(2026, 1, 1), results[0].PostedDate);
+        Assert.Equal(new DateOnly(2026, 5, 5), results[^1].PostedDate);
+        Assert.All(results, transaction =>
+            Assert.StartsWith("Synthetic transaction ", transaction.Name));
+    }
+
     private static BankTransactionEntity CreateTransaction(
         Guid userId,
         string name,

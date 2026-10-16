@@ -1,8 +1,10 @@
 ## Release checkpoint — 2026-10-15 UTC
 
-- The `master` release branch at candidate `457e7e4b77a88714e8870e369a1aaf17e76e2de2` is verified live.
+- The `master` release branch at candidate `b275ad413a0532cdd2c42ee6ab3f9a1a4ed3fdd2` has not been verified as deployed; the last verified live release is `457e7e4b77a88714e8870e369a1aaf17e76e2de2`.
 
 Currently verified live production release: `457e7e4b77a88714e8870e369a1aaf17e76e2de2`.
+
+- On October 15, the verified Web/PWA hybrid redesign was promoted to `master` at `b275ad413a0532cdd2c42ee6ab3f9a1a4ed3fdd2`; [exact-master CI](https://github.com/Fullworth/FullWorth/actions/runs/38696477773) passed. No guarded production deployment of this newer SHA is established. A later operator check reported SSH port 22 unreachable on the VPS; resolve host console/SSH access and reverify runtime before any further guarded deployment. Preserve last verified deployed release identity separately from repository state.
 
 - [Guarded production deploy #23](https://github.com/Fullworth/FullWorth/actions/runs/38690114274) succeeded on 2026-10-15 at 06:05 UTC. Pinned SSH, exact-release provenance/SBOM attestations, image identity, database-role separation/migrations, native OCR and kernel containment, file-backed secrets/non-disclosure, permissions, runtime/exposure, and public API/Web readiness passed. The host's verified release marker matches `457e7e4b77a88714e8870e369a1aaf17e76e2de2`.
 - [Production Auth Smoke](https://github.com/Fullworth/FullWorth/actions/runs/38690396582) passed on the same release: API login/refresh, protected read endpoints, non-admin denial, export secret/storage boundaries, Web cookie login, authenticated app/BFF, antiforgery issuance, and logout invalidation. Mutation probes were disabled; this does not prove two-user ownership or statement/provider acceptance.

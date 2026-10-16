@@ -136,10 +136,10 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|GET|/bff/bank-accounts|authenticated|none",
         "WEB|GET|/bff/bank-connections|authenticated|none",
         "WEB|GET|/bff/bank-transactions|authenticated|none",
+        "WEB|GET|/bff/bill-discovery/diagnostics|authenticated|named:financial-refresh",
         "WEB|GET|/bff/bill-streams/{billStreamId:guid}/statement-uploads/{uploadId:guid}/file|authenticated|none",
         "WEB|GET|/bff/bill-streams/{billStreamId:guid}/statement-uploads/{uploadId:guid}|authenticated|none",
         "WEB|GET|/bff/bill-streams/{billStreamId:guid}|authenticated|none",
-        "WEB|GET|/bff/bill-discovery/diagnostics|authenticated|named:financial-refresh",
         "WEB|GET|/bff/bill-streams|authenticated|none",
         "WEB|GET|/bff/planning/bill-funding-preferences|authenticated|none",
         "WEB|GET|/bff/planning/pay-schedule|authenticated|none",
@@ -264,7 +264,7 @@ public sealed class EndpointSecurityInventoryTests
     public void Snapshot_CoversEveryReviewedAccessAndRateLimitClass()
     {
         Assert.Equal(
-            213,
+            214,
             ExpectedInventory.Length);
 
         Assert.Equal(
@@ -276,7 +276,7 @@ public sealed class EndpointSecurityInventoryTests
                         StringComparison.Ordinal)));
 
         Assert.Equal(
-            123,
+            124,
             ExpectedInventory.Count(
                 row =>
                     row.StartsWith(
@@ -312,7 +312,7 @@ public sealed class EndpointSecurityInventoryTests
                     StringComparison.Ordinal));
 
         Assert.Equal(
-            53,
+            54,
             ExpectedInventory.Count(
                 row =>
                     row.Contains(
@@ -320,7 +320,7 @@ public sealed class EndpointSecurityInventoryTests
                         StringComparison.Ordinal)));
 
         Assert.Equal(
-            8,
+            9,
             ExpectedInventory.Count(
                 row =>
                     row.EndsWith(

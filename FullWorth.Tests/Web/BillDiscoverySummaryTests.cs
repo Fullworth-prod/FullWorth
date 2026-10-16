@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Text.RegularExpressions;
 using FullWorth.Web.Components.Shared;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -32,10 +33,10 @@ public sealed class BillDiscoverySummaryTests
         var html = WebUtility.HtmlDecode(await RenderAsync(culture, data));
         Assert.Contains(imported, html);
         Assert.Contains(accepted, html);
-        Assert.Contains("<dd>125</dd>", html);
-        Assert.Contains("<dd>111</dd>", html);
-        Assert.Contains("<dd>7</dd>", html);
-        Assert.Contains("<dd>6</dd>", html);
+        Assert.Matches("<dd[^>]*>125</dd>", html);
+        Assert.Matches("<dd[^>]*>111</dd>", html);
+        Assert.Matches("<dd[^>]*>7</dd>", html);
+        Assert.Matches("<dd[^>]*>6</dd>", html);
         Assert.Contains("href=\"/app/account\"", html);
         Assert.Contains("href=\"/app/account/transactions\"", html);
         Assert.DoesNotContain("<form", html, StringComparison.OrdinalIgnoreCase);

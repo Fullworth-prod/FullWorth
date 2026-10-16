@@ -103,7 +103,7 @@ class DeviceIpaTests(unittest.TestCase):
     def test_every_external_action_is_immutable(self):
         import re
         workflow = (ROOT / ".github/workflows/ios-personal-device.yml").read_text()
-        actions = re.findall(r"uses: (\\S+)", workflow)
+        actions = re.findall(r"uses: (\S+)", workflow)
         self.assertGreaterEqual(len(actions), 3)
         for action in actions:
             self.assertRegex(action, r"^[^@]+@[a-f0-9]{40}$")

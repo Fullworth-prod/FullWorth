@@ -1,8 +1,10 @@
-## Release checkpoint — 2026-10-15 UTC
+## Release preparation checkpoint — 2026-10-16 UTC
 
-- The `master` release branch at candidate `457e7e4b77a88714e8870e369a1aaf17e76e2de2` is verified live.
+- The `master` release branch at candidate `b275ad413a0532cdd2c42ee6ab3f9a1a4ed3fdd2` is not claimed as deployed.
 
 Currently verified live production release: `457e7e4b77a88714e8870e369a1aaf17e76e2de2`.
+
+Release preparation: PR #760 promotes only the themed bank-disconnect confirmation from #759. The candidate above is the current pre-promotion master branch head, not a new deployment claim. Previous verified live-release evidence below remains historical and unchanged; the new modal requires successful exact-master CI and guarded deployment before it is live.
 
 - [Guarded production deploy #23](https://github.com/Fullworth/FullWorth/actions/runs/38690114274) succeeded on 2026-10-15 at 06:05 UTC. Pinned SSH, exact-release provenance/SBOM attestations, image identity, database-role separation/migrations, native OCR and kernel containment, file-backed secrets/non-disclosure, permissions, runtime/exposure, and public API/Web readiness passed. The host's verified release marker matches `457e7e4b77a88714e8870e369a1aaf17e76e2de2`.
 - [Production Auth Smoke](https://github.com/Fullworth/FullWorth/actions/runs/38690396582) passed on the same release: API login/refresh, protected read endpoints, non-admin denial, export secret/storage boundaries, Web cookie login, authenticated app/BFF, antiforgery issuance, and logout invalidation. Mutation probes were disabled; this does not prove two-user ownership or statement/provider acceptance.

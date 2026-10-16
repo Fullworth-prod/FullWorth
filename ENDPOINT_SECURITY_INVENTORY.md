@@ -11,8 +11,8 @@ class that the application actually exposes.
 | Host | Method-route exposures | Authenticated | Explicit anonymous | Implicit anonymous | Named rate limit |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | API | 89 | 73 | 8 | 8 | 39 |
-| Web | 122 | 91 | 5 | 26 | 13 |
-| **Total** | **211** | **164** | **13** | **34** | **52** |
+| Web | 123 | 92 | 5 | 26 | 13 |
+| **Total** | **212** | **165** | **13** | **34** | **52** |
 
 The complete, reviewable list is embedded in
 `FullWorth.Tests/Security/EndpointSecurityInventoryTests.cs`. A route addition,

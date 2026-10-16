@@ -155,6 +155,7 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|GET|/|anonymous-implicit|none",
         "WEB|POST|/Error|anonymous-implicit|none",
         "WEB|POST|/app/account/privacy|authenticated|none",
+        "WEB|POST|/app/account/security-keys|authenticated|none",
         "WEB|POST|/app/account/settings|authenticated|none",
         "WEB|POST|/app/account/transactions|authenticated|none",
         "WEB|POST|/app/account|authenticated|none",
@@ -261,7 +262,7 @@ public sealed class EndpointSecurityInventoryTests
     public void Snapshot_CoversEveryReviewedAccessAndRateLimitClass()
     {
         Assert.Equal(
-            211,
+            212,
             ExpectedInventory.Length);
 
         Assert.Equal(
@@ -273,7 +274,7 @@ public sealed class EndpointSecurityInventoryTests
                         StringComparison.Ordinal)));
 
         Assert.Equal(
-            122,
+            123,
             ExpectedInventory.Count(
                 row =>
                     row.StartsWith(

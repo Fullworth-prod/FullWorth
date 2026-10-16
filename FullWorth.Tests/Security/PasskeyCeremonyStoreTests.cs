@@ -39,7 +39,7 @@ public sealed class PasskeyCeremonyStoreTests
         var id = store.Create("login", "state", null, null);
         var results = await Task.WhenAll(Enumerable.Range(0, 32)
             .Select(_ => Task.Run(() => store.Consume(id, "login", null))));
-        Assert.Single(results.Where(x => x is not null));
+        Assert.Single(results, x => x is not null);
     }
 
     [Fact]
@@ -56,12 +56,12 @@ public sealed class PasskeyCeremonyStoreTests
 
     [Theory]
     [InlineData("https://fullworth.org", true)]
-    [InlineData("https://fullworth.org.evil.example", false)]
+    [InlineData("https://fullworth.org.evil.example", true)]
     [InlineData("http://fullworth.org", false)]
     [InlineData("https://fullworth.org/", false)]
     [InlineData("https://fullworth.org/path", false)]
     [InlineData("https://user@fullworth.org", false)]
-    public void ExactHttpsOriginRequired(string origin, bool expected) =>
+    public void CanonicalHttpsConfigurationOriginRequired(string origin, bool expected) =>
         Assert.Equal(expected, FullWorthPasskeyOptions.IsValidOrigin(origin));
 
     [Fact]
@@ -77,10 +77,11 @@ public sealed class PasskeyCeremonyStoreTests
         {
             HttpContext = context.HttpContext, Origin = options.Origin, CrossOrigin = true
         }));
-        Assert.False(options.AcceptOrigin(new()
-        {
-            HttpContext = context.HttpContext, Origin = "https://evil.example", CrossOrigin = false
-        }));
+        foreach (var origin in new[] { "https://evil.example", "https://fullworth.org.evil.example" })
+            Assert.False(options.AcceptOrigin(new()
+            {
+                HttpContext = context.HttpContext, Origin = origin, CrossOrigin = false
+            }));
     }
 
     private sealed class Clock : TimeProvider

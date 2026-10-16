@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using FullWorth.API.Data.Entities;
 using FullWorth.API.Data;
+using FullWorth.API.Authorization;
 using Microsoft.EntityFrameworkCore;
 using FullWorth.API.Services.Identity;
 using Microsoft.AspNetCore.Authorization;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.Options;
 namespace FullWorth.API.Controllers;
 
 [ApiController]
+[SubscriptionAccessExempt]
 [Route("api")]
 [EnableRateLimiting("authentication")]
 public sealed class PasskeysController(

@@ -59,6 +59,10 @@ public static class BffEndpointMappings
             return await proxy.ForwardJsonAsync(context, HttpMethod.Post, "/api/subscription/access-keys/redeem", request, context.RequestAborted);
         });
 
+        bff.MapGet("/bill-discovery/diagnostics", async (HttpContext context, FullWorthBffProxyService proxy) =>
+            await proxy.ForwardGetAsync(context, "/api/bill-discovery/diagnostics", context.RequestAborted))
+            .RequireRateLimiting(FinancialRefreshRateLimitPolicy);
+
         bff.MapGet("/bill-streams", async (HttpContext context, FullWorthBffProxyService proxy) =>
             await proxy.ForwardGetAsync(context, "/api/bill-streams", context.RequestAborted));
         bff.MapGet("/bill-streams/{billStreamId:guid}", async (HttpContext context, FullWorthBffProxyService proxy, Guid billStreamId) =>

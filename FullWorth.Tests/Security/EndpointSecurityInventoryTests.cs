@@ -139,6 +139,7 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|GET|/bff/bill-streams/{billStreamId:guid}/statement-uploads/{uploadId:guid}/file|authenticated|none",
         "WEB|GET|/bff/bill-streams/{billStreamId:guid}/statement-uploads/{uploadId:guid}|authenticated|none",
         "WEB|GET|/bff/bill-streams/{billStreamId:guid}|authenticated|none",
+        "WEB|GET|/bff/bill-discovery/diagnostics|authenticated|named:financial-refresh",
         "WEB|GET|/bff/bill-streams|authenticated|none",
         "WEB|GET|/bff/planning/bill-funding-preferences|authenticated|none",
         "WEB|GET|/bff/planning/pay-schedule|authenticated|none",

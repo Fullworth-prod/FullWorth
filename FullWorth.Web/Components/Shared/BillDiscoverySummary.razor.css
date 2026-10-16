@@ -1,0 +1,34 @@
+.discovery-summary {
+    margin-block-start: 20px;
+    color: var(--bw-text);
+    line-height: 1.6;
+}
+
+.discovery-summary p { max-width: 70ch; }
+
+.discovery-note {
+    padding: 16px;
+    border: 1px solid var(--bw-border);
+    border-radius: 14px;
+    background: var(--bw-surface-soft);
+}
+
+dl { margin-block: 20px; }
+dl > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+    padding-block: 12px;
+    border-block-end: 1px solid var(--bw-border);
+}
+dt { overflow-wrap: anywhere; }
+dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+nav { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+a {
+    color: var(--bw-text);
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    text-underline-offset: 3px;
+}
+a:focus-visible { outline: 3px solid var(--bw-accent, #4f46e5); outline-offset: 4px; }

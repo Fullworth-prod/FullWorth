@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="This checks your imported history without syncing your bank or changing monitored bills. Counts explain discovery rules, not why a specific payment is missing." xml:space="preserve"><value>Esto revisa tu historial importado sin sincronizar tu banco ni cambiar las facturas monitoreadas. Los recuentos explican las reglas de detección, no por qué falta un pago específico.</value></data>
+  <data name="No eligible posted payments are available. Check your bank connections and imported transactions. This does not prove that you have no bills." xml:space="preserve"><value>No hay pagos contabilizados elegibles. Revisa tus conexiones bancarias y transacciones importadas. Esto no demuestra que no tengas facturas.</value></data>
+  <data name="Eligible posted payments: {0} to {1}. These dates do not prove uninterrupted bank coverage." xml:space="preserve"><value>Pagos contabilizados elegibles: del {0} al {1}. Estas fechas no demuestran una cobertura bancaria ininterrumpida.</value></data>
+  <data name="Imported transactions" xml:space="preserve"><value>Transacciones importadas</value></data>
+  <data name="Pending payments, credits, or zero amounts excluded" xml:space="preserve"><value>Pagos pendientes, abonos o importes de cero excluidos</value></data>
+  <data name="Payments without a usable merchant name" xml:space="preserve"><value>Pagos sin un nombre de comercio utilizable</value></data>
+  <data name="Eligible posted payments" xml:space="preserve"><value>Pagos contabilizados elegibles</value></data>
+  <data name="Merchant groups with only one payment" xml:space="preserve"><value>Grupos de comercios con un solo pago</value></data>
+  <data name="Repeat groups without supported monthly timing" xml:space="preserve"><value>Grupos repetidos sin un patrón mensual compatible</value></data>
+  <data name="Monthly candidates found" xml:space="preserve"><value>Candidatos mensuales encontrados</value></data>
+  <data name="Unclassified candidates excluded by category" xml:space="preserve"><value>Candidatos sin clasificar excluidos por categoría</value></data>
+  <data name="Two-payment candidates needing stronger evidence" xml:space="preserve"><value>Candidatos con dos pagos que necesitan más evidencia</value></data>
+  <data name="Other unclassified candidates with weak or variable evidence" xml:space="preserve"><value>Otros candidatos sin clasificar con evidencia débil o variable</value></data>
+  <data name="Candidates accepted by current rules" xml:space="preserve"><value>Candidatos aceptados por las reglas actuales</value></data>
+  <data name="Discovery currently supports monthly timing. Weekly, biweekly, annual, and irregular payments may be missing. Accepted candidates are not the same as your active bill count or total spending." xml:space="preserve"><value>La detección actualmente admite patrones mensuales. Pueden faltar pagos semanales, quincenales, anuales e irregulares. Los candidatos aceptados no equivalen al número de facturas activas ni al gasto total.</value></data>
+  <data name="If an expected bill is missing, privately check whether its payments appear in imported transactions. Do not post bank details or screenshots in public issues." xml:space="preserve"><value>Si falta una factura esperada, verifica en privado si sus pagos aparecen en las transacciones importadas. No publiques datos bancarios ni capturas de pantalla en incidencias públicas.</value></data>
+  <data name="Investigate missing bills" xml:space="preserve"><value>Investigar facturas faltantes</value></data>
+  <data name="Check bank connections" xml:space="preserve"><value>Revisar conexiones bancarias</value></data>
+  <data name="Review imported transactions" xml:space="preserve"><value>Revisar transacciones importadas</value></data>
+  <data name="Unavailable" xml:space="preserve"><value>No disponible</value></data>
+</root>

@@ -560,6 +560,11 @@ export async function getExperiencePreferences() {
         "/bff/account/preferences");
 }
 
+export async function getBillDiscoveryDiagnostics() {
+    return await getJson(
+        "/bff/bill-discovery/diagnostics");
+}
+
 export async function getBillStreams() {
     return await getJson(
         "/bff/bill-streams");

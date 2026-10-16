@@ -17,6 +17,7 @@ on:
       - "deploy/ios/verify-device-ipa.py"
       - "deploy/tests/test_ios_device_ipa.py"
       - "IOS_PERSONAL_TESTING.md"
+      - "IOS_SHARED_WEB_EXPERIENCE.md"
 
 permissions:
   contents: read
@@ -123,6 +124,7 @@ jobs:
           -p:RuntimeIdentifier=ios-arm64
           -p:FullWorthApiBaseUrl=https://api.fullworth.org/
           -p:ApplicationId=org.fullworth.personal
+          -p:FullWorthUseHostedWebShell=true
           -p:EnableCodeSigning=false
           -p:CodesignRequireProvisioningProfile=false
           -p:ArchiveOnBuild=false
@@ -145,6 +147,8 @@ jobs:
           {
             echo "Source SHA: $GITHUB_SHA"
             echo "Personal-test bundle ID: org.fullworth.personal"
+            echo "UI mode: hosted website (no separate native login or screens)"
+            echo "Web entry: https://fullworth.org/app"
             echo "API: https://api.fullworth.org/"
             echo "UNSIGNED: must be signed for the owner's device before installation."
             echo "Not a TestFlight/App Store distribution package or physical-device acceptance."

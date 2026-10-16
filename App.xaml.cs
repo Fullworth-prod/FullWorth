@@ -1,7 +1,16 @@
-﻿using FullWorth.Services;
+using FullWorth.Services;
 
 namespace FullWorth;
 
+#if FULLWORTH_HOSTED_WEB
+public partial class App : Application
+{
+    public App() => InitializeComponent();
+
+    protected override Window CreateWindow(IActivationState? activationState) =>
+        new(new HostedWebPage());
+}
+#else
 public partial class App : Application
 {
     private readonly AuthenticationService
@@ -51,3 +60,4 @@ public partial class App : Application
                         "//Login"));
     }
 }
+#endif

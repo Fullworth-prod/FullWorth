@@ -13,6 +13,10 @@
     <Nullable>enable</Nullable>
     <FullWorthApiBaseUrl Condition="'$(FullWorthApiBaseUrl)' == '' and '$(Configuration)' == 'Debug'">https://localhost:7243</FullWorthApiBaseUrl>
 
+    <!-- iPhone/iPad use the hosted website. Other platforms retain native UI. -->
+    <FullWorthUseHostedWebShell Condition="'$(FullWorthUseHostedWebShell)' == '' and $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">true</FullWorthUseHostedWebShell>
+    <FullWorthUseHostedWebShell Condition="'$(FullWorthUseHostedWebShell)' == ''">false</FullWorthUseHostedWebShell>
+
     <MauiXamlInflator>SourceGen</MauiXamlInflator>
 
     <ApplicationTitle>FullWorth</ApplicationTitle>
@@ -40,6 +44,10 @@
     </DefaultItemExcludes>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(FullWorthUseHostedWebShell)' == 'true'">
+    <DefineConstants>$(DefineConstants);FULLWORTH_HOSTED_WEB</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>FullWorthApiBaseUrl</_Parameter1>
@@ -47,7 +55,7 @@
     </AssemblyAttribute>
   </ItemGroup>
 
-  <Target Name="ValidateFullWorthApiBaseUrl" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'Release'">
+  <Target Name="ValidateFullWorthApiBaseUrl" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'Release' and '$(FullWorthUseHostedWebShell)' != 'true'">
     <Error Condition="'$(FullWorthApiBaseUrl)' == ''" Text="Release builds require -p:FullWorthApiBaseUrl=https://your-api-host/." />
     <Error Condition="!$([System.String]::Copy('$(FullWorthApiBaseUrl)').StartsWith('https://'))" Text="Release builds require an HTTPS FullWorthApiBaseUrl." />
   </Target>

@@ -65,6 +65,16 @@ export function confirmAction({ title, message, cancelText, confirmText }) {
             dismiss();
         });
         dialog.addEventListener("close", dismiss);
+        dialog.addEventListener("keydown", event => {
+            if (event.key !== "Tab") return;
+            if (event.shiftKey && document.activeElement === cancel) {
+                event.preventDefault();
+                confirm.focus();
+            } else if (!event.shiftKey && document.activeElement === confirm) {
+                event.preventDefault();
+                cancel.focus();
+            }
+        });
         dialog.addEventListener("click", event => {
             if (event.target !== dialog) return;
             const rect = dialog.getBoundingClientRect();

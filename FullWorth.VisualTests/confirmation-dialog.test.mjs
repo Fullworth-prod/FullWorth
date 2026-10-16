@@ -73,6 +73,8 @@ try {
                 await page.screenshot({ path: path.join(output, name + "-" + theme + ".png") });
                 await page.keyboard.press("Shift+Tab");
                 assert.equal(await page.evaluate(() => document.activeElement.className), "fw-confirm-destructive");
+                await page.keyboard.press("Tab");
+                assert.equal(await page.evaluate(() => document.activeElement.className), "fw-confirm-cancel");
                 await page.click(".fw-confirm-cancel");
                 await result(false);
                 assert.equal(await page.evaluate(() => document.activeElement.id), "trigger");

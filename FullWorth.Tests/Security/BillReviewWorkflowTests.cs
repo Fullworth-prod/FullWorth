@@ -56,10 +56,8 @@ public sealed class BillReviewWorkflowTests
         Assert.False(detail.IsActive);
         Assert.False(detail.HasTransactionEvidence);
 
-        using var confirm = await client.PostAsJsonAsync("/api/bill-streams",
-            new { providerName = "Synthetic review bill", category = "Utility" });
-        confirm.EnsureSuccessStatusCode();
-        Assert.Equal(id, (await confirm.Content.ReadFromJsonAsync<Payload>())!.Id);
+        using var confirm = await client.PostAsync($"/api/bill-streams/{id:D}/confirm", null);
+        Assert.Equal(HttpStatusCode.NoContent, confirm.StatusCode);
         await using (var scope = factory.Services.CreateAsyncScope())
         {
             var result = await scope.ServiceProvider.GetRequiredService<RecurringBillDiscoveryPersistenceService>()
@@ -103,11 +101,11 @@ public sealed class BillReviewWorkflowTests
         using var factory = new FullWorthWebFactory();
         using var anonymous = factory.CreateHttpsClient();
         anonymous.DefaultRequestHeaders.Add("X-FullWorth-Test-Anonymous", "true");
-        using var denied = await anonymous.PostAsJsonAsync("/bff/bill-streams",
+        using var denied = await anonymous.PostAsJsonAsync("/bff/bill-streams/11111111-1111-1111-1111-111111111111/confirm",
             new { providerName = "Synthetic provider", category = "Utility" });
         Assert.Equal(HttpStatusCode.Unauthorized, denied.StatusCode);
         using var client = factory.CreateHttpsClient();
-        using var csrf = await client.PostAsJsonAsync("/bff/bill-streams",
+        using var csrf = await client.PostAsJsonAsync("/bff/bill-streams/11111111-1111-1111-1111-111111111111/confirm",
             new { providerName = "Synthetic provider", category = "Utility" });
         Assert.Equal(HttpStatusCode.BadRequest, csrf.StatusCode);
         using var privateList = await anonymous.GetAsync("/bff/bill-streams?includeInactive=true");
@@ -125,7 +123,7 @@ public sealed class BillReviewWorkflowTests
         var token = await tokenResponse.Content.ReadFromJsonAsync<TokenPayload>();
         Assert.NotNull(token);
         client.DefaultRequestHeaders.Add("X-CSRF-TOKEN", token.RequestToken);
-        using var response = await client.PostAsJsonAsync("/bff/bill-streams",
+        using var response = await client.PostAsJsonAsync("/bff/bill-streams/11111111-1111-1111-1111-111111111111/confirm",
             new { providerName = "Synthetic provider", category = "Utility" });
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         Assert.Contains("no-store", response.Headers.CacheControl?.ToString() ?? "");
@@ -148,8 +146,73 @@ public sealed class BillReviewWorkflowTests
         };
         Assert.IsType<UnauthorizedResult>((await controller.GetBillStreams()).Result);
         Assert.IsType<UnauthorizedResult>((await controller.GetBillStreamDetail(Guid.NewGuid())).Result);
+        Assert.IsType<UnauthorizedResult>(await controller.ConfirmBillStream(Guid.NewGuid()));
         Assert.IsType<UnauthorizedResult>((await controller.CreateBillStream(
             new CreateBillStreamRequest("Synthetic provider", "Utility"))).Result);
+    }
+
+    [Fact]
+    public async Task ConfirmForeignBill_ReturnsNotFoundWithoutMutation_AndUsesExactOwnedId()
+    {
+        await using var factory = new FullWorthApiFactory();
+        using var client = factory.CreateHttpsClient();
+        var owner = await TestUserAuthentication.RegisterAndLoginAsync(client);
+        var other = await TestUserAuthentication.RegisterAndLoginAsync(client);
+        var ownerId = await TestUserAuthentication.GetUserIdAsync(factory, owner.Email);
+        var otherId = await TestUserAuthentication.GetUserIdAsync(factory, other.Email);
+        var unchanged = new BillStreamEntity { UserId = ownerId, ProviderName = "Duplicate provider",
+            IsActive = false, Source = BillStreamSource.AutomaticDiscovery };
+        var target = new BillStreamEntity { UserId = ownerId, ProviderName = "Duplicate provider",
+            IsActive = false, Source = BillStreamSource.AutomaticDiscovery };
+        var foreign = new BillStreamEntity { UserId = otherId, ProviderName = "Duplicate provider",
+            IsActive = false, Source = BillStreamSource.AutomaticDiscovery };
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FullWorthDbContext>();
+            db.BillStreams.AddRange(unchanged, target, foreign);
+            await db.SaveChangesAsync();
+        }
+        TestUserAuthentication.Authorize(client, owner);
+        using var denied = await client.PostAsync($"/api/bill-streams/{foreign.Id:D}/confirm", null);
+        Assert.Equal(HttpStatusCode.NotFound, denied.StatusCode);
+        using var empty = await client.PostAsync($"/api/bill-streams/{Guid.Empty:D}/confirm", null);
+        Assert.Equal(HttpStatusCode.NotFound, empty.StatusCode);
+        using var absent = await client.PostAsync($"/api/bill-streams/{Guid.NewGuid():D}/confirm", null);
+        Assert.Equal(HttpStatusCode.NotFound, absent.StatusCode);
+        using var confirmed = await client.PostAsync($"/api/bill-streams/{target.Id:D}/confirm", null);
+        Assert.Equal(HttpStatusCode.NoContent, confirmed.StatusCode);
+        DateTimeOffset confirmedAt;
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FullWorthDbContext>();
+            var selected = await db.BillStreams.SingleAsync(s => s.Id == target.Id);
+            Assert.True(selected.IsActive);
+            Assert.Equal(BillStreamSource.Manual, selected.Source);
+            confirmedAt = selected.UpdatedAtUtc;
+            foreach (var id in new[] { unchanged.Id, foreign.Id })
+            {
+                var preserved = await db.BillStreams.SingleAsync(s => s.Id == id);
+                Assert.False(preserved.IsActive);
+                Assert.Equal(BillStreamSource.AutomaticDiscovery, preserved.Source);
+            }
+            Assert.Empty(await db.BillTransactionAssociations.ToListAsync());
+            Assert.Empty(await db.BillAlerts.ToListAsync());
+        }
+        using var repeated = await client.PostAsync($"/api/bill-streams/{target.Id:D}/confirm", null);
+        Assert.Equal(HttpStatusCode.NoContent, repeated.StatusCode);
+        await using var verification = factory.Services.CreateAsyncScope();
+        var verify = verification.ServiceProvider.GetRequiredService<FullWorthDbContext>();
+        Assert.Equal(confirmedAt, (await verify.BillStreams.SingleAsync(s => s.Id == target.Id)).UpdatedAtUtc);
+        Assert.Equal(3, await verify.BillStreams.CountAsync());
+    }
+
+    [Fact]
+    public async Task Confirm_AnonymousApiUser_IsRejected()
+    {
+        await using var factory = new FullWorthApiFactory();
+        using var client = factory.CreateHttpsClient();
+        using var response = await client.PostAsync($"/api/bill-streams/{Guid.NewGuid():D}/confirm", null);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     private sealed record TokenPayload(string RequestToken);

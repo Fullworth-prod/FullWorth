@@ -397,13 +397,12 @@
     {
         if (_detail is null || _isKeeping) return;
         var id = BillStreamId;
-        var detail = _detail;
         _isKeeping = true;
         _keepMessage = null;
         try
         {
             _bffModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/bff.js");
-            await _bffModule.InvokeAsync<object?>("confirmBillStream", detail.ProviderName, detail.Category);
+            await _bffModule.InvokeAsync<object?>("confirmBillStream", id.ToString("D"));
             if (id == BillStreamId)
             {
                 await LoadAsync();

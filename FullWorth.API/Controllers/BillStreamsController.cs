@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace FullWorth.API.Controllers;
 
@@ -251,6 +252,27 @@ public sealed class BillStreamsController : ControllerBase
                 HasTransactionEvidence = streamMetrics is not null,
                 HasMonthlyCadenceEvidence = streamMetrics?.HasMonthlyCadenceEvidence ?? false
             });
+    }
+
+    [HttpPost("{billStreamId:guid}/confirm")]
+    [EnableRateLimiting("financial-refresh")]
+    public async Task<IActionResult> ConfirmBillStream(
+        Guid billStreamId, CancellationToken cancellationToken = default)
+    {
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+        if (billStreamId == Guid.Empty) return NotFound();
+        var stream = await _dbContext.BillStreams.SingleOrDefaultAsync(
+            candidate => candidate.Id == billStreamId && candidate.UserId == userId,
+            cancellationToken);
+        if (stream is null) return NotFound();
+        if (!stream.IsActive || stream.Source != BillStreamSource.Manual)
+        {
+            stream.IsActive = true;
+            stream.Source = BillStreamSource.Manual;
+            stream.UpdatedAtUtc = DateTimeOffset.UtcNow;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        return NoContent();
     }
 
     [HttpPost]

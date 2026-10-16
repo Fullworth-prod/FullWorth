@@ -54,6 +54,9 @@ public sealed class CrossUserIdentifierCoverageTests
                         nameof(
                             BillAlertOwnershipTests
                                 .OtherUser_CannotMarkAlertRead)),
+                ["POST|/api/bill-streams/{billStreamId:guid}/confirm"] =
+                    new(typeof(BillReviewWorkflowTests),
+                        nameof(BillReviewWorkflowTests.ConfirmForeignBill_ReturnsNotFoundWithoutMutation_AndUsesExactOwnedId)),
                 ["POST|/api/bill-streams/{billStreamId:guid}/statement-uploads"] =
                     new(
                         typeof(BillStatementUploadAuthorizationTests),

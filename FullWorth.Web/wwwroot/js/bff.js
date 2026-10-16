@@ -570,8 +570,9 @@ export async function getBillStreams(includeInactive = false) {
         `/bff/bill-streams?includeInactive=${includeInactive === true ? "true" : "false"}`);
 }
 
-export async function confirmBillStream(providerName, category) {
-    return await mutateJsonWithBody("/bff/bill-streams", "POST", { providerName, category });
+export async function confirmBillStream(billStreamId) {
+    if (!billStreamId) throw new Error("Bill stream ID is required.");
+    return await mutateJson(`/bff/bill-streams/${encodeURIComponent(billStreamId)}/confirm`, "POST");
 }
 
 export async function getBillStreamDetail(

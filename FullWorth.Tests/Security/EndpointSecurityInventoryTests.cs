@@ -79,6 +79,7 @@ public sealed class EndpointSecurityInventoryTests
         "API|POST|/api/auth/resetPassword|anonymous-implicit|named:authentication",
         "API|POST|/api/bill-discovery/run|authenticated|named:financial-refresh",
         "API|POST|/api/bill-monitoring/refresh|authenticated|named:financial-refresh",
+        "API|POST|/api/bill-streams/{billStreamId:guid}/confirm|authenticated|named:financial-refresh",
         "API|POST|/api/bill-streams/{billStreamId:guid}/statement-uploads|authenticated|named:statement-upload",
         "API|POST|/api/bill-streams|authenticated|global:300-per-minute",
         "API|POST|/api/plaid/accounts/sync|authenticated|named:financial-refresh",
@@ -203,8 +204,8 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|POST|/bff/alerts/{alertId:guid}/dismiss|authenticated|none",
         "WEB|POST|/bff/alerts/{alertId:guid}/read|authenticated|none",
         "WEB|POST|/bff/bill-monitoring/refresh|authenticated|named:financial-refresh",
+        "WEB|POST|/bff/bill-streams/{billStreamId:guid}/confirm|authenticated|named:financial-refresh",
         "WEB|POST|/bff/bill-streams/{billStreamId:guid}/statement-uploads|authenticated|named:statement-upload",
-        "WEB|POST|/bff/bill-streams|authenticated|named:financial-refresh",
         "WEB|POST|/bff/plaid/connections/{connectionId:guid}/update-link-session|authenticated|named:financial-provider",
         "WEB|POST|/bff/plaid/link-session/{sessionId:guid}/complete|authenticated|named:financial-provider",
         "WEB|POST|/bff/plaid/link-session|authenticated|named:financial-provider",
@@ -265,11 +266,11 @@ public sealed class EndpointSecurityInventoryTests
     public void Snapshot_CoversEveryReviewedAccessAndRateLimitClass()
     {
         Assert.Equal(
-            215,
+            216,
             ExpectedInventory.Length);
 
         Assert.Equal(
-            90,
+            91,
             ExpectedInventory.Count(
                 row =>
                     row.StartsWith(
@@ -313,7 +314,7 @@ public sealed class EndpointSecurityInventoryTests
                     StringComparison.Ordinal));
 
         Assert.Equal(
-            55,
+            56,
             ExpectedInventory.Count(
                 row =>
                     row.Contains(
@@ -321,7 +322,7 @@ public sealed class EndpointSecurityInventoryTests
                         StringComparison.Ordinal)));
 
         Assert.Equal(
-            10,
+            11,
             ExpectedInventory.Count(
                 row =>
                     row.EndsWith(

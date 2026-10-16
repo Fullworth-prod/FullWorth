@@ -858,6 +858,7 @@
             _actionMessage = L["Disconnecting {0}…",
                 connection.InstitutionName].Value;
             _actionSucceeded = false;
+            StateHasChanged();
 
             await module.InvokeAsync<object?>(
                 "disconnectBankConnection",

@@ -1,0 +1,27 @@
+@inject Microsoft.Extensions.Localization.IStringLocalizer<BillsEmptyState> L
+
+<section class="empty-dashboard bills-empty-state" aria-labelledby="bills-empty-title">
+    <div class="empty-icon" aria-hidden="true">
+        <svg class="bw-sprite">
+            <use href="/assets/billwatch-sprites.svg#bill"></use>
+        </svg>
+    </div>
+
+    <span class="page-kicker">@L["No bills yet"]</span>
+    <h2 id="bills-empty-title">@L["No recurring bills to show yet."]</h2>
+    <p>@L["Bills appear when FullWorth finds supported recurring charges in your imported transaction history. An empty list does not confirm that your bank is connected or syncing."]</p>
+
+    <nav class="bills-empty-actions" aria-label="@L["Next steps for your bills"]">
+        <a class="bills-empty-action is-primary" href="/app/account">
+            @L["Check bank connections"]
+        </a>
+        <a class="bills-empty-action" href="/app/account/transactions">
+            @L["Review imported transactions"]
+        </a>
+        <a class="bills-empty-action" href="/app">
+            @L["Check monitoring progress"]
+        </a>
+    </nav>
+
+    <p class="bills-empty-note">@L["Reconnect any bank that needs attention. If your bank is syncing successfully, FullWorth will keep checking as new transactions arrive; more history may be needed to identify a recurring bill."]</p>
+</section>

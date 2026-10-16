@@ -73,26 +73,7 @@
     }
     else if (_billStreams.Count == 0)
     {
-        <div class="empty-dashboard">
-            <div class="empty-icon">
-                <svg class="bw-sprite"
-                     aria-hidden="true">
-                    <use href="/assets/billwatch-sprites.svg#bill"></use>
-                </svg>
-            </div>
-
-            <span class="page-kicker">
-                @L["No bills yet"]
-            </span>
-
-            <h2>
-                @L["FullWorth hasn't discovered a recurring bill yet."]
-            </h2>
-
-            <p>
-                @L["Once recurring charges are matched into Bill Streams, they'll appear here automatically."]
-            </p>
-        </div>
+        <BillsEmptyState />
     }
     else
     {

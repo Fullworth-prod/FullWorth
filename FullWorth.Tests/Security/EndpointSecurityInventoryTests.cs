@@ -27,6 +27,7 @@ public sealed class EndpointSecurityInventoryTests
         "API|GET|/api/bank-accounts|authenticated|global:300-per-minute",
         "API|GET|/api/bank-connections|authenticated|global:300-per-minute",
         "API|GET|/api/bank-transactions|authenticated|global:300-per-minute",
+        "API|GET|/api/bill-discovery/diagnostics|authenticated|named:financial-refresh",
         "API|GET|/api/bill-streams/{billStreamId:guid}/statement-uploads/{uploadId:guid}/file|authenticated|named:statement-download",
         "API|GET|/api/bill-streams/{billStreamId:guid}/statement-uploads/{uploadId:guid}|authenticated|global:300-per-minute",
         "API|GET|/api/bill-streams/{billStreamId:guid}|authenticated|global:300-per-minute",

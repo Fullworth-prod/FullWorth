@@ -27,6 +27,8 @@
     font-weight: 650;
     line-height: 1.4;
     overflow-wrap: anywhere;
+    /* Leave the fixed mobile navigation unobstructed when a link receives focus. */
+    scroll-margin-block-end: calc(112px + env(safe-area-inset-bottom));
 }
 
 .bills-empty-action.is-primary {

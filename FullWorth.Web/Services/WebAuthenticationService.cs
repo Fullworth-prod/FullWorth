@@ -19,6 +19,32 @@ public sealed class WebAuthenticationService
             httpClientFactory;
     }
 
+    public async Task<AuthOperationResult> LoginPasskeyAsync(
+        HttpContext context, object request, bool rememberMe,
+        CancellationToken cancellationToken)
+    {
+        if (context.User.Identity?.IsAuthenticated == true)
+            return new(false, "Sign out before signing in to another account.");
+        var client = _httpClientFactory.CreateClient("FullWorthApi");
+        using var response = await client.PostAsJsonAsync("/api/auth/passkeys/login",
+            request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return new(false, "Passkey sign-in failed. Try again and include your authenticator code if enabled.");
+        var tokens = await ReadAccessTokenResponseAsync(response, cancellationToken);
+        if (tokens is null) return new(false, "Invalid sign-in response.");
+        using var infoRequest = new HttpRequestMessage(HttpMethod.Get, "/api/auth/manage/info");
+        infoRequest.Headers.Authorization = new("Bearer", tokens.AccessToken);
+        using var infoResponse = await client.SendAsync(infoRequest, cancellationToken);
+        if (!infoResponse.IsSuccessStatusCode) return new(false, "Unable to confirm account.");
+        using var info = JsonDocument.Parse(await infoResponse.Content.ReadAsStringAsync(cancellationToken));
+        var email = info.RootElement.GetProperty("email").GetString();
+        if (string.IsNullOrWhiteSpace(email)) return new(false, "Unable to confirm account.");
+        tokens = await EnrollRefreshFamilyAsync(tokens, cancellationToken);
+        if (tokens is null) return new(false, "Unable to establish a secure session.");
+        await SignInWebSessionAsync(context, email, email, email, tokens, rememberMe);
+        return AuthOperationResult.Success;
+    }
+
     public Task<AuthOperationResult>
         LoginAsync(
             HttpContext httpContext,

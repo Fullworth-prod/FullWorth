@@ -23,6 +23,13 @@ public static class AccountSecurityBffEndpointMappings
                     "/api/account/security",
                     context.RequestAborted));
 
+        bff.MapGet("/passkeys", async (HttpContext context, FullWorthBffProxyService proxy) =>
+            await proxy.ForwardGetAsync(context, "/api/account/security/passkeys", context.RequestAborted));
+
+        MapSecurePost<System.Text.Json.Nodes.JsonObject>(bff, "/passkeys/options", "/api/account/security/passkeys/options");
+        MapSecurePost<System.Text.Json.Nodes.JsonObject>(bff, "/passkeys/register", "/api/account/security/passkeys/register");
+        MapSecurePost<System.Text.Json.Nodes.JsonObject>(bff, "/passkeys/remove", "/api/account/security/passkeys/remove");
+
         MapSecurePost<UpdateProfileBffRequest>(
             bff,
             "/profile",

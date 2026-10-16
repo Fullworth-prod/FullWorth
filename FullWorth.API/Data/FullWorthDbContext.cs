@@ -89,6 +89,23 @@ public sealed class FullWorthDbContext
     {
         base.OnModelCreating(builder);
 
+        // Add only the passkey table, without changing existing Identity v1 columns.
+        builder.Entity<IdentityUserPasskey<Guid>>(entity =>
+        {
+            entity.ToTable("AspNetUserPasskeys");
+            entity.HasKey(key => key.CredentialId);
+            entity.Property(key => key.CredentialId).HasMaxLength(1024);
+            entity.Property(key => key.Data)
+                .HasConversion(
+                    data => System.Text.Json.JsonSerializer.Serialize(data,
+                        (System.Text.Json.JsonSerializerOptions?)null),
+                    json => System.Text.Json.JsonSerializer.Deserialize<IdentityPasskeyData>(json,
+                        (System.Text.Json.JsonSerializerOptions?)null)!)
+                .HasColumnType("jsonb");
+            entity.HasOne<ApplicationUser>().WithMany()
+                .HasForeignKey(key => key.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
         SeedStaffRoles(builder);
 
         ConfigureApplicationUser(builder);

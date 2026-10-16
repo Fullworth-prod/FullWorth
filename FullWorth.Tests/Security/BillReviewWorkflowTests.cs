@@ -1,6 +1,10 @@
 using System.Net;
 using System.Net.Http.Json;
 using FullWorth.API.Data;
+using FullWorth.API.Controllers;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using FullWorth.API.Data.Entities;
 using FullWorth.API.Services.Bills;
 using FullWorth.Tests.Infrastructure;
@@ -125,6 +129,27 @@ public sealed class BillReviewWorkflowTests
             new { providerName = "Synthetic provider", category = "Utility" });
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         Assert.Contains("no-store", response.Headers.CacheControl?.ToString() ?? "");
+    }
+
+    [Fact]
+    public async Task EmptyAuthenticatedIdentity_IsRejectedByEveryBillStreamAction()
+    {
+        await using var factory = new FullWorthApiFactory();
+        using var client = factory.CreateHttpsClient();
+        await using var scope = factory.Services.CreateAsyncScope();
+        var controller = ActivatorUtilities.CreateInstance<BillStreamsController>(scope.ServiceProvider);
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(
+                    [new Claim(ClaimTypes.NameIdentifier, Guid.Empty.ToString("D"))], "Synthetic"))
+            }
+        };
+        Assert.IsType<UnauthorizedResult>((await controller.GetBillStreams()).Result);
+        Assert.IsType<UnauthorizedResult>((await controller.GetBillStreamDetail(Guid.NewGuid())).Result);
+        Assert.IsType<UnauthorizedResult>((await controller.CreateBillStream(
+            new CreateBillStreamRequest("Synthetic provider", "Utility"))).Result);
     }
 
     private sealed record TokenPayload(string RequestToken);

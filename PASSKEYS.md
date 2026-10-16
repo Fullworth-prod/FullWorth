@@ -30,7 +30,9 @@ authenticated account and security stamp. At most 2048 pending ceremonies exist 
 API process; they expire after three minutes and are atomically consumed on every
 completion attempt, including failures. Capacity returns 503 rather than evicting
 active ceremonies. Registration is capped at 10 keys per account. PostgreSQL transaction advisory locking
-serializes registration ownership and quota checks before Identity's upsert.
+serializes credential writes, including assertion verification and signature-counter
+updates, removal, and registration ownership/quota checks before Identity's upsert.
+This prevents a concurrent assertion from re-adding a just-removed credential.
 
 The challenge cache intentionally supports one API process. Restart, routing to a
 different replica, or process loss fails closed and requires restarting the ceremony.

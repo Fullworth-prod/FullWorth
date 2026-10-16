@@ -49,6 +49,7 @@ public sealed class PasskeysController(
         Response.Headers.CacheControl = "no-store";
         var state = ceremonies.Consume(request.CeremonyId, "login", null);
         if (state is null) return Denied();
+        await using var transaction = await BeginCredentialWrite();
         var result = await handler.PerformAssertionAsync(new()
         {
             HttpContext = HttpContext, CredentialJson = request.CredentialJson,
@@ -70,6 +71,7 @@ public sealed class PasskeysController(
         if (!saved.Succeeded) return Denied();
         user.LastLoginAtUtc = DateTimeOffset.UtcNow;
         if (!(await users.UpdateAsync(user)).Succeeded) return Denied();
+        if (transaction is not null) await transaction.CommitAsync(HttpContext.RequestAborted);
         var principal = await signIn.CreateUserPrincipalAsync(user);
         return SignIn(principal, IdentityConstants.BearerScheme);
     }
@@ -126,14 +128,7 @@ public sealed class PasskeysController(
             AttestationState = state.State
         });
         if (!result.Succeeded || result.UserEntity.Id != user.Id.ToString()) return Denied();
-        // Serialize registration writes in PostgreSQL. Identity's upsert could otherwise
-        // replace a concurrently registered credential after an earlier ownership check.
-        // This also makes the per-account quota atomic across API processes.
-        await using var transaction = database.Database.IsRelational()
-            ? await database.Database.BeginTransactionAsync(HttpContext.RequestAborted) : null;
-        if (transaction is not null)
-            await database.Database.ExecuteSqlRawAsync(
-                "SELECT pg_advisory_xact_lock(74128596321048)", HttpContext.RequestAborted);
+        await using var transaction = await BeginCredentialWrite();
         // Identity's upsert must never replace another credential, even for this owner.
         if (await users.FindByPasskeyIdAsync(result.Passkey.CredentialId) is not null) return Conflict();
         if ((await users.GetPasskeysAsync(user)).Count >= 10) return BadRequest();
@@ -154,8 +149,31 @@ public sealed class PasskeysController(
         byte[] id;
         try { id = WebEncoders.Base64UrlDecode(request.CredentialId); }
         catch (FormatException) { return NotFound(); }
+        await using var transaction = await BeginCredentialWrite();
         if (!(await users.GetPasskeysAsync(user)).Any(key => key.CredentialId.AsSpan().SequenceEqual(id))) return NotFound();
-        return (await users.RemovePasskeyAsync(user, id)).Succeeded ? NoContent() : Denied();
+        if (!(await users.RemovePasskeyAsync(user, id)).Succeeded) return Denied();
+        if (transaction is not null) await transaction.CommitAsync(HttpContext.RequestAborted);
+        return NoContent();
+    }
+
+    private async Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction?> BeginCredentialWrite()
+    {
+        if (!database.Database.IsRelational()) return null;
+        var transaction = await database.Database.BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            // All credential writes share this PostgreSQL transaction lock. Keep
+            // assertion verification inside it, so an upsert cannot resurrect a
+            // key concurrently removed after the verifier read its public key.
+            await database.Database.ExecuteSqlRawAsync(
+                "SELECT pg_advisory_xact_lock(74128596321048)", HttpContext.RequestAborted);
+            return transaction;
+        }
+        catch
+        {
+            await transaction.DisposeAsync();
+            throw;
+        }
     }
 
     private async Task<ApplicationUser?> CurrentUser()

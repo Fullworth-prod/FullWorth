@@ -48,4 +48,6 @@
   <data name="Not available" xml:space="preserve"><value>No disponible</value></data>
   <data name="Some bill amounts are unavailable and excluded from this total." xml:space="preserve"><value>Algunos importes no están disponibles y se excluyen de este total.</value></data>
   <data name="A yearly estimate is unavailable without supported monthly timing. Provider evidence is required to explain why a charge changed." xml:space="preserve"><value>No hay una estimación anual sin un patrón mensual compatible. Se requiere evidencia del proveedor para explicar por qué cambió un cargo.</value></data>
+  <data name="No active monitored bills" xml:space="preserve"><value>No hay facturas activas monitoreadas</value></data>
+  <data name="Previously discovered bills are listed below for review. Their amounts are excluded from monitored totals." xml:space="preserve"><value>Las facturas detectadas anteriormente se muestran abajo para su revisión. Sus importes se excluyen de los totales monitoreados.</value></data>
 </root>

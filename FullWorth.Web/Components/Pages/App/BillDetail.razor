@@ -95,7 +95,7 @@
                 </div>
 
                 <div class="fw-detail-current">
-                    <span>@L["Latest transaction"]</span>
+                    <span>@L["Latest posted charge"]</span>
                     <strong>@(_detail.HasTransactionEvidence ? FormatMoney(_detail.CurrentAmount) : L["Amount unavailable"].Value)</strong>
 
                     @if (_detail.PreviousAverage > 0m)
@@ -134,7 +134,7 @@
             </div>
         </section>
 
-        <section class="app-panel" aria-labelledby="monitoring-choice-heading">
+        <section class="app-panel bill-monitoring-choice" aria-labelledby="monitoring-choice-heading">
             <h2 id="monitoring-choice-heading">@L["Monitoring choice"]</h2>
             @if (!_detail.IsActive || _detail.Source != "Manual")
             {

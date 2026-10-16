@@ -75,4 +75,5 @@
   <data name="You chose to keep this bill monitored. Automatic discovery will preserve that choice." xml:space="preserve"><value>Elegiste seguir monitoreando esta factura. La detección automática conservará tu elección.</value></data>
   <data name="Your monitoring choice was saved." xml:space="preserve"><value>Se guardó tu opción de monitoreo.</value></data>
   <data name="Your monitoring choice could not be saved. Try again." xml:space="preserve"><value>No se pudo guardar tu opción de monitoreo. Inténtalo de nuevo.</value></data>
+  <data name="Latest posted charge" xml:space="preserve"><value>Último cargo contabilizado</value></data>
 </root>

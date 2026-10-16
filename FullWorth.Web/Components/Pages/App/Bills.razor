@@ -73,7 +73,17 @@
     }
     else if (_billStreams.Count == 0)
     {
-        <BillsEmptyState />
+        @if (_reviewBills.Count == 0)
+        {
+            <BillsEmptyState />
+        }
+        else
+        {
+            <section class="app-panel bill-discovery-panel">
+                <h2>@L["No active monitored bills"]</h2>
+                <p>@L["Previously discovered bills are listed below for review. Their amounts are excluded from monitored totals."]</p>
+            </section>
+        }
     }
     else
     {
@@ -282,7 +292,7 @@
         <BillReviewList Bills="_reviewBills" />
     }
 
-    <section class="app-panel" aria-labelledby="discovery-heading">
+    <section class="app-panel bill-discovery-panel" aria-labelledby="discovery-heading">
         <h2 id="discovery-heading">@L["Missing a bill?"]</h2>
         <button type="button" class="secondary-action"
                 aria-expanded="@_showDiscovery" aria-controls="discovery-details"

@@ -44,6 +44,7 @@ public partial class LoginPage : ContentPage
     protected override void OnDisappearing()
     {
         _resumeCancellation?.Cancel();
+        _viewModel.ClearSensitiveInputs();
         base.OnDisappearing();
     }
 

@@ -1,0 +1,176 @@
+name: FullWorth iOS Personal Device IPA
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "FullWorth.csproj"
+      - "FullWorth.Core/**"
+      - "Platforms/iOS/**"
+      - "Resources/**"
+      - "Services/**"
+      - "ViewModels/**"
+      - "*.xaml"
+      - "*.xaml.cs"
+      - "*.cs"
+      - ".github/workflows/ios-personal-device.yml"
+      - "deploy/ios/verify-device-ipa.py"
+      - "deploy/tests/test_ios_device_ipa.py"
+      - "IOS_PERSONAL_TESTING.md"
+      - "IOS_SHARED_WEB_EXPERIENCE.md"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fullworth-ios-personal-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: Validate personal iPhone package contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Test archive validation and workflow boundaries
+        run: python3 -m unittest discover -s deploy/tests -p test_ios_device_ipa.py -v
+
+  build:
+    name: Build unsigned iPhone device IPA
+    needs: contract
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Select Xcode 26.0 required by .NET iOS
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          xcode_app="/Applications/Xcode_26.0.1.app"
+          developer_dir="$xcode_app/Contents/Developer"
+
+          [ -d "$developer_dir" ] || {
+            printf '%s\n' \
+              "Expected the real Xcode 26.0.1 bundle at $xcode_app on the pinned macos-15 runner." \
+              >&2
+            exit 65
+          }
+
+          version=$(
+            DEVELOPER_DIR="$developer_dir" \
+              xcodebuild -version |
+              awk '/^Xcode / { print $2; exit }'
+          )
+
+          case "$version" in
+            26.0|26.0.*)
+              ;;
+            *)
+              printf '%s\n' \
+                "Expected Xcode 26.0.x but $xcode_app reports Xcode $version." \
+                >&2
+              exit 65
+              ;;
+          esac
+
+          printf 'DEVELOPER_DIR=%s\n' "$developer_dir" >> "$GITHUB_ENV"
+
+          DEVELOPER_DIR="$developer_dir" xcodebuild -version
+
+          runtime_count=$(
+            DEVELOPER_DIR="$developer_dir" \
+              xcrun simctl list runtimes --json |
+              python3 -c 'import json,sys; data=json.load(sys.stdin); print(sum(1 for runtime in data.get("runtimes", []) if runtime.get("isAvailable") and runtime.get("identifier", "").startswith("com.apple.CoreSimulator.SimRuntime.iOS-26-0")))'
+          )
+
+          if [ "$runtime_count" -lt 1 ]; then
+            printf '%s\n' \
+              "The pinned macos-15 runner does not expose an available iOS 26.0 simulator runtime under Xcode $version." \
+              >&2
+            exit 65
+          fi
+
+
+      - name: Install MAUI iOS workload
+        run: dotnet workload install maui-ios --skip-manifest-update
+
+      - name: Restore device dependencies
+        run: >-
+          dotnet restore FullWorth.csproj
+          -p:TargetFramework=net10.0-ios
+          -p:RuntimeIdentifier=ios-arm64
+          -p:WarningsAsErrors=NU1901%3BNU1902%3BNU1903%3BNU1904
+
+      - name: Restore shared Core target
+        run: >-
+          dotnet restore FullWorth.Core/FullWorth.Core.csproj
+          -p:WarningsAsErrors=NU1901%3BNU1902%3BNU1903%3BNU1904
+
+      - name: Compile for physical iPhone without signing credentials
+        run: >-
+          dotnet build FullWorth.csproj
+          --framework net10.0-ios --configuration Release --no-restore
+          -p:RuntimeIdentifier=ios-arm64
+          -p:FullWorthApiBaseUrl=https://api.fullworth.org/
+          -p:ApplicationId=org.fullworth.personal
+          -p:FullWorthUseHostedWebShell=true
+          -p:EnableCodeSigning=false
+          -p:CodesignRequireProvisioningProfile=false
+          -p:ArchiveOnBuild=false
+          -p:BuildIpa=false
+
+      - name: Package and validate device archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          app="$GITHUB_WORKSPACE/bin/Release/net10.0-ios/ios-arm64/FullWorth.app"
+          test -d "$app"
+          staging=$(mktemp -d "$RUNNER_TEMP/fullworth-device.XXXXXX")
+          mkdir -p "$staging/Payload" "$RUNNER_TEMP/fullworth-device-output"
+          ditto "$app" "$staging/Payload/FullWorth.app"
+          ipa="$RUNNER_TEMP/fullworth-device-output/FullWorth-personal-unsigned.ipa"
+          ditto -c -k --keepParent "$staging/Payload" "$ipa"
+          python3 deploy/ios/verify-device-ipa.py "$ipa"
+          cd "$RUNNER_TEMP/fullworth-device-output"
+          shasum -a 256 FullWorth-personal-unsigned.ipa > FullWorth-personal-unsigned.ipa.sha256
+          {
+            echo "Source SHA: $GITHUB_SHA"
+            echo "Personal-test bundle ID: org.fullworth.personal"
+            echo "UI mode: hosted website (no separate native login or screens)"
+            echo "Web entry: https://fullworth.org/app"
+            echo "API: https://api.fullworth.org/"
+            echo "UNSIGNED: must be signed for the owner's device before installation."
+            echo "Not a TestFlight/App Store distribution package or physical-device acceptance."
+          } > BUILD-INFO.txt
+
+      - name: Retain unsigned IPA for owner-controlled signing
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: fullworth-ios-personal-${{ github.sha }}
+          path: ${{ runner.temp }}/fullworth-device-output/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+      - name: Explain installation boundary
+        shell: bash
+        run: |
+          {
+            echo "## FullWorth personal iPhone package"
+            echo "- Source: $GITHUB_SHA"
+            echo "- Real device architecture: ios-arm64 (not Simulator)"
+            echo "- Signing: absent; owner-controlled signing is still required"
+            echo "- No Apple credentials were used and no upload to Apple was performed"
+            echo "- This build does not establish successful iPhone installation"
+          } >> "$GITHUB_STEP_SUMMARY"

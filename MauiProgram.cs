@@ -30,6 +30,7 @@ public static class MauiProgram
                         "OpenSansSemibold");
                 });
 
+#if !FULLWORTH_HOSTED_WEB
         builder.Services.AddSingleton(
             new HttpClient
             {
@@ -63,6 +64,8 @@ public static class MauiProgram
 
         builder.Services.AddTransient<ActivityPage>();
         builder.Services.AddTransient<AccountPage>();
+
+#endif
 
 #if DEBUG
         builder.Logging.AddDebug();

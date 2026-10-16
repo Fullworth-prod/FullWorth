@@ -14,32 +14,69 @@ public sealed class FullWorthApiClient
             httpClient;
     }
 
-    public async Task<LoginResult> LoginAsync(
-        string email,
-        string password,
+    public Task<LoginResult> LoginAsync(
+        string email, string password,
+        CancellationToken cancellationToken = default) =>
+        LoginWithSecondFactorAsync(email, password, null, null, cancellationToken);
+
+    public async Task<LoginResult> LoginWithSecondFactorAsync(
+        string email, string password,
+        string? twoFactorCode, string? twoFactorRecoveryCode,
         CancellationToken cancellationToken = default)
     {
-        using var response =
-            await _httpClient.PostAsJsonAsync(
-                "/api/auth/login",
-                new
-                {
-                    email,
-                    password
-                },
-                cancellationToken);
+        using var response = await _httpClient.PostAsJsonAsync(
+            "/api/auth/login",
+            new
+            {
+                email,
+                password,
+                twoFactorCode = NormalizeCode(twoFactorCode),
+                twoFactorRecoveryCode = NormalizeCode(twoFactorRecoveryCode)
+            },
+            cancellationToken);
+
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized &&
+            await RequiresTwoFactorAsync(response, cancellationToken))
+        {
+            throw new TwoFactorRequiredException();
+        }
 
         response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<LoginResult>(
+            cancellationToken: cancellationToken);
+        return result ?? throw new InvalidOperationException("The login response was empty.");
+    }
 
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<LoginResult>(
-                    cancellationToken:
-                        cancellationToken);
+    private static string? NormalizeCode(string? code) =>
+        string.IsNullOrWhiteSpace(code) ? null : code.Trim();
 
-        return result
-            ?? throw new InvalidOperationException(
-                "The login response was empty.");
+    private static async Task<bool> RequiresTwoFactorAsync(
+        HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        // Only interpret the exact structured framework marker; never show or log the body.
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        var buffer = new byte[4097];
+        var length = 0;
+        while (length < buffer.Length)
+        {
+            var read = await stream.ReadAsync(buffer.AsMemory(length), cancellationToken);
+            if (read == 0) break;
+            length += read;
+        }
+
+        if (length > 4096) return false;
+        try
+        {
+            using var problem = System.Text.Json.JsonDocument.Parse(buffer.AsMemory(0, length));
+            return problem.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object &&
+                problem.RootElement.TryGetProperty("detail", out var detail) &&
+                detail.ValueKind == System.Text.Json.JsonValueKind.String &&
+                detail.GetString() == "RequiresTwoFactor";
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return false;
+        }
     }
 
     public async Task<LoginResult>
@@ -638,3 +675,8 @@ public sealed record PlaidConnectionResult(
     Guid Id,
     string InstitutionName,
     string Status);
+
+public sealed class TwoFactorRequiredException : Exception
+{
+    public TwoFactorRequiredException() : base("Two-step verification is required.") { }
+}

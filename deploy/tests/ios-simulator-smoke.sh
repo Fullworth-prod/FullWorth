@@ -4,6 +4,7 @@ set -eu
 
 app_path=${1:-}
 expected_bundle_id=${2:-}
+evidence_dir=${3:-}
 
 fail()
 {
@@ -190,6 +191,15 @@ run_with_timeout 30 \
         "$expected_bundle_id" \
         app >/dev/null ||
     fail "FullWorth app container was not available after launch."
+
+if [ -n "$evidence_dir" ]; then
+    mkdir -p "$evidence_dir"
+    # Capture logged-out launch evidence only; no account credentials in CI.
+    sleep 12
+    run_with_timeout 30 \
+        xcrun simctl io "$udid" screenshot "$evidence_dir/hosted-launch.png" ||
+        fail "could not capture the hosted launch screen."
+fi
 
 printf '%s\n' \
     "FullWorth iOS simulator install/launch smoke passed for $expected_bundle_id."

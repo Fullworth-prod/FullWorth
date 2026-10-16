@@ -29,6 +29,47 @@ public sealed class LoginPageViewModel : INotifyPropertyChanged
         _authenticationService = authenticationService;
     }
 
+    private string _verificationCode = string.Empty;
+    private bool _requiresTwoFactor;
+    private bool _useRecoveryCode;
+
+    public string VerificationCode
+    {
+        get => _verificationCode;
+        set { _verificationCode = value; OnPropertyChanged(); }
+    }
+
+    public bool RequiresTwoFactor
+    {
+        get => _requiresTwoFactor;
+        private set { _requiresTwoFactor = value; OnPropertyChanged(); }
+    }
+
+    public bool UseRecoveryCode
+    {
+        get => _useRecoveryCode;
+        set
+        {
+            if (_useRecoveryCode == value) return;
+            _useRecoveryCode = value;
+            VerificationCode = string.Empty;
+            OnPropertyChanged();
+        }
+    }
+
+    private void ResetSecondFactor()
+    {
+        RequiresTwoFactor = false;
+        VerificationCode = string.Empty;
+        UseRecoveryCode = false;
+    }
+
+    public void ClearSensitiveInputs()
+    {
+        ClearPasswords();
+        ResetSecondFactor();
+    }
+
     public string Email
     {
         get => _email;
@@ -36,6 +77,7 @@ public sealed class LoginPageViewModel : INotifyPropertyChanged
         {
             if (_email == value) return;
             _email = value;
+            ResetSecondFactor();
             OnPropertyChanged();
         }
     }
@@ -47,6 +89,7 @@ public sealed class LoginPageViewModel : INotifyPropertyChanged
         {
             if (_password == value) return;
             _password = value;
+            ResetSecondFactor();
             OnPropertyChanged();
         }
     }
@@ -177,6 +220,12 @@ public sealed class LoginPageViewModel : INotifyPropertyChanged
             return LoginPageDestination.None;
         }
 
+        if (RequiresTwoFactor && string.IsNullOrWhiteSpace(VerificationCode))
+        {
+            ErrorMessage = "Enter an authenticator code or select recovery code.";
+            return LoginPageDestination.None;
+        }
+
         var accountWasCreated = false;
 
         try
@@ -198,9 +247,24 @@ public sealed class LoginPageViewModel : INotifyPropertyChanged
                 return LoginPageDestination.ConnectBank;
             }
 
-            await _authenticationService.LoginAsync(email, Password, cancellationToken);
-            ClearPasswords();
+            await _authenticationService.LoginWithSecondFactorAsync(
+                email, Password,
+                RequiresTwoFactor && !UseRecoveryCode ? VerificationCode : null,
+                RequiresTwoFactor && UseRecoveryCode ? VerificationCode : null,
+                cancellationToken);
+            ClearSensitiveInputs();
             return LoginPageDestination.Home;
+        }
+        catch (TwoFactorRequiredException)
+        {
+            RequiresTwoFactor = true;
+            ErrorMessage = "Your account uses two-step verification. Enter a code from your authenticator app, or use a recovery code.";
+            return LoginPageDestination.None;
+        }
+        catch (SignInSessionException exception)
+        {
+            ErrorMessage = exception.Message;
+            return LoginPageDestination.None;
         }
         catch (AccountRegistrationException exception)
         {
@@ -219,7 +283,9 @@ public sealed class LoginPageViewModel : INotifyPropertyChanged
         catch (HttpRequestException exception)
             when (exception.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.Unauthorized)
         {
-            ErrorMessage = "The email address or password is incorrect.";
+            ErrorMessage = RequiresTwoFactor
+                ? "Sign-in was not accepted. Check your password and authenticator or recovery code."
+                : "The email address or password is incorrect.";
             return LoginPageDestination.None;
         }
         catch (HttpRequestException exception)
@@ -246,6 +312,7 @@ public sealed class LoginPageViewModel : INotifyPropertyChanged
         }
         finally
         {
+            VerificationCode = string.Empty;
             IsBusy = false;
         }
     }

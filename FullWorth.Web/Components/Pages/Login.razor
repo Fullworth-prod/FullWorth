@@ -284,6 +284,21 @@
                 </form>
             }
 
+            @if (!IsTwoFactorStep && Configuration.GetValue<bool>("Passkeys:Enabled"))
+            {
+                <section data-passkeys="login">
+                    <label class="field">
+                        <span>Authenticator code (only if you enabled 2FA)</span>
+                        <input name="passkeyTwoFactorCode" autocomplete="one-time-code" inputmode="numeric" maxlength="12" />
+                    </label>
+                    <button type="button" class="auth-submit" data-passkey-action="login">
+                        Sign in with a passkey or security key
+                    </button>
+                    <p data-passkey-status role="status" aria-live="polite"></p>
+                    <p>Use Face ID, your device PIN, or a compatible FIDO2 security key.</p>
+                </section>
+            }
+
             <div class="auth-divider">
                 <span></span>
             </div>

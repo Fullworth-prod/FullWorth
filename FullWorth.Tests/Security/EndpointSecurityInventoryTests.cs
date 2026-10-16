@@ -15,6 +15,7 @@ public sealed class EndpointSecurityInventoryTests
         "API|DELETE|/api/bank-connections/{connectionId:guid}|authenticated|global:300-per-minute",
         "API|DELETE|/api/planning/bill-funding-preferences/{billStreamId:guid}|authenticated|global:300-per-minute",
         "API|GET|/api/account/preferences|authenticated|global:300-per-minute",
+        "API|GET|/api/account/security/passkeys|authenticated|named:authentication",
         "API|GET|/api/account/security|authenticated|global:300-per-minute",
         "API|GET|/api/admin/access-keys|authenticated|global:300-per-minute",
         "API|GET|/api/admin/audit-log|authenticated|global:300-per-minute",
@@ -42,6 +43,9 @@ public sealed class EndpointSecurityInventoryTests
         "API|POST|/api/account/export|authenticated|named:account-export",
         "API|POST|/api/account/security/email/verification|authenticated|global:300-per-minute",
         "API|POST|/api/account/security/email|authenticated|global:300-per-minute",
+        "API|POST|/api/account/security/passkeys/options|authenticated|named:authentication",
+        "API|POST|/api/account/security/passkeys/register|authenticated|named:authentication",
+        "API|POST|/api/account/security/passkeys/remove|authenticated|named:authentication",
         "API|POST|/api/account/security/password|authenticated|global:300-per-minute",
         "API|POST|/api/account/security/profile|authenticated|global:300-per-minute",
         "API|POST|/api/account/security/sessions/revoke-all|authenticated|global:300-per-minute",
@@ -66,6 +70,8 @@ public sealed class EndpointSecurityInventoryTests
         "API|POST|/api/auth/logout|anonymous-explicit|named:authentication",
         "API|POST|/api/auth/manage/2fa|authenticated|named:authentication",
         "API|POST|/api/auth/manage/info|authenticated|named:authentication",
+        "API|POST|/api/auth/passkeys/login|anonymous-explicit|named:authentication",
+        "API|POST|/api/auth/passkeys/options|anonymous-explicit|named:authentication",
         "API|POST|/api/auth/refresh|anonymous-implicit|named:authentication",
         "API|POST|/api/auth/register|anonymous-implicit|named:authentication",
         "API|POST|/api/auth/resendConfirmationEmail|anonymous-implicit|named:authentication",
@@ -99,6 +105,7 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|DELETE|/bff/planning/bill-funding-preferences/{billStreamId:guid}|authenticated|none",
         "WEB|GET|/Error|anonymous-implicit|none",
         "WEB|GET|/app/account/privacy|authenticated|none",
+        "WEB|GET|/app/account/security-keys|authenticated|none",
         "WEB|GET|/app/account/settings|authenticated|none",
         "WEB|GET|/app/account/transactions|authenticated|none",
         "WEB|GET|/app/account|authenticated|none",
@@ -118,6 +125,7 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|GET|/auth/external/{provider}|anonymous-explicit|none",
         "WEB|GET|/bff/account/external|authenticated|none",
         "WEB|GET|/bff/account/preferences/|authenticated|none",
+        "WEB|GET|/bff/account/security/passkeys|authenticated|none",
         "WEB|GET|/bff/account/security/|authenticated|none",
         "WEB|GET|/bff/admin/access-keys|authenticated|none",
         "WEB|GET|/bff/admin/audit-log|authenticated|none",
@@ -147,6 +155,7 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|GET|/|anonymous-implicit|none",
         "WEB|POST|/Error|anonymous-implicit|none",
         "WEB|POST|/app/account/privacy|authenticated|none",
+        "WEB|POST|/app/account/security-keys|authenticated|none",
         "WEB|POST|/app/account/settings|authenticated|none",
         "WEB|POST|/app/account/transactions|authenticated|none",
         "WEB|POST|/app/account|authenticated|none",
@@ -164,6 +173,8 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|POST|/auth/forgot-password|anonymous-implicit|named:web-authentication",
         "WEB|POST|/auth/login|anonymous-implicit|named:web-authentication",
         "WEB|POST|/auth/logout|anonymous-implicit|none",
+        "WEB|POST|/auth/passkeys/login|anonymous-implicit|named:web-authentication",
+        "WEB|POST|/auth/passkeys/options|anonymous-implicit|named:web-authentication",
         "WEB|POST|/auth/register|anonymous-implicit|named:web-authentication",
         "WEB|POST|/auth/reset-password|anonymous-implicit|named:web-authentication",
         "WEB|POST|/bff/account/export|authenticated|none",
@@ -171,6 +182,9 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|POST|/bff/account/external/unlink|authenticated|none",
         "WEB|POST|/bff/account/security/email/verification|authenticated|none",
         "WEB|POST|/bff/account/security/email|authenticated|none",
+        "WEB|POST|/bff/account/security/passkeys/options|authenticated|none",
+        "WEB|POST|/bff/account/security/passkeys/register|authenticated|none",
+        "WEB|POST|/bff/account/security/passkeys/remove|authenticated|none",
         "WEB|POST|/bff/account/security/password|authenticated|none",
         "WEB|POST|/bff/account/security/profile|authenticated|none",
         "WEB|POST|/bff/account/security/sessions/revoke-all|authenticated|none",
@@ -248,11 +262,11 @@ public sealed class EndpointSecurityInventoryTests
     public void Snapshot_CoversEveryReviewedAccessAndRateLimitClass()
     {
         Assert.Equal(
-            198,
+            212,
             ExpectedInventory.Length);
 
         Assert.Equal(
-            83,
+            89,
             ExpectedInventory.Count(
                 row =>
                     row.StartsWith(
@@ -260,7 +274,7 @@ public sealed class EndpointSecurityInventoryTests
                         StringComparison.Ordinal)));
 
         Assert.Equal(
-            115,
+            123,
             ExpectedInventory.Count(
                 row =>
                     row.StartsWith(
@@ -296,7 +310,7 @@ public sealed class EndpointSecurityInventoryTests
                     StringComparison.Ordinal));
 
         Assert.Equal(
-            44,
+            52,
             ExpectedInventory.Count(
                 row =>
                     row.Contains(

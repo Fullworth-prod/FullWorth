@@ -91,6 +91,30 @@ public sealed class RecurringBillDiscoveryPersistenceService
                 dbContext);
     }
 
+    // Read-only analysis uses exactly the same deterministic candidate gates as
+    // persistence, but intentionally does not sync accounts, stage associations,
+    // create alerts, deactivate streams or save any database changes.
+    public async Task<RecurringBillDiscoveryDiagnostics> GetDiagnosticsAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (userId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "User ID is required.",
+                nameof(userId));
+        }
+
+        var transactionSnapshots = await _transactionGateway
+            .GetDiscoveryTransactionsAsync(userId, cancellationToken);
+
+        var transactions = transactionSnapshots
+            .Select(transaction => new DiscoveryTransaction(transaction, null))
+            .ToList();
+
+        return AnalyzeDiscovery(transactions, transactionSnapshots.Count).Diagnostics;
+    }
+
     public async Task<RecurringBillDiscoveryPersistenceResult>
         DiscoverAndSaveAsync(
             Guid userId,
@@ -140,177 +164,11 @@ public sealed class RecurringBillDiscoveryPersistenceService
                                 : null))
                 .ToList();
 
-        /*
-         * Do not discard a transaction merely because Plaid placed it in a
-         * category FullWorth does not currently recognize.
-         *
-         * Cadence is primary evidence that a charge is recurring. Category
-         * evidence is evaluated after recurrence is established so a stable
-         * subscription is not invisible just because its upstream category
-         * is broad or missing.
-         */
-        var candidateTransactionsByProvider =
-            new Dictionary<
-                string,
-                List<DiscoveryTransaction>>(
-                    StringComparer.OrdinalIgnoreCase);
+        var analysis = AnalyzeDiscovery(
+            persistedTransactions,
+            transactionSnapshots.Count);
 
-        var coreTransactions =
-            new List<CoreBankTransaction>(
-                persistedTransactions.Count);
-
-        var excludedPendingOrNonDebit = 0;
-        var excludedMissingMerchant = 0;
-
-        foreach (var transaction in
-                 persistedTransactions)
-        {
-            if (transaction.IsPending ||
-                transaction.Amount <=
-                    0m)
-            {
-                excludedPendingOrNonDebit++;
-                continue;
-            }
-
-            var normalizedMerchantName =
-                GetNormalizedMerchantName(
-                    transaction);
-
-            if (string.IsNullOrWhiteSpace(
-                    normalizedMerchantName))
-            {
-                excludedMissingMerchant++;
-                continue;
-            }
-
-            if (!candidateTransactionsByProvider
-                .TryGetValue(
-                    normalizedMerchantName,
-                    out var providerTransactions))
-            {
-                providerTransactions =
-                    [];
-
-                candidateTransactionsByProvider.Add(
-                    normalizedMerchantName,
-                    providerTransactions);
-            }
-
-            providerTransactions.Add(
-                transaction);
-
-            coreTransactions.Add(
-                ToCoreTransaction(
-                    transaction,
-                    normalizedMerchantName));
-        }
-
-        var detectedStreams =
-            _discoveryService.Discover(
-                coreTransactions);
-
-        var acceptedDiscoveries =
-            new List<AcceptedRecurringDiscovery>();
-
-        // Aggregate only user-owned counts, never raw merchant or account data.
-        var groupsWithOneObservation = candidateTransactionsByProvider.Values
-            .Count(group => group.Count == 1);
-        var groupsWithMultipleObservations = candidateTransactionsByProvider.Values
-            .Count(group => group.Count >= 2);
-        var groupsWithoutMonthlyEvidence = Math.Max(
-            0, groupsWithMultipleObservations - detectedStreams.Count);
-        var rejectedExplicitFallbackCategory = 0;
-        var rejectedTwoObservationEvidence = 0;
-        var rejectedOtherWeakEvidence = 0;
-
-        foreach (var detectedStream in
-                 detectedStreams)
-        {
-            if (!candidateTransactionsByProvider
-                .TryGetValue(
-                    detectedStream.ProviderName,
-                    out var matchingTransactions))
-            {
-                continue;
-            }
-
-            var resolvedCategory =
-                ResolveBillCategory(
-                    matchingTransactions);
-
-            /*
-             * The core discovery layer also contains deterministic
-             * provider-name knowledge for known billers such as
-             * Black Hills Energy, Midco, and Verizon.
-             *
-             * Preserve that evidence when Plaid's category metadata is
-             * missing or outside FullWorth's supported category map. This is
-             * especially important for variable-amount utilities, which
-             * intentionally fail the generic stable-amount fallback.
-             */
-            if (resolvedCategory ==
-                    BillCategory.Unknown &&
-                detectedStream.Category !=
-                    BillCategory.Unknown)
-            {
-                resolvedCategory =
-                    detectedStream.Category;
-            }
-
-            /*
-             * A brand-new monthly subscription may only have two posted
-             * charges in the available history. Promote that early only when
-             * the transactions contain explicit subscription/digital evidence
-             * and are not in a category we deliberately reject. Generic
-             * two-off merchant repeats remain candidates only and are not
-             * persisted.
-             */
-            if (resolvedCategory ==
-                    BillCategory.Unknown &&
-                matchingTransactions.Count ==
-                    2 &&
-                HasStrongTwoOccurrenceSubscriptionEvidence(
-                    matchingTransactions))
-            {
-                resolvedCategory =
-                    BillCategory.Other;
-            }
-
-            if (resolvedCategory ==
-                    BillCategory.Unknown &&
-                IsStrongUnclassifiedRecurringBill(
-                    matchingTransactions))
-            {
-                resolvedCategory =
-                    BillCategory.Other;
-            }
-
-            if (resolvedCategory ==
-                BillCategory.Unknown)
-            {
-                if (matchingTransactions.Any(IsExplicitlyRejectedFallbackCategory))
-                {
-                    rejectedExplicitFallbackCategory++;
-                }
-                else if (matchingTransactions.Count == 2)
-                {
-                    rejectedTwoObservationEvidence++;
-                }
-                else
-                {
-                    rejectedOtherWeakEvidence++;
-                }
-
-                continue;
-            }
-
-            acceptedDiscoveries.Add(
-                new AcceptedRecurringDiscovery(
-                    detectedStream.ProviderName,
-                    matchingTransactions,
-                    resolvedCategory));
-        }
+        var acceptedDiscoveries = analysis.AcceptedDiscoveries;
 
         var existingStreams =
             await _dbContext.BillStreams
@@ -599,13 +457,13 @@ public sealed class RecurringBillDiscoveryPersistenceService
 
         return new RecurringBillDiscoveryPersistenceResult(
             TransactionsAnalyzed:
-                coreTransactions.Count,
+                analysis.TransactionsAnalyzed,
 
             RecurringCandidatesDetected:
-                detectedStreams.Count,
+                analysis.DetectedMonthlyCandidates,
 
             RecurringCandidatesRejected:
-                detectedStreams.Count - acceptedDiscoveries.Count,
+                analysis.DetectedMonthlyCandidates - acceptedDiscoveries.Count,
 
             BillsDiscovered:
                 acceptedDiscoveries.Count,
@@ -628,8 +486,187 @@ public sealed class RecurringBillDiscoveryPersistenceService
             NewBillAlertsCreated:
                 newBillAlertCount)
         {
-            Diagnostics = new RecurringBillDiscoveryDiagnostics(
-                ImportedTransactions: transactionSnapshots.Count,
+            Diagnostics = analysis.Diagnostics
+        };
+    }
+
+    private DiscoveryAnalysis AnalyzeDiscovery(
+        IReadOnlyList<DiscoveryTransaction> persistedTransactions,
+        int importedTransactionCount)
+    {
+        /*
+         * Do not discard a transaction merely because Plaid placed it in a
+         * category FullWorth does not currently recognize.
+         *
+         * Cadence is primary evidence that a charge is recurring. Category
+         * evidence is evaluated after recurrence is established so a stable
+         * subscription is not invisible just because its upstream category
+         * is broad or missing.
+         */
+        var candidateTransactionsByProvider =
+            new Dictionary<
+                string,
+                List<DiscoveryTransaction>>(
+                    StringComparer.OrdinalIgnoreCase);
+
+        var coreTransactions =
+            new List<CoreBankTransaction>(
+                persistedTransactions.Count);
+
+        var excludedPendingOrNonDebit = 0;
+        var excludedMissingMerchant = 0;
+
+        foreach (var transaction in
+                 persistedTransactions)
+        {
+            if (transaction.IsPending ||
+                transaction.Amount <=
+                    0m)
+            {
+                excludedPendingOrNonDebit++;
+                continue;
+            }
+
+            var normalizedMerchantName =
+                GetNormalizedMerchantName(
+                    transaction);
+
+            if (string.IsNullOrWhiteSpace(
+                    normalizedMerchantName))
+            {
+                excludedMissingMerchant++;
+                continue;
+            }
+
+            if (!candidateTransactionsByProvider
+                .TryGetValue(
+                    normalizedMerchantName,
+                    out var providerTransactions))
+            {
+                providerTransactions =
+                    [];
+
+                candidateTransactionsByProvider.Add(
+                    normalizedMerchantName,
+                    providerTransactions);
+            }
+
+            providerTransactions.Add(
+                transaction);
+
+            coreTransactions.Add(
+                ToCoreTransaction(
+                    transaction,
+                    normalizedMerchantName));
+        }
+
+        var detectedStreams =
+            _discoveryService.Discover(
+                coreTransactions);
+
+        var acceptedDiscoveries =
+            new List<AcceptedRecurringDiscovery>();
+
+        // Aggregate only user-owned counts, never raw merchant or account data.
+        var groupsWithOneObservation = candidateTransactionsByProvider.Values
+            .Count(group => group.Count == 1);
+        var groupsWithMultipleObservations = candidateTransactionsByProvider.Values
+            .Count(group => group.Count >= 2);
+        var groupsWithoutMonthlyEvidence = Math.Max(
+            0, groupsWithMultipleObservations - detectedStreams.Count);
+        var rejectedExplicitFallbackCategory = 0;
+        var rejectedTwoObservationEvidence = 0;
+        var rejectedOtherWeakEvidence = 0;
+
+        foreach (var detectedStream in
+                 detectedStreams)
+        {
+            if (!candidateTransactionsByProvider
+                .TryGetValue(
+                    detectedStream.ProviderName,
+                    out var matchingTransactions))
+            {
+                continue;
+            }
+
+            var resolvedCategory =
+                ResolveBillCategory(
+                    matchingTransactions);
+
+            /*
+             * The core discovery layer also contains deterministic
+             * provider-name knowledge for known billers such as
+             * Black Hills Energy, Midco, and Verizon.
+             *
+             * Preserve that evidence when Plaid's category metadata is
+             * missing or outside FullWorth's supported category map. This is
+             * especially important for variable-amount utilities, which
+             * intentionally fail the generic stable-amount fallback.
+             */
+            if (resolvedCategory ==
+                    BillCategory.Unknown &&
+                detectedStream.Category !=
+                    BillCategory.Unknown)
+            {
+                resolvedCategory =
+                    detectedStream.Category;
+            }
+
+            /*
+             * A brand-new monthly subscription may only have two posted
+             * charges in the available history. Promote that early only when
+             * the transactions contain explicit subscription/digital evidence
+             * and are not in a category we deliberately reject. Generic
+             * two-off merchant repeats remain candidates only and are not
+             * persisted.
+             */
+            if (resolvedCategory ==
+                    BillCategory.Unknown &&
+                matchingTransactions.Count ==
+                    2 &&
+                HasStrongTwoOccurrenceSubscriptionEvidence(
+                    matchingTransactions))
+            {
+                resolvedCategory =
+                    BillCategory.Other;
+            }
+
+            if (resolvedCategory ==
+                    BillCategory.Unknown &&
+                IsStrongUnclassifiedRecurringBill(
+                    matchingTransactions))
+            {
+                resolvedCategory =
+                    BillCategory.Other;
+            }
+
+            if (resolvedCategory ==
+                BillCategory.Unknown)
+            {
+                if (matchingTransactions.Any(IsExplicitlyRejectedFallbackCategory))
+                {
+                    rejectedExplicitFallbackCategory++;
+                }
+                else if (matchingTransactions.Count == 2)
+                {
+                    rejectedTwoObservationEvidence++;
+                }
+                else
+                {
+                    rejectedOtherWeakEvidence++;
+                }
+
+                continue;
+            }
+
+            acceptedDiscoveries.Add(
+                new AcceptedRecurringDiscovery(
+                    detectedStream.ProviderName,
+                    matchingTransactions,
+                    resolvedCategory));
+        }
+        var diagnostics = new RecurringBillDiscoveryDiagnostics(
+                ImportedTransactions: importedTransactionCount,
                 ExcludedPendingOrNonDebitTransactions: excludedPendingOrNonDebit,
                 ExcludedMissingMerchantTransactions: excludedMissingMerchant,
                 EligiblePostedTransactions: coreTransactions.Count,
@@ -643,9 +680,20 @@ public sealed class RecurringBillDiscoveryPersistenceService
                 RejectedExplicitFallbackCategories: rejectedExplicitFallbackCategory,
                 RejectedInsufficientTwoObservationEvidence: rejectedTwoObservationEvidence,
                 RejectedOtherWeakOrVariableEvidence: rejectedOtherWeakEvidence,
-                AcceptedCandidates: acceptedDiscoveries.Count)
-        };
+                AcceptedCandidates: acceptedDiscoveries.Count);
+
+        return new DiscoveryAnalysis(
+            coreTransactions.Count,
+            detectedStreams.Count,
+            acceptedDiscoveries,
+            diagnostics);
     }
+
+    private sealed record DiscoveryAnalysis(
+        int TransactionsAnalyzed,
+        int DetectedMonthlyCandidates,
+        IReadOnlyList<AcceptedRecurringDiscovery> AcceptedDiscoveries,
+        RecurringBillDiscoveryDiagnostics Diagnostics);
 
     private BillCategory ResolveBillCategory(
         IReadOnlyCollection<DiscoveryTransaction>

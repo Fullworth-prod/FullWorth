@@ -1,8 +1,23 @@
 # FullWorth personal iPhone testing
 
 This is an owner-controlled development experiment, not a production release.
-The MAUI native client is separate from the Web/PWA client: the Web redesign and
-pending Web passkeys do not automatically become native features.
+For iOS, the MAUI shell now defaults to the deployed FullWorth.Web interface at
+https://fullworth.org/app; the browser and app use the same server-side Web/BFF
+pages and login forms, but their sessions do not automatically transfer between
+Safari and the app's WKWebView. Other platforms retain the native client; iOS
+can explicitly opt back into the native fallback. Passkey support has merged to
+development but remains disabled in the API and Web until separately reviewed and
+activated. Installing this IPA does not activate passkeys or prove provider handoffs.
+
+## Verified integration build — 2026-10-16 UTC
+
+The [PR #755](https://github.com/Fullworth/FullWorth/pull/755) source head
+`8c1b2c5bdf1851e9b609d022145322851d162139` passed CI, dependency security,
+the iOS device IPA build, iOS simulator install/launch, and Android internal
+emulator testing. The device IPA is unsigned, and the GitHub Actions artifact
+`12027007141` expires on October 23, 2026 at 05:18 UTC. The verified
+source head predates the development integration merge; do not misidentify the
+merge commit as the compiled IPA source. Physical-device testing is still open.
 
 ## Build without persistent Apple credentials
 

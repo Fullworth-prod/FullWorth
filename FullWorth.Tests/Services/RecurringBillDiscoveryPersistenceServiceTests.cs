@@ -595,6 +595,78 @@ public sealed class RecurringBillDiscoveryPersistenceServiceTests
                         association.BillStreamId == cloudTwo.Id));
     }
 
+    [Fact]
+    public async Task DiscoveryDiagnostics_CountReasonsWithoutExposingOtherUserHistory()
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = Guid.NewGuid();
+        var anotherUserId = Guid.NewGuid();
+
+        AddMonthlyTransactions(dbContext, userId, "Black Hills Energy",
+            99m, null, null);
+
+        AddTransaction(dbContext, userId, "Two Observations",
+            new DateOnly(2026, 1, 12), 19m, null, null);
+        AddTransaction(dbContext, userId, "Two Observations",
+            new DateOnly(2026, 2, 12), 19m, null, null);
+
+        AddMonthlyTransactions(dbContext, userId, "Example Restaurant",
+            24m, "FOOD_AND_DRINK", "FOOD_AND_DRINK_RESTAURANT");
+
+        AddTransaction(dbContext, userId, "Nonmonthly",
+            new DateOnly(2026, 1, 12), 10m, null, null);
+        AddTransaction(dbContext, userId, "Nonmonthly",
+            new DateOnly(2026, 1, 20), 10m, null, null);
+
+        AddTransaction(dbContext, userId, "One Off",
+            new DateOnly(2026, 1, 1), 10m, null, null);
+
+        var pending = AddTransaction(dbContext, userId, "Pending",
+            new DateOnly(2026, 3, 6), 10m, null, null);
+        pending.IsPending = true;
+        AddTransaction(dbContext, userId, " ",
+            new DateOnly(2026, 3, 6), 10m, null, null);
+
+        AddMonthlyTransactions(dbContext, anotherUserId, "Other User Bills",
+            10m, null, null);
+        await dbContext.SaveChangesAsync();
+
+        var service = new RecurringBillDiscoveryPersistenceService(
+            dbContext,
+            new PlaidBankTransactionDiscoveryGateway(dbContext),
+            new BillTransactionAssociationGateway(dbContext));
+
+        var result = await service.DiscoverAndSaveAsync(userId);
+        var diagnostics = Assert.IsType<RecurringBillDiscoveryDiagnostics>(
+            result.Diagnostics);
+
+        Assert.Equal(13, diagnostics.ImportedTransactions);
+        Assert.Equal(1, diagnostics.ExcludedPendingOrNonDebitTransactions);
+        Assert.Equal(1, diagnostics.ExcludedMissingMerchantTransactions);
+        Assert.Equal(11, diagnostics.EligiblePostedTransactions);
+        Assert.Equal(new DateOnly(2026, 1, 1),
+            diagnostics.FirstEligiblePostedDate);
+        Assert.Equal(new DateOnly(2026, 3, 5),
+            diagnostics.LastEligiblePostedDate);
+        Assert.Equal(1, diagnostics.SingleObservationGroups);
+        Assert.Equal(1, diagnostics.GroupsWithoutSupportedMonthlyCadence);
+        Assert.Equal(3, diagnostics.DetectedMonthlyCandidates);
+        Assert.Equal(1, diagnostics.RejectedExplicitFallbackCategories);
+        Assert.Equal(1, diagnostics.RejectedInsufficientTwoObservationEvidence);
+        Assert.Equal(0, diagnostics.RejectedOtherWeakOrVariableEvidence);
+        Assert.Equal(1, diagnostics.AcceptedCandidates);
+        Assert.Equal(1, result.BillsDiscovered);
+        Assert.Equal(2, result.RecurringCandidatesRejected);
+
+        // The summary must be safe for an authenticated user-facing API to
+        // consume later; no raw description, account or bank identifiers.
+        Assert.DoesNotContain(
+            diagnostics.GetType().GetProperties(),
+            property => property.Name.Contains("Merchant", StringComparison.Ordinal)
+                || property.Name.Contains("AccountId", StringComparison.Ordinal)
+                || property.Name.Contains("TransactionId", StringComparison.Ordinal));
+    }
+
     private static FullWorthDbContext CreateDbContext()
     {
         return new FullWorthDbContext(

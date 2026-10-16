@@ -672,6 +672,66 @@ public sealed class RecurringBillDiscoveryPersistenceServiceTests
                 || property.Name.EndsWith("Id", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task ReadOnlyDiagnostics_MatchDiscoveryAndNeverChangeFinancialState()
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = Guid.NewGuid();
+        var anotherUserId = Guid.NewGuid();
+
+        AddMonthlyTransactions(dbContext, userId, "Black Hills Energy",
+            118m, null, null);
+        AddTransaction(dbContext, anotherUserId, "Unrelated Payment",
+            new DateOnly(2026, 5, 9), 15m, null, null);
+
+        await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
+
+        var service = new RecurringBillDiscoveryPersistenceService(
+            dbContext,
+            new PlaidBankTransactionDiscoveryGateway(dbContext),
+            new BillTransactionAssociationGateway(dbContext));
+
+        var diagnostics = await service.GetDiagnosticsAsync(userId);
+        Assert.Equal(3, diagnostics.ImportedTransactions);
+        Assert.Equal(3, diagnostics.EligiblePostedTransactions);
+        Assert.Equal(1, diagnostics.DetectedMonthlyCandidates);
+        Assert.Equal(1, diagnostics.AcceptedCandidates);
+        Assert.Equal(new DateOnly(2026, 1, 5),
+            diagnostics.FirstEligiblePostedDate);
+        Assert.Equal(new DateOnly(2026, 3, 5),
+            diagnostics.LastEligiblePostedDate);
+
+        var otherDiagnostics = await service.GetDiagnosticsAsync(anotherUserId);
+        Assert.Equal(1, otherDiagnostics.ImportedTransactions);
+        Assert.Equal(1, otherDiagnostics.SingleObservationGroups);
+        Assert.Equal(0, otherDiagnostics.AcceptedCandidates);
+
+        // Neither owner read may stage an association, generate an alert,
+        // deactivate a stream or write anything to the database.
+        Assert.Empty(dbContext.BillStreams);
+        Assert.Empty(dbContext.BillTransactionAssociations);
+        Assert.Empty(dbContext.BillAlerts);
+        Assert.False(dbContext.ChangeTracker.HasChanges());
+
+        var persisted = await service.DiscoverAndSaveAsync(userId);
+        Assert.Equal(diagnostics, persisted.Diagnostics);
+        Assert.Equal(1, persisted.BillsDiscovered);
+    }
+
+    [Fact]
+    public async Task ReadOnlyDiagnostics_RejectsMissingAuthenticatedUserId()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = new RecurringBillDiscoveryPersistenceService(
+            dbContext,
+            new PlaidBankTransactionDiscoveryGateway(dbContext),
+            new BillTransactionAssociationGateway(dbContext));
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.GetDiagnosticsAsync(Guid.Empty));
+    }
+
     private static FullWorthDbContext CreateDbContext()
     {
         return new FullWorthDbContext(

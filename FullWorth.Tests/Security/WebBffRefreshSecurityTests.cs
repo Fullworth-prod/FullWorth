@@ -13,8 +13,10 @@ namespace FullWorth.Tests.Security;
 
 public sealed class WebBffRefreshSecurityTests
 {
-    [Fact]
-    public async Task NearExpirySession_RefreshesServerSide_WithoutReturningTokens()
+    [Theory]
+    [InlineData("/api/bill-streams")]
+    [InlineData("/api/bill-discovery/diagnostics")]
+    public async Task NearExpirySession_RefreshesServerSide_WithoutReturningTokens(string route)
     {
         const string oldAccessToken = "old-access-secret";
         const string oldRefreshToken = "old-refresh-secret";
@@ -57,7 +59,7 @@ public sealed class WebBffRefreshSecurityTests
         var result =
             await service.ForwardGetAsync(
                 context,
-                "/api/bill-streams");
+                route);
 
         Assert.Collection(
             handler.Requests,
@@ -86,7 +88,7 @@ public sealed class WebBffRefreshSecurityTests
                     forwarded.Method);
 
                 Assert.Equal(
-                    "/api/bill-streams",
+                    route,
                     forwarded.Path);
 
                 Assert.Equal(

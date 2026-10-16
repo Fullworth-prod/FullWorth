@@ -265,9 +265,74 @@
             }
         </section>
     }
+    <section class="app-panel" aria-labelledby="discovery-heading">
+        <h2 id="discovery-heading">@L["Missing a bill?"]</h2>
+        <button type="button" class="secondary-action"
+                aria-expanded="@_showDiscovery" aria-controls="discovery-details"
+                disabled="@_discoveryLoading" @onclick="ToggleDiscoveryAsync">
+            @(_discoveryLoading ? L["Checking imported history…"]
+                : _showDiscovery ? L["Hide discovery details"] : L["Check discovery details"])
+        </button>
+        @if (_showDiscovery)
+        {
+            <div id="discovery-details" aria-busy="@_discoveryLoading">
+                @if (_discoveryLoading)
+                {
+                    <p role="status">@L["Checking imported history…"]</p>
+                }
+                else if (_discoveryError)
+                {
+                    <p role="alert">@L["Discovery details could not be loaded. Try again."]</p>
+                    <button type="button" class="secondary-action" @onclick="LoadDiscoveryAsync">
+                        @L["Try again"]
+                    </button>
+                }
+                else if (_discovery is not null)
+                {
+                    <BillDiscoverySummary Data="_discovery" />
+                }
+            </div>
+        }
+    </section>
 </div>
 
 @code {
+    private BillDiscoverySummary.Snapshot? _discovery;
+    private bool _showDiscovery;
+    private bool _discoveryLoading;
+    private bool _discoveryError;
+
+    private async Task ToggleDiscoveryAsync()
+    {
+        _showDiscovery = !_showDiscovery;
+        if (_showDiscovery)
+        {
+            await LoadDiscoveryAsync();
+        }
+        else
+        {
+            _discovery = null;
+        }
+    }
+
+    private async Task LoadDiscoveryAsync()
+    {
+        if (_discoveryLoading) return;
+        _discoveryLoading = true;
+        _discoveryError = false;
+        _discovery = null;
+        try
+        {
+            _bffModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/bff.js");
+            _discovery = await _bffModule.InvokeAsync<BillDiscoverySummary.Snapshot?>(
+                "getBillDiscoveryDiagnostics");
+            _discoveryError = _discovery is null;
+        }
+        catch (JSException) { _discoveryError = true; }
+        catch (Exception) { _discoveryError = true; }
+        finally { _discoveryLoading = false; }
+    }
+
     private IJSObjectReference?
         _bffModule;
 

@@ -26,6 +26,24 @@ public sealed class BillDiscoveryController : ControllerBase
         _userManager = userManager;
     }
 
+    [HttpGet("diagnostics")]
+    [EnableRateLimiting("financial-refresh")]
+    public async Task<IActionResult> GetDiagnostics(
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        // This query never triggers bank synchronization or bill mutations.
+        var diagnostics = await _discoveryService.GetDiagnosticsAsync(
+            userId,
+            cancellationToken);
+
+        return Ok(diagnostics);
+    }
+
     [HttpPost("run")]
     [EnableRateLimiting("financial-refresh")]
     public async Task<IActionResult> RunDiscovery(

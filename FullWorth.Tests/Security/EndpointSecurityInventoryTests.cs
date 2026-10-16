@@ -27,6 +27,7 @@ public sealed class EndpointSecurityInventoryTests
         "API|GET|/api/bank-accounts|authenticated|global:300-per-minute",
         "API|GET|/api/bank-connections|authenticated|global:300-per-minute",
         "API|GET|/api/bank-transactions|authenticated|global:300-per-minute",
+        "API|GET|/api/bill-discovery/diagnostics|authenticated|named:financial-refresh",
         "API|GET|/api/bill-streams/{billStreamId:guid}/statement-uploads/{uploadId:guid}/file|authenticated|named:statement-download",
         "API|GET|/api/bill-streams/{billStreamId:guid}/statement-uploads/{uploadId:guid}|authenticated|global:300-per-minute",
         "API|GET|/api/bill-streams/{billStreamId:guid}|authenticated|global:300-per-minute",
@@ -262,11 +263,11 @@ public sealed class EndpointSecurityInventoryTests
     public void Snapshot_CoversEveryReviewedAccessAndRateLimitClass()
     {
         Assert.Equal(
-            212,
+            213,
             ExpectedInventory.Length);
 
         Assert.Equal(
-            89,
+            90,
             ExpectedInventory.Count(
                 row =>
                     row.StartsWith(
@@ -310,7 +311,7 @@ public sealed class EndpointSecurityInventoryTests
                     StringComparison.Ordinal));
 
         Assert.Equal(
-            52,
+            53,
             ExpectedInventory.Count(
                 row =>
                     row.Contains(
@@ -318,7 +319,7 @@ public sealed class EndpointSecurityInventoryTests
                         StringComparison.Ordinal)));
 
         Assert.Equal(
-            7,
+            8,
             ExpectedInventory.Count(
                 row =>
                     row.EndsWith(

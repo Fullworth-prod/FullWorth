@@ -1,7 +1,7 @@
 # Passkeys and FIDO2 security keys
 
 This implementation supports discoverable device passkeys (including iPhone Face ID)
-and PIN/biometric-capable FIDO2 roaming keys. FullWorth never stores biometric data
+and discoverable-credential/PIN/biometric-capable FIDO2 roaming keys. FullWorth never stores biometric data
 or private keys. User verification is required; legacy touch-only U2F keys are not
 advertised as supported.
 
@@ -29,8 +29,8 @@ signature verification. Registration state remains server-side and is bound to t
 authenticated account and security stamp. At most 2048 pending ceremonies exist per
 API process; they expire after three minutes and are atomically consumed on every
 completion attempt, including failures. Capacity returns 503 rather than evicting
-active ceremonies. Registration is capped at 10 keys per account (concurrent
-registration can require a database-level quota in a future multi-writer release).
+active ceremonies. Registration is capped at 10 keys per account. PostgreSQL transaction advisory locking
+serializes registration ownership and quota checks before Identity's upsert.
 
 The challenge cache intentionally supports one API process. Restart, routing to a
 different replica, or process loss fails closed and requires restarting the ceremony.

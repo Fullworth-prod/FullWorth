@@ -256,7 +256,7 @@ builder.Services.AddOptions<IdentityPasskeyOptions>()
     {
         options.ServerDomain = new Uri(configured.Value.Origin).Host;
         options.UserVerificationRequirement = "required";
-        options.ResidentKeyRequirement = "preferred";
+        options.ResidentKeyRequirement = "required";
         options.AuthenticatorAttachment = null; // Platform passkeys AND roaming FIDO2 keys.
         options.AttestationConveyancePreference = "none";
         options.AuthenticatorTimeout = PasskeyCeremonyStore.Lifetime;

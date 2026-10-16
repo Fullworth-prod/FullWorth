@@ -100,6 +100,83 @@ public sealed class PasskeyAuthenticationTests
         }
     }
 
+    [Fact]
+    public async Task ExistingMfaCannotBeBypassedWithAValidKey()
+    {
+        await using var factory = new FullWorthApiFactory();
+        await using var enabled = Enable(factory);
+        using var client = enabled.CreateClient();
+        var session = await TestUserAuthentication.RegisterAndLoginAsync(client);
+        TestUserAuthentication.Authorize(client, session);
+        using var key = new VirtualKey();
+        await Enroll(client, key);
+        await using (var scope = enabled.Services.CreateAsyncScope())
+        {
+            var manager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var user = await manager.FindByEmailAsync(session.Email);
+            Assert.True((await manager.SetTwoFactorEnabledAsync(user!, true)).Succeeded);
+        }
+        client.DefaultRequestHeaders.Authorization = null;
+        var options = await Begin(client, "/api/auth/passkeys/options", new { });
+        var response = await client.PostAsJsonAsync("/api/auth/passkeys/login", new
+        {
+            ceremonyId = options.GetProperty("ceremonyId").GetString(),
+            credentialJson = key.Assert(options.GetProperty("options"))
+        });
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.DoesNotContain("accessToken", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task KeysAreOwnerScopedAndRemovalPreventsSignIn()
+    {
+        await using var factory = new FullWorthApiFactory();
+        await using var enabled = Enable(factory);
+        using var client = enabled.CreateClient();
+        var owner = await TestUserAuthentication.RegisterAndLoginAsync(client);
+        TestUserAuthentication.Authorize(client, owner);
+        using var key = new VirtualKey();
+        await Enroll(client, key);
+        var owned = await client.GetFromJsonAsync<JsonElement>("/api/account/security/passkeys");
+        var id = owned[0].GetProperty("id").GetString();
+        client.DefaultRequestHeaders.Authorization = null;
+        var other = await TestUserAuthentication.RegisterAndLoginAsync(client);
+        TestUserAuthentication.Authorize(client, other);
+        Assert.Equal(0, (await client.GetFromJsonAsync<JsonElement>(
+            "/api/account/security/passkeys")).GetArrayLength());
+        Assert.Equal(HttpStatusCode.NotFound, (await client.PostAsJsonAsync(
+            "/api/account/security/passkeys/remove", new
+            {
+                credentialId = id, currentPassword = "FullWorth!Tests123"
+            })).StatusCode);
+        TestUserAuthentication.Authorize(client, owner);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync(
+            "/api/account/security/passkeys/remove", new
+            {
+                credentialId = id, currentPassword = "FullWorth!Tests123"
+            })).StatusCode);
+        client.DefaultRequestHeaders.Authorization = null;
+        var options = await Begin(client, "/api/auth/passkeys/options", new { });
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync(
+            "/api/auth/passkeys/login", new
+            {
+                ceremonyId = options.GetProperty("ceremonyId").GetString(),
+                credentialJson = key.Assert(options.GetProperty("options"))
+            })).StatusCode);
+    }
+
+    private static async Task Enroll(HttpClient client, VirtualKey key)
+    {
+        var options = await Begin(client, "/api/account/security/passkeys/options",
+            new { currentPassword = "FullWorth!Tests123" });
+        var response = await client.PostAsJsonAsync("/api/account/security/passkeys/register", new
+        {
+            ceremonyId = options.GetProperty("ceremonyId").GetString(),
+            credentialJson = key.Register(options.GetProperty("options")), name = "Test key"
+        });
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
     private static Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<FullWorth.API.ApiAssemblyMarker>
         Enable(FullWorthApiFactory factory) => factory.WithWebHostBuilder(builder =>
             builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(

@@ -17,8 +17,8 @@ public sealed class PasskeyCeremonyStore(TimeProvider clock)
         lock (_gate)
         {
             var now = clock.GetUtcNow();
-            foreach (var id in _pending.Where(x => x.Value.ExpiresAt <= now).Select(x => x.Key).ToArray())
-                _pending.Remove(id);
+            foreach (var expiredId in _pending.Where(x => x.Value.ExpiresAt <= now).Select(x => x.Key).ToArray())
+                _pending.Remove(expiredId);
             if (_pending.Count >= Capacity) return null;
             var id = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
             _pending.Add(id, new(operation, state, userId, securityStamp, now + Lifetime));

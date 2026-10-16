@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using FullWorth.API.Data.Entities;
+using FullWorth.API.Data;
+using Microsoft.EntityFrameworkCore;
 using FullWorth.API.Services.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -15,6 +17,7 @@ namespace FullWorth.API.Controllers;
 [Route("api")]
 [EnableRateLimiting("authentication")]
 public sealed class PasskeysController(
+    FullWorthDbContext database,
     UserManager<ApplicationUser> users,
     SignInManager<ApplicationUser> signIn,
     IPasskeyHandler<ApplicationUser> handler,
@@ -121,11 +124,21 @@ public sealed class PasskeysController(
             AttestationState = state.State
         });
         if (!result.Succeeded || result.UserEntity.Id != user.Id.ToString()) return Denied();
+        // Serialize registration writes in PostgreSQL. Identity's upsert could otherwise
+        // replace a concurrently registered credential after an earlier ownership check.
+        // This also makes the per-account quota atomic across API processes.
+        await using var transaction = database.Database.IsRelational()
+            ? await database.Database.BeginTransactionAsync(HttpContext.RequestAborted) : null;
+        if (transaction is not null)
+            await database.Database.ExecuteSqlRawAsync(
+                "SELECT pg_advisory_xact_lock(74128596321048)", HttpContext.RequestAborted);
         // Identity's upsert must never replace another credential, even for this owner.
         if (await users.FindByPasskeyIdAsync(result.Passkey.CredentialId) is not null) return Conflict();
         if ((await users.GetPasskeysAsync(user)).Count >= 10) return BadRequest();
         result.Passkey.Name = string.IsNullOrWhiteSpace(request.Name) ? "Passkey or security key" : request.Name.Trim();
-        return (await users.AddOrUpdatePasskeyAsync(user, result.Passkey)).Succeeded ? NoContent() : Denied();
+        if (!(await users.AddOrUpdatePasskeyAsync(user, result.Passkey)).Succeeded) return Denied();
+        if (transaction is not null) await transaction.CommitAsync(HttpContext.RequestAborted);
+        return NoContent();
     }
 
     [Authorize]
@@ -139,7 +152,7 @@ public sealed class PasskeysController(
         byte[] id;
         try { id = WebEncoders.Base64UrlDecode(request.CredentialId); }
         catch (FormatException) { return NotFound(); }
-        if (await users.FindPasskeyAsync(user, id) is null) return NotFound();
+        if (!(await users.GetPasskeysAsync(user)).Any(key => key.CredentialId.AsSpan().SequenceEqual(id))) return NotFound();
         return (await users.RemovePasskeyAsync(user, id)).Succeeded ? NoContent() : Denied();
     }
 

@@ -263,11 +263,11 @@ public sealed class EndpointSecurityInventoryTests
     public void Snapshot_CoversEveryReviewedAccessAndRateLimitClass()
     {
         Assert.Equal(
-            212,
+            213,
             ExpectedInventory.Length);
 
         Assert.Equal(
-            89,
+            90,
             ExpectedInventory.Count(
                 row =>
                     row.StartsWith(
@@ -311,7 +311,7 @@ public sealed class EndpointSecurityInventoryTests
                     StringComparison.Ordinal));
 
         Assert.Equal(
-            52,
+            53,
             ExpectedInventory.Count(
                 row =>
                     row.Contains(
@@ -319,7 +319,7 @@ public sealed class EndpointSecurityInventoryTests
                         StringComparison.Ordinal)));
 
         Assert.Equal(
-            7,
+            8,
             ExpectedInventory.Count(
                 row =>
                     row.EndsWith(

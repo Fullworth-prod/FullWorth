@@ -159,6 +159,9 @@ public sealed class RecurringBillDiscoveryPersistenceService
             new List<CoreBankTransaction>(
                 persistedTransactions.Count);
 
+        var excludedPendingOrNonDebit = 0;
+        var excludedMissingMerchant = 0;
+
         foreach (var transaction in
                  persistedTransactions)
         {
@@ -166,6 +169,7 @@ public sealed class RecurringBillDiscoveryPersistenceService
                 transaction.Amount <=
                     0m)
             {
+                excludedPendingOrNonDebit++;
                 continue;
             }
 
@@ -176,6 +180,7 @@ public sealed class RecurringBillDiscoveryPersistenceService
             if (string.IsNullOrWhiteSpace(
                     normalizedMerchantName))
             {
+                excludedMissingMerchant++;
                 continue;
             }
 
@@ -207,6 +212,17 @@ public sealed class RecurringBillDiscoveryPersistenceService
 
         var acceptedDiscoveries =
             new List<AcceptedRecurringDiscovery>();
+
+        // Aggregate only user-owned counts, never raw merchant or account data.
+        var groupsWithOneObservation = candidateTransactionsByProvider.Values
+            .Count(group => group.Count == 1);
+        var groupsWithMultipleObservations = candidateTransactionsByProvider.Values
+            .Count(group => group.Count >= 2);
+        var groupsWithoutMonthlyEvidence = Math.Max(
+            0, groupsWithMultipleObservations - detectedStreams.Count);
+        var rejectedExplicitFallbackCategory = 0;
+        var rejectedTwoObservationEvidence = 0;
+        var rejectedOtherWeakEvidence = 0;
 
         foreach (var detectedStream in
                  detectedStreams)
@@ -273,6 +289,19 @@ public sealed class RecurringBillDiscoveryPersistenceService
             if (resolvedCategory ==
                 BillCategory.Unknown)
             {
+                if (matchingTransactions.Any(IsExplicitlyRejectedFallbackCategory))
+                {
+                    rejectedExplicitFallbackCategory++;
+                }
+                else if (matchingTransactions.Count == 2)
+                {
+                    rejectedTwoObservationEvidence++;
+                }
+                else
+                {
+                    rejectedOtherWeakEvidence++;
+                }
+
                 continue;
             }
 
@@ -597,7 +626,25 @@ public sealed class RecurringBillDiscoveryPersistenceService
                 unlinkedTransactionCount,
 
             NewBillAlertsCreated:
-                newBillAlertCount);
+                newBillAlertCount)
+        {
+            Diagnostics = new RecurringBillDiscoveryDiagnostics(
+                ImportedTransactions: transactionSnapshots.Count,
+                ExcludedPendingOrNonDebitTransactions: excludedPendingOrNonDebit,
+                ExcludedMissingMerchantTransactions: excludedMissingMerchant,
+                EligiblePostedTransactions: coreTransactions.Count,
+                FirstEligiblePostedDate: coreTransactions.Count == 0
+                    ? null : coreTransactions.Min(t => t.PostedDate),
+                LastEligiblePostedDate: coreTransactions.Count == 0
+                    ? null : coreTransactions.Max(t => t.PostedDate),
+                SingleObservationGroups: groupsWithOneObservation,
+                GroupsWithoutSupportedMonthlyCadence: groupsWithoutMonthlyEvidence,
+                DetectedMonthlyCandidates: detectedStreams.Count,
+                RejectedExplicitFallbackCategories: rejectedExplicitFallbackCategory,
+                RejectedInsufficientTwoObservationEvidence: rejectedTwoObservationEvidence,
+                RejectedOtherWeakOrVariableEvidence: rejectedOtherWeakEvidence,
+                AcceptedCandidates: acceptedDiscoveries.Count)
+        };
     }
 
     private BillCategory ResolveBillCategory(
@@ -877,4 +924,24 @@ public sealed record RecurringBillDiscoveryPersistenceResult(
     int BillStreamsDeactivated,
     int TransactionsLinked,
     int TransactionsUnlinked,
-    int NewBillAlertsCreated);
+    int NewBillAlertsCreated)
+{
+    // Deliberately summary-only. Do not expose transaction/provider identifiers in
+    // unauthenticated responses, telemetry, CI logs or public issue comments.
+    public RecurringBillDiscoveryDiagnostics? Diagnostics { get; init; }
+}
+
+public sealed record RecurringBillDiscoveryDiagnostics(
+    int ImportedTransactions,
+    int ExcludedPendingOrNonDebitTransactions,
+    int ExcludedMissingMerchantTransactions,
+    int EligiblePostedTransactions,
+    DateOnly? FirstEligiblePostedDate,
+    DateOnly? LastEligiblePostedDate,
+    int SingleObservationGroups,
+    int GroupsWithoutSupportedMonthlyCadence,
+    int DetectedMonthlyCandidates,
+    int RejectedExplicitFallbackCategories,
+    int RejectedInsufficientTwoObservationEvidence,
+    int RejectedOtherWeakOrVariableEvidence,
+    int AcceptedCandidates);

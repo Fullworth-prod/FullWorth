@@ -126,7 +126,9 @@ public sealed class HostedWebPage : ContentPage
 
         StopLoadTimeout();
         SetLoading(false);
-        if (e.Result != WebNavigationResult.Success)
+        if (e.Result == WebNavigationResult.Success)
+            ClearNotice();
+        else
             ShowFailure("FullWorth could not load. Check your connection and try again.");
     }
 

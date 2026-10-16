@@ -70,7 +70,7 @@ try {
                 assert.equal(await page.evaluate(() => document.activeElement.className), "fw-confirm-cancel");
                 const bounds = await page.locator("dialog").boundingBox();
                 assert.ok(bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= 391 && bounds.y + bounds.height <= 845);
-                await page.screenshot({ path: path.join(output, name + "-" + theme + ".png") });
+                await page.screenshot({ path: path.join(output, name + "-" + theme + ".png"), animations: "disabled" });
                 await page.keyboard.press("Shift+Tab");
                 assert.equal(await page.evaluate(() => document.activeElement.className), "fw-confirm-destructive");
                 await page.keyboard.press("Tab");

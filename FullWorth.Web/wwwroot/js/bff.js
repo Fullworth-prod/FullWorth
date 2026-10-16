@@ -1,4 +1,6 @@
-﻿let antiforgeryToken = null;
+import { confirmAction } from "./confirmation-dialog.js";
+
+let antiforgeryToken = null;
 
 const statementFileSizeLimit =
     15 * 1024 * 1024;
@@ -1334,4 +1336,8 @@ export function wirePlaidReconnectButton(
                     originalText;
             }
         });
+}
+
+export function confirmBankDisconnect(title, message, cancelText, confirmText) {
+    return confirmAction({ title, message, cancelText, confirmText });
 }

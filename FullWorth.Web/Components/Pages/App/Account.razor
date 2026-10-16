@@ -533,6 +533,8 @@
 
     private bool _isMutating;
 
+    private bool _isConfirmingDisconnect;
+
     private bool _actionSucceeded;
 
     private bool _connectButtonWired;
@@ -832,69 +834,50 @@
     private async Task DisconnectAsync(
         BankConnectionViewModel connection)
     {
-        if (_isMutating ||
-            connection.Id ==
-                Guid.Empty ||
-            connection.Status ==
-                2)
+        if (_isMutating || _isConfirmingDisconnect ||
+            connection.Id == Guid.Empty || connection.Status == 2)
         {
             return;
         }
 
-        var confirmed =
-            await JS.InvokeAsync<bool>(
-                "confirm",
-                L["Disconnect {0}? FullWorth will stop syncing this bank connection.",
-                    connection.InstitutionName].Value);
-
-        if (!confirmed)
-        {
-            return;
-        }
-
-        _isMutating =
-            true;
-
-        _actionMessage =
-            L["Disconnecting {0}…",
-                connection.InstitutionName].Value;
-
-        _actionSucceeded =
-            false;
-
+        _isConfirmingDisconnect = true;
         try
         {
-            var module =
-                await GetBffModuleAsync();
+            var module = await GetBffModuleAsync();
+            var confirmed = await module.InvokeAsync<bool>(
+                "confirmBankDisconnect",
+                L["Disconnect bank?"].Value,
+                L["Disconnect {0}? FullWorth will stop syncing this bank connection.",
+                    connection.InstitutionName].Value,
+                L["Keep connected"].Value,
+                L["Disconnect bank"].Value);
+
+            if (!confirmed) return;
+
+            _isMutating = true;
+            _actionMessage = L["Disconnecting {0}…",
+                connection.InstitutionName].Value;
+            _actionSucceeded = false;
 
             await module.InvokeAsync<object?>(
                 "disconnectBankConnection",
-                connection.Id.ToString(
-                    "D"));
+                connection.Id.ToString("D"));
 
-            _actionMessage =
-                L["{0} was disconnected.",
-                    connection.InstitutionName].Value;
-
-            _actionSucceeded =
-                true;
-
+            _actionMessage = L["{0} was disconnected.",
+                connection.InstitutionName].Value;
+            _actionSucceeded = true;
             await LoadAsync();
         }
         catch
         {
-            _actionMessage =
-                L["FullWorth could not disconnect {0}.",
-                    connection.InstitutionName].Value;
-
-            _actionSucceeded =
-                false;
+            _actionMessage = L["FullWorth could not disconnect {0}.",
+                connection.InstitutionName].Value;
+            _actionSucceeded = false;
         }
         finally
         {
-            _isMutating =
-                false;
-
+            _isConfirmingDisconnect = false;
+            _isMutating = false;
             StateHasChanged();
         }
     }

@@ -1,0 +1,43 @@
+name: Themed confirmation dialog
+on:
+  pull_request:
+    paths:
+      - "FullWorth.Web/wwwroot/js/bff.js"
+      - "FullWorth.Web/wwwroot/js/confirmation-dialog.js"
+      - "FullWorth.Web/wwwroot/confirmation-dialog.css"
+      - "FullWorth.Web/wwwroot/theme.css"
+      - "FullWorth.Web/Components/App.razor"
+      - "FullWorth.Web/Components/Pages/App/Account.razor"
+      - "FullWorth.VisualTests/**"
+      - ".github/workflows/web-confirmation-dialog.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: confirmation-dialog-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    name: Chromium and WebKit confirmation regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Install pinned browser test dependencies
+        working-directory: FullWorth.VisualTests
+        run: npm ci --ignore-scripts
+      - name: Install browser engines
+        working-directory: FullWorth.VisualTests
+        run: npx playwright install --with-deps chromium webkit
+      - name: Exercise actual dialog and BFF modules in isolated fixture
+        run: node FullWorth.VisualTests/confirmation-dialog.test.mjs
+      - name: Retain synthetic mobile screenshots
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: confirmation-dialog-${{ github.sha }}
+          path: FullWorth.VisualTests/artifacts/confirmation/
+          if-no-files-found: warn
+          retention-days: 7

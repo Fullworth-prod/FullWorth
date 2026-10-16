@@ -72,4 +72,7 @@
   <data name="Money market" xml:space="preserve"><value>Mercado monetario</value></data>
   <data name="Certificate of deposit" xml:space="preserve"><value>Certificado de depósito</value></data>
   <data name="Credit card" xml:space="preserve"><value>Tarjeta de crédito</value></data>
+  <data name="Disconnect bank?" xml:space="preserve"><value>¿Desconectar banco?</value></data>
+  <data name="Keep connected" xml:space="preserve"><value>Mantener conectado</value></data>
+  <data name="Disconnect bank" xml:space="preserve"><value>Desconectar banco</value></data>
 </root>

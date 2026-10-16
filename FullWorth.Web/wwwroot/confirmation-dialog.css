@@ -1,0 +1,70 @@
+/* Shares the live theme tokens; the top layer sits above mobile navigation. */
+.fw-confirm-dialog {
+    box-sizing: border-box;
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    width: min(28rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 3rem);
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: clamp(1.25rem, 5vw, 1.75rem);
+    border: 1px solid var(--bw-border-strong);
+    border-radius: 24px;
+    background: var(--bw-bg-elevated);
+    color: var(--bw-text);
+    box-shadow: var(--bw-card-shadow);
+    font: inherit;
+}
+.fw-confirm-dialog::backdrop {
+    background: rgba(2, 6, 14, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+.fw-confirm-dialog .fw-confirm-kicker {
+    margin: 0 0 0.65rem;
+    color: var(--bw-text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+.fw-confirm-dialog h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.2;
+    letter-spacing: -0.035em;
+    overflow-wrap: anywhere;
+}
+.fw-confirm-dialog .fw-confirm-message {
+    margin: 0.85rem 0 1.5rem;
+    color: var(--bw-text-secondary);
+    font-size: 1rem;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+.fw-confirm-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.fw-confirm-actions button {
+    flex: 1 1 9rem;
+    min-height: 48px;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--bw-border-strong);
+    border-radius: 14px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+.fw-confirm-cancel { background: var(--bw-surface); color: var(--bw-text); }
+.fw-confirm-destructive { background: #b42318; color: #fff; }
+.fw-confirm-destructive:hover { background: #912018; }
+.fw-confirm-actions button:focus-visible {
+    outline: 3px solid #8b9aff;
+    outline-offset: 3px;
+}
+@media (prefers-reduced-motion: no-preference) {
+    .fw-confirm-dialog[open] { animation: fw-confirm-enter 140ms ease-out; }
+    @keyframes fw-confirm-enter {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+}

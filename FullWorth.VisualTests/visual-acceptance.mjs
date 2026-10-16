@@ -222,7 +222,11 @@ try {
       for (const [label, destination] of billsDestinations) {
         const link = empty.getByRole("link", { name: label, exact: true });
         assert.equal(await link.getAttribute("href"), destination);
-        await link.scrollIntoViewIfNeeded();
+        // Fixed navigation overlaps part of the viewport; center the action as a
+        // person scrolling to it would, then verify it is actually unobstructed.
+        await link.evaluate(element => element.scrollIntoView({
+          block: "center", inline: "nearest", behavior: "instant"
+        }));
         await link.focus();
         const geometry = await link.evaluate(element => {
           const rect = element.getBoundingClientRect();
@@ -245,7 +249,9 @@ try {
         });
         assert.ok(geometry.height >= 48, "Empty-state actions need 48px touch targets.");
         assert.ok(geometry.left >= 0 && geometry.right <= geometry.viewportWidth + 1);
-        assert.ok(geometry.bottom <= geometry.navTop, "Action must clear the fixed bottom navigation.");
+        assert.ok(geometry.bottom <= geometry.navTop,
+          `Action must clear the fixed bottom navigation (${width}px ${theme} ` +
+          `largeText=${enlarged} ${label}; bottom=${geometry.bottom}, navTop=${geometry.navTop}).`);
         assert.ok(geometry.reachable && geometry.focused, "Action must be reachable and keyboard focusable.");
         // Programmatic focus followed by a keyboard event opts into :focus-visible.
         await page.keyboard.press("Tab");

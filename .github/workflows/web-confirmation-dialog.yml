@@ -27,7 +27,7 @@ jobs:
           persist-credentials: false
       - name: Install pinned browser test dependencies
         working-directory: FullWorth.VisualTests
-        run: npm ci --ignore-scripts
+        run: npm install --ignore-scripts --no-package-lock
       - name: Install browser engines
         working-directory: FullWorth.VisualTests
         run: npx playwright install --with-deps chromium webkit

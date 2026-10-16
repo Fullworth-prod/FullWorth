@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 
@@ -179,6 +180,110 @@ try {
     const selector = route === "/" ? ".landing-page" : ".app-shell";
     await capture(name, route, selector);
   }
+
+  // Exercise the real authenticated Bills page, not duplicated fixture markup.
+  // This account and every bank/transaction record are disposable CI data.
+  const billsDestinations = [
+    ["Check bank connections", "/app/account"],
+    ["Review imported transactions", "/app/account/transactions"],
+    ["Check monitoring progress", "/app"]
+  ];
+  for (const [width, theme, enlarged] of [
+    [390, "dark", false],
+    [390, "light", false],
+    [320, "dark", false],
+    [320, "light", false],
+    [390, "dark", true]
+  ]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.evaluate(value => localStorage.setItem("billwatch-theme", value), theme);
+    await page.goto("/app/bills", { waitUntil: "domcontentloaded" });
+    await settle(".bills-empty-state");
+    if (enlarged) {
+      await page.evaluate(() => document.documentElement.style.fontSize = "200%");
+    }
+    const empty = page.locator(".bills-empty-state");
+    assert.equal(await empty.locator("h2").innerText(), "No recurring bills to show yet.");
+    assert.equal(await empty.locator("a").count(), 3);
+    assert.equal(await empty.locator("button, form").count(), 0);
+    assert.ok((await empty.innerText()).includes(
+      "An empty list does not confirm that your bank is connected or syncing."));
+    assert.equal(await page.locator("html").getAttribute("data-theme"), theme);
+
+    const unsafeRequests = [];
+    const recordMutation = request => {
+      const pathname = new URL(request.url()).pathname;
+      if (pathname.startsWith("/bff/") && !["GET", "HEAD", "OPTIONS"].includes(request.method())) {
+        unsafeRequests.push(request.method() + " " + pathname);
+      }
+    };
+    page.on("request", recordMutation);
+    try {
+      for (const [label, destination] of billsDestinations) {
+        const link = empty.getByRole("link", { name: label, exact: true });
+        assert.equal(await link.getAttribute("href"), destination);
+        await link.scrollIntoViewIfNeeded();
+        await link.focus();
+        const geometry = await link.evaluate(element => {
+          const rect = element.getBoundingClientRect();
+          const nav = document.querySelector(".mobile-bottom-nav")?.getBoundingClientRect();
+          const style = getComputedStyle(element);
+          const center = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+          return {
+            height: rect.height,
+            left: rect.left,
+            right: rect.right,
+            bottom: rect.bottom,
+            navTop: nav?.top ?? innerHeight,
+            reachable: element === center || element.contains(center),
+            focused: document.activeElement === element,
+            outline: style.outlineStyle,
+            outlineWidth: parseFloat(style.outlineWidth),
+            overflow: document.documentElement.scrollWidth > innerWidth + 1,
+            viewportWidth: innerWidth
+          };
+        });
+        assert.ok(geometry.height >= 48, "Empty-state actions need 48px touch targets.");
+        assert.ok(geometry.left >= 0 && geometry.right <= geometry.viewportWidth + 1);
+        assert.ok(geometry.bottom <= geometry.navTop, "Action must clear the fixed bottom navigation.");
+        assert.ok(geometry.reachable && geometry.focused, "Action must be reachable and keyboard focusable.");
+        // Programmatic focus followed by a keyboard event opts into :focus-visible.
+        await page.keyboard.press("Tab");
+        await page.keyboard.press("Shift+Tab");
+        const focusOutline = await link.evaluate(element => {
+          const style = getComputedStyle(element);
+          return document.activeElement === element &&
+            style.outlineStyle !== "none" && parseFloat(style.outlineWidth) >= 2;
+        });
+        assert.ok(focusOutline, "Keyboard users need a visible focus indicator.");
+        assert.equal(geometry.overflow, false, "Bills empty state must not introduce horizontal scrolling.");
+      }
+
+      await page.screenshot({
+        path: path.join(outputDir, "bills-empty-" + width + "-" + theme + (enlarged ? "-large-text" : "") + ".png"),
+        fullPage: true
+      });
+
+      // Verify each real internal destination with the keyboard, without invoking sync.
+      for (const [label, destination] of billsDestinations) {
+        await page.goto("/app/bills", { waitUntil: "domcontentloaded" });
+        await settle(".bills-empty-state");
+        const link = page.locator(".bills-empty-state").getByRole("link", { name: label, exact: true });
+        await link.focus();
+        await Promise.all([
+          page.waitForURL(url => url.pathname === destination, { timeout: 10000 }),
+          page.keyboard.press("Enter")
+        ]);
+        await settle(".app-shell");
+        assert.equal(await page.locator(".app-error-state").count(), 0);
+      }
+      assert.deepEqual(unsafeRequests, [], "Empty-state navigation must not mutate BFF resources.");
+    } finally {
+      page.off("request", recordMutation);
+    }
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => localStorage.setItem("billwatch-theme", "dark"));
 
   for (const route of ["/app/subscription", "/app/profile"]) {
     await page.goto(route, { waitUntil: "domcontentloaded" });

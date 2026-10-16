@@ -204,6 +204,7 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|POST|/bff/alerts/{alertId:guid}/read|authenticated|none",
         "WEB|POST|/bff/bill-monitoring/refresh|authenticated|named:financial-refresh",
         "WEB|POST|/bff/bill-streams/{billStreamId:guid}/statement-uploads|authenticated|named:statement-upload",
+        "WEB|POST|/bff/bill-streams|authenticated|named:financial-refresh",
         "WEB|POST|/bff/plaid/connections/{connectionId:guid}/update-link-session|authenticated|named:financial-provider",
         "WEB|POST|/bff/plaid/link-session/{sessionId:guid}/complete|authenticated|named:financial-provider",
         "WEB|POST|/bff/plaid/link-session|authenticated|named:financial-provider",
@@ -264,7 +265,7 @@ public sealed class EndpointSecurityInventoryTests
     public void Snapshot_CoversEveryReviewedAccessAndRateLimitClass()
     {
         Assert.Equal(
-            214,
+            215,
             ExpectedInventory.Length);
 
         Assert.Equal(
@@ -276,7 +277,7 @@ public sealed class EndpointSecurityInventoryTests
                         StringComparison.Ordinal)));
 
         Assert.Equal(
-            124,
+            125,
             ExpectedInventory.Count(
                 row =>
                     row.StartsWith(
@@ -312,7 +313,7 @@ public sealed class EndpointSecurityInventoryTests
                     StringComparison.Ordinal));
 
         Assert.Equal(
-            54,
+            55,
             ExpectedInventory.Count(
                 row =>
                     row.Contains(
@@ -320,7 +321,7 @@ public sealed class EndpointSecurityInventoryTests
                         StringComparison.Ordinal)));
 
         Assert.Equal(
-            9,
+            10,
             ExpectedInventory.Count(
                 row =>
                     row.EndsWith(

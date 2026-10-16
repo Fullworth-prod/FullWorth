@@ -65,4 +65,14 @@
   <data name="Mobile Phone" xml:space="preserve"><value>Teléfono móvil</value></data>
   <data name="Utility" xml:space="preserve"><value>Servicio público</value></data>
   <data name="Other" xml:space="preserve"><value>Otro</value></data>
+  <data name="Amount unavailable" xml:space="preserve"><value>Importe no disponible</value></data>
+  <data name="Needs review" xml:space="preserve"><value>Necesita revisión</value></data>
+  <data name="Inactive" xml:space="preserve"><value>Inactiva</value></data>
+  <data name="Monitoring choice" xml:space="preserve"><value>Opción de monitoreo</value></data>
+  <data name="Choose to keep this bill monitored even when automatic discovery has insufficient evidence. This does not verify your bank connection, payment timing, or bill amount." xml:space="preserve"><value>Elige seguir monitoreando esta factura aunque la detección automática no tenga suficiente evidencia. Esto no verifica tu conexión bancaria, la frecuencia de pago ni el importe.</value></data>
+  <data name="Keep monitoring this bill" xml:space="preserve"><value>Seguir monitoreando esta factura</value></data>
+  <data name="Saving…" xml:space="preserve"><value>Guardando…</value></data>
+  <data name="You chose to keep this bill monitored. Automatic discovery will preserve that choice." xml:space="preserve"><value>Elegiste seguir monitoreando esta factura. La detección automática conservará tu elección.</value></data>
+  <data name="Your monitoring choice was saved." xml:space="preserve"><value>Se guardó tu opción de monitoreo.</value></data>
+  <data name="Your monitoring choice could not be saved. Try again." xml:space="preserve"><value>No se pudo guardar tu opción de monitoreo. Inténtalo de nuevo.</value></data>
 </root>

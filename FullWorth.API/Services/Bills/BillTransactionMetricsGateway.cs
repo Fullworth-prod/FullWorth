@@ -1,4 +1,6 @@
 using FullWorth.API.Data;
+using FullWorth.Core.Models;
+using FullWorth.Core.Services;
 using FullWorth.API.Services.Contracts;
 using Microsoft.EntityFrameworkCore;
 
@@ -77,6 +79,7 @@ public sealed class BillTransactionMetricsGateway(
         return facts
             .Where(
                 fact =>
+                    fact.Amount > 0m &&
                     billStreamIdByTransactionId.ContainsKey(
                         fact.TransactionId))
             .GroupBy(
@@ -88,6 +91,7 @@ public sealed class BillTransactionMetricsGateway(
                     var ordered = group
                         .OrderByDescending(fact => fact.PostedDate)
                         .ThenByDescending(fact => fact.CreatedAtUtc)
+                        .ThenByDescending(fact => fact.TransactionId)
                         .ToArray();
 
                     return new BankTransactionBillStreamMetrics(
@@ -97,7 +101,15 @@ public sealed class BillTransactionMetricsGateway(
                             ? 0m
                             : ordered
                                 .Skip(1)
-                                .Average(fact => fact.Amount));
+                                .Average(fact => fact.Amount))
+                    {
+                        HasMonthlyCadenceEvidence = new RecurringBillDetectionService()
+                            .Detect(ordered.Select(fact => new BankTransaction(
+                                merchantName: "Bill",
+                                postedDate: fact.PostedDate,
+                                amount: fact.Amount,
+                                isPending: false))).Count > 0
+                    };
                 })
             .ToDictionary(metric => metric.BillStreamId);
     }

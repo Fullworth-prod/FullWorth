@@ -1,0 +1,18 @@
+@inject Microsoft.Extensions.Localization.IStringLocalizer<BillReviewList> L
+
+<section class="app-panel" aria-labelledby="bill-review-heading">
+    <h2 id="bill-review-heading">@L["Bills needing review"]</h2>
+    <p>@L["These previously discovered bills no longer meet the automatic discovery rules. They are excluded from monitored totals. Review the evidence before choosing to keep monitoring."]</p>
+    <ul>
+        @foreach (var bill in Bills)
+        {
+            <li><a href="@($"/app/bills/{bill.Id:D}")">@bill.ProviderName — @L["Review bill"]</a></li>
+        }
+    </ul>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Item> Bills { get; set; } = [];
+    public sealed record Item(Guid Id, string ProviderName);
+}

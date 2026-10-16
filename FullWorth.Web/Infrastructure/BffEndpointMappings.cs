@@ -63,8 +63,16 @@ public static class BffEndpointMappings
             await proxy.ForwardGetAsync(context, "/api/bill-discovery/diagnostics", context.RequestAborted))
             .RequireRateLimiting(FinancialRefreshRateLimitPolicy);
 
-        bff.MapGet("/bill-streams", async (HttpContext context, FullWorthBffProxyService proxy) =>
-            await proxy.ForwardGetAsync(context, "/api/bill-streams", context.RequestAborted));
+        bff.MapGet("/bill-streams", async (HttpContext context, FullWorthBffProxyService proxy, bool? includeInactive) =>
+            await proxy.ForwardGetAsync(context,
+                $"/api/bill-streams?includeInactive={(includeInactive ?? false).ToString().ToLowerInvariant()}",
+                context.RequestAborted));
+        bff.MapPost("/bill-streams", async (HttpContext context, IAntiforgery antiforgery, AdminBffWriteProxyService proxy, BillStreamConfirmationBffRequest request) =>
+        {
+            await antiforgery.ValidateRequestAsync(context);
+            return await proxy.ForwardJsonAsync(context, HttpMethod.Post, "/api/bill-streams",
+                request, context.RequestAborted);
+        }).RequireRateLimiting(FinancialRefreshRateLimitPolicy);
         bff.MapGet("/bill-streams/{billStreamId:guid}", async (HttpContext context, FullWorthBffProxyService proxy, Guid billStreamId) =>
             billStreamId == Guid.Empty
                 ? Results.NotFound()
@@ -240,3 +248,5 @@ public sealed record AccountExportBffRequest(string CurrentPassword, string? Two
 public sealed record DeleteAccountBffRequest(string Confirmation, string CurrentPassword, string? TwoFactorCode);
 public sealed record PlanningPayScheduleBffRequest(string Frequency, DateOnly AnchorPayDate, int? SecondaryDayOfMonth, int DefaultPaychecksAhead);
 public sealed record PlanningBillFundingPreferenceBffRequest(int PaychecksAheadOverride);
+
+public sealed record BillStreamConfirmationBffRequest(string ProviderName, string Category);

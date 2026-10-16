@@ -565,9 +565,13 @@ export async function getBillDiscoveryDiagnostics() {
         "/bff/bill-discovery/diagnostics");
 }
 
-export async function getBillStreams() {
+export async function getBillStreams(includeInactive = false) {
     return await getJson(
-        "/bff/bill-streams");
+        `/bff/bill-streams?includeInactive=${includeInactive === true ? "true" : "false"}`);
+}
+
+export async function confirmBillStream(providerName, category) {
+    return await mutateJsonWithBody("/bff/bill-streams", "POST", { providerName, category });
 }
 
 export async function getBillStreamDetail(

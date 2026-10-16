@@ -108,7 +108,12 @@ public sealed class BillStreamsController : ControllerBase
 
                         PreviousAverage:
                             metrics?.PreviousAverage ??
-                            0m);
+                            0m)
+                    {
+                        Source = stream.Source.ToString(),
+                        HasTransactionEvidence = metrics is not null,
+                        HasMonthlyCadenceEvidence = metrics?.HasMonthlyCadenceEvidence ?? false
+                    };
                 })
                 .ToList();
 
@@ -147,7 +152,8 @@ public sealed class BillStreamsController : ControllerBase
                             candidate.Id,
                             candidate.ProviderName,
                             candidate.Category,
-                            candidate.IsActive
+                            candidate.IsActive,
+                            candidate.Source
                         })
                 .SingleOrDefaultAsync(
                     cancellationToken);
@@ -239,7 +245,12 @@ public sealed class BillStreamsController : ControllerBase
                     statements,
 
                 Changes:
-                    changes));
+                    changes)
+            {
+                Source = streamSnapshot.Source.ToString(),
+                HasTransactionEvidence = streamMetrics is not null,
+                HasMonthlyCadenceEvidence = streamMetrics?.HasMonthlyCadenceEvidence ?? false
+            });
     }
 
     [HttpPost]
@@ -279,7 +290,9 @@ public sealed class BillStreamsController : ControllerBase
         if (!Enum.TryParse<BillCategory>(
                 request.Category,
                 ignoreCase: true,
-                out var category))
+                out var category) ||
+            !Enum.IsDefined(category) ||
+            !string.Equals(category.ToString(), request.Category?.Trim(), StringComparison.OrdinalIgnoreCase))
         {
             return BadRequest(
                 new
@@ -366,7 +379,7 @@ public sealed class BillStreamsController : ControllerBase
                         0m,
 
                     PreviousAverage:
-                        0m));
+                        0m) { Source = existingStream.Source.ToString() });
         }
 
         var now =
@@ -421,7 +434,7 @@ public sealed class BillStreamsController : ControllerBase
                     0m,
 
                 PreviousAverage:
-                    0m));
+                    0m) { Source = stream.Source.ToString() });
     }
 
     private bool TryGetUserId(
@@ -432,7 +445,7 @@ public sealed class BillStreamsController : ControllerBase
 
         return Guid.TryParse(
             userIdText,
-            out userId);
+            out userId) && userId != Guid.Empty;
     }
 }
 
@@ -446,7 +459,12 @@ public sealed record BillStreamResult(
     string Category,
     bool IsActive,
     decimal CurrentAmount,
-    decimal PreviousAverage);
+    decimal PreviousAverage)
+{
+    public string Source { get; init; } = "Unknown";
+    public bool HasTransactionEvidence { get; init; }
+    public bool HasMonthlyCadenceEvidence { get; init; }
+}
 
 public sealed record BillStreamDetailResult(
     Guid Id,
@@ -456,7 +474,12 @@ public sealed record BillStreamDetailResult(
     decimal CurrentAmount,
     decimal PreviousAverage,
     IReadOnlyList<BillStatementHistoryResult> Statements,
-    IReadOnlyList<BillChangeResult> Changes);
+    IReadOnlyList<BillChangeResult> Changes)
+{
+    public string Source { get; init; } = "Unknown";
+    public bool HasTransactionEvidence { get; init; }
+    public bool HasMonthlyCadenceEvidence { get; init; }
+}
 
 public sealed record BillStatementHistoryResult(
     Guid Id,

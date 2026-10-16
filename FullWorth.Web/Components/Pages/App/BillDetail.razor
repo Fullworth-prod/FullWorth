@@ -84,7 +84,7 @@
                     <div class="fw-detail-provider-meta">
                         <span class="watching-state">
                             <span></span>
-                            @L["Watching"]
+                            @(_detail.IsActive ? L["Watching"] : _detail.Source == "AutomaticDiscovery" ? L["Needs review"] : L["Inactive"])
                         </span>
 
                         @if (_detail.Statements.Count > 0)
@@ -96,7 +96,7 @@
 
                 <div class="fw-detail-current">
                     <span>@L["Latest transaction"]</span>
-                    <strong>@FormatMoney(_detail.CurrentAmount)</strong>
+                    <strong>@(_detail.HasTransactionEvidence ? FormatMoney(_detail.CurrentAmount) : L["Amount unavailable"].Value)</strong>
 
                     @if (_detail.PreviousAverage > 0m)
                     {
@@ -134,7 +134,26 @@
             </div>
         </section>
 
-        <StatementUploadPanel BillStreamId="@BillStreamId"
+        <section class="app-panel" aria-labelledby="monitoring-choice-heading">
+            <h2 id="monitoring-choice-heading">@L["Monitoring choice"]</h2>
+            @if (!_detail.IsActive || _detail.Source != "Manual")
+            {
+                <p>@L["Choose to keep this bill monitored even when automatic discovery has insufficient evidence. This does not verify your bank connection, payment timing, or bill amount."]</p>
+                <button type="button" class="secondary-action" disabled="@_isKeeping" @onclick="KeepMonitoringAsync">
+                    @(_isKeeping ? L["Saving…"] : L["Keep monitoring this bill"])
+                </button>
+            }
+            else
+            {
+                <p>@L["You chose to keep this bill monitored. Automatic discovery will preserve that choice."]</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(_keepMessage))
+            {
+                <p role="status">@_keepMessage</p>
+            }
+        </section>
+
+        <StatementUploadPanel @key="BillStreamId" BillStreamId="@BillStreamId"
                               ProviderName="@_detail.ProviderName"
                               OnProcessed="@HandleStatementProcessedAsync" />
 
@@ -337,6 +356,10 @@
     private BillStreamDetailViewModel? _detail;
     private bool _isLoading = true;
     private string? _errorMessage;
+    private bool _isKeeping;
+    private string? _keepMessage;
+    private Guid? _requestedBillId;
+    private long _loadVersion;
 
     private string PageTitleText =>
         _detail is null
@@ -346,46 +369,68 @@
     private BillChangeViewModel? LatestChange =>
         _detail?.Changes.FirstOrDefault();
 
+    protected override void OnParametersSet()
+    {
+        if (_requestedBillId != BillStreamId)
+        {
+            _loadVersion++;
+            _detail = null;
+            _isLoading = true;
+            _errorMessage = null;
+            _keepMessage = null;
+        }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
-        {
-            return;
-        }
-
+        if (_requestedBillId == BillStreamId) return;
+        _requestedBillId = BillStreamId;
         await LoadAsync();
         StateHasChanged();
     }
 
-    private async Task ReloadAsync()
-    {
-        await LoadAsync();
-    }
+    private Task ReloadAsync() => LoadAsync();
 
-    private async Task HandleStatementProcessedAsync()
+    private Task HandleStatementProcessedAsync() => LoadAsync();
+
+    private async Task KeepMonitoringAsync()
     {
+        if (_detail is null || _isKeeping) return;
+        var id = BillStreamId;
+        var detail = _detail;
+        _isKeeping = true;
+        _keepMessage = null;
         try
         {
-            await LoadDetailAsync();
-            _errorMessage = null;
+            _bffModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/bff.js");
+            await _bffModule.InvokeAsync<object?>("confirmBillStream", detail.ProviderName, detail.Category);
+            if (id == BillStreamId)
+            {
+                await LoadAsync();
+                _keepMessage = L["Your monitoring choice was saved."];
+            }
         }
         catch (JSException)
         {
-            _errorMessage = L["The statement finished processing, but FullWorth could not refresh this bill."];
+            if (id == BillStreamId)
+                _keepMessage = L["Your monitoring choice could not be saved. Try again."];
         }
         catch (Exception)
         {
-            _errorMessage = L["The statement finished processing, but FullWorth could not refresh this bill."];
+            if (id == BillStreamId)
+                _keepMessage = L["Your monitoring choice could not be saved. Try again."];
         }
-
+        finally { _isKeeping = false; }
     }
 
     private async Task LoadAsync()
     {
+        var version = ++_loadVersion;
+        var id = BillStreamId;
         _isLoading = true;
         _errorMessage = null;
-
-        if (BillStreamId == Guid.Empty)
+        _detail = null;
+        if (id == Guid.Empty)
         {
             _isLoading = false;
             _errorMessage = L["FullWorth could not determine which bill to open."];
@@ -394,36 +439,28 @@
 
         try
         {
-            await LoadDetailAsync();
-
-            if (_detail is null)
-            {
-                _errorMessage = L["This bill could not be found."];
-            }
+            _bffModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/bff.js");
+            var detail = await _bffModule.InvokeAsync<BillStreamDetailViewModel>(
+                "getBillStreamDetail", id.ToString("D"));
+            if (version != _loadVersion || id != BillStreamId) return;
+            // Never display a delayed response for a different route/resource.
+            _detail = detail?.Id == id ? detail : null;
+            if (_detail is null) _errorMessage = L["This bill could not be found."];
         }
         catch (JSException)
         {
-            _errorMessage = L["FullWorth could not load this bill from the secure API."];
+            if (version == _loadVersion)
+                _errorMessage = L["FullWorth could not load this bill from the secure API."];
         }
         catch (Exception)
         {
-            _errorMessage = L["Something went wrong while opening this bill."];
+            if (version == _loadVersion)
+                _errorMessage = L["Something went wrong while opening this bill."];
         }
         finally
         {
-            _isLoading = false;
+            if (version == _loadVersion) _isLoading = false;
         }
-    }
-
-    private async Task LoadDetailAsync()
-    {
-        _bffModule ??= await JS.InvokeAsync<IJSObjectReference>(
-            "import",
-            "./js/bff.js");
-
-        _detail = await _bffModule.InvokeAsync<BillStreamDetailViewModel>(
-            "getBillStreamDetail",
-            BillStreamId.ToString("D"));
     }
 
     private decimal GetTransactionDifference()
@@ -637,6 +674,9 @@
         public string ProviderName { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
         public bool IsActive { get; set; }
+        public string Source { get; set; } = "Unknown";
+        public bool HasTransactionEvidence { get; set; }
+        public bool HasMonthlyCadenceEvidence { get; set; }
         public decimal CurrentAmount { get; set; }
         public decimal PreviousAverage { get; set; }
         public List<BillStatementViewModel> Statements { get; set; } = [];

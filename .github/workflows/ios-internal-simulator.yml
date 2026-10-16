@@ -148,6 +148,7 @@ jobs:
           --no-restore
           -p:RuntimeIdentifier=iossimulator-arm64
           -p:FullWorthApiBaseUrl=https://api.fullworth.org/
+          -p:FullWorthUseHostedWebShell=true
           -p:ArchiveOnBuild=false
 
       - name: Locate simulator app
@@ -193,6 +194,16 @@ jobs:
           sh deploy/tests/ios-simulator-smoke.sh
           "${{ steps.app.outputs.app_path }}"
           "${{ steps.app.outputs.bundle_id }}"
+          "${{ runner.temp }}/fullworth-ios-launch-evidence"
+
+      - name: Upload simulator launch evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: fullworth-ios-launch-${{ github.sha }}
+          path: ${{ runner.temp }}/fullworth-ios-launch-evidence/
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Package simulator artifact
         id: package

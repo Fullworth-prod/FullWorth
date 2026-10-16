@@ -662,9 +662,14 @@ public sealed class RecurringBillDiscoveryPersistenceServiceTests
         // consume later; no raw description, account or bank identifiers.
         Assert.DoesNotContain(
             diagnostics.GetType().GetProperties(),
-            property => property.Name.Contains("Merchant", StringComparison.Ordinal)
-                || property.Name.Contains("AccountId", StringComparison.Ordinal)
-                || property.Name.Contains("TransactionId", StringComparison.Ordinal));
+            property =>
+                property.Name.Contains("MerchantName", StringComparison.Ordinal)
+                || property.Name.Contains("ProviderName", StringComparison.Ordinal)
+                || property.Name.Contains("AccountNumber", StringComparison.Ordinal)
+                || property.Name.Contains("TransactionId", StringComparison.Ordinal)
+                || property.Name.Contains("BankAccountId", StringComparison.Ordinal)
+                || property.Name.Contains("Amount", StringComparison.Ordinal)
+                || property.Name.EndsWith("Id", StringComparison.Ordinal));
     }
 
     private static FullWorthDbContext CreateDbContext()

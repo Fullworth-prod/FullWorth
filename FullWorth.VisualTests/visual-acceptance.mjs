@@ -221,7 +221,8 @@ try {
         institutionName: "Synthetic bank", status: 0,
         lastSuccessfulSyncAtUtc: "2026-02-01T00:00:00Z", createdAtUtc: "2026-01-01T00:00:00Z" }]) });
   };
-  await page.route("**/bff/bill-streams**", currencyRoute);
+  const currencyBillRoutePattern = /\/bff\/bill-streams(?:\/[^?]*)?(?:\?.*)?$/;
+  await page.route(currencyBillRoutePattern, currencyRoute);
   await page.route("**/bff/bank-connections", currencyConnectionRoute);
   try {
     for (const width of [1440, 320]) {
@@ -256,8 +257,11 @@ try {
       assert.ok(!detailText.includes("$20.00") && !detailText.includes("$25.00"));
       await page.screenshot({ path: path.join(outputDir, "bill-detail-currencies-" + width + ".png"), fullPage: true });
     }
+  } catch (error) {
+    await page.screenshot({ path: path.join(outputDir, "currency-acceptance-failure.png"), fullPage: true });
+    throw error;
   } finally {
-    await page.unroute("**/bff/bill-streams**", currencyRoute);
+    await page.unroute(currencyBillRoutePattern, currencyRoute);
     await page.unroute("**/bff/bank-connections", currencyConnectionRoute);
   }
 

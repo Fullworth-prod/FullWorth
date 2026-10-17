@@ -1408,12 +1408,12 @@ jobs:
         run: |
           set -euo pipefail
           restore_default_flags() {
-            docker compose --file compose.production.yml up --detach --no-build --wait api web
+            docker compose --file compose.production.yml up --detach --no-build --no-deps --wait api web
           }
           trap restore_default_flags EXIT
           docker compose --file compose.production.yml \
             --file FullWorth.VisualTests/compose.passkeys-ci.yml \
-            up --detach --no-build --wait api web
+            up --detach --no-build --no-deps --wait api web
           node FullWorth.VisualTests/passkey-acceptance.mjs
 
       - name: Upload passkey choice screenshot

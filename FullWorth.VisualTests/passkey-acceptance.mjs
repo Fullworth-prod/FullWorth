@@ -44,6 +44,12 @@ try {
   });
   const page = await context.newPage();
   page.setDefaultTimeout(15000);
+  const enrollmentResponses = [];
+  page.on("response", response => {
+    const url = new URL(response.url());
+    if (url.pathname.startsWith("/bff/account/security/passkeys"))
+      enrollmentResponses.push(url.pathname + ":" + response.status());
+  });
   const cdp = await context.newCDPSession(page);
   await cdp.send("WebAuthn.enable");
   const { authenticatorId } = await cdp.send("WebAuthn.addVirtualAuthenticator", {
@@ -65,10 +71,20 @@ try {
   await page.locator(".whats-new-dialog").waitFor({ state: "hidden" });
   await page.goto("/app/account/security-keys");
   const management = page.locator('[data-passkeys="manage"]');
+  // Match the existing visual harness's hydration settling period.
+  await page.waitForTimeout(900);
+  await page.locator('[data-passkeys="manage"][data-loaded="true"]').waitFor();
   await management.locator('input[name="currentPassword"]').fill(password);
   await management.locator('input[name="keyName"]').fill("CI virtual platform passkey");
   await management.locator('[data-passkey-action="register"]').click();
-  await management.locator("[data-passkey-list]").getByText("CI virtual platform passkey", { exact: false }).waitFor();
+  try {
+    await management.locator("[data-passkey-list]").getByText("CI virtual platform passkey", { exact: false }).waitFor();
+  } catch {
+    const status = await management.locator("[data-passkey-status]").textContent();
+    const count = (await cdp.send("WebAuthn.getCredentials", { authenticatorId })).credentials.length;
+    throw new Error("Passkey enrollment did not finish. UI status: " + status +
+      "; virtual credential count: " + count + "; HTTP statuses: " + enrollmentResponses.join(","));
+  }
   assert.equal((await cdp.send("WebAuthn.getCredentials", { authenticatorId })).credentials.length, 1);
   const bootstrap = await (await apiPost("/api/auth/login", { email, password })).json();
   const setup = await (await apiPost("/api/account/security/two-factor/setup",

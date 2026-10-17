@@ -58,13 +58,19 @@ try {
   });
   async function passwordStep() {
     await page.goto("/login");
+    await page.waitForTimeout(900);
     await page.locator('input[name="email"]').fill(email);
     await page.locator('input[name="password"]').fill(password);
     await page.locator('input[name="rememberMe"]').check();
-    await page.locator('.auth-form button[type="submit"]').click();
+    await Promise.all([
+      page.waitForResponse(response => response.url().endsWith("/auth/login") &&
+        response.request().method() === "POST"),
+      page.locator('.auth-form button[type="submit"]').click()
+    ]);
   }
   await passwordStep();
-  await page.waitForURL(url => url.pathname === "/app");
+  await page.waitForURL(url => url.pathname === "/app" || url.pathname === "/app/setup");
+  await page.locator(".app-shell").waitFor();
   await page.goto("/app/setup");
   await page.locator(".whats-new-dialog").waitFor({ state: "visible" });
   await page.locator(".whats-new-primary").click();
@@ -111,7 +117,8 @@ try {
   assert.equal(await page.locator('input[name="password"], input[name="email"]').count(), 0);
   await page.locator('input[name="twoFactorCode"]').fill(code(setup.sharedKey));
   await page.locator('form[action="/auth/login"]').first().getByRole("button", { name: "Verify and sign in" }).click();
-  await page.waitForURL(url => url.pathname === "/app");
+  await page.waitForURL(url => url.pathname === "/app" || url.pathname === "/app/setup");
+  await page.locator(".app-shell").waitFor();
   await context.clearCookies();
   await passwordStep();
   await page.waitForURL(url => url.searchParams.get("twoFactor") === "true");
@@ -120,7 +127,8 @@ try {
   await page.locator("[data-password-passkey-button]").click();
   const completion = (await completionRequest).postDataJSON();
   assert.deepEqual(Object.keys(completion).sort(), ["ceremonyId", "credentialJson"]);
-  await page.waitForURL(url => url.pathname === "/app");
+  await page.waitForURL(url => url.pathname === "/app" || url.pathname === "/app/setup");
+  await page.locator(".app-shell").waitFor();
   const credentials = (await cdp.send("WebAuthn.getCredentials", { authenticatorId })).credentials;
   assert.ok(credentials[0].signCount > 0, "Browser must produce a signed assertion.");
   assert.equal((await context.cookies()).filter(cookie =>

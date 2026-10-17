@@ -29,7 +29,7 @@ public sealed class BillDiscoveryEvidenceProtectionTests
     [Theory]
     [InlineData("TRANSFER_OUT")]
     [InlineData("INCOME")]
-    [InlineData("LOAN_PAYMENTS")]
+    [InlineData("LOAN_DISBURSEMENTS")]
     [InlineData("BANK_FEES")]
     public async Task FamiliarProviderName_DoesNotOverrideExplicitNegativeCategory(string category)
     {
@@ -44,6 +44,28 @@ public sealed class BillDiscoveryEvidenceProtectionTests
         Assert.Equal(1, result.Diagnostics!.RejectedExplicitFallbackCategories);
         Assert.Empty(db.BillStreams);
         Assert.Empty(db.BillAlerts);
+    }
+
+    [Theory]
+    [InlineData("LOAN_PAYMENTS_MORTGAGE_PAYMENT", true)]
+    [InlineData("LOAN_PAYMENTS_AUTO_PAYMENT", true)]
+    [InlineData("LOAN_PAYMENTS_CASH_ADVANCES", false)]
+    [InlineData("LOAN_PAYMENTS_EWA", false)]
+    public async Task ActualLoanRepaymentsRemainEligible_ButAdvancesDoNot(
+        string detailed, bool accepted)
+    {
+        await using var db = CreateDb();
+        var owner = Guid.NewGuid();
+        SeedTransactions(db, owner, "USD", "USD", "Black Hills Energy");
+        foreach (var entry in db.ChangeTracker.Entries<BankTransactionEntity>())
+        {
+            entry.Entity.CategoryPrimary = "LOAN_PAYMENTS";
+            entry.Entity.CategoryDetailed = detailed;
+        }
+        await db.SaveChangesAsync();
+        var result = await Service(db).DiscoverAndSaveAsync(owner);
+        Assert.Equal(accepted ? 1 : 0, result.BillsDiscovered);
+        Assert.Equal(accepted ? 1 : 0, await db.BillStreams.CountAsync());
     }
 
     [Fact]

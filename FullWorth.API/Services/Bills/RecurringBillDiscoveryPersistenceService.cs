@@ -15,6 +15,12 @@ namespace FullWorth.API.Services.Bills;
 
 public sealed class RecurringBillDiscoveryPersistenceService
 {
+    private static readonly HashSet<string> HardRejectedPrimaryCategories =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            "BANK_FEES", "INCOME", "LOAN_DISBURSEMENTS", "TRANSFER_IN", "TRANSFER_OUT"
+        };
+
     private static readonly HashSet<string>
         StrongFallbackRejectedPrimaryCategories =
             new(
@@ -625,8 +631,11 @@ public sealed class RecurringBillDiscoveryPersistenceService
             // Explicit transfer/income/loan evidence must not be overridden by a
             // familiar merchant name or another charge's supported category.
             if (matchingTransactions.Any(transaction =>
-                StrongFallbackRejectedPrimaryCategories.Contains(
-                    transaction.CategoryPrimary?.Trim() ?? string.Empty)))
+                HardRejectedPrimaryCategories.Contains(
+                    transaction.CategoryPrimary?.Trim() ?? string.Empty) ||
+                (string.Equals(transaction.CategoryPrimary?.Trim(), "LOAN_PAYMENTS",
+                    StringComparison.OrdinalIgnoreCase) &&
+                    ContainsAny(transaction.CategoryDetailed, "CASH_ADVANCES", "EWA"))))
             {
                 rejectedExplicitFallbackCategory++;
                 continue;

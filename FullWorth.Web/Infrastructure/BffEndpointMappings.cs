@@ -59,8 +59,22 @@ public static class BffEndpointMappings
             return await proxy.ForwardJsonAsync(context, HttpMethod.Post, "/api/subscription/access-keys/redeem", request, context.RequestAborted);
         });
 
-        bff.MapGet("/bill-streams", async (HttpContext context, FullWorthBffProxyService proxy) =>
-            await proxy.ForwardGetAsync(context, "/api/bill-streams", context.RequestAborted));
+        bff.MapGet("/bill-discovery/diagnostics", async (HttpContext context, FullWorthBffProxyService proxy) =>
+            await proxy.ForwardGetAsync(context, "/api/bill-discovery/diagnostics", context.RequestAborted))
+            .RequireRateLimiting(FinancialRefreshRateLimitPolicy);
+
+        bff.MapGet("/bill-streams", async (HttpContext context, FullWorthBffProxyService proxy, bool? includeInactive) =>
+            await proxy.ForwardGetAsync(context,
+                $"/api/bill-streams?includeInactive={(includeInactive ?? false).ToString().ToLowerInvariant()}",
+                context.RequestAborted));
+        bff.MapPost("/bill-streams/{billStreamId:guid}/confirm", async (HttpContext context, IAntiforgery antiforgery, FullWorthBffProxyService proxy, Guid billStreamId) =>
+        {
+            await antiforgery.ValidateRequestAsync(context);
+            return billStreamId == Guid.Empty
+                ? Results.NotFound()
+                : await proxy.ForwardPostAsync(context, $"/api/bill-streams/{billStreamId:D}/confirm",
+                    false, context.RequestAborted);
+        }).RequireRateLimiting(FinancialRefreshRateLimitPolicy);
         bff.MapGet("/bill-streams/{billStreamId:guid}", async (HttpContext context, FullWorthBffProxyService proxy, Guid billStreamId) =>
             billStreamId == Guid.Empty
                 ? Results.NotFound()

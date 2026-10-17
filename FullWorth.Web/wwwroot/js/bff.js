@@ -560,9 +560,19 @@ export async function getExperiencePreferences() {
         "/bff/account/preferences");
 }
 
-export async function getBillStreams() {
+export async function getBillDiscoveryDiagnostics() {
     return await getJson(
-        "/bff/bill-streams");
+        "/bff/bill-discovery/diagnostics");
+}
+
+export async function getBillStreams(includeInactive = false) {
+    return await getJson(
+        `/bff/bill-streams?includeInactive=${includeInactive === true ? "true" : "false"}`);
+}
+
+export async function confirmBillStream(billStreamId) {
+    if (!billStreamId) throw new Error("Bill stream ID is required.");
+    return await mutateJson(`/bff/bill-streams/${encodeURIComponent(billStreamId)}/confirm`, "POST");
 }
 
 export async function getBillStreamDetail(

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="No bills yet" xml:space="preserve"><value>Aún no hay facturas</value></data>
+  <data name="No recurring bills to show yet." xml:space="preserve"><value>Aún no hay facturas recurrentes para mostrar.</value></data>
+  <data name="Bills appear when FullWorth finds supported recurring charges in your imported transaction history. An empty list does not confirm that your bank is connected or syncing." xml:space="preserve"><value>Las facturas aparecen cuando FullWorth encuentra cargos recurrentes compatibles en tu historial de transacciones importadas. Una lista vacía no confirma que tu banco esté conectado o sincronizando.</value></data>
+  <data name="Next steps for your bills" xml:space="preserve"><value>Próximos pasos para tus facturas</value></data>
+  <data name="Check bank connections" xml:space="preserve"><value>Revisar conexiones bancarias</value></data>
+  <data name="Review imported transactions" xml:space="preserve"><value>Revisar transacciones importadas</value></data>
+  <data name="Check monitoring progress" xml:space="preserve"><value>Revisar el progreso del monitoreo</value></data>
+  <data name="Reconnect any bank that needs attention. If your bank is syncing successfully, FullWorth will keep checking as new transactions arrive; more history may be needed to identify a recurring bill." xml:space="preserve"><value>Vuelve a conectar cualquier banco que necesite atención. Si tu banco se sincroniza correctamente, FullWorth seguirá revisando las nuevas transacciones; puede necesitar más historial para identificar una factura recurrente.</value></data>
+</root>

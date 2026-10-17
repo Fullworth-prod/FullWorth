@@ -420,6 +420,97 @@ public sealed class RecurringBillDiscoveryPersistenceServiceTests
             dbContext.BillStreams);
     }
 
+    [Theory]
+    [InlineData("removed")]
+    [InlineData("pending")]
+    [InlineData("credit")]
+    public async Task Discovery_WithoutEligibleOwnedCharges_PreservesBillAndAssociation(
+        string transactionState)
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = Guid.NewGuid();
+        var anotherUserId = Guid.NewGuid();
+        var createdAt = DateTimeOffset.UtcNow.AddMonths(-2);
+
+        var bill = new BillStreamEntity
+        {
+            UserId = userId,
+            ProviderName = "Known Utility",
+            Category = BillCategory.Utility,
+            Source = BillStreamSource.AutomaticDiscovery,
+            IsActive = true,
+            CreatedAtUtc = createdAt,
+            UpdatedAtUtc = createdAt
+        };
+        dbContext.BillStreams.Add(bill);
+
+        var transaction = AddTransaction(
+            dbContext, userId, "Known Utility",
+            new DateOnly(2026, 1, 5), 95m,
+            "RENT_AND_UTILITIES",
+            "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY");
+
+        switch (transactionState)
+        {
+            case "removed":
+                transaction.IsRemoved = true;
+                break;
+            case "pending":
+                transaction.IsPending = true;
+                break;
+            case "credit":
+                transaction.Amount = -95m;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(transactionState));
+        }
+
+        dbContext.BillTransactionAssociations.Add(
+            new BillTransactionAssociationEntity
+            {
+                UserId = userId,
+                BankTransactionId = transaction.Id,
+                BillStreamId = bill.Id,
+                CreatedAtUtc = createdAt,
+                UpdatedAtUtc = createdAt
+            });
+
+        // Another person's valid monthly charges cannot justify deactivating
+        // this user's bill or make the no-evidence protection disappear.
+        AddMonthlyTransactions(dbContext, anotherUserId,
+            "Another User's Internet", 70m,
+            "RENT_AND_UTILITIES",
+            "RENT_AND_UTILITIES_INTERNET_AND_CABLE");
+
+        await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
+
+        var service = new RecurringBillDiscoveryPersistenceService(
+            dbContext,
+            new PlaidBankTransactionDiscoveryGateway(dbContext),
+            new BillTransactionAssociationGateway(dbContext));
+
+        var result = await service.DiscoverAndSaveAsync(userId);
+
+        Assert.Equal(0, result.TransactionsAnalyzed);
+        Assert.Equal(0, result.BillsDiscovered);
+        Assert.Equal(0, result.BillStreamsDeactivated);
+        Assert.Equal(0, result.TransactionsUnlinked);
+        Assert.Equal(0, result.NewBillAlertsCreated);
+
+        dbContext.ChangeTracker.Clear();
+        var saved = await dbContext.BillStreams.SingleAsync();
+        Assert.True(saved.IsActive);
+        Assert.Equal(BillStreamSource.AutomaticDiscovery, saved.Source);
+        Assert.Equal(createdAt, saved.UpdatedAtUtc);
+
+        var savedAssociation =
+            await dbContext.BillTransactionAssociations.SingleAsync();
+        Assert.Equal(userId, savedAssociation.UserId);
+        Assert.Equal(bill.Id, savedAssociation.BillStreamId);
+        Assert.Equal(transaction.Id, savedAssociation.BankTransactionId);
+    }
+
     [Fact]
     public async Task MultipleDiscoveries_LinkCorrectStreams_AndDeactivateStaleStream()
     {
@@ -593,6 +684,143 @@ public sealed class RecurringBillDiscoveryPersistenceServiceTests
                     association =>
                         association.BankTransactionId == transaction.Id &&
                         association.BillStreamId == cloudTwo.Id));
+    }
+
+    [Fact]
+    public async Task DiscoveryDiagnostics_CountReasonsWithoutExposingOtherUserHistory()
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = Guid.NewGuid();
+        var anotherUserId = Guid.NewGuid();
+
+        AddMonthlyTransactions(dbContext, userId, "Black Hills Energy",
+            99m, null, null);
+
+        AddTransaction(dbContext, userId, "Two Observations",
+            new DateOnly(2026, 1, 12), 19m, null, null);
+        AddTransaction(dbContext, userId, "Two Observations",
+            new DateOnly(2026, 2, 12), 19m, null, null);
+
+        AddMonthlyTransactions(dbContext, userId, "Example Restaurant",
+            24m, "FOOD_AND_DRINK", "FOOD_AND_DRINK_RESTAURANT");
+
+        AddTransaction(dbContext, userId, "Nonmonthly",
+            new DateOnly(2026, 1, 12), 10m, null, null);
+        AddTransaction(dbContext, userId, "Nonmonthly",
+            new DateOnly(2026, 1, 20), 10m, null, null);
+
+        AddTransaction(dbContext, userId, "One Off",
+            new DateOnly(2026, 1, 1), 10m, null, null);
+
+        var pending = AddTransaction(dbContext, userId, "Pending",
+            new DateOnly(2026, 3, 6), 10m, null, null);
+        pending.IsPending = true;
+        AddTransaction(dbContext, userId, " ",
+            new DateOnly(2026, 3, 6), 10m, null, null);
+
+        AddMonthlyTransactions(dbContext, anotherUserId, "Other User Bills",
+            10m, null, null);
+        await dbContext.SaveChangesAsync();
+
+        var service = new RecurringBillDiscoveryPersistenceService(
+            dbContext,
+            new PlaidBankTransactionDiscoveryGateway(dbContext),
+            new BillTransactionAssociationGateway(dbContext));
+
+        var result = await service.DiscoverAndSaveAsync(userId);
+        var diagnostics = Assert.IsType<RecurringBillDiscoveryDiagnostics>(
+            result.Diagnostics);
+
+        Assert.Equal(13, diagnostics.ImportedTransactions);
+        Assert.Equal(1, diagnostics.ExcludedPendingOrNonDebitTransactions);
+        Assert.Equal(1, diagnostics.ExcludedMissingMerchantTransactions);
+        Assert.Equal(11, diagnostics.EligiblePostedTransactions);
+        Assert.Equal(new DateOnly(2026, 1, 1),
+            diagnostics.FirstEligiblePostedDate);
+        Assert.Equal(new DateOnly(2026, 3, 5),
+            diagnostics.LastEligiblePostedDate);
+        Assert.Equal(1, diagnostics.SingleObservationGroups);
+        Assert.Equal(1, diagnostics.GroupsWithoutSupportedMonthlyCadence);
+        Assert.Equal(3, diagnostics.DetectedMonthlyCandidates);
+        Assert.Equal(1, diagnostics.RejectedExplicitFallbackCategories);
+        Assert.Equal(1, diagnostics.RejectedInsufficientTwoObservationEvidence);
+        Assert.Equal(0, diagnostics.RejectedOtherWeakOrVariableEvidence);
+        Assert.Equal(1, diagnostics.AcceptedCandidates);
+        Assert.Equal(1, result.BillsDiscovered);
+        Assert.Equal(2, result.RecurringCandidatesRejected);
+
+        // The summary must be safe for an authenticated user-facing API to
+        // consume later; no raw description, account or bank identifiers.
+        Assert.DoesNotContain(
+            diagnostics.GetType().GetProperties(),
+            property =>
+                property.Name.Contains("MerchantName", StringComparison.Ordinal)
+                || property.Name.Contains("ProviderName", StringComparison.Ordinal)
+                || property.Name.Contains("AccountNumber", StringComparison.Ordinal)
+                || property.Name.Contains("TransactionId", StringComparison.Ordinal)
+                || property.Name.Contains("BankAccountId", StringComparison.Ordinal)
+                || property.Name.Contains("Amount", StringComparison.Ordinal)
+                || property.Name.EndsWith("Id", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ReadOnlyDiagnostics_MatchDiscoveryAndNeverChangeFinancialState()
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = Guid.NewGuid();
+        var anotherUserId = Guid.NewGuid();
+
+        AddMonthlyTransactions(dbContext, userId, "Black Hills Energy",
+            118m, null, null);
+        AddTransaction(dbContext, anotherUserId, "Unrelated Payment",
+            new DateOnly(2026, 5, 9), 15m, null, null);
+
+        await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
+
+        var service = new RecurringBillDiscoveryPersistenceService(
+            dbContext,
+            new PlaidBankTransactionDiscoveryGateway(dbContext),
+            new BillTransactionAssociationGateway(dbContext));
+
+        var diagnostics = await service.GetDiagnosticsAsync(userId);
+        Assert.Equal(3, diagnostics.ImportedTransactions);
+        Assert.Equal(3, diagnostics.EligiblePostedTransactions);
+        Assert.Equal(1, diagnostics.DetectedMonthlyCandidates);
+        Assert.Equal(1, diagnostics.AcceptedCandidates);
+        Assert.Equal(new DateOnly(2026, 1, 5),
+            diagnostics.FirstEligiblePostedDate);
+        Assert.Equal(new DateOnly(2026, 3, 5),
+            diagnostics.LastEligiblePostedDate);
+
+        var otherDiagnostics = await service.GetDiagnosticsAsync(anotherUserId);
+        Assert.Equal(1, otherDiagnostics.ImportedTransactions);
+        Assert.Equal(1, otherDiagnostics.SingleObservationGroups);
+        Assert.Equal(0, otherDiagnostics.AcceptedCandidates);
+
+        // Neither owner read may stage an association, generate an alert,
+        // deactivate a stream or write anything to the database.
+        Assert.Empty(dbContext.BillStreams);
+        Assert.Empty(dbContext.BillTransactionAssociations);
+        Assert.Empty(dbContext.BillAlerts);
+        Assert.False(dbContext.ChangeTracker.HasChanges());
+
+        var persisted = await service.DiscoverAndSaveAsync(userId);
+        Assert.Equal(diagnostics, persisted.Diagnostics);
+        Assert.Equal(1, persisted.BillsDiscovered);
+    }
+
+    [Fact]
+    public async Task ReadOnlyDiagnostics_RejectsMissingAuthenticatedUserId()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = new RecurringBillDiscoveryPersistenceService(
+            dbContext,
+            new PlaidBankTransactionDiscoveryGateway(dbContext),
+            new BillTransactionAssociationGateway(dbContext));
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.GetDiagnosticsAsync(Guid.Empty));
     }
 
     private static FullWorthDbContext CreateDbContext()

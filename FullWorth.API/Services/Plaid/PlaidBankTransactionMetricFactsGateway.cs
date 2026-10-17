@@ -46,14 +46,18 @@ public sealed class PlaidBankTransactionMetricFactsGateway(
                     transaction.UserId == userId &&
                     ids.Contains(transaction.Id) &&
                     !transaction.IsRemoved &&
-                    !transaction.IsPending)
+                    !transaction.IsPending &&
+                    transaction.Amount > 0m)
             .Select(
                 transaction =>
                     new BankTransactionMetricFact(
                         transaction.Id,
                         transaction.Amount,
                         transaction.PostedDate,
-                        transaction.CreatedAtUtc))
+                        transaction.CreatedAtUtc)
+                    {
+                        CurrencyCode = transaction.IsoCurrencyCode
+                    })
             .ToListAsync(cancellationToken);
     }
 }

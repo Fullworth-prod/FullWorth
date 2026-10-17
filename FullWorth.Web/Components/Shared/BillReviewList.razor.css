@@ -1,0 +1,15 @@
+section { padding: 24px; }
+h2 { margin-block: 0 16px; }
+p { max-width: 70ch; line-height: 1.6; }
+ul { list-style: none; padding: 0; margin-block: 16px 0; }
+li + li { border-block-start: 1px solid var(--bw-border); }
+a {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    padding-block: 12px;
+    color: var(--bw-text);
+    overflow-wrap: anywhere;
+    text-underline-offset: 3px;
+}
+a:focus-visible { outline: 3px solid var(--bw-accent, #4f46e5); outline-offset: 4px; }

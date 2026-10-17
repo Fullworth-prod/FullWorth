@@ -39,7 +39,10 @@ public sealed class PlaidBankTransactionDiscoveryGateway(
                         transaction.PostedDate,
                         transaction.IsPending,
                         transaction.CategoryPrimary,
-                        transaction.CategoryDetailed))
+                        transaction.CategoryDetailed)
+                    {
+                        CurrencyCode = transaction.IsoCurrencyCode
+                    })
             .ToListAsync(
                 cancellationToken);
     }

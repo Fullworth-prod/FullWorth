@@ -1,4 +1,4 @@
-﻿using FullWorth.API.Data;
+using FullWorth.API.Data;
 using FullWorth.API.Data.Entities;
 using FullWorth.API.Services.Contracts;
 using FullWorth.Core.Models;
@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace FullWorth.API.Controllers;
 
@@ -108,7 +109,13 @@ public sealed class BillStreamsController : ControllerBase
 
                         PreviousAverage:
                             metrics?.PreviousAverage ??
-                            0m);
+                            0m)
+                    {
+                        CurrencyCode = metrics?.CurrencyCode,
+                        Source = stream.Source.ToString(),
+                        HasTransactionEvidence = metrics is not null,
+                        HasMonthlyCadenceEvidence = metrics?.HasMonthlyCadenceEvidence ?? false
+                    };
                 })
                 .ToList();
 
@@ -147,7 +154,8 @@ public sealed class BillStreamsController : ControllerBase
                             candidate.Id,
                             candidate.ProviderName,
                             candidate.Category,
-                            candidate.IsActive
+                            candidate.IsActive,
+                            candidate.Source
                         })
                 .SingleOrDefaultAsync(
                     cancellationToken);
@@ -196,6 +204,9 @@ public sealed class BillStreamsController : ControllerBase
                             statement.CurrencyCode))
                 .ToList();
 
+        var statementCurrencyById = statements.ToDictionary(statement => statement.Id,
+            statement => statement.CurrencyCode);
+
         var changes =
             statementHistory.Changes
                 .Select(
@@ -212,7 +223,10 @@ public sealed class BillStreamsController : ControllerBase
                             change.AmountDifference,
                             change.AnnualizedImpact,
                             change.IsAcknowledged,
-                            change.DetectedAtUtc))
+                            change.DetectedAtUtc)
+                        {
+                            CurrencyCode = statementCurrencyById.GetValueOrDefault(change.CurrentStatementId)
+                        })
                 .ToList();
 
         return Ok(
@@ -239,7 +253,35 @@ public sealed class BillStreamsController : ControllerBase
                     statements,
 
                 Changes:
-                    changes));
+                    changes)
+            {
+                CurrencyCode = streamMetrics?.CurrencyCode,
+                Source = streamSnapshot.Source.ToString(),
+                HasTransactionEvidence = streamMetrics is not null,
+                HasMonthlyCadenceEvidence = streamMetrics?.HasMonthlyCadenceEvidence ?? false
+            });
+    }
+
+    [HttpPost("{billStreamId:guid}/confirm")]
+    [EnableRateLimiting("financial-refresh")]
+    public async Task<IActionResult> ConfirmBillStream(
+        Guid billStreamId, CancellationToken cancellationToken = default)
+    {
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+        if (billStreamId == Guid.Empty) return NotFound();
+        var stream = await _dbContext.BillStreams.SingleOrDefaultAsync(
+            candidate => candidate.Id == billStreamId && candidate.UserId == userId,
+            cancellationToken);
+        if (stream is null) return NotFound();
+        if (!stream.IsActive || stream.Source != BillStreamSource.Manual)
+        {
+            stream.IsActive = true;
+            stream.Source = BillStreamSource.Manual;
+            stream.UpdatedAtUtc = DateTimeOffset.UtcNow;
+            if (!await TrySaveConfirmationAsync(cancellationToken))
+                return Conflict(new { message = "This bill changed while saving. Try again." });
+        }
+        return NoContent();
     }
 
     [HttpPost]
@@ -279,7 +321,9 @@ public sealed class BillStreamsController : ControllerBase
         if (!Enum.TryParse<BillCategory>(
                 request.Category,
                 ignoreCase: true,
-                out var category))
+                out var category) ||
+            !Enum.IsDefined(category) ||
+            !string.Equals(category.ToString(), request.Category?.Trim(), StringComparison.OrdinalIgnoreCase))
         {
             return BadRequest(
                 new
@@ -326,8 +370,11 @@ public sealed class BillStreamsController : ControllerBase
                     true;
             }
 
-            if (existingStream.Source ==
-                BillStreamSource.Unknown)
+            // An explicit create request confirms this user's obligation even
+            // when it was first found automatically. Discovery must not later
+            // undo that manual choice merely because imported evidence changes.
+            if (existingStream.Source !=
+                BillStreamSource.Manual)
             {
                 existingStream.Source =
                     BillStreamSource.Manual;
@@ -341,8 +388,8 @@ public sealed class BillStreamsController : ControllerBase
                 existingStream.UpdatedAtUtc =
                     DateTimeOffset.UtcNow;
 
-                await _dbContext.SaveChangesAsync(
-                    cancellationToken);
+                if (!await TrySaveConfirmationAsync(cancellationToken))
+                    return Conflict(new { message = "This bill changed while saving. Try again." });
             }
 
             return Ok(
@@ -363,7 +410,7 @@ public sealed class BillStreamsController : ControllerBase
                         0m,
 
                     PreviousAverage:
-                        0m));
+                        0m) { Source = existingStream.Source.ToString() });
         }
 
         var now =
@@ -418,7 +465,21 @@ public sealed class BillStreamsController : ControllerBase
                     0m,
 
                 PreviousAverage:
-                    0m));
+                    0m) { Source = stream.Source.ToString() });
+    }
+
+    private async Task<bool> TrySaveConfirmationAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            _dbContext.ChangeTracker.Clear();
+            return false;
+        }
     }
 
     private bool TryGetUserId(
@@ -429,7 +490,7 @@ public sealed class BillStreamsController : ControllerBase
 
         return Guid.TryParse(
             userIdText,
-            out userId);
+            out userId) && userId != Guid.Empty;
     }
 }
 
@@ -443,7 +504,13 @@ public sealed record BillStreamResult(
     string Category,
     bool IsActive,
     decimal CurrentAmount,
-    decimal PreviousAverage);
+    decimal PreviousAverage)
+{
+    public string? CurrencyCode { get; init; }
+    public string Source { get; init; } = "Unknown";
+    public bool HasTransactionEvidence { get; init; }
+    public bool HasMonthlyCadenceEvidence { get; init; }
+}
 
 public sealed record BillStreamDetailResult(
     Guid Id,
@@ -453,7 +520,13 @@ public sealed record BillStreamDetailResult(
     decimal CurrentAmount,
     decimal PreviousAverage,
     IReadOnlyList<BillStatementHistoryResult> Statements,
-    IReadOnlyList<BillChangeResult> Changes);
+    IReadOnlyList<BillChangeResult> Changes)
+{
+    public string? CurrencyCode { get; init; }
+    public string Source { get; init; } = "Unknown";
+    public bool HasTransactionEvidence { get; init; }
+    public bool HasMonthlyCadenceEvidence { get; init; }
+}
 
 public sealed record BillStatementHistoryResult(
     Guid Id,
@@ -476,4 +549,7 @@ public sealed record BillChangeResult(
     decimal AmountDifference,
     decimal AnnualizedImpact,
     bool IsAcknowledged,
-    DateTimeOffset DetectedAtUtc);
+    DateTimeOffset DetectedAtUtc)
+{
+    public string? CurrencyCode { get; init; }
+}

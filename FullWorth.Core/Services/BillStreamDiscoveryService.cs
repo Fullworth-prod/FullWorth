@@ -24,7 +24,7 @@ public sealed class BillStreamDiscoveryService
         var transactionList =
             transactions
                 .Where(transaction =>
-                    !transaction.IsPending)
+                    !transaction.IsPending && transaction.Amount > 0m)
                 .ToList();
 
         var statementList =

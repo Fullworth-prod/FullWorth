@@ -162,20 +162,22 @@ public sealed class BillTransactionAssociationGateway(
             }
         }
 
+        // Validate the entire batch before staging any changes. A stale later
+        // assignment must not leave earlier financial writes in the scoped context.
+        foreach (var assignment in assignments)
+        {
+            existingAssociations.TryGetValue(assignment.BankTransactionId, out var existing);
+            if (existing?.BillStreamId != assignment.ExpectedBillStreamId)
+                throw new InvalidOperationException(
+                    "A bank transaction bill association changed during recurring-bill discovery.");
+        }
+
         foreach (var assignment in assignments)
         {
             existingAssociations.TryGetValue(
                 assignment.BankTransactionId,
                 out var existingAssociation);
-
-            var currentBillStreamId =
-                existingAssociation?.BillStreamId;
-
-            if (currentBillStreamId != assignment.ExpectedBillStreamId)
-            {
-                throw new InvalidOperationException(
-                    "A bank transaction bill association changed during recurring-bill discovery.");
-            }
+            var currentBillStreamId = existingAssociation?.BillStreamId;
 
             if (currentBillStreamId == assignment.BillStreamId)
             {

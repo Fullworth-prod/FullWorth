@@ -1,0 +1,36 @@
+@page "/app/account/security-keys"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@layout AppLayout
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+
+<PageTitle>Passkeys & security keys — FullWorth</PageTitle>
+<link rel="stylesheet" href="/account-settings.css" />
+<div class="app-page settings-page">
+    <header class="settings-header">
+        <div><h1>Passkeys & security keys</h1>
+        <p>Sign in with Face ID, your device PIN, or a FIDO2 hardware key.
+        FullWorth never receives your face or fingerprint.</p></div>
+    </header>
+    <a href="/app/account/settings">Back to security settings</a>
+    @if (Configuration.GetValue<bool>("Passkeys:Enabled"))
+    {
+        <section class="settings-card" data-passkeys="manage">
+            <h2>Your keys</h2>
+            <p>Changes require your current password and your authenticator code if 2FA is enabled.
+                Your password and recovery options remain available.</p>
+            <label class="field"><span>Current password</span>
+                <input name="currentPassword" type="password" autocomplete="current-password" maxlength="1024" /></label>
+            <label class="field"><span>Authenticator code (if enabled)</span>
+                <input name="twoFactorCode" autocomplete="one-time-code" inputmode="numeric" maxlength="12" /></label>
+            <label class="field"><span>Key name</span>
+                <input name="keyName" maxlength="80" placeholder="My iPhone or security key" /></label>
+            <button class="primary-action" type="button" data-passkey-action="register">Add passkey or security key</button>
+            <p data-passkey-status role="status" aria-live="polite"></p>
+            <ul data-passkey-list></ul>
+        </section>
+    }
+    else
+    {
+        <p>Passkey sign-in is not enabled on this installation yet. Your existing sign-in still works.</p>
+    }
+</div>

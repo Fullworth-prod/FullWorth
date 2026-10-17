@@ -1,4 +1,5 @@
-﻿using FullWorth.Services;
+using FullWorth.Core.Formatting;
+using FullWorth.Services;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -9,7 +10,7 @@ public sealed class BillsPageViewModel : INotifyPropertyChanged
     private readonly BillStreamService _billStreamService;
 
     private int _billsMonitored;
-    private decimal _monthlyTotal;
+    private string _monthlyTotal = "Amount unavailable";
     private IReadOnlyList<BillListItem> _bills = [];
     private bool _isLoading;
     private string _errorMessage = string.Empty;
@@ -35,7 +36,7 @@ public sealed class BillsPageViewModel : INotifyPropertyChanged
         }
     }
 
-    public decimal MonthlyTotal
+    public string MonthlyTotal
     {
         get => _monthlyTotal;
         private set
@@ -120,14 +121,14 @@ public sealed class BillsPageViewModel : INotifyPropertyChanged
                 .Select(stream =>
                 {
                     var monthlyChange =
-                        decimal.Round(
+                        stream.PreviousAverage <= 0m ? 0m : decimal.Round(
                             stream.CurrentAmount -
                             stream.PreviousAverage,
                             2,
                             MidpointRounding.AwayFromZero);
 
                     var annualImpact =
-                        decimal.Round(
+                        !stream.HasMonthlyCadenceEvidence ? 0m : decimal.Round(
                             monthlyChange * 12m,
                             2,
                             MidpointRounding.AwayFromZero);
@@ -152,7 +153,12 @@ public sealed class BillsPageViewModel : INotifyPropertyChanged
                             ? "Changed"
                             : stream.IsActive
                                 ? "Watching"
-                                : "Inactive");
+                                : "Inactive")
+                    {
+                        CurrencyCode = stream.CurrencyCode,
+                        HasTransactionEvidence = stream.HasTransactionEvidence,
+                        HasMonthlyCadenceEvidence = stream.HasMonthlyCadenceEvidence
+                    };
                 })
                 .OrderBy(
                     bill => bill.ProviderName,
@@ -162,10 +168,9 @@ public sealed class BillsPageViewModel : INotifyPropertyChanged
 
             BillsMonitored = Bills.Count;
 
-            MonthlyTotal = decimal.Round(
-                Bills.Sum(bill => bill.CurrentAmount),
-                2,
-                MidpointRounding.AwayFromZero);
+            MonthlyTotal = FinancialAmountFormatter.FormatTotals(Bills
+                .Where(bill => bill.HasTransactionEvidence)
+                .Select(bill => (bill.CurrentAmount, bill.CurrencyCode))) ?? "Amount unavailable";
         }
         catch (HttpRequestException)
         {
@@ -214,4 +219,19 @@ public sealed record BillListItem(
     decimal MonthlyChange,
     decimal AnnualImpact,
     bool HasMeaningfulChange,
-    string Status);
+    string Status)
+{
+    public string? CurrencyCode { get; init; }
+    public bool HasTransactionEvidence { get; init; }
+    public bool HasMonthlyCadenceEvidence { get; init; }
+    public string CurrentAmountText => HasTransactionEvidence
+        ? FinancialAmountFormatter.FormatOrUnspecified(CurrentAmount, CurrencyCode) : "Amount unavailable";
+    public string PreviousAverageText => PreviousAverage > 0m
+        ? "Previous average " + FinancialAmountFormatter.FormatOrUnspecified(PreviousAverage, CurrencyCode)
+        : "Building historical average";
+    public string ChangeText => FinancialAmountFormatter.FormatOrUnspecified(MonthlyChange, CurrencyCode) + " per cycle";
+    public string AnnualImpactText => HasMonthlyCadenceEvidence &&
+        FinancialAmountFormatter.TryNormalizeCurrency(CurrencyCode, out _)
+            ? FinancialAmountFormatter.FormatOrUnspecified(AnnualImpact, CurrencyCode) + "/year"
+            : "Yearly estimate unavailable";
+}

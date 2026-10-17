@@ -1,0 +1,66 @@
+@inject Microsoft.Extensions.Localization.IStringLocalizer<BillDiscoverySummary> L
+
+<div class="discovery-summary">
+    <p>@L["This checks your imported history without syncing your bank or changing monitored bills. Counts explain discovery rules, not why a specific payment is missing."]</p>
+
+    @if (Data.EligiblePostedTransactions == 0)
+    {
+        <p class="discovery-note">@L["No eligible posted payments are available. Check your bank connections and imported transactions. This does not prove that you have no bills."]</p>
+    }
+    else
+    {
+        <p class="discovery-note">
+            @L["Eligible posted payments: {0} to {1}. These dates do not prove uninterrupted bank coverage.",
+                FormatDate(Data.FirstEligiblePostedDate), FormatDate(Data.LastEligiblePostedDate)]
+        </p>
+    }
+
+    <dl>
+        <div><dt>@L["Imported transactions"]</dt><dd>@Data.ImportedTransactions</dd></div>
+        <div><dt>@L["Pending payments, credits, or zero amounts excluded"]</dt><dd>@Data.ExcludedPendingOrNonDebitTransactions</dd></div>
+        <div><dt>@L["Payments without a usable merchant name"]</dt><dd>@Data.ExcludedMissingMerchantTransactions</dd></div>
+        <div><dt>@L["Eligible posted payments"]</dt><dd>@Data.EligiblePostedTransactions</dd></div>
+        <div><dt>@L["Merchant groups with only one payment"]</dt><dd>@Data.SingleObservationGroups</dd></div>
+        <div><dt>@L["Repeat groups without supported monthly timing"]</dt><dd>@Data.GroupsWithoutSupportedMonthlyCadence</dd></div>
+        <div><dt>@L["Monthly candidates found"]</dt><dd>@Data.DetectedMonthlyCandidates</dd></div>
+        <div><dt>@L["Candidates with mixed or partially missing currencies"]</dt><dd>@Data.RejectedCurrencyAmbiguity</dd></div>
+        <div><dt>@L["Candidates excluded by category"]</dt><dd>@Data.RejectedExplicitFallbackCategories</dd></div>
+        <div><dt>@L["Two-payment candidates needing stronger evidence"]</dt><dd>@Data.RejectedInsufficientTwoObservationEvidence</dd></div>
+        <div><dt>@L["Other unclassified candidates with weak or variable evidence"]</dt><dd>@Data.RejectedOtherWeakOrVariableEvidence</dd></div>
+        <div><dt>@L["Candidates accepted by current rules"]</dt><dd>@Data.AcceptedCandidates</dd></div>
+    </dl>
+
+    <p>@L["Discovery currently supports monthly timing. Weekly, biweekly, annual, and irregular payments may be missing. Accepted candidates are not the same as your active bill count or total spending."]</p>
+    <p>@L["If an expected bill is missing, privately check whether its payments appear in imported transactions. Do not post bank details or screenshots in public issues."]</p>
+    <nav aria-label="@L["Investigate missing bills"]">
+        <a href="/app/account">@L["Check bank connections"]</a>
+        <a href="/app/account/transactions">@L["Review imported transactions"]</a>
+    </nav>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Snapshot Data { get; set; } = new();
+
+    private string FormatDate(DateOnly? date) =>
+        date?.ToString("d", System.Globalization.CultureInfo.CurrentCulture)
+        ?? L["Unavailable"].Value;
+
+    public sealed class Snapshot
+    {
+        public int ImportedTransactions { get; set; }
+        public int ExcludedPendingOrNonDebitTransactions { get; set; }
+        public int ExcludedMissingMerchantTransactions { get; set; }
+        public int EligiblePostedTransactions { get; set; }
+        public DateOnly? FirstEligiblePostedDate { get; set; }
+        public DateOnly? LastEligiblePostedDate { get; set; }
+        public int SingleObservationGroups { get; set; }
+        public int GroupsWithoutSupportedMonthlyCadence { get; set; }
+        public int DetectedMonthlyCandidates { get; set; }
+        public int RejectedExplicitFallbackCategories { get; set; }
+        public int RejectedInsufficientTwoObservationEvidence { get; set; }
+        public int RejectedOtherWeakOrVariableEvidence { get; set; }
+        public int AcceptedCandidates { get; set; }
+        public int RejectedCurrencyAmbiguity { get; set; }
+    }
+}

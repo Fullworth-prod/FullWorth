@@ -180,6 +180,28 @@ public sealed class BillTransactionAssociationGatewayTests
         Assert.Equal(billStreamId, persisted.BillStreamId);
     }
 
+    [Fact]
+    public async Task StaleLaterAssignment_DoesNotStageEarlierAssignments()
+    {
+        await using var db = new FullWorthDbContext(CreateOptions());
+        var owner = Guid.NewGuid();
+        var stream = Guid.NewGuid();
+        var current = Guid.NewGuid();
+        var firstTransaction = Guid.NewGuid();
+        var secondTransaction = Guid.NewGuid();
+        db.BillStreams.Add(CreateBillStream(owner, stream));
+        db.BillTransactionAssociations.Add(new BillTransactionAssociationEntity
+            { UserId = owner, BankTransactionId = secondTransaction, BillStreamId = current });
+        await db.SaveChangesAsync();
+        db.ChangeTracker.Clear();
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            new BillTransactionAssociationGateway(db).StageAssignmentsAsync(owner,
+                [new(firstTransaction, null, stream), new(secondTransaction, null, stream)],
+                DateTimeOffset.UtcNow));
+        Assert.False(db.ChangeTracker.HasChanges());
+        Assert.Equal(current, (await db.BillTransactionAssociations.SingleAsync()).BillStreamId);
+    }
+
     private static DbContextOptions<FullWorthDbContext> CreateOptions()
     {
         return new DbContextOptionsBuilder<FullWorthDbContext>()

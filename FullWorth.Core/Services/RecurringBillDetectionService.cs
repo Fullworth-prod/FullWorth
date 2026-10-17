@@ -15,7 +15,7 @@ public sealed class RecurringBillDetectionService
         ArgumentNullException.ThrowIfNull(transactions);
 
         var postedTransactions = transactions
-            .Where(transaction => !transaction.IsPending)
+            .Where(transaction => !transaction.IsPending && transaction.Amount > 0m)
             .OrderBy(transaction => transaction.PostedDate)
             .ToList();
 
@@ -34,6 +34,13 @@ public sealed class RecurringBillDetectionService
             var merchantTransactions = merchantGroup
                 .OrderBy(transaction => transaction.PostedDate)
                 .ToList();
+
+            // Multiple charges on one date can be separate obligations or duplicate imports.
+            // Do not discard zero-day gaps and silently promote the remaining dates.
+            if (merchantTransactions.Select(transaction => transaction.PostedDate).Distinct().Count() != merchantTransactions.Count)
+            {
+                continue;
+            }
 
             if (merchantTransactions.Count < 2)
             {

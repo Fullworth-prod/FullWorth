@@ -1,3 +1,22 @@
+# Release readiness checkpoint — 2026-10-15 UTC
+
+**Guarded deployment and authenticated smoke passed. Broader launch remains on hold pending acceptance.**
+
+Current master candidate: `b275ad413a0532cdd2c42ee6ab3f9a1a4ed3fdd2` (not verified deployed). Last verified live release: `457e7e4b77a88714e8870e369a1aaf17e76e2de2`.
+
+- On October 15, the verified Web/PWA hybrid redesign was promoted to `master` at `b275ad413a0532cdd2c42ee6ab3f9a1a4ed3fdd2`; [exact-master CI](https://github.com/Fullworth/FullWorth/actions/runs/38696477773) passed. No guarded production deployment of this newer SHA is established. A later operator check reported SSH port 22 unreachable on the VPS; resolve host console/SSH access and reverify runtime before any further guarded deployment. Preserve last verified deployed release identity separately from repository state.
+
+- [Guarded production deploy #23](https://github.com/Fullworth/FullWorth/actions/runs/38690114274) succeeded on 2026-10-15 at 06:05 UTC. Pinned SSH, exact-release provenance/SBOM attestations, image identity, database-role separation/migrations, native OCR and kernel containment, file-backed secrets/non-disclosure, permissions, runtime/exposure, and public API/Web readiness passed. The host's verified release marker matches `457e7e4b77a88714e8870e369a1aaf17e76e2de2`.
+- [Production Auth Smoke](https://github.com/Fullworth/FullWorth/actions/runs/38690396582) passed on the same release: API login/refresh, protected read endpoints, non-admin denial, export secret/storage boundaries, Web cookie login, authenticated app/BFF, antiforgery issuance, and logout invalidation. Mutation probes were disabled; this does not prove two-user ownership or statement/provider acceptance.
+- [Exact-master CI #1797](https://github.com/Fullworth/FullWorth/actions/runs/38681858810), [Governance #36](https://github.com/Fullworth/FullWorth/actions/runs/38681858771), and all three exact-master CodeQL analyses passed. Attested production image artifact `11948796248` expires 2026-10-22 04:32 UTC. PR #748 fixed the OCR cgroup observer race without relaxing limits; PR #749 promoted it.
+- Direct post-deployment verification confirmed release identity, public HTTPS readiness, private exposure boundaries, the Owner role, disabled subscription enforcement, active backup/readiness timers, configured alerting, and append-only backup-client policy. Snapshot availability is verified; a new post-deployment snapshot, separate clean-host recovery, provider immutability, and external alert delivery are not established by these checks.
+- Keep payments/subscription enforcement and AI-derived persistence disabled. Broader launch remains gated by controlled statement and two-user ownership acceptance, Plaid lifecycle/payroll acceptance, physical-device checks, actual reboot recovery, clean-host recovery with real statements and both key rings, provider-enforced immutability, external alert delivery, and qualified legal/license review.
+- Next: collect those remaining acceptance results against this deployed release. Preserve production data and the existing manual guarded deployment path; do not redeploy merely to publish handoff documentation.
+
+## Previous release checklist (historical; checkpoint above supersedes stale candidate/live/governance claims)
+
+The matrix and controlled acceptance scenarios below remain useful. Old commit IDs, expired artifacts, no-live-release statements, and one-review requirements describe prior checkpoints; current policy allows zero approvals while retaining mandatory PRs, strict required checks, and no bypass actors.
+
 # Release candidate readiness — 2026-10-14
 
 ## Owner-approved release policy — 2026-10-14

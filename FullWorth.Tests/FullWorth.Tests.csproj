@@ -53,4 +53,10 @@
 	</ItemGroup>
 
 
+  <!-- Exercise the actual native auth sources without a MAUI runtime. -->
+  <ItemGroup>
+    <Compile Include="../Services/FullWorthApiClient.cs" Link="Native/FullWorthApiClient.cs" />
+    <Compile Include="../Services/AuthenticationService.cs" Link="Native/AuthenticationService.cs" />
+    <Compile Include="../ViewModels/LoginPageViewModel.cs" Link="Native/LoginPageViewModel.cs" />
+  </ItemGroup>
 </Project>

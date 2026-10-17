@@ -4,7 +4,10 @@ public sealed record BankTransactionMetricFact(
     Guid TransactionId,
     decimal Amount,
     DateOnly PostedDate,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc)
+{
+    public string? CurrencyCode { get; init; }
+}
 
 public interface IBankTransactionMetricFactsGateway
 {

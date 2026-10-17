@@ -144,6 +144,39 @@ public sealed class RecurringBillDetectionServiceTests
                 transactions));
     }
 
+    [Fact]
+    public void Detect_ZeroAmountsDoNotCreateRecurrenceOrChangeLatestCharge()
+    {
+        var paid = Transaction("Synthetic Subscription", 2026, 1, 5, 20m);
+        var zero = Transaction("Synthetic Subscription", 2026, 2, 5, 0m);
+        Assert.Empty(_service.Detect([paid, zero]));
+        Assert.Empty(new BillStreamDiscoveryService().Discover([paid, zero]));
+
+        var secondPaid = Transaction("Synthetic Subscription", 2026, 2, 5, 22m);
+        var laterZero = Transaction("Synthetic Subscription", 2026, 3, 5, 0m);
+        var result = Assert.Single(_service.Detect([paid, secondPaid, laterZero]));
+        Assert.Equal(2, result.TransactionCount);
+        Assert.Equal(22m, result.LatestAmount);
+        var stream = Assert.Single(new BillStreamDiscoveryService()
+            .Discover([paid, secondPaid, laterZero]));
+        Assert.Equal(2, stream.Transactions.Count);
+        Assert.Equal(22m, stream.LatestAmount);
+    }
+
+    [Fact]
+    public void Detect_SameDateChargesDoNotMasqueradeAsOneMonthlyObligation()
+    {
+        var transactions = new[]
+        {
+            Transaction("Synthetic subscription", 2026, 1, 5, 20m),
+            Transaction("Synthetic subscription", 2026, 1, 5, 20m),
+            Transaction("Synthetic subscription", 2026, 2, 5, 20m)
+        };
+        Assert.Empty(_service.Detect(transactions));
+        Assert.Empty(_service.Detect(transactions.Reverse()));
+        Assert.Empty(new BillStreamDiscoveryService().Discover(transactions));
+    }
+
     private static BankTransaction Transaction(
         string merchant,
         int year,

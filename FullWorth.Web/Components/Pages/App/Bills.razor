@@ -1,6 +1,7 @@
-﻿@page "/app/bills"
+@page "/app/bills"
 
 @using FullWorth.Web.Components.Shared
+@using FullWorth.Core.Formatting
 
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
@@ -12,7 +13,6 @@
 @inject Microsoft.Extensions.Localization.IStringLocalizer<Bills> L
 
 <PageTitle>@L["Bills — FullWorth"]</PageTitle>
-
 
 
 <div class="app-page bills-page">
@@ -73,26 +73,17 @@
     }
     else if (_billStreams.Count == 0)
     {
-        <div class="empty-dashboard">
-            <div class="empty-icon">
-                <svg class="bw-sprite"
-                     aria-hidden="true">
-                    <use href="/assets/billwatch-sprites.svg#bill"></use>
-                </svg>
-            </div>
-
-            <span class="page-kicker">
-                @L["No bills yet"]
-            </span>
-
-            <h2>
-                @L["FullWorth hasn't discovered a recurring bill yet."]
-            </h2>
-
-            <p>
-                @L["Once recurring charges are matched into Bill Streams, they'll appear here automatically."]
-            </p>
-        </div>
+        @if (_reviewBills.Count == 0)
+        {
+            <BillsEmptyState />
+        }
+        else
+        {
+            <section class="app-panel bill-discovery-panel">
+                <h2>@L["No active monitored bills"]</h2>
+                <p>@L["Previously discovered bills are listed below for review. Their amounts are excluded from monitored totals."]</p>
+            </section>
+        }
     }
     else
     {
@@ -102,8 +93,12 @@
         <section class="fw-bills-pulse" aria-label="@L["Bill summary"]">
             <div class="fw-bills-total">
                 <span>@L["Latest recurring total"]</span>
-                <strong>@FormatMoney(_totalCurrent)</strong>
+                <strong>@FormatTotals(_billStreams.Where(bill => bill.HasTransactionEvidence).Select(bill => (bill.CurrentAmount, bill.CurrencyCode)))</strong>
                 <small>@L["Across {0} monitored recurring bills", _billStreams.Count]</small>
+                @if (_billStreams.Any(bill => !bill.HasTransactionEvidence || !FinancialAmountFormatter.TryNormalizeCurrency(bill.CurrencyCode, out _)))
+                {
+                    <small>@L["Some bill amounts are unavailable and excluded from this total."]</small>
+                }
             </div>
 
             <div class="fw-bills-stats">
@@ -113,7 +108,7 @@
                         @onclick="() => SetFilter(BillFilter.Increased)">
                     <span>@L["Increased"]</span>
                     <strong>@_increasedCount</strong>
-                    <small>@FormatMoney(_increaseTotal) @L["more per cycle"]</small>
+                    <small>@FormatIncreaseTotals() @L["more per cycle"]</small>
                 </button>
 
                 <button type="button"
@@ -148,10 +143,18 @@
                 <div class="fw-bills-alert-copy">
                     <span>@L["Worth a closer look"]</span>
                     <strong>
-                        @L["{0} in current recurring increases", FormatMoney(_increaseTotal)]
+                        @L["{0} in current recurring increases", FormatIncreaseTotals()]
                     </strong>
                     <small>
-                        @L["That is {0} annualized if these increases persist. Transaction amounts show what changed; provider evidence is still required to explain why.", FormatMoney(_increaseTotal * 12m)]
+                        @if (_billStreams.Where(bill => GetDifference(bill) > 0m)
+                            .All(bill => bill.HasMonthlyCadenceEvidence))
+                        {
+                            @L["That is {0} annualized if these increases persist. Transaction amounts show what changed; provider evidence is still required to explain why.", FormatIncreaseTotals(12m)]
+                        }
+                        else
+                        {
+                            @L["A yearly estimate is unavailable without supported monthly timing. Provider evidence is required to explain why a charge changed."]
+                        }
                     </small>
                 </div>
 
@@ -254,18 +257,18 @@
 
                             <div class="fw-bills-current">
                                 <span>@L["Current"]</span>
-                                <strong>@FormatMoney(bill.CurrentAmount)</strong>
+                                <strong>@(bill.HasTransactionEvidence ? FormatMoney(bill.CurrentAmount, bill.CurrencyCode) : L["Amount unavailable"].Value)</strong>
                             </div>
 
                             @if (bill.PreviousAverage > 0m)
                             {
                                 <div class="@GetLedgerChangeClass(difference)">
                                     <span>@L["Change"]</span>
-                                    <strong>@FormatDifference(difference)</strong>
+                                    <strong>@FormatDifference(difference, bill.CurrencyCode)</strong>
                                 </div>
 
                                 <div class="fw-bills-impact">
-                                    <span>@GetAnnualizedLabel(difference)</span>
+                                    <span>@(bill.HasMonthlyCadenceEvidence ? GetAnnualizedLabel(difference) : L["Yearly estimate unavailable"].Value)</span>
                                     <strong>@FormatAnnualized(bill, difference)</strong>
                                 </div>
                             }
@@ -284,9 +287,80 @@
             }
         </section>
     }
+    @if (!_isLoading && string.IsNullOrWhiteSpace(_errorMessage) && _reviewBills.Count > 0)
+    {
+        <BillReviewList Bills="_reviewBills" />
+    }
+
+    <section class="app-panel bill-discovery-panel" aria-labelledby="discovery-heading">
+        <h2 id="discovery-heading">@L["Missing a bill?"]</h2>
+        <button type="button" class="secondary-action"
+                aria-expanded="@_showDiscovery" aria-controls="discovery-details"
+                disabled="@_discoveryLoading" @onclick="ToggleDiscoveryAsync">
+            @(_discoveryLoading ? L["Checking imported history…"]
+                : _showDiscovery ? L["Hide discovery details"] : L["Check discovery details"])
+        </button>
+        @if (_showDiscovery)
+        {
+            <div id="discovery-details" aria-busy="@_discoveryLoading">
+                @if (_discoveryLoading)
+                {
+                    <p role="status">@L["Checking imported history…"]</p>
+                }
+                else if (_discoveryError)
+                {
+                    <p role="alert">@L["Discovery details could not be loaded. Try again."]</p>
+                    <button type="button" class="secondary-action" @onclick="LoadDiscoveryAsync">
+                        @L["Try again"]
+                    </button>
+                }
+                else if (_discovery is not null)
+                {
+                    <BillDiscoverySummary Data="_discovery" />
+                }
+            </div>
+        }
+    </section>
 </div>
 
 @code {
+    private List<BillReviewList.Item> _reviewBills = [];
+    private BillDiscoverySummary.Snapshot? _discovery;
+    private bool _showDiscovery;
+    private bool _discoveryLoading;
+    private bool _discoveryError;
+
+    private async Task ToggleDiscoveryAsync()
+    {
+        _showDiscovery = !_showDiscovery;
+        if (_showDiscovery)
+        {
+            await LoadDiscoveryAsync();
+        }
+        else
+        {
+            _discovery = null;
+        }
+    }
+
+    private async Task LoadDiscoveryAsync()
+    {
+        if (_discoveryLoading) return;
+        _discoveryLoading = true;
+        _discoveryError = false;
+        _discovery = null;
+        try
+        {
+            _bffModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/bff.js");
+            _discovery = await _bffModule.InvokeAsync<BillDiscoverySummary.Snapshot?>(
+                "getBillDiscoveryDiagnostics");
+            _discoveryError = _discovery is null;
+        }
+        catch (JSException) { _discoveryError = true; }
+        catch (Exception) { _discoveryError = true; }
+        finally { _discoveryLoading = false; }
+    }
+
     private IJSObjectReference?
         _bffModule;
 
@@ -301,7 +375,6 @@
     private BillFilter _filter =
         BillFilter.All;
 
-    private decimal _totalCurrent;
 
     private int _increasedCount;
 
@@ -309,7 +382,6 @@
 
     private int _noHistoryCount;
 
-    private decimal _increaseTotal;
 
     private IReadOnlyList<BillStreamViewModel>
         FilteredBills =>
@@ -417,7 +489,12 @@
                 await _bffModule
                     .InvokeAsync<
                         BillStreamViewModel[]>(
-                        "getBillStreams");
+                        "getBillStreams", true);
+
+            _reviewBills = result?
+                .Where(bill => !bill.IsActive && bill.Source == "AutomaticDiscovery")
+                .Select(bill => new BillReviewList.Item(bill.Id, bill.ProviderName))
+                .ToList() ?? [];
 
             _billStreams =
                 result?
@@ -448,13 +525,6 @@
 
     private void UpdateBillSummaries()
     {
-        _totalCurrent =
-            _billStreams.Sum(
-                bill =>
-                    Math.Max(
-                        bill.CurrentAmount,
-                        0m));
-
         _increasedCount =
             _billStreams.Count(
                 bill =>
@@ -472,14 +542,7 @@
                 bill =>
                     bill.PreviousAverage <= 0m);
 
-        _increaseTotal =
-            _billStreams
-                .Where(
-                    bill =>
-                        bill.PreviousAverage > 0m &&
-                        GetDifference(bill) > 0m)
-                .Sum(
-                    GetDifference);
+
     }
 
     private static decimal GetDifference(
@@ -497,24 +560,28 @@
             MidpointRounding.AwayFromZero);
     }
 
-    private static string FormatMoney(
-        decimal amount)
-    {
-        return amount.ToString(
-            "C2");
-    }
+    private string FormatMoney(decimal amount, string? currencyCode) =>
+        FinancialAmountFormatter.FormatOrUnspecified(amount, currencyCode, L["Currency unavailable"].Value);
+
+    private string FormatTotals(IEnumerable<(decimal Amount, string? CurrencyCode)> amounts,
+        decimal multiplier = 1m) =>
+        FinancialAmountFormatter.FormatTotals(amounts, multiplier) ?? L["Amount unavailable"].Value;
+
+    private string FormatIncreaseTotals(decimal multiplier = 1m) =>
+        FormatTotals(_billStreams.Where(bill => GetDifference(bill) > 0m)
+            .Select(bill => (GetDifference(bill), bill.CurrencyCode)), multiplier);
 
     private string FormatDifference(
-        decimal difference)
+        decimal difference, string? currencyCode)
     {
         if (difference > 0m)
         {
-            return $"+{FormatMoney(difference)}";
+            return $"+{FormatMoney(difference, currencyCode)}";
         }
 
         if (difference < 0m)
         {
-            return $"-{FormatMoney(Math.Abs(difference))}";
+            return $"-{FormatMoney(Math.Abs(difference), currencyCode)}";
         }
 
         return L["No change"].Value;
@@ -532,6 +599,11 @@
         BillStreamViewModel bill,
         decimal difference)
     {
+        if (!bill.HasMonthlyCadenceEvidence || !FinancialAmountFormatter.TryNormalizeCurrency(bill.CurrencyCode, out _))
+        {
+            return L["Not available"].Value;
+        }
+
         if (difference == 0m)
         {
             var annualizedCost =
@@ -544,7 +616,7 @@
                     MidpointRounding.AwayFromZero);
 
             return
-                $"{FormatMoney(annualizedCost)}{L["/yr"].Value}";
+                $"{FormatMoney(annualizedCost, bill.CurrencyCode)}{L["/yr"].Value}";
         }
 
         var annualizedImpact =
@@ -556,11 +628,11 @@
         if (annualizedImpact > 0m)
         {
             return
-                $"+{FormatMoney(annualizedImpact)}{L["/yr"].Value}";
+                $"+{FormatMoney(annualizedImpact, bill.CurrencyCode)}{L["/yr"].Value}";
         }
 
         return
-            $"-{FormatMoney(Math.Abs(annualizedImpact))}{L["/yr"].Value}";
+            $"-{FormatMoney(Math.Abs(annualizedImpact), bill.CurrencyCode)}{L["/yr"].Value}";
     }
 
     private static string GetLedgerChangeClass(
@@ -717,6 +789,10 @@
         } = string.Empty;
 
         public bool IsActive { get; set; }
+        public string? CurrencyCode { get; set; }
+        public string Source { get; set; } = "Unknown";
+        public bool HasTransactionEvidence { get; set; }
+        public bool HasMonthlyCadenceEvidence { get; set; }
 
         public decimal CurrentAmount
         {

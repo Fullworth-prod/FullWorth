@@ -38,4 +38,17 @@
   <data name="See bill history" xml:space="preserve"><value>Ver historial de la factura</value></data>
   <data name="FullWorth could not reach the secure API." xml:space="preserve"><value>FullWorth no pudo comunicarse con la API segura.</value></data>
   <data name="Something went wrong while loading your bills." xml:space="preserve"><value>Algo salió mal al cargar tus facturas.</value></data>
+  <data name="Missing a bill?" xml:space="preserve"><value>¿Falta una factura?</value></data>
+  <data name="Checking imported history…" xml:space="preserve"><value>Revisando el historial importado…</value></data>
+  <data name="Hide discovery details" xml:space="preserve"><value>Ocultar detalles de detección</value></data>
+  <data name="Check discovery details" xml:space="preserve"><value>Revisar detalles de detección</value></data>
+  <data name="Discovery details could not be loaded. Try again." xml:space="preserve"><value>No se pudieron cargar los detalles de detección. Inténtalo de nuevo.</value></data>
+  <data name="Amount unavailable" xml:space="preserve"><value>Importe no disponible</value></data>
+  <data name="Yearly estimate unavailable" xml:space="preserve"><value>Estimación anual no disponible</value></data>
+  <data name="Not available" xml:space="preserve"><value>No disponible</value></data>
+  <data name="Some bill amounts are unavailable and excluded from this total." xml:space="preserve"><value>Algunos importes no están disponibles y se excluyen de este total.</value></data>
+  <data name="A yearly estimate is unavailable without supported monthly timing. Provider evidence is required to explain why a charge changed." xml:space="preserve"><value>No hay una estimación anual sin un patrón mensual compatible. Se requiere evidencia del proveedor para explicar por qué cambió un cargo.</value></data>
+  <data name="No active monitored bills" xml:space="preserve"><value>No hay facturas activas monitoreadas</value></data>
+  <data name="Previously discovered bills are listed below for review. Their amounts are excluded from monitored totals." xml:space="preserve"><value>Las facturas detectadas anteriormente se muestran abajo para su revisión. Sus importes se excluyen de los totales monitoreados.</value></data>
+  <data name="Currency unavailable" xml:space="preserve"><value>Moneda no disponible</value></data>
 </root>

@@ -50,6 +50,7 @@ jobs:
 
       - name: Validate packaging workflow contract
         run: |
+          python3 -m unittest discover -s deploy/tests -p test_ios_device_ipa.py -v
           sh deploy/tests/ios-internal-simulator-workflow-tests.sh
           sh -n deploy/tests/ios-simulator-smoke.sh
 
@@ -86,7 +87,7 @@ jobs:
           version=$(
             DEVELOPER_DIR="$developer_dir" \
               xcodebuild -version |
-              awk '/^Xcode / { print $2; exit }'
+              awk '/^Xcode / { print $2 }'
           )
 
           case "$version" in
@@ -148,6 +149,7 @@ jobs:
           --no-restore
           -p:RuntimeIdentifier=iossimulator-arm64
           -p:FullWorthApiBaseUrl=https://api.fullworth.org/
+          -p:FullWorthUseHostedWebShell=true
           -p:ArchiveOnBuild=false
 
       - name: Locate simulator app
@@ -193,6 +195,16 @@ jobs:
           sh deploy/tests/ios-simulator-smoke.sh
           "${{ steps.app.outputs.app_path }}"
           "${{ steps.app.outputs.bundle_id }}"
+          "${{ runner.temp }}/fullworth-ios-launch-evidence"
+
+      - name: Upload simulator launch evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: fullworth-ios-launch-${{ github.sha }}
+          path: ${{ runner.temp }}/fullworth-ios-launch-evidence/
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Package simulator artifact
         id: package

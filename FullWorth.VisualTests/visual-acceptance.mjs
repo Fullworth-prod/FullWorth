@@ -237,7 +237,9 @@ try {
       assert.ok((await unknown.innerText()).includes("999.00 (Currency unavailable)"));
       assert.ok((await page.locator(".fw-bills-row").filter({
         hasText: "Synthetic Unavailable Amount" }).innerText()).includes("Amount unavailable"));
-      assert.ok(!(await page.locator(".fw-bills-total").innerText()).includes("999.00"));
+      const totalText = await page.locator(".fw-bills-total").innerText();
+      assert.ok(!totalText.includes("999.00"));
+      assert.match(totalText, /bills\s+Some bill amounts are unavailable/);
       assert.ok(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)),
         "Currency totals must fit the viewport");
       await page.screenshot({ path: path.join(outputDir, "bills-currencies-" + width + ".png"), fullPage: true });

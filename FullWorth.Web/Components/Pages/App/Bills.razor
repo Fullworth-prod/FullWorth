@@ -94,11 +94,11 @@
             <div class="fw-bills-total">
                 <span>@L["Latest recurring total"]</span>
                 <strong>@FormatTotals(_billStreams.Where(bill => bill.HasTransactionEvidence).Select(bill => (bill.CurrentAmount, bill.CurrencyCode)))</strong>
-                <small>@L["Across {0} monitored recurring bills", _billStreams.Count]
+                <small>@L["Across {0} monitored recurring bills", _billStreams.Count]</small>
                 @if (_billStreams.Any(bill => !bill.HasTransactionEvidence || !FinancialAmountFormatter.TryNormalizeCurrency(bill.CurrencyCode, out _)))
                 {
                     <small>@L["Some bill amounts are unavailable and excluded from this total."]</small>
-                }</small>
+                }
             </div>
 
             <div class="fw-bills-stats">

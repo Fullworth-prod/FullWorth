@@ -214,7 +214,15 @@ try {
     await route.fulfill({ status: 200, contentType: "application/json",
       body: JSON.stringify(pathname === "/bff/bill-streams" ? currencyBills : currencyDetail) });
   };
+  const currencyConnectionRoute = async route => {
+    if (route.request().method() !== "GET") return route.continue();
+    await route.fulfill({ status: 200, contentType: "application/json",
+      body: JSON.stringify([{ id: "77777777-7777-7777-7777-777777777777",
+        institutionName: "Synthetic bank", status: 0,
+        lastSuccessfulSyncAtUtc: "2026-02-01T00:00:00Z", createdAtUtc: "2026-01-01T00:00:00Z" }]) });
+  };
   await page.route("**/bff/bill-streams**", currencyRoute);
+  await page.route("**/bff/bank-connections", currencyConnectionRoute);
   try {
     for (const width of [1440, 320]) {
       await page.setViewportSize({ width, height: 1100 });
@@ -250,6 +258,7 @@ try {
     }
   } finally {
     await page.unroute("**/bff/bill-streams**", currencyRoute);
+    await page.unroute("**/bff/bank-connections", currencyConnectionRoute);
   }
 
   // Exercise the real authenticated Bills page, not duplicated fixture markup.

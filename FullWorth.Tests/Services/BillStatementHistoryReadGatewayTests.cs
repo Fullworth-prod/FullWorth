@@ -229,6 +229,32 @@ public sealed class BillStatementHistoryReadGatewayTests
             snapshot.Changes);
     }
 
+    [Fact]
+    public async Task TiedDates_UseStableIdentifiersForStatementsAndChanges()
+    {
+        await using var db = CreateDbContext();
+        var owner = Guid.NewGuid();
+        var stream = Guid.NewGuid();
+        var low = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var high = Guid.Parse("00000000-0000-0000-0000-000000000002");
+        var first = CreateStatement(owner, stream, new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 31), 10m);
+        var second = CreateStatement(owner, stream, first.PeriodStart, first.PeriodEnd, 20m);
+        first.Id = low;
+        second.Id = high;
+        db.BillStatements.AddRange(first, second);
+        var timestamp = new DateTimeOffset(2026, 2, 1, 0, 0, 0, TimeSpan.Zero);
+        var firstChange = CreateChange(owner, stream, low, high, BillChangeType.TotalIncrease, timestamp);
+        var secondChange = CreateChange(owner, stream, low, high, BillChangeType.TotalIncrease, timestamp);
+        firstChange.Id = low;
+        secondChange.Id = high;
+        db.BillChanges.AddRange(firstChange, secondChange);
+        await db.SaveChangesAsync();
+        var gateway = new BillStatementHistoryReadGateway(db);
+        var result = await gateway.GetAsync(owner, stream);
+        Assert.Equal(new[] { high, low }, result.Statements.Select(statement => statement.Id));
+        Assert.Equal(new[] { high, low }, result.Changes.Select(change => change.Id));
+    }
+
     private static FullWorthDbContext
         CreateDbContext()
     {

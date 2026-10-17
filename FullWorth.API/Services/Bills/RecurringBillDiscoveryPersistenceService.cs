@@ -1,4 +1,5 @@
 using FullWorth.API.Data;
+using FullWorth.Core.Formatting;
 using FullWorth.API.Data.Entities;
 using FullWorth.API.Services.Contracts;
 using FullWorth.Core.Services;
@@ -179,6 +180,16 @@ public sealed class RecurringBillDiscoveryPersistenceService
                 .ToListAsync(
                     cancellationToken);
 
+        var streamGroupsByProvider = existingStreams
+            .GroupBy(stream => _merchantNormalizer.Normalize(stream.ProviderName),
+                StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.ToArray(),
+                StringComparer.OrdinalIgnoreCase);
+        var ambiguousProviders = streamGroupsByProvider
+            .Where(pair => pair.Value.Length > 1)
+            .Select(pair => pair.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         var existingStreamsByProvider =
             existingStreams
                 .GroupBy(
@@ -190,7 +201,7 @@ public sealed class RecurringBillDiscoveryPersistenceService
                     group =>
                         group.Key,
                     group =>
-                        group.First(),
+                        group.OrderBy(stream => stream.Id).First(),
                     StringComparer.OrdinalIgnoreCase);
 
         var linkedTransactionsByStreamId =
@@ -216,6 +227,8 @@ public sealed class RecurringBillDiscoveryPersistenceService
                         discovery.ProviderName)
                 .ToHashSet(
                     StringComparer.OrdinalIgnoreCase);
+
+        var discoveredCount = 0;
 
         var createdCount =
             0;
@@ -251,6 +264,8 @@ public sealed class RecurringBillDiscoveryPersistenceService
                 _merchantNormalizer.Normalize(
                     existingStream.ProviderName);
 
+            if (ambiguousProviders.Contains(normalizedExistingProvider)) continue;
+
             if (discoveredProviderNames.Contains(
                     normalizedExistingProvider))
             {
@@ -276,6 +291,10 @@ public sealed class RecurringBillDiscoveryPersistenceService
                 continue;
             }
 
+            // Even an already-inactive stream must validate its source before
+            // unlinking evidence; another context may just have confirmed it.
+            _dbContext.Entry(existingStream).Property(stream => stream.Source).IsModified = true;
+
             foreach (var transaction in
                      linkedTransactions)
             {
@@ -293,6 +312,18 @@ public sealed class RecurringBillDiscoveryPersistenceService
                 .TryGetValue(
                     discovery.ProviderName,
                     out var persistedStream);
+
+            // A normalized name is not an obligation identifier. Preserve both
+            // duplicate streams and existing associations until the user resolves them.
+            if (ambiguousProviders.Contains(discovery.ProviderName) ||
+                discovery.Transactions.Any(transaction =>
+                    transaction.OriginalBillStreamId.HasValue &&
+                    transaction.OriginalBillStreamId != persistedStream?.Id))
+            {
+                continue;
+            }
+
+            discoveredCount++;
 
             if (persistedStream is
                 null)
@@ -452,8 +483,16 @@ public sealed class RecurringBillDiscoveryPersistenceService
          * Bill Streams, alerts, and provider-owned transaction-link changes
          * commit together in the current scoped modular-monolith unit of work.
          */
-        await _dbContext.SaveChangesAsync(
-            cancellationToken);
+        try
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // A secondary refresh/reconciliation must not replay stale staged writes.
+            _dbContext.ChangeTracker.Clear();
+            throw;
+        }
 
         return new RecurringBillDiscoveryPersistenceResult(
             TransactionsAnalyzed:
@@ -463,10 +502,10 @@ public sealed class RecurringBillDiscoveryPersistenceService
                 analysis.DetectedMonthlyCandidates,
 
             RecurringCandidatesRejected:
-                analysis.DetectedMonthlyCandidates - acceptedDiscoveries.Count,
+                analysis.DetectedMonthlyCandidates - discoveredCount,
 
             BillsDiscovered:
-                acceptedDiscoveries.Count,
+                discoveredCount,
 
             BillStreamsCreated:
                 createdCount,
@@ -577,6 +616,7 @@ public sealed class RecurringBillDiscoveryPersistenceService
         var rejectedExplicitFallbackCategory = 0;
         var rejectedTwoObservationEvidence = 0;
         var rejectedOtherWeakEvidence = 0;
+        var rejectedCurrencyAmbiguity = 0;
 
         foreach (var detectedStream in
                  detectedStreams)
@@ -586,6 +626,25 @@ public sealed class RecurringBillDiscoveryPersistenceService
                     detectedStream.ProviderName,
                     out var matchingTransactions))
             {
+                continue;
+            }
+
+            var currencyUnits = matchingTransactions.Select(transaction =>
+                FinancialAmountFormatter.TryNormalizeCurrency(transaction.CurrencyCode, out var code)
+                    ? code : null).Distinct().Count();
+            if (currencyUnits > 1)
+            {
+                rejectedCurrencyAmbiguity++;
+                continue;
+            }
+
+            // Explicit transfer/income/loan evidence must not be overridden by a
+            // familiar merchant name or another charge's supported category.
+            if (matchingTransactions.Any(transaction =>
+                StrongFallbackRejectedPrimaryCategories.Contains(
+                    transaction.CategoryPrimary?.Trim() ?? string.Empty)))
+            {
+                rejectedExplicitFallbackCategory++;
                 continue;
             }
 
@@ -680,7 +739,10 @@ public sealed class RecurringBillDiscoveryPersistenceService
                 RejectedExplicitFallbackCategories: rejectedExplicitFallbackCategory,
                 RejectedInsufficientTwoObservationEvidence: rejectedTwoObservationEvidence,
                 RejectedOtherWeakOrVariableEvidence: rejectedOtherWeakEvidence,
-                AcceptedCandidates: acceptedDiscoveries.Count);
+                AcceptedCandidates: acceptedDiscoveries.Count)
+        {
+            RejectedCurrencyAmbiguity = rejectedCurrencyAmbiguity
+        };
 
         return new DiscoveryAnalysis(
             coreTransactions.Count,
@@ -938,6 +1000,7 @@ public sealed class RecurringBillDiscoveryPersistenceService
             IsPending = source.IsPending;
             CategoryPrimary = source.CategoryPrimary;
             CategoryDetailed = source.CategoryDetailed;
+            CurrencyCode = source.CurrencyCode;
         }
 
         public Guid Id { get; }
@@ -959,6 +1022,8 @@ public sealed class RecurringBillDiscoveryPersistenceService
         public string? CategoryPrimary { get; }
 
         public string? CategoryDetailed { get; }
+
+        public string? CurrencyCode { get; }
     }
 }
 
@@ -992,4 +1057,7 @@ public sealed record RecurringBillDiscoveryDiagnostics(
     int RejectedExplicitFallbackCategories,
     int RejectedInsufficientTwoObservationEvidence,
     int RejectedOtherWeakOrVariableEvidence,
-    int AcceptedCandidates);
+    int AcceptedCandidates)
+{
+    public int RejectedCurrencyAmbiguity { get; init; }
+}

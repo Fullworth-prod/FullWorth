@@ -5,6 +5,8 @@ public sealed record BankTransactionBillStreamMetrics(
     decimal CurrentAmount,
     decimal PreviousAverage)
 {
+    public string? CurrencyCode { get; init; }
+
     // Timing evidence only; this does not establish a provider's contract or cause.
     public bool HasMonthlyCadenceEvidence { get; init; }
 }

@@ -1,6 +1,7 @@
-﻿@page "/app/bills"
+@page "/app/bills"
 
 @using FullWorth.Web.Components.Shared
+@using FullWorth.Core.Formatting
 
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
@@ -93,9 +94,9 @@
         <section class="fw-bills-pulse" aria-label="@L["Bill summary"]">
             <div class="fw-bills-total">
                 <span>@L["Latest recurring total"]</span>
-                <strong>@FormatMoney(_totalCurrent)</strong>
+                <strong>@FormatTotals(_billStreams.Where(bill => bill.HasTransactionEvidence).Select(bill => (bill.CurrentAmount, bill.CurrencyCode)))</strong>
                 <small>@L["Across {0} monitored recurring bills", _billStreams.Count]
-                @if (_billStreams.Any(bill => !bill.HasTransactionEvidence))
+                @if (_billStreams.Any(bill => !bill.HasTransactionEvidence || !FinancialAmountFormatter.TryNormalizeCurrency(bill.CurrencyCode, out _)))
                 {
                     <small>@L["Some bill amounts are unavailable and excluded from this total."]</small>
                 }</small>
@@ -108,7 +109,7 @@
                         @onclick="() => SetFilter(BillFilter.Increased)">
                     <span>@L["Increased"]</span>
                     <strong>@_increasedCount</strong>
-                    <small>@FormatMoney(_increaseTotal) @L["more per cycle"]</small>
+                    <small>@FormatIncreaseTotals() @L["more per cycle"]</small>
                 </button>
 
                 <button type="button"
@@ -143,13 +144,13 @@
                 <div class="fw-bills-alert-copy">
                     <span>@L["Worth a closer look"]</span>
                     <strong>
-                        @L["{0} in current recurring increases", FormatMoney(_increaseTotal)]
+                        @L["{0} in current recurring increases", FormatIncreaseTotals()]
                     </strong>
                     <small>
                         @if (_billStreams.Where(bill => GetDifference(bill) > 0m)
                             .All(bill => bill.HasMonthlyCadenceEvidence))
                         {
-                            @L["That is {0} annualized if these increases persist. Transaction amounts show what changed; provider evidence is still required to explain why.", FormatMoney(_increaseTotal * 12m)]
+                            @L["That is {0} annualized if these increases persist. Transaction amounts show what changed; provider evidence is still required to explain why.", FormatIncreaseTotals(12m)]
                         }
                         else
                         {
@@ -257,14 +258,14 @@
 
                             <div class="fw-bills-current">
                                 <span>@L["Current"]</span>
-                                <strong>@(bill.HasTransactionEvidence ? FormatMoney(bill.CurrentAmount) : L["Amount unavailable"].Value)</strong>
+                                <strong>@(bill.HasTransactionEvidence ? FormatMoney(bill.CurrentAmount, bill.CurrencyCode) : L["Amount unavailable"].Value)</strong>
                             </div>
 
                             @if (bill.PreviousAverage > 0m)
                             {
                                 <div class="@GetLedgerChangeClass(difference)">
                                     <span>@L["Change"]</span>
-                                    <strong>@FormatDifference(difference)</strong>
+                                    <strong>@FormatDifference(difference, bill.CurrencyCode)</strong>
                                 </div>
 
                                 <div class="fw-bills-impact">
@@ -375,7 +376,7 @@
     private BillFilter _filter =
         BillFilter.All;
 
-    private decimal _totalCurrent;
+
 
     private int _increasedCount;
 
@@ -383,7 +384,7 @@
 
     private int _noHistoryCount;
 
-    private decimal _increaseTotal;
+
 
     private IReadOnlyList<BillStreamViewModel>
         FilteredBills =>
@@ -527,13 +528,6 @@
 
     private void UpdateBillSummaries()
     {
-        _totalCurrent =
-            _billStreams.Sum(
-                bill =>
-                    Math.Max(
-                        bill.CurrentAmount,
-                        0m));
-
         _increasedCount =
             _billStreams.Count(
                 bill =>
@@ -551,14 +545,7 @@
                 bill =>
                     bill.PreviousAverage <= 0m);
 
-        _increaseTotal =
-            _billStreams
-                .Where(
-                    bill =>
-                        bill.PreviousAverage > 0m &&
-                        GetDifference(bill) > 0m)
-                .Sum(
-                    GetDifference);
+
     }
 
     private static decimal GetDifference(
@@ -576,24 +563,28 @@
             MidpointRounding.AwayFromZero);
     }
 
-    private static string FormatMoney(
-        decimal amount)
-    {
-        return amount.ToString(
-            "C2");
-    }
+    private string FormatMoney(decimal amount, string? currencyCode) =>
+        FinancialAmountFormatter.FormatOrUnspecified(amount, currencyCode, L["Currency unavailable"].Value);
+
+    private string FormatTotals(IEnumerable<(decimal Amount, string? CurrencyCode)> amounts,
+        decimal multiplier = 1m) =>
+        FinancialAmountFormatter.FormatTotals(amounts, multiplier) ?? L["Amount unavailable"].Value;
+
+    private string FormatIncreaseTotals(decimal multiplier = 1m) =>
+        FormatTotals(_billStreams.Where(bill => GetDifference(bill) > 0m)
+            .Select(bill => (GetDifference(bill), bill.CurrencyCode)), multiplier);
 
     private string FormatDifference(
-        decimal difference)
+        decimal difference, string? currencyCode)
     {
         if (difference > 0m)
         {
-            return $"+{FormatMoney(difference)}";
+            return $"+{FormatMoney(difference, currencyCode)}";
         }
 
         if (difference < 0m)
         {
-            return $"-{FormatMoney(Math.Abs(difference))}";
+            return $"-{FormatMoney(Math.Abs(difference), currencyCode)}";
         }
 
         return L["No change"].Value;
@@ -611,7 +602,7 @@
         BillStreamViewModel bill,
         decimal difference)
     {
-        if (!bill.HasMonthlyCadenceEvidence)
+        if (!bill.HasMonthlyCadenceEvidence || !FinancialAmountFormatter.TryNormalizeCurrency(bill.CurrencyCode, out _))
         {
             return L["Not available"].Value;
         }
@@ -628,7 +619,7 @@
                     MidpointRounding.AwayFromZero);
 
             return
-                $"{FormatMoney(annualizedCost)}{L["/yr"].Value}";
+                $"{FormatMoney(annualizedCost, bill.CurrencyCode)}{L["/yr"].Value}";
         }
 
         var annualizedImpact =
@@ -640,11 +631,11 @@
         if (annualizedImpact > 0m)
         {
             return
-                $"+{FormatMoney(annualizedImpact)}{L["/yr"].Value}";
+                $"+{FormatMoney(annualizedImpact, bill.CurrencyCode)}{L["/yr"].Value}";
         }
 
         return
-            $"-{FormatMoney(Math.Abs(annualizedImpact))}{L["/yr"].Value}";
+            $"-{FormatMoney(Math.Abs(annualizedImpact), bill.CurrencyCode)}{L["/yr"].Value}";
     }
 
     private static string GetLedgerChangeClass(
@@ -801,6 +792,7 @@
         } = string.Empty;
 
         public bool IsActive { get; set; }
+        public string? CurrencyCode { get; set; }
         public string Source { get; set; } = "Unknown";
         public bool HasTransactionEvidence { get; set; }
         public bool HasMonthlyCadenceEvidence { get; set; }

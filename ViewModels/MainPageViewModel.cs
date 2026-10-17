@@ -1,4 +1,5 @@
-﻿using FullWorth.Services;
+using FullWorth.Core.Formatting;
+using FullWorth.Services;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
@@ -47,17 +48,9 @@ public sealed class MainPageViewModel : INotifyPropertyChanged
         private set;
     }
 
-    public decimal TotalMonthlyBills
-    {
-        get;
-        private set;
-    }
+    public string TotalMonthlyBills { get; private set; } = "Amount unavailable";
 
-    public decimal TotalAnnualBills
-    {
-        get;
-        private set;
-    }
+    public string TotalAnnualBills { get; private set; } = "Amount unavailable";
 
     public int ChangesDetected
     {
@@ -65,17 +58,9 @@ public sealed class MainPageViewModel : INotifyPropertyChanged
         private set;
     }
 
-    public decimal AddedAnnualCost
-    {
-        get;
-        private set;
-    }
+    public string AddedAnnualCost { get; private set; } = "Amount unavailable";
 
-    public decimal ReducedAnnualCost
-    {
-        get;
-        private set;
-    }
+    public string ReducedAnnualCost { get; private set; } = "Amount unavailable";
 
     public int UnreadAlerts
     {
@@ -146,31 +131,29 @@ public sealed class MainPageViewModel : INotifyPropertyChanged
         !HasAttention;
 
     public string MonthlyBillsText =>
-        $"${TotalMonthlyBills:0.00}";
+        TotalMonthlyBills;
 
     public string AnnualBillsText =>
-        $"${TotalAnnualBills:0.00} per year monitored";
+        TotalAnnualBills + " per year monitored";
 
     public string AnnualImpactHeadline
     {
         get
         {
-            if (AddedAnnualCost >
-                0m)
+            if (_hasAnnualIncrease)
             {
                 return
-                    $"+${AddedAnnualCost:0.00}/year";
+                    AddedAnnualCost + "/year";
             }
 
-            if (ReducedAnnualCost >
-                0m)
+            if (_hasAnnualDecrease)
             {
                 return
-                    $"${ReducedAnnualCost:0.00}/year less";
+                    ReducedAnnualCost + "/year less";
             }
 
             return
-                "$0/year";
+                "Yearly estimate unavailable";
         }
     }
 
@@ -178,15 +161,13 @@ public sealed class MainPageViewModel : INotifyPropertyChanged
     {
         get
         {
-            if (AddedAnnualCost >
-                0m)
+            if (_hasAnnualIncrease)
             {
                 return
                     "New annual cost detected";
             }
 
-            if (ReducedAnnualCost >
-                0m)
+            if (_hasAnnualDecrease)
             {
                 return
                     "Annual cost reduction detected";
@@ -379,26 +360,23 @@ public sealed class MainPageViewModel : INotifyPropertyChanged
         }
     }
 
+    private bool _hasAnnualIncrease;
+    private bool _hasAnnualDecrease;
+
     private void ApplyBillSummary(
         IReadOnlyList<BillStreamResult> billStreams)
     {
         BillsMonitored =
             billStreams.Count;
 
-        TotalMonthlyBills =
-            decimal.Round(
-                billStreams.Sum(
-                    stream =>
-                        stream.CurrentAmount),
-                2,
-                MidpointRounding.AwayFromZero);
-
-        TotalAnnualBills =
-            decimal.Round(
-                TotalMonthlyBills *
-                12m,
-                2,
-                MidpointRounding.AwayFromZero);
+        TotalMonthlyBills = FinancialAmountFormatter.FormatTotals(billStreams
+            .Where(stream => stream.HasTransactionEvidence)
+            .Select(stream => (stream.CurrentAmount, stream.CurrencyCode))) ?? "Amount unavailable";
+        var monthly = billStreams.Where(stream => stream.HasTransactionEvidence).ToArray();
+        TotalAnnualBills = monthly.Length > 0 && monthly.All(stream => stream.HasMonthlyCadenceEvidence)
+            ? FinancialAmountFormatter.FormatTotals(monthly.Select(stream => (stream.CurrentAmount, stream.CurrencyCode)), 12m)
+                ?? "Yearly estimate unavailable"
+            : "Yearly estimate unavailable";
 
         /*
          * Keep the same deterministic "meaningful change" threshold
@@ -427,7 +405,11 @@ public sealed class MainPageViewModel : INotifyPropertyChanged
                                 monthlyChange,
 
                             PreviousAmount:
-                                stream.PreviousAverage);
+                                stream.PreviousAverage)
+                        {
+                            CurrencyCode = stream.CurrencyCode,
+                            HasMonthlyCadenceEvidence = stream.HasMonthlyCadenceEvidence
+                        };
                     })
                 .Where(
                     change =>
@@ -443,34 +425,16 @@ public sealed class MainPageViewModel : INotifyPropertyChanged
         ChangesDetected =
             meaningfulChanges.Count;
 
-        AddedAnnualCost =
-            decimal.Round(
-                meaningfulChanges
-                    .Where(
-                        change =>
-                            change.MonthlyChange >
-                            0m)
-                    .Sum(
-                        change =>
-                            change.MonthlyChange *
-                            12m),
-                2,
-                MidpointRounding.AwayFromZero);
-
-        ReducedAnnualCost =
-            decimal.Round(
-                meaningfulChanges
-                    .Where(
-                        change =>
-                            change.MonthlyChange <
-                            0m)
-                    .Sum(
-                        change =>
-                            Math.Abs(
-                                change.MonthlyChange) *
-                            12m),
-                2,
-                MidpointRounding.AwayFromZero);
+        var annualIncreases = meaningfulChanges.Where(change => change.MonthlyChange > 0m &&
+            change.HasMonthlyCadenceEvidence).ToArray();
+        var annualDecreases = meaningfulChanges.Where(change => change.MonthlyChange < 0m &&
+            change.HasMonthlyCadenceEvidence).ToArray();
+        AddedAnnualCost = FinancialAmountFormatter.FormatTotals(annualIncreases
+            .Select(change => (change.MonthlyChange, change.CurrencyCode)), 12m) ?? "Yearly estimate unavailable";
+        ReducedAnnualCost = FinancialAmountFormatter.FormatTotals(annualDecreases
+            .Select(change => (Math.Abs(change.MonthlyChange), change.CurrencyCode)), 12m) ?? "Yearly estimate unavailable";
+        _hasAnnualIncrease = annualIncreases.Length > 0;
+        _hasAnnualDecrease = annualDecreases.Length > 0;
     }
 
     private void ApplyAlertSummary(
@@ -604,5 +568,9 @@ public sealed class MainPageViewModel : INotifyPropertyChanged
 
     private sealed record DashboardBillChange(
         decimal MonthlyChange,
-        decimal PreviousAmount);
+        decimal PreviousAmount)
+    {
+        public string? CurrencyCode { get; init; }
+        public bool HasMonthlyCadenceEvidence { get; init; }
+    }
 }

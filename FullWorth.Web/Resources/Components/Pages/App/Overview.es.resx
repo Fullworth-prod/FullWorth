@@ -77,4 +77,9 @@
   <data name="None of the latest recognized bill amounts are above their available prior transaction averages." xml:space="preserve"><value>Ninguno de los importes de factura reconocidos más recientes está por encima de sus promedios de transacciones anteriores disponibles.</value></data>
   <data name="FullWorth could not reach the secure API. Try again in a moment." xml:space="preserve"><value>FullWorth no pudo comunicarse con la API segura. Inténtalo de nuevo en un momento.</value></data>
   <data name="Something went wrong while loading your FullWorth overview." xml:space="preserve"><value>Algo salió mal al cargar tu resumen de FullWorth.</value></data>
+  <data name="Currency unavailable" xml:space="preserve"><value>Moneda no disponible</value></data>
+  <data name="Amount unavailable" xml:space="preserve"><value>Importe no disponible</value></data>
+  <data name="Yearly estimate unavailable" xml:space="preserve"><value>Estimación anual no disponible</value></data>
+  <data name="Bills need review" xml:space="preserve"><value>Hay facturas que necesitan revisión</value></data>
+  <data name="Review increases in their original currencies. Amounts in different currencies cannot be ranked together." xml:space="preserve"><value>Revisa los aumentos en sus monedas originales. Los importes de monedas diferentes no se pueden ordenar juntos.</value></data>
 </root>

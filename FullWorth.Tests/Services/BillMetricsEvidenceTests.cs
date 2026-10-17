@@ -79,7 +79,7 @@ public sealed class BillMetricsEvidenceTests
             UserId = owner, BankAccountId = Guid.NewGuid(),
             PlaidTransactionId = Guid.NewGuid().ToString("N"),
             Name = "Synthetic bill", MerchantName = "Synthetic bill",
-            Amount = amount, PostedDate = date, IsPending = pending, IsRemoved = removed
+            IsoCurrencyCode = "USD", Amount = amount, PostedDate = date, IsPending = pending, IsRemoved = removed
         };
         db.BankTransactions.Add(transaction);
         db.BillTransactionAssociations.Add(new BillTransactionAssociationEntity

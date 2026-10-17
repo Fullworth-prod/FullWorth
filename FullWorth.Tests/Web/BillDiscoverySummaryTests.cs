@@ -18,6 +18,7 @@ public sealed class BillDiscoverySummaryTests
     {
         var data = new BillDiscoverySummary.Snapshot
         {
+            RejectedCurrencyAmbiguity = 2,
             ImportedTransactions = 125,
             EligiblePostedTransactions = 111,
             FirstEligiblePostedDate = new DateOnly(2026, 1, 5),
@@ -34,6 +35,7 @@ public sealed class BillDiscoverySummaryTests
         Assert.Contains(imported, html);
         Assert.Contains(accepted, html);
         Assert.Matches("<dd[^>]*>125</dd>", html);
+        Assert.Matches("<dd[^>]*>2</dd>", html);
         Assert.Matches("<dd[^>]*>111</dd>", html);
         Assert.Matches("<dd[^>]*>7</dd>", html);
         Assert.Matches("<dd[^>]*>6</dd>", html);

@@ -1,4 +1,5 @@
-﻿@page "/app"
+@using FullWorth.Core.Formatting
+@page "/app"
 
 @using FullWorth.Web.Components.Shared
 @using FullWorth.Web.Services
@@ -433,8 +434,7 @@
                 </span>
 
                 <strong class="fw-pulse-amount">
-                    @FormatMoney(
-                        CurrentTotal)
+                    @CurrentTotal
                 </strong>
 
                 <p class="fw-pulse-summary">
@@ -479,8 +479,7 @@
                 <div class="fw-pulse-stat @(BillsAbovePriorAverage > 0 ? "is-alert" : "is-calm")">
                     <span>@L["Current increases"]</span>
                     <strong>
-                        @FormatMoney(
-                            CurrentIncreaseTotal)
+                        @CurrentIncreaseTotal
                     </strong>
                     <small>
                         @if (BillsAbovePriorAverage > 0)
@@ -497,8 +496,7 @@
                 <div class="fw-pulse-stat">
                     <span>@L["Annualized impact"]</span>
                     <strong>
-                        @FormatMoney(
-                            AnnualizedIncreaseTotal)
+                        @AnnualizedIncreaseTotal
                     </strong>
                     <small>@L["If current increases persisted for 12 months"]</small>
                 </div>
@@ -576,16 +574,14 @@
 
                             <div class="fw-bill-value">
                                 <strong>
-                                    @FormatMoney(
-                                        bill.CurrentAmount)
+                                    @(bill.HasTransactionEvidence ? FormatMoney(bill.CurrentAmount, bill.CurrencyCode) : L["Amount unavailable"].Value)
                                 </strong>
 
                                 @if (bill.PreviousAverage > 0m)
                                 {
                                     <span class="@GetDifferenceClass(
                                         difference)">
-                                        @FormatDifference(
-                                            difference)
+                                        @FormatDifference(difference, bill.CurrencyCode)
                                     </span>
                                 }
                                 else
@@ -632,8 +628,7 @@
                     </div>
 
                     <div class="fw-signal-change">
-                        +@FormatMoney(
-                            increase)
+                        +@FormatMoney(increase, LargestIncrease.CurrencyCode)
                     </div>
 
                     <span class="fw-signal-period">
@@ -643,8 +638,7 @@
                     <div class="fw-signal-impact">
                         <span>@L["Annualized difference"]</span>
                         <strong>
-                            +@FormatMoney(
-                                increase * 12m)
+                            @(LargestIncrease.HasMonthlyCadenceEvidence ? "+" + FormatMoney(increase * 12m, LargestIncrease.CurrencyCode) : L["Yearly estimate unavailable"].Value)
                         </strong>
                     </div>
 
@@ -671,11 +665,13 @@
                     </div>
 
                     <h2>
-                        @L["Everything looks steady"]
+                        @(BillsAbovePriorAverage > 0 ? L["Bills need review"] : L["Everything looks steady"])
                     </h2>
 
                     <p>
-                        @L["None of the latest recognized bill amounts are above their available prior transaction averages."]
+                        @(BillsAbovePriorAverage > 0
+                            ? L["Review increases in their original currencies. Amounts in different currencies cannot be ranked together."]
+                            : L["None of the latest recognized bill amounts are above their available prior transaction averages."])
                     </p>
 
                     <a class="fw-signal-action"
@@ -771,13 +767,13 @@
 
     private DateTimeOffset? LatestSuccessfulSync { get; set; }
 
-    private decimal CurrentTotal { get; set; }
+    private string CurrentTotal { get; set; } = string.Empty;
 
     private int BillsAbovePriorAverage { get; set; }
 
-    private decimal CurrentIncreaseTotal { get; set; }
+    private string CurrentIncreaseTotal { get; set; } = string.Empty;
 
-    private decimal AnnualizedIncreaseTotal { get; set; }
+    private string AnnualizedIncreaseTotal { get; set; } = string.Empty;
 
     private BillStreamViewModel? LargestIncrease { get; set; }
 
@@ -948,12 +944,8 @@
                         value)
                 .FirstOrDefault();
 
-        CurrentTotal =
-            _billStreams.Sum(
-                bill =>
-                    Math.Max(
-                        bill.CurrentAmount,
-                        0m));
+        CurrentTotal = FormatTotals(_billStreams.Where(bill => bill.HasTransactionEvidence)
+            .Select(bill => (bill.CurrentAmount, bill.CurrencyCode)));
 
         BillsAbovePriorAverage =
             _billStreams.Count(
@@ -962,20 +954,14 @@
                     bill.CurrentAmount >
                         bill.PreviousAverage);
 
-        CurrentIncreaseTotal =
-            _billStreams
-                .Where(
-                    bill =>
-                        bill.PreviousAverage > 0m &&
-                        bill.CurrentAmount >
-                            bill.PreviousAverage)
-                .Sum(
-                    GetDifference);
-
-        AnnualizedIncreaseTotal =
-            CurrentIncreaseTotal * 12m;
+        var increases = _billStreams.Where(bill => GetDifference(bill) > 0m).ToArray();
+        CurrentIncreaseTotal = FormatTotals(increases.Select(bill => (GetDifference(bill), bill.CurrencyCode)));
+        AnnualizedIncreaseTotal = increases.Length > 0 && increases.All(bill => bill.HasMonthlyCadenceEvidence)
+            ? FormatTotals(increases.Select(bill => (GetDifference(bill) * 12m, bill.CurrencyCode)))
+            : L["Yearly estimate unavailable"].Value;
 
         LargestIncrease =
+            increases.Select(bill => bill.CurrencyCode).Distinct().Count() > 1 ? null :
             _billStreams
                 .Where(
                     bill =>
@@ -999,24 +985,23 @@
             bill.PreviousAverage;
     }
 
-    private static string FormatMoney(
-        decimal amount)
-    {
-        return amount.ToString(
-            "C2");
-    }
+    private string FormatMoney(decimal amount, string? currencyCode) =>
+        FinancialAmountFormatter.FormatOrUnspecified(amount, currencyCode, L["Currency unavailable"].Value);
+
+    private string FormatTotals(IEnumerable<(decimal Amount, string? CurrencyCode)> amounts) =>
+        FinancialAmountFormatter.FormatTotals(amounts) ?? L["Amount unavailable"].Value;
 
     private string FormatDifference(
-        decimal difference)
+        decimal difference, string? currencyCode)
     {
         if (difference > 0m)
         {
-            return $"+{FormatMoney(difference)}";
+            return $"+{FormatMoney(difference, currencyCode)}";
         }
 
         if (difference < 0m)
         {
-            return $"-{FormatMoney(Math.Abs(difference))}";
+            return $"-{FormatMoney(Math.Abs(difference), currencyCode)}";
         }
 
         return L["No change"].Value;
@@ -1120,6 +1105,10 @@
             get;
             set;
         }
+
+        public string? CurrencyCode { get; set; }
+        public bool HasTransactionEvidence { get; set; }
+        public bool HasMonthlyCadenceEvidence { get; set; }
 
         public decimal CurrentAmount
         {

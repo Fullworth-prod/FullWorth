@@ -1,4 +1,5 @@
 using FullWorth.API.Data;
+using FullWorth.Core.Formatting;
 using FullWorth.Core.Models;
 using FullWorth.Core.Services;
 using FullWorth.API.Services.Contracts;
@@ -94,16 +95,24 @@ public sealed class BillTransactionMetricsGateway(
                         .ThenByDescending(fact => fact.TransactionId)
                         .ToArray();
 
+                    var currencies = ordered.Select(fact =>
+                        FinancialAmountFormatter.TryNormalizeCurrency(fact.CurrencyCode, out var code)
+                            ? code : null).Distinct().ToArray();
+                    var comparable = currencies.Length == 1 && currencies[0] is not null;
+                    // Mixed or partially unknown units cannot support a monetary comparison.
+                    if (currencies.Length != 1) return null;
+
                     return new BankTransactionBillStreamMetrics(
                         group.Key,
                         ordered[0].Amount,
-                        ordered.Length <= 1
+                        !comparable || ordered.Length <= 1
                             ? 0m
                             : ordered
                                 .Skip(1)
                                 .Average(fact => fact.Amount))
                     {
-                        HasMonthlyCadenceEvidence = new RecurringBillDetectionService()
+                        CurrencyCode = currencies[0],
+                        HasMonthlyCadenceEvidence = comparable && new RecurringBillDetectionService()
                             .Detect(ordered.Select(fact => new BankTransaction(
                                 merchantName: "Bill",
                                 postedDate: fact.PostedDate,
@@ -111,6 +120,7 @@ public sealed class BillTransactionMetricsGateway(
                                 isPending: false))).Count > 0
                     };
                 })
-            .ToDictionary(metric => metric.BillStreamId);
+            .Where(metric => metric is not null)
+            .ToDictionary(metric => metric!.BillStreamId, metric => metric!);
     }
 }

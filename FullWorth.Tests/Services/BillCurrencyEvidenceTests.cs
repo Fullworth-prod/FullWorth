@@ -41,6 +41,23 @@ public sealed class BillCurrencyEvidenceTests
     }
 
     [Fact]
+    public async Task SameDateCharges_HaveNoUnambiguousHistoricalComparison()
+    {
+        await using var db = CreateDb();
+        var owner = Guid.NewGuid();
+        var stream = new BillStreamEntity { UserId = owner, ProviderName = "Synthetic bill" };
+        db.BillStreams.Add(stream);
+        Add(db, owner, stream.Id, "USD", 10m, 1);
+        Add(db, owner, stream.Id, "USD", 30m, 1);
+        await db.SaveChangesAsync();
+        var metrics = (await new BillTransactionMetricsGateway(db,
+            new PlaidBankTransactionMetricFactsGateway(db)).GetMetricsAsync(owner, [stream.Id]))[stream.Id];
+        Assert.Equal("USD", metrics.CurrencyCode);
+        Assert.Equal(0m, metrics.PreviousAverage);
+        Assert.False(metrics.HasMonthlyCadenceEvidence);
+    }
+
+    [Fact]
     public void Totals_PreserveCurrencies_ExcludeUnknown_AndDoNotConvert()
     {
         Assert.Equal("EUR 5.00 · $30.00", FinancialAmountFormatter.FormatTotals(

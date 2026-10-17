@@ -98,7 +98,8 @@ public sealed class BillTransactionMetricsGateway(
                     var currencies = ordered.Select(fact =>
                         FinancialAmountFormatter.TryNormalizeCurrency(fact.CurrencyCode, out var code)
                             ? code : null).Distinct().ToArray();
-                    var comparable = currencies.Length == 1 && currencies[0] is not null;
+                    var comparable = currencies.Length == 1 && currencies[0] is not null &&
+                        ordered.Select(fact => fact.PostedDate).Distinct().Count() == ordered.Length;
                     // Mixed or partially unknown units cannot support a monetary comparison.
                     if (currencies.Length != 1) return null;
 

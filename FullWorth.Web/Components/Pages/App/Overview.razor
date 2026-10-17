@@ -437,6 +437,12 @@
                     @CurrentTotal
                 </strong>
 
+                @if (_billStreams.Any(bill => !bill.HasTransactionEvidence ||
+                    !FinancialAmountFormatter.TryNormalizeCurrency(bill.CurrencyCode, out _)))
+                {
+                    <p>@L["Some bill amounts are unavailable and excluded from this total."]</p>
+                }
+
                 <p class="fw-pulse-summary">
                     @if (BillsAbovePriorAverage == 1)
                     {

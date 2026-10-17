@@ -82,4 +82,5 @@
   <data name="Yearly estimate unavailable" xml:space="preserve"><value>Estimación anual no disponible</value></data>
   <data name="Bills need review" xml:space="preserve"><value>Hay facturas que necesitan revisión</value></data>
   <data name="Review increases in their original currencies. Amounts in different currencies cannot be ranked together." xml:space="preserve"><value>Revisa los aumentos en sus monedas originales. Los importes de monedas diferentes no se pueden ordenar juntos.</value></data>
+  <data name="Some bill amounts are unavailable and excluded from this total." xml:space="preserve"><value>Algunos importes no están disponibles y se excluyen de este total.</value></data>
 </root>

@@ -9,7 +9,6 @@ public sealed record BankTransactionMetricFact(
     public string? CurrencyCode { get; init; }
 }
 
-
 public interface IBankTransactionMetricFactsGateway
 {
     Task<IReadOnlyList<BankTransactionMetricFact>> GetAsync(

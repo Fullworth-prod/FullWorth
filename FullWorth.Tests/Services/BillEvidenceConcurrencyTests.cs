@@ -94,6 +94,42 @@ public sealed class BillEvidenceConcurrencyTests
         await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => confirmation.SaveChangesAsync());
     }
 
+    [Fact]
+    public async Task AssignmentFailure_ClearsNewStreamsAndAlertsBeforeSecondaryWork()
+    {
+        var options = new DbContextOptionsBuilder<FullWorthDbContext>()
+            .UseInMemoryDatabase($"failed-discovery-{Guid.NewGuid():N}").Options;
+        await using var db = new FullWorthDbContext(options);
+        var owner = Guid.NewGuid();
+        for (var month = 1; month <= 3; month++)
+            db.BankTransactions.Add(new BankTransactionEntity { UserId = owner,
+                Name = "Synthetic Subscription", Amount = 20m, IsoCurrencyCode = "USD",
+                PostedDate = new DateOnly(2026, month, 5),
+                CategoryPrimary = "GENERAL_MERCHANDISE",
+                CategoryDetailed = "GENERAL_MERCHANDISE_DIGITAL_GOODS" });
+        await db.SaveChangesAsync();
+        var service = new RecurringBillDiscoveryPersistenceService(db,
+            new PlaidBankTransactionDiscoveryGateway(db), new FailingAssignmentGateway());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.DiscoverAndSaveAsync(owner));
+        Assert.False(db.ChangeTracker.HasChanges());
+        // A later scoped service may save unrelated reconciliation work.
+        await db.SaveChangesAsync();
+        Assert.Empty(db.BillStreams);
+        Assert.Empty(db.BillAlerts);
+        Assert.Empty(db.BillTransactionAssociations);
+    }
+
+    private sealed class FailingAssignmentGateway : IBillTransactionAssociationGateway
+    {
+        public Task<IReadOnlyList<BillTransactionAssociationRecord>> GetAsync(Guid userId,
+            IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<BillTransactionAssociationRecord>>([]);
+        public Task StageAssignmentsAsync(Guid userId,
+            IReadOnlyCollection<BillTransactionAssociationAssignment> assignments, DateTimeOffset now,
+            CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Synthetic stale association batch");
+    }
+
     private sealed class ConfirmDuringAssignmentGateway(FullWorthDbContext scan,
         DbContextOptions<FullWorthDbContext> options, Guid streamId) : IBillTransactionAssociationGateway
     {

@@ -190,19 +190,10 @@ public sealed class RecurringBillDiscoveryPersistenceService
             .Select(pair => pair.Key)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var existingStreamsByProvider =
-            existingStreams
-                .GroupBy(
-                    stream =>
-                        _merchantNormalizer.Normalize(
-                            stream.ProviderName),
-                    StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(
-                    group =>
-                        group.Key,
-                    group =>
-                        group.OrderBy(stream => stream.Id).First(),
-                    StringComparer.OrdinalIgnoreCase);
+        var existingStreamsByProvider = streamGroupsByProvider
+            .Where(pair => pair.Value.Length == 1)
+            .ToDictionary(pair => pair.Key, pair => pair.Value[0],
+                StringComparer.OrdinalIgnoreCase);
 
         var linkedTransactionsByStreamId =
             persistedTransactions
@@ -472,24 +463,17 @@ public sealed class RecurringBillDiscoveryPersistenceService
                             transaction.BillStreamId))
                 .ToArray();
 
-        await _associationGateway
-            .StageAssignmentsAsync(
-                userId,
-                linkAssignments,
-                now,
-                cancellationToken);
-
-        /*
-         * Bill Streams, alerts, and provider-owned transaction-link changes
-         * commit together in the current scoped modular-monolith unit of work.
-         */
         try
         {
+            await _associationGateway.StageAssignmentsAsync(
+                userId, linkAssignments, now, cancellationToken);
+            // Bill streams, alerts, and links commit in the same owning unit of work.
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateConcurrencyException)
+        catch
         {
-            // A secondary refresh/reconciliation must not replay stale staged writes.
+            // Secondary reconciliation must never replay staged writes after a
+            // failed assignment, cancellation, database error, or concurrency conflict.
             _dbContext.ChangeTracker.Clear();
             throw;
         }

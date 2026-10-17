@@ -13,7 +13,6 @@ public sealed record BankTransactionDiscoveryRecord(
     public string? CurrencyCode { get; init; }
 }
 
-
 public interface IBankTransactionDiscoveryGateway
 {
     Task<IReadOnlyList<BankTransactionDiscoveryRecord>>

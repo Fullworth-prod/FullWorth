@@ -251,6 +251,16 @@ public sealed class RecurringBillDiscoveryPersistenceService
         foreach (var existingStream in
                  existingStreams)
         {
+            // A sync with no eligible posted charges cannot establish that
+            // any previously discovered obligation ended. Bank connections
+            // can temporarily return empty, removed, pending, or credit-only
+            // history. Preserve existing streams and links until there is
+            // enough actual posted-charge evidence to re-evaluate them.
+            if (analysis.TransactionsAnalyzed == 0)
+            {
+                continue;
+            }
+
             if (existingStream.Source !=
                 BillStreamSource.AutomaticDiscovery)
             {

@@ -17,7 +17,7 @@ public sealed class BillStreamConfirmationRetentionTests
     [InlineData(true, 1)]
     [InlineData(false, 0)]
     [InlineData(false, 1)]
-    public async Task ExplicitConfirmation_SurvivesSparseHistory_WhileAutomaticRejectionRemains(
+    public async Task ExplicitConfirmationAndEmptyHistoryProtection_PreserveOwnedBillEvidence(
         bool confirm, int remainingPayments)
     {
         await using var factory = new FullWorthApiFactory();
@@ -86,13 +86,13 @@ public sealed class BillStreamConfirmationRetentionTests
             Assert.Equal(0, result.BillsDiscovered);
             Assert.Equal(0, result.BillStreamsCreated);
             Assert.Equal(0, result.NewBillAlertsCreated);
-            Assert.Equal(confirm ? 0 : 1, result.BillStreamsDeactivated);
-            Assert.Equal(confirm ? 0 : remainingPayments, result.TransactionsUnlinked);
+            Assert.Equal(confirm || remainingPayments == 0 ? 0 : 1, result.BillStreamsDeactivated);
+            Assert.Equal(confirm || remainingPayments == 0 ? 0 : remainingPayments, result.TransactionsUnlinked);
             var stream = await db.BillStreams.SingleAsync(s => s.Id == streamId);
-            Assert.Equal(confirm, stream.IsActive);
+            Assert.Equal(confirm || remainingPayments == 0, stream.IsActive);
             Assert.Equal(confirm ? BillStreamSource.Manual : BillStreamSource.AutomaticDiscovery,
                 stream.Source);
-            if (confirm)
+            if (confirm || remainingPayments == 0)
             {
                 Assert.Equal(3, await db.BillTransactionAssociations.CountAsync(a =>
                     a.UserId == userId && a.BillStreamId == streamId));
@@ -103,7 +103,7 @@ public sealed class BillStreamConfirmationRetentionTests
         listResponse.EnsureSuccessStatusCode();
         var active = await listResponse.Content.ReadFromJsonAsync<List<StreamPayload>>();
         Assert.NotNull(active);
-        if (confirm)
+        if (confirm || remainingPayments == 0)
         {
             Assert.Equal(streamId, Assert.Single(active).Id);
         }

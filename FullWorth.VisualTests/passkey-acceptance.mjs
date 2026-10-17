@@ -82,6 +82,24 @@ try {
   await page.locator('[data-passkeys="manage"][data-loaded="true"]').waitFor();
   await management.locator('input[name="currentPassword"]').fill(password);
   await management.locator('input[name="keyName"]').fill("CI virtual platform passkey");
+  // Deterministically reproduce SSR/hydration replacing the management region
+  // while the OS credential request is in flight. WebAuthn and HTTP remain real.
+  await page.evaluate(() => {
+    const original = navigator.credentials.create.bind(navigator.credentials);
+    navigator.credentials.create = async (...args) => {
+      navigator.credentials.create = original;
+      const credential = await original(...args);
+      const root = document.querySelector('[data-passkeys="manage"]');
+      const replacement = root.cloneNode(true);
+      replacement.removeAttribute("data-loaded");
+      replacement.querySelectorAll("input").forEach(input => { input.value = ""; });
+      replacement.querySelector("[data-passkey-list]").replaceChildren();
+      replacement.querySelector("[data-passkey-status]").textContent = "";
+      replacement.querySelector('[data-passkey-action="register"]').disabled = false;
+      root.replaceWith(replacement);
+      return credential;
+    };
+  });
   await management.locator('[data-passkey-action="register"]').click();
   try {
     await management.locator("[data-passkey-list]").getByText("CI virtual platform passkey", { exact: false }).waitFor();

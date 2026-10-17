@@ -15,7 +15,7 @@ public sealed class PendingPasswordLoginTests
         var first = store.Create(Guid.NewGuid(), "stamp")!;
         var consumed = await Task.WhenAll(Enumerable.Range(0, 32)
             .Select(_ => Task.Run(() => store.Consume(first.LoginId))));
-        var proof = Assert.Single(consumed.Where(p => p is not null))!;
+        var proof = Assert.Single(consumed, p => p is not null)!;
         Assert.Equal(clock.Now + PendingPasswordLoginStore.Lifetime, first.ExpiresAt);
         var second = store.Retry(proof)!;
         Assert.NotEqual(first.LoginId, second.LoginId);

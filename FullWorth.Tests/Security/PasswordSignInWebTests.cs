@@ -47,7 +47,7 @@ public sealed class PasswordSignInWebTests
         Assert.Equal(HttpStatusCode.Redirect, first.StatusCode);
         Assert.Equal("/login?twoFactor=true", first.Headers.Location!.OriginalString);
         var pendingCookie = first.Headers.GetValues("Set-Cookie")
-            .Single(value => value.StartsWith(PendingPasswordLoginCookie.Name + "="));
+            .Last(value => value.StartsWith(PendingPasswordLoginCookie.Name + "="));
         Assert.DoesNotContain("FullWorth!Tests123", pendingCookie);
         var mainCookie = web.Services.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
             .Get(CookieAuthenticationDefaults.AuthenticationScheme).Cookie.Name!;

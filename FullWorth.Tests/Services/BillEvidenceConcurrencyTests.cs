@@ -78,7 +78,7 @@ public sealed class BillEvidenceConcurrencyTests
             .UseInMemoryDatabase($"confirmation-concurrency-{Guid.NewGuid():N}").Options;
         await using (var seed = new FullWorthDbContext(options))
         {
-            seed.BillStreams.Add(new BillStreamEntity { ProviderName = "Synthetic",
+            seed.BillStreams.Add(new BillStreamEntity { UserId = Guid.NewGuid(), ProviderName = "Synthetic",
                 Source = BillStreamSource.AutomaticDiscovery, IsActive = true });
             await seed.SaveChangesAsync();
         }

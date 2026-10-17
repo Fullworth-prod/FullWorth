@@ -181,6 +181,77 @@ try {
     await capture(name, route, selector);
   }
 
+  // Render the real components with synthetic BFF evidence. The API contract
+  // tests separately verify ownership and provider-currency projection.
+  const currencyBillId = "11111111-1111-1111-1111-111111111111";
+  const currencyBills = [
+    { id: currencyBillId, providerName: "Synthetic Euro Utility", category: "Utility",
+      isActive: true, source: "Manual", currentAmount: 20, previousAverage: 10,
+      currencyCode: "EUR", hasTransactionEvidence: true, hasMonthlyCadenceEvidence: true },
+    { id: "22222222-2222-2222-2222-222222222222", providerName: "Synthetic Dollar Service",
+      category: "Other", isActive: true, source: "Manual", currentAmount: 10, previousAverage: 8,
+      currencyCode: "USD", hasTransactionEvidence: true, hasMonthlyCadenceEvidence: true },
+    { id: "33333333-3333-3333-3333-333333333333", providerName: "Synthetic Unknown Currency",
+      category: "Other", isActive: true, source: "Manual", currentAmount: 999, previousAverage: 0,
+      currencyCode: null, hasTransactionEvidence: true, hasMonthlyCadenceEvidence: false },
+    { id: "44444444-4444-4444-4444-444444444444", providerName: "Synthetic Unavailable Amount",
+      category: "Other", isActive: true, source: "Manual", currentAmount: 0, previousAverage: 0,
+      currencyCode: null, hasTransactionEvidence: false, hasMonthlyCadenceEvidence: false }
+  ];
+  const currencyDetail = { ...currencyBills[0],
+    statements: [{ id: "55555555-5555-5555-5555-555555555555",
+      periodStart: "2026-01-01", periodEnd: "2026-01-31", totalAmount: 25, currencyCode: "EUR" }],
+    changes: [{ id: "66666666-6666-6666-6666-666666666666",
+      currentStatementId: "55555555-5555-5555-5555-555555555555",
+      previousAmount: 20, currentAmount: 25, amountDifference: 5, annualizedImpact: 60,
+      currencyCode: "EUR", changeType: "TotalIncrease", confidence: "Confirmed",
+      description: "Synthetic statement evidence", isAcknowledged: false,
+      detectedAtUtc: "2026-02-01T00:00:00Z" }]
+  };
+  const currencyRoute = async route => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (route.request().method() !== "GET") return route.continue();
+    await route.fulfill({ status: 200, contentType: "application/json",
+      body: JSON.stringify(pathname === "/bff/bill-streams" ? currencyBills : currencyDetail) });
+  };
+  await page.route("**/bff/bill-streams**", currencyRoute);
+  try {
+    for (const width of [1440, 320]) {
+      await page.setViewportSize({ width, height: 1100 });
+      await page.goto("/app/bills", { waitUntil: "domcontentloaded" });
+      await settle(".fw-bills-row");
+      assert.equal((await page.locator(".fw-bills-total > strong").innerText()).trim(), "EUR 20.00 · $10.00");
+      const euro = page.locator(".fw-bills-row").filter({ hasText: "Synthetic Euro Utility" });
+      assert.ok((await euro.innerText()).includes("EUR 20.00"));
+      assert.ok(!(await euro.innerText()).includes("$20.00"));
+      const unknown = page.locator(".fw-bills-row").filter({ hasText: "Synthetic Unknown Currency" });
+      assert.ok((await unknown.innerText()).includes("999.00 (Currency unavailable)"));
+      assert.ok((await page.locator(".fw-bills-row").filter({
+        hasText: "Synthetic Unavailable Amount" }).innerText()).includes("Amount unavailable"));
+      assert.ok(!(await page.locator(".fw-bills-total").innerText()).includes("999.00"));
+      assert.ok(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)),
+        "Currency totals must fit the viewport");
+      await page.screenshot({ path: path.join(outputDir, "bills-currencies-" + width + ".png"), fullPage: true });
+
+      await page.goto("/app", { waitUntil: "domcontentloaded" });
+      await settle(".fw-pulse-amount");
+      assert.equal((await page.locator(".fw-pulse-amount").innerText()).trim(), "EUR 20.00 · $10.00");
+      assert.ok((await page.locator(".fw-signal-card").innerText()).includes("Bills need review"));
+      assert.ok(!(await page.locator(".fw-signal-card").innerText()).includes("Everything looks steady"));
+
+      await page.goto("/app/bills/" + currencyBillId, { waitUntil: "domcontentloaded" });
+      await settle(".fw-detail-current");
+      const detailText = await page.locator(".app-page").innerText();
+      assert.ok(detailText.includes("EUR 20.00"));
+      assert.ok(detailText.includes("EUR 25.00"));
+      assert.ok(detailText.includes("+EUR 60.00"));
+      assert.ok(!detailText.includes("$20.00") && !detailText.includes("$25.00"));
+      await page.screenshot({ path: path.join(outputDir, "bill-detail-currencies-" + width + ".png"), fullPage: true });
+    }
+  } finally {
+    await page.unroute("**/bff/bill-streams**", currencyRoute);
+  }
+
   // Exercise the real authenticated Bills page, not duplicated fixture markup.
   // This account and every bank/transaction record are disposable CI data.
   const billsDestinations = [

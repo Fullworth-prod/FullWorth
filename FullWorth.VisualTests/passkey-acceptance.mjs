@@ -59,6 +59,10 @@ try {
   }
   await passwordStep();
   await page.waitForURL(url => url.pathname === "/app");
+  await page.goto("/app/setup");
+  await page.locator(".whats-new-dialog").waitFor({ state: "visible" });
+  await page.locator(".whats-new-primary").click();
+  await page.locator(".whats-new-dialog").waitFor({ state: "hidden" });
   await page.goto("/app/account/security-keys");
   const management = page.locator('[data-passkeys="manage"]');
   await management.locator('input[name="currentPassword"]').fill(password);

@@ -73,7 +73,17 @@
     }
     else if (_billStreams.Count == 0)
     {
-        <BillsEmptyState />
+        @if (_reviewBills.Count == 0)
+        {
+            <BillsEmptyState />
+        }
+        else
+        {
+            <section class="app-panel bill-discovery-panel">
+                <h2>@L["No active monitored bills"]</h2>
+                <p>@L["Previously discovered bills are listed below for review. Their amounts are excluded from monitored totals."]</p>
+            </section>
+        }
     }
     else
     {
@@ -84,7 +94,11 @@
             <div class="fw-bills-total">
                 <span>@L["Latest recurring total"]</span>
                 <strong>@FormatMoney(_totalCurrent)</strong>
-                <small>@L["Across {0} monitored recurring bills", _billStreams.Count]</small>
+                <small>@L["Across {0} monitored recurring bills", _billStreams.Count]
+                @if (_billStreams.Any(bill => !bill.HasTransactionEvidence))
+                {
+                    <small>@L["Some bill amounts are unavailable and excluded from this total."]</small>
+                }</small>
             </div>
 
             <div class="fw-bills-stats">
@@ -132,7 +146,15 @@
                         @L["{0} in current recurring increases", FormatMoney(_increaseTotal)]
                     </strong>
                     <small>
-                        @L["That is {0} annualized if these increases persist. Transaction amounts show what changed; provider evidence is still required to explain why.", FormatMoney(_increaseTotal * 12m)]
+                        @if (_billStreams.Where(bill => GetDifference(bill) > 0m)
+                            .All(bill => bill.HasMonthlyCadenceEvidence))
+                        {
+                            @L["That is {0} annualized if these increases persist. Transaction amounts show what changed; provider evidence is still required to explain why.", FormatMoney(_increaseTotal * 12m)]
+                        }
+                        else
+                        {
+                            @L["A yearly estimate is unavailable without supported monthly timing. Provider evidence is required to explain why a charge changed."]
+                        }
                     </small>
                 </div>
 
@@ -235,7 +257,7 @@
 
                             <div class="fw-bills-current">
                                 <span>@L["Current"]</span>
-                                <strong>@FormatMoney(bill.CurrentAmount)</strong>
+                                <strong>@(bill.HasTransactionEvidence ? FormatMoney(bill.CurrentAmount) : L["Amount unavailable"].Value)</strong>
                             </div>
 
                             @if (bill.PreviousAverage > 0m)
@@ -246,7 +268,7 @@
                                 </div>
 
                                 <div class="fw-bills-impact">
-                                    <span>@GetAnnualizedLabel(difference)</span>
+                                    <span>@(bill.HasMonthlyCadenceEvidence ? GetAnnualizedLabel(difference) : L["Yearly estimate unavailable"].Value)</span>
                                     <strong>@FormatAnnualized(bill, difference)</strong>
                                 </div>
                             }
@@ -265,7 +287,12 @@
             }
         </section>
     }
-    <section class="app-panel" aria-labelledby="discovery-heading">
+    @if (!_isLoading && string.IsNullOrWhiteSpace(_errorMessage) && _reviewBills.Count > 0)
+    {
+        <BillReviewList Bills="_reviewBills" />
+    }
+
+    <section class="app-panel bill-discovery-panel" aria-labelledby="discovery-heading">
         <h2 id="discovery-heading">@L["Missing a bill?"]</h2>
         <button type="button" class="secondary-action"
                 aria-expanded="@_showDiscovery" aria-controls="discovery-details"
@@ -297,6 +324,7 @@
 </div>
 
 @code {
+    private List<BillReviewList.Item> _reviewBills = [];
     private BillDiscoverySummary.Snapshot? _discovery;
     private bool _showDiscovery;
     private bool _discoveryLoading;
@@ -463,7 +491,12 @@
                 await _bffModule
                     .InvokeAsync<
                         BillStreamViewModel[]>(
-                        "getBillStreams");
+                        "getBillStreams", true);
+
+            _reviewBills = result?
+                .Where(bill => !bill.IsActive && bill.Source == "AutomaticDiscovery")
+                .Select(bill => new BillReviewList.Item(bill.Id, bill.ProviderName))
+                .ToList() ?? [];
 
             _billStreams =
                 result?
@@ -578,6 +611,11 @@
         BillStreamViewModel bill,
         decimal difference)
     {
+        if (!bill.HasMonthlyCadenceEvidence)
+        {
+            return L["Not available"].Value;
+        }
+
         if (difference == 0m)
         {
             var annualizedCost =
@@ -763,6 +801,9 @@
         } = string.Empty;
 
         public bool IsActive { get; set; }
+        public string Source { get; set; } = "Unknown";
+        public bool HasTransactionEvidence { get; set; }
+        public bool HasMonthlyCadenceEvidence { get; set; }
 
         public decimal CurrentAmount
         {

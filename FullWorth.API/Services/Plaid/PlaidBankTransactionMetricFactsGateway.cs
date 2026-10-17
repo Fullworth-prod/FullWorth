@@ -46,7 +46,8 @@ public sealed class PlaidBankTransactionMetricFactsGateway(
                     transaction.UserId == userId &&
                     ids.Contains(transaction.Id) &&
                     !transaction.IsRemoved &&
-                    !transaction.IsPending)
+                    !transaction.IsPending &&
+                    transaction.Amount > 0m)
             .Select(
                 transaction =>
                     new BankTransactionMetricFact(

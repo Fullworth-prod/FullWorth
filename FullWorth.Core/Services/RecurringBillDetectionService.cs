@@ -15,7 +15,7 @@ public sealed class RecurringBillDetectionService
         ArgumentNullException.ThrowIfNull(transactions);
 
         var postedTransactions = transactions
-            .Where(transaction => !transaction.IsPending)
+            .Where(transaction => !transaction.IsPending && transaction.Amount > 0m)
             .OrderBy(transaction => transaction.PostedDate)
             .ToList();
 

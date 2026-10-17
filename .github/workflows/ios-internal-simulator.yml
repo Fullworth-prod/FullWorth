@@ -50,6 +50,7 @@ jobs:
 
       - name: Validate packaging workflow contract
         run: |
+          python3 -m unittest discover -s deploy/tests -p test_ios_device_ipa.py -v
           sh deploy/tests/ios-internal-simulator-workflow-tests.sh
           sh -n deploy/tests/ios-simulator-smoke.sh
 
@@ -86,7 +87,7 @@ jobs:
           version=$(
             DEVELOPER_DIR="$developer_dir" \
               xcodebuild -version |
-              awk '/^Xcode / { print $2; exit }'
+              awk '/^Xcode / { print $2 }'
           )
 
           case "$version" in

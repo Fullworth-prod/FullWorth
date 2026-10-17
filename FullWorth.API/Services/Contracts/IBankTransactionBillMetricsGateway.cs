@@ -3,7 +3,11 @@ namespace FullWorth.API.Services.Contracts;
 public sealed record BankTransactionBillStreamMetrics(
     Guid BillStreamId,
     decimal CurrentAmount,
-    decimal PreviousAverage);
+    decimal PreviousAverage)
+{
+    // Timing evidence only; this does not establish a provider's contract or cause.
+    public bool HasMonthlyCadenceEvidence { get; init; }
+}
 
 public interface IBankTransactionBillMetricsGateway
 {

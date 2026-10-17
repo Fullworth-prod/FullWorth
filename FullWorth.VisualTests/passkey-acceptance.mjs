@@ -102,6 +102,17 @@ try {
   await page.waitForURL(url => url.searchParams.get("twoFactor") === "true");
   await page.locator("[data-password-passkey-button]").waitFor();
   assert.equal(await page.locator('input[name="password"], input[name="email"]').count(), 0);
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    const geometry = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      width: document.documentElement.scrollWidth,
+      outside: [...document.querySelectorAll(".auth-page, .auth-shell, .auth-card, .auth-glow")]
+        .map(element => ({ name: element.className, right: element.getBoundingClientRect().right }))
+    }));
+    assert.ok(geometry.width <= geometry.viewport + 1,
+      "Verification must not scroll sideways: " + JSON.stringify(geometry));
+  }
   await page.screenshot({ path: path.join(outputDir, "password-once-passkey-choice-mobile.png"), fullPage: true });
 
   // Simulated user cancellation, without replacing signature validation.

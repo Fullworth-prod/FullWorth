@@ -125,7 +125,7 @@ try {
     const geometry = await page.evaluate(() => ({
       viewport: document.documentElement.clientWidth,
       width: document.documentElement.scrollWidth,
-      outside: [...document.querySelectorAll(".auth-page, .auth-shell, .auth-card, .auth-glow")]
+      outside: [...document.querySelectorAll(".site-header, .header-inner, .header-actions, .header-action, .site-footer, .footer-inner, .auth-page, .auth-shell, .auth-card, .auth-glow")]
         .map(element => ({ name: element.className, right: element.getBoundingClientRect().right }))
     }));
     assert.ok(geometry.width <= geometry.viewport + 1,

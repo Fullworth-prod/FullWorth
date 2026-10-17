@@ -217,3 +217,29 @@
         display: none;
     }
 }
+
+/* Keep public navigation reachable on narrow sign-in/verification screens. */
+@media (max-width: 520px) {
+    .site-shell .site-header .header-inner {
+        height: auto;
+        min-height: 70px;
+        padding-block: 12px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .site-shell .site-header .header-actions {
+        min-width: 0;
+        max-width: 100%;
+        margin-left: auto;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .site-shell .site-header .header-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+    }
+}

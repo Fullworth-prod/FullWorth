@@ -420,6 +420,97 @@ public sealed class RecurringBillDiscoveryPersistenceServiceTests
             dbContext.BillStreams);
     }
 
+    [Theory]
+    [InlineData("removed")]
+    [InlineData("pending")]
+    [InlineData("credit")]
+    public async Task Discovery_WithoutEligibleOwnedCharges_PreservesBillAndAssociation(
+        string transactionState)
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = Guid.NewGuid();
+        var anotherUserId = Guid.NewGuid();
+        var createdAt = DateTimeOffset.UtcNow.AddMonths(-2);
+
+        var bill = new BillStreamEntity
+        {
+            UserId = userId,
+            ProviderName = "Known Utility",
+            Category = BillCategory.Utility,
+            Source = BillStreamSource.AutomaticDiscovery,
+            IsActive = true,
+            CreatedAtUtc = createdAt,
+            UpdatedAtUtc = createdAt
+        };
+        dbContext.BillStreams.Add(bill);
+
+        var transaction = AddTransaction(
+            dbContext, userId, "Known Utility",
+            new DateOnly(2026, 1, 5), 95m,
+            "RENT_AND_UTILITIES",
+            "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY");
+
+        switch (transactionState)
+        {
+            case "removed":
+                transaction.IsRemoved = true;
+                break;
+            case "pending":
+                transaction.IsPending = true;
+                break;
+            case "credit":
+                transaction.Amount = -95m;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(transactionState));
+        }
+
+        dbContext.BillTransactionAssociations.Add(
+            new BillTransactionAssociationEntity
+            {
+                UserId = userId,
+                BankTransactionId = transaction.Id,
+                BillStreamId = bill.Id,
+                CreatedAtUtc = createdAt,
+                UpdatedAtUtc = createdAt
+            });
+
+        // Another person's valid monthly charges cannot justify deactivating
+        // this user's bill or make the no-evidence protection disappear.
+        AddMonthlyTransactions(dbContext, anotherUserId,
+            "Another User's Internet", 70m,
+            "RENT_AND_UTILITIES",
+            "RENT_AND_UTILITIES_INTERNET_AND_CABLE");
+
+        await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
+
+        var service = new RecurringBillDiscoveryPersistenceService(
+            dbContext,
+            new PlaidBankTransactionDiscoveryGateway(dbContext),
+            new BillTransactionAssociationGateway(dbContext));
+
+        var result = await service.DiscoverAndSaveAsync(userId);
+
+        Assert.Equal(0, result.TransactionsAnalyzed);
+        Assert.Equal(0, result.BillsDiscovered);
+        Assert.Equal(0, result.BillStreamsDeactivated);
+        Assert.Equal(0, result.TransactionsUnlinked);
+        Assert.Equal(0, result.NewBillAlertsCreated);
+
+        dbContext.ChangeTracker.Clear();
+        var saved = await dbContext.BillStreams.SingleAsync();
+        Assert.True(saved.IsActive);
+        Assert.Equal(BillStreamSource.AutomaticDiscovery, saved.Source);
+        Assert.Equal(createdAt, saved.UpdatedAtUtc);
+
+        var savedAssociation =
+            await dbContext.BillTransactionAssociations.SingleAsync();
+        Assert.Equal(userId, savedAssociation.UserId);
+        Assert.Equal(bill.Id, savedAssociation.BillStreamId);
+        Assert.Equal(transaction.Id, savedAssociation.BankTransactionId);
+    }
+
     [Fact]
     public async Task MultipleDiscoveries_LinkCorrectStreams_AndDeactivateStaleStream()
     {

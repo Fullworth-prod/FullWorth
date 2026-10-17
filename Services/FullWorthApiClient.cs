@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 namespace FullWorth.Services;
@@ -577,7 +577,12 @@ public sealed record BillStreamResult(
     string Category,
     bool IsActive,
     decimal CurrentAmount,
-    decimal PreviousAverage);
+    decimal PreviousAverage)
+{
+    public string? CurrencyCode { get; init; }
+    public bool HasTransactionEvidence { get; init; }
+    public bool HasMonthlyCadenceEvidence { get; init; }
+}
 
 public sealed record BillStreamDetailResult(
     Guid Id,
@@ -587,7 +592,12 @@ public sealed record BillStreamDetailResult(
     decimal CurrentAmount,
     decimal PreviousAverage,
     IReadOnlyList<BillStatementHistoryResult> Statements,
-    IReadOnlyList<BillChangeResult> Changes);
+    IReadOnlyList<BillChangeResult> Changes)
+{
+    public string? CurrencyCode { get; init; }
+    public bool HasTransactionEvidence { get; init; }
+    public bool HasMonthlyCadenceEvidence { get; init; }
+}
 
 public sealed record BillStatementHistoryResult(
     Guid Id,
@@ -610,7 +620,10 @@ public sealed record BillChangeResult(
     decimal AmountDifference,
     decimal AnnualizedImpact,
     bool IsAcknowledged,
-    DateTimeOffset DetectedAtUtc);
+    DateTimeOffset DetectedAtUtc)
+{
+    public string? CurrencyCode { get; init; }
+}
 
 public sealed record BillStatementUploadResult(
     Guid Id,

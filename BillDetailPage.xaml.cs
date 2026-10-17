@@ -1,4 +1,5 @@
-﻿using FullWorth.Services;
+using FullWorth.Core.Formatting;
+using FullWorth.Services;
 
 namespace FullWorth;
 
@@ -288,11 +289,9 @@ public partial class BillDetailPage : ContentPage
             : "INACTIVE";
 
     public string CurrentAmountText =>
-        _detail is
-        null
-            ? "$0.00"
-            : FormatMoney(
-                _detail.CurrentAmount);
+        _detail is null || !_detail.HasTransactionEvidence
+            ? "Amount unavailable"
+            : FormatMoney(_detail.CurrentAmount, _detail.CurrencyCode);
 
     public string PreviousAverageText
     {
@@ -308,7 +307,7 @@ public partial class BillDetailPage : ContentPage
             }
 
             return
-                $"Previous average {FormatMoney(_detail.PreviousAverage)}";
+                $"Previous average {FormatMoney(_detail.PreviousAverage, _detail.CurrencyCode)}";
         }
     }
 
@@ -376,7 +375,7 @@ public partial class BillDetailPage : ContentPage
             }
 
             return
-                $"{FormatMoney(change.PreviousAmount)} → {FormatMoney(change.CurrentAmount)}";
+                $"{FormatMoney(change.PreviousAmount, change.CurrencyCode)} → {FormatMoney(change.CurrentAmount, change.CurrencyCode)}";
         }
     }
 
@@ -401,18 +400,18 @@ public partial class BillDetailPage : ContentPage
                 0m)
             {
                 return
-                    $"+{FormatMoney(difference)}/mo";
+                    $"+{FormatMoney(difference, change.CurrencyCode)} per cycle";
             }
 
             if (difference <
                 0m)
             {
                 return
-                    $"-{FormatMoney(Math.Abs(difference))}/mo";
+                    $"-{FormatMoney(Math.Abs(difference), change.CurrencyCode)} per cycle";
             }
 
             return
-                "$0/month";
+                FormatMoney(0m, change.CurrencyCode) + " per cycle";
         }
     }
 
@@ -437,18 +436,18 @@ public partial class BillDetailPage : ContentPage
                 0m)
             {
                 return
-                    $"+{FormatMoney(impact)}/yr";
+                    $"+{FormatMoney(impact, change.CurrencyCode)}/yr";
             }
 
             if (impact <
                 0m)
             {
                 return
-                    $"-{FormatMoney(Math.Abs(impact))}/yr";
+                    $"-{FormatMoney(Math.Abs(impact), change.CurrencyCode)}/yr";
             }
 
             return
-                "$0/year";
+                FormatMoney(0m, change.CurrencyCode) + "/year";
         }
     }
 
@@ -600,7 +599,7 @@ public partial class BillDetailPage : ContentPage
 
                                 AmountText:
                                     FormatMoney(
-                                        statement.TotalAmount),
+                                        statement.TotalAmount, statement.CurrencyCode),
 
                                 StatementDateText:
                                     FormatStatementDate(
@@ -1064,12 +1063,8 @@ public partial class BillDetailPage : ContentPage
         };
     }
 
-    private static string FormatMoney(
-        decimal amount)
-    {
-        return amount.ToString(
-            "C2");
-    }
+    private static string FormatMoney(decimal amount, string? currencyCode) =>
+        FinancialAmountFormatter.FormatOrUnspecified(amount, currencyCode);
 
     private static string FormatCategory(
         string? category)

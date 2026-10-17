@@ -24,4 +24,6 @@
   <data name="Check bank connections" xml:space="preserve"><value>Revisar conexiones bancarias</value></data>
   <data name="Review imported transactions" xml:space="preserve"><value>Revisar transacciones importadas</value></data>
   <data name="Unavailable" xml:space="preserve"><value>No disponible</value></data>
+  <data name="Candidates with mixed or partially missing currencies" xml:space="preserve"><value>Candidatos con monedas diferentes o parcialmente ausentes</value></data>
+  <data name="Candidates excluded by category" xml:space="preserve"><value>Candidatos excluidos por categoría</value></data>
 </root>

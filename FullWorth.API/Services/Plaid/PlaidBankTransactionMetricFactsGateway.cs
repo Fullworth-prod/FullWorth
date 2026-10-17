@@ -54,7 +54,10 @@ public sealed class PlaidBankTransactionMetricFactsGateway(
                         transaction.Id,
                         transaction.Amount,
                         transaction.PostedDate,
-                        transaction.CreatedAtUtc))
+                        transaction.CreatedAtUtc)
+                    {
+                        CurrencyCode = transaction.IsoCurrencyCode
+                    })
             .ToListAsync(cancellationToken);
     }
 }

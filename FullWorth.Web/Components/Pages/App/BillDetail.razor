@@ -1,4 +1,5 @@
-﻿@page "/app/bills/{BillStreamId:guid}"
+@page "/app/bills/{BillStreamId:guid}"
+@using FullWorth.Core.Formatting
 
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
@@ -96,12 +97,12 @@
 
                 <div class="fw-detail-current">
                     <span>@L["Latest posted charge"]</span>
-                    <strong>@(_detail.HasTransactionEvidence ? FormatMoney(_detail.CurrentAmount) : L["Amount unavailable"].Value)</strong>
+                    <strong>@(_detail.HasTransactionEvidence ? FormatMoney(_detail.CurrentAmount, _detail.CurrencyCode) : L["Amount unavailable"].Value)</strong>
 
                     @if (_detail.PreviousAverage > 0m)
                     {
                         <small class="@GetDifferenceClass(transactionDifference)">
-                            @FormatDifference(transactionDifference)
+                            @FormatDifference(transactionDifference, _detail.CurrencyCode)
                             @L["vs. prior average"]
                         </small>
                     }
@@ -117,7 +118,7 @@
                     <span>@L["Prior transaction average"]</span>
                     <strong>
                         @(_detail.PreviousAverage > 0m
-                            ? FormatMoney(_detail.PreviousAverage)
+                            ? FormatMoney(_detail.PreviousAverage, _detail.CurrencyCode)
                             : L["Not available"].Value)
                     </strong>
                 </div>
@@ -169,14 +170,14 @@
                     <div class="detected-change-values">
                         <div>
                             <span>@L["Previous"]</span>
-                            <strong>@FormatMoney(latestChange.PreviousAmount)</strong>
+                            <strong>@FormatMoney(latestChange.PreviousAmount, latestChange.CurrencyCode)</strong>
                         </div>
 
                         <span class="detail-arrow">→</span>
 
                         <div>
                             <span>@L["Current"]</span>
-                            <strong>@FormatMoney(latestChange.CurrentAmount)</strong>
+                            <strong>@FormatMoney(latestChange.CurrentAmount, latestChange.CurrencyCode)</strong>
                         </div>
                     </div>
                 </div>
@@ -184,12 +185,12 @@
                 <div class="change-impact-stack">
                     <div>
                         <span>@L["Change"]</span>
-                        <strong>@FormatDifference(latestChange.AmountDifference)</strong>
+                        <strong>@FormatDifference(latestChange.AmountDifference, latestChange.CurrencyCode)</strong>
                     </div>
 
                     <div>
                         <span>@L["Annual impact"]</span>
-                        <strong>@FormatSignedMoney(latestChange.AnnualizedImpact)</strong>
+                        <strong>@FormatSignedMoney(latestChange.AnnualizedImpact, latestChange.CurrencyCode)</strong>
                     </div>
                 </div>
                 </div>
@@ -245,7 +246,7 @@
                 <div>
                     <span class="panel-kicker">@L["Explanation"]</span>
                     <h2>@L["We don't know yet."]</h2>
-                    <p>@L["FullWorth has transaction history for this recurring bill, but no verified statement comparison has produced a detected change yet."]</p>
+                    <p>@L["No verified statement comparison has produced a detected change for this bill yet."]</p>
                 </div>
             </section>
         }
@@ -285,7 +286,7 @@
                                 </div>
 
                                 <div class="statement-amount">
-                                    <strong>@FormatMoney(statement.TotalAmount)</strong>
+                                    <strong>@FormatMoney(statement.TotalAmount, statement.CurrencyCode)</strong>
                                     <span>@statement.CurrencyCode</span>
                                 </div>
                             </article>
@@ -331,8 +332,8 @@
                                     <p>@GetExplanation(change.Description)</p>
 
                                     <div class="change-history-meta">
-                                        <span>@FormatDifference(change.AmountDifference)</span>
-                                        <span>@FormatSignedMoney(change.AnnualizedImpact) @L["/ year"]</span>
+                                        <span>@FormatDifference(change.AmountDifference, change.CurrencyCode)</span>
+                                        <span>@FormatSignedMoney(change.AnnualizedImpact, change.CurrencyCode) @L["/ year"]</span>
                                         <span>@FormatConfidence(change.Confidence)</span>
                                     </div>
                                 </div>
@@ -472,26 +473,26 @@
         return _detail.CurrentAmount - _detail.PreviousAverage;
     }
 
-    private static string FormatMoney(decimal amount) =>
-        amount.ToString("C2", UsCulture);
+    private string FormatMoney(decimal amount, string? currencyCode) =>
+        FinancialAmountFormatter.FormatOrUnspecified(amount, currencyCode, L["Currency unavailable"].Value);
 
-    private static string FormatSignedMoney(decimal amount)
+    private string FormatSignedMoney(decimal amount, string? currencyCode)
     {
         if (amount > 0m)
         {
-            return $"+{FormatMoney(amount)}";
+            return $"+{FormatMoney(amount, currencyCode)}";
         }
 
         if (amount < 0m)
         {
-            return $"-{FormatMoney(Math.Abs(amount))}";
+            return $"-{FormatMoney(Math.Abs(amount), currencyCode)}";
         }
 
-        return FormatMoney(0m);
+        return FormatMoney(0m, currencyCode);
     }
 
-    private static string FormatDifference(decimal difference) =>
-        FormatSignedMoney(difference);
+    private string FormatDifference(decimal difference, string? currencyCode) =>
+        FormatSignedMoney(difference, currencyCode);
 
     private static string GetDifferenceClass(decimal difference) =>
         difference > 0m
@@ -673,6 +674,7 @@
         public string ProviderName { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
         public bool IsActive { get; set; }
+        public string? CurrencyCode { get; set; }
         public string Source { get; set; } = "Unknown";
         public bool HasTransactionEvidence { get; set; }
         public bool HasMonthlyCadenceEvidence { get; set; }
@@ -690,7 +692,7 @@
         public DateOnly? StatementDate { get; set; }
         public DateOnly? DueDate { get; set; }
         public decimal TotalAmount { get; set; }
-        public string CurrencyCode { get; set; } = "USD";
+        public string? CurrencyCode { get; set; }
     }
 
     public sealed class BillChangeViewModel
@@ -704,6 +706,7 @@
         public decimal PreviousAmount { get; set; }
         public decimal CurrentAmount { get; set; }
         public decimal AmountDifference { get; set; }
+        public string? CurrencyCode { get; set; }
         public decimal AnnualizedImpact { get; set; }
         public bool IsAcknowledged { get; set; }
         public DateTimeOffset DetectedAtUtc { get; set; }

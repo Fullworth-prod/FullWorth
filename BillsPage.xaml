@@ -84,13 +84,13 @@
                         <VerticalStackLayout Spacing="5">
 
                             <Label
-                                Text="MONTHLY TOTAL"
+                                Text="LATEST RECURRING TOTAL"
                                 FontSize="11"
                                 FontAttributes="Bold"
                                 Style="{StaticResource SecondaryTextStyle}" />
 
                             <Label
-                                Text="{Binding MonthlyTotal, StringFormat='${0:F2}'}"
+                                Text="{Binding MonthlyTotal}"
                                 FontSize="34"
                                 FontAttributes="Bold"
                                 Style="{StaticResource PrimaryTextStyle}" />
@@ -186,11 +186,11 @@
                                             Style="{StaticResource SmallTextStyle}" />
 
                                         <Label
-                                            Text="{Binding PreviousAverage, StringFormat='Previous average ${0:F2}'}"
+                                            Text="{Binding PreviousAverageText}"
                                             Style="{StaticResource SmallTextStyle}" />
 
                                         <Label
-                                            Text="{Binding MonthlyChange, StringFormat='+${0:F2}/month'}"
+                                            Text="{Binding ChangeText}"
                                             FontSize="13"
                                             Style="{StaticResource IncreaseTextStyle}">
 
@@ -212,7 +212,7 @@
                                         </Label>
 
                                         <Label
-                                            Text="{Binding AnnualImpact, StringFormat='+${0:F2}/year'}"
+                                            Text="{Binding AnnualImpactText}"
                                             FontSize="12"
                                             Style="{StaticResource IncreaseTextStyle}">
 
@@ -243,7 +243,7 @@
                                         Spacing="5">
 
                                         <Label
-                                            Text="{Binding CurrentAmount, StringFormat='${0:F2}'}"
+                                            Text="{Binding CurrentAmountText}"
                                             FontSize="22"
                                             FontAttributes="Bold"
                                             HorizontalTextAlignment="End"

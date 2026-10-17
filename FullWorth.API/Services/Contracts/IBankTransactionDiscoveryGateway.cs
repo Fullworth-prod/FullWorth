@@ -8,7 +8,10 @@ public sealed record BankTransactionDiscoveryRecord(
     DateOnly PostedDate,
     bool IsPending,
     string? CategoryPrimary,
-    string? CategoryDetailed);
+    string? CategoryDetailed)
+{
+    public string? CurrencyCode { get; init; }
+}
 
 public interface IBankTransactionDiscoveryGateway
 {

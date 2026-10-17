@@ -163,6 +163,20 @@ public sealed class RecurringBillDetectionServiceTests
         Assert.Equal(22m, stream.LatestAmount);
     }
 
+    [Fact]
+    public void Detect_SameDateChargesDoNotMasqueradeAsOneMonthlyObligation()
+    {
+        var transactions = new[]
+        {
+            Transaction("Synthetic subscription", 2026, 1, 5, 20m),
+            Transaction("Synthetic subscription", 2026, 1, 5, 20m),
+            Transaction("Synthetic subscription", 2026, 2, 5, 20m)
+        };
+        Assert.Empty(_service.Detect(transactions));
+        Assert.Empty(_service.Detect(transactions.Reverse()));
+        Assert.Empty(new BillStreamDiscoveryService().Discover(transactions));
+    }
+
     private static BankTransaction Transaction(
         string merchant,
         int year,

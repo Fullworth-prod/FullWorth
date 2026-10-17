@@ -35,6 +35,13 @@ public sealed class RecurringBillDetectionService
                 .OrderBy(transaction => transaction.PostedDate)
                 .ToList();
 
+            // Multiple charges on one date can be separate obligations or duplicate imports.
+            // Do not discard zero-day gaps and silently promote the remaining dates.
+            if (merchantTransactions.Select(transaction => transaction.PostedDate).Distinct().Count() != merchantTransactions.Count)
+            {
+                continue;
+            }
+
             if (merchantTransactions.Count < 2)
             {
                 continue;

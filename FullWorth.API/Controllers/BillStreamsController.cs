@@ -1,4 +1,4 @@
-﻿using FullWorth.API.Data;
+using FullWorth.API.Data;
 using FullWorth.API.Data.Entities;
 using FullWorth.API.Services.Contracts;
 using FullWorth.Core.Models;
@@ -111,6 +111,7 @@ public sealed class BillStreamsController : ControllerBase
                             metrics?.PreviousAverage ??
                             0m)
                     {
+                        CurrencyCode = metrics?.CurrencyCode,
                         Source = stream.Source.ToString(),
                         HasTransactionEvidence = metrics is not null,
                         HasMonthlyCadenceEvidence = metrics?.HasMonthlyCadenceEvidence ?? false
@@ -203,6 +204,9 @@ public sealed class BillStreamsController : ControllerBase
                             statement.CurrencyCode))
                 .ToList();
 
+        var statementCurrencyById = statements.ToDictionary(statement => statement.Id,
+            statement => statement.CurrencyCode);
+
         var changes =
             statementHistory.Changes
                 .Select(
@@ -219,7 +223,10 @@ public sealed class BillStreamsController : ControllerBase
                             change.AmountDifference,
                             change.AnnualizedImpact,
                             change.IsAcknowledged,
-                            change.DetectedAtUtc))
+                            change.DetectedAtUtc)
+                        {
+                            CurrencyCode = statementCurrencyById.GetValueOrDefault(change.CurrentStatementId)
+                        })
                 .ToList();
 
         return Ok(
@@ -248,6 +255,7 @@ public sealed class BillStreamsController : ControllerBase
                 Changes:
                     changes)
             {
+                CurrencyCode = streamMetrics?.CurrencyCode,
                 Source = streamSnapshot.Source.ToString(),
                 HasTransactionEvidence = streamMetrics is not null,
                 HasMonthlyCadenceEvidence = streamMetrics?.HasMonthlyCadenceEvidence ?? false
@@ -270,7 +278,8 @@ public sealed class BillStreamsController : ControllerBase
             stream.IsActive = true;
             stream.Source = BillStreamSource.Manual;
             stream.UpdatedAtUtc = DateTimeOffset.UtcNow;
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            if (!await TrySaveConfirmationAsync(cancellationToken))
+                return Conflict(new { message = "This bill changed while saving. Try again." });
         }
         return NoContent();
     }
@@ -379,8 +388,8 @@ public sealed class BillStreamsController : ControllerBase
                 existingStream.UpdatedAtUtc =
                     DateTimeOffset.UtcNow;
 
-                await _dbContext.SaveChangesAsync(
-                    cancellationToken);
+                if (!await TrySaveConfirmationAsync(cancellationToken))
+                    return Conflict(new { message = "This bill changed while saving. Try again." });
             }
 
             return Ok(
@@ -459,6 +468,20 @@ public sealed class BillStreamsController : ControllerBase
                     0m) { Source = stream.Source.ToString() });
     }
 
+    private async Task<bool> TrySaveConfirmationAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            _dbContext.ChangeTracker.Clear();
+            return false;
+        }
+    }
+
     private bool TryGetUserId(
         out Guid userId)
     {
@@ -483,6 +506,7 @@ public sealed record BillStreamResult(
     decimal CurrentAmount,
     decimal PreviousAverage)
 {
+    public string? CurrencyCode { get; init; }
     public string Source { get; init; } = "Unknown";
     public bool HasTransactionEvidence { get; init; }
     public bool HasMonthlyCadenceEvidence { get; init; }
@@ -498,6 +522,7 @@ public sealed record BillStreamDetailResult(
     IReadOnlyList<BillStatementHistoryResult> Statements,
     IReadOnlyList<BillChangeResult> Changes)
 {
+    public string? CurrencyCode { get; init; }
     public string Source { get; init; } = "Unknown";
     public bool HasTransactionEvidence { get; init; }
     public bool HasMonthlyCadenceEvidence { get; init; }
@@ -524,4 +549,7 @@ public sealed record BillChangeResult(
     decimal AmountDifference,
     decimal AnnualizedImpact,
     bool IsAcknowledged,
-    DateTimeOffset DetectedAtUtc);
+    DateTimeOffset DetectedAtUtc)
+{
+    public string? CurrencyCode { get; init; }
+}

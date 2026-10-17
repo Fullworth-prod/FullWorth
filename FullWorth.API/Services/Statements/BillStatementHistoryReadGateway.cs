@@ -44,6 +44,7 @@ public sealed class BillStatementHistoryReadGateway(
                 .ThenByDescending(
                     statement =>
                         statement.StatementDate)
+                .ThenByDescending(statement => statement.Id)
                 .Select(
                     statement =>
                         new BillStatementHistoryReadRecord(
@@ -69,6 +70,7 @@ public sealed class BillStatementHistoryReadGateway(
                 .OrderByDescending(
                     change =>
                         change.DetectedAtUtc)
+                .ThenByDescending(change => change.Id)
                 .Select(
                     change =>
                         new BillChangeHistoryReadRecord(

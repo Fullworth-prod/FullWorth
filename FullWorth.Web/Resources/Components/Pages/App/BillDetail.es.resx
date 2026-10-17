@@ -76,4 +76,6 @@
   <data name="Your monitoring choice was saved." xml:space="preserve"><value>Se guardó tu opción de monitoreo.</value></data>
   <data name="Your monitoring choice could not be saved. Try again." xml:space="preserve"><value>No se pudo guardar tu opción de monitoreo. Inténtalo de nuevo.</value></data>
   <data name="Latest posted charge" xml:space="preserve"><value>Último cargo contabilizado</value></data>
+  <data name="Currency unavailable" xml:space="preserve"><value>Moneda no disponible</value></data>
+  <data name="No verified statement comparison has produced a detected change for this bill yet." xml:space="preserve"><value>Ninguna comparación verificada de estados de cuenta ha detectado un cambio en esta factura todavía.</value></data>
 </root>

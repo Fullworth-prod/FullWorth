@@ -1,4 +1,4 @@
-﻿using FullWorth.API.Data.Entities;
+using FullWorth.API.Data.Entities;
 using FullWorth.API.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -191,7 +191,11 @@ public sealed class FullWorthDbContext
                     .HasMaxLength(50)
                     .IsRequired();
 
+                entity.Property(stream => stream.Source)
+                    .IsConcurrencyToken();
+
                 entity.Property(stream => stream.IsActive)
+                    .IsConcurrencyToken()
                     .IsRequired();
 
                 entity.Property(stream => stream.CreatedAtUtc)
@@ -781,6 +785,8 @@ public sealed class FullWorthDbContext
             entity =>
             {
                 entity.ToTable("BillTransactionAssociations");
+
+                entity.Property(association => association.BillStreamId).IsConcurrencyToken();
 
                 entity.HasKey(association => new
                 {

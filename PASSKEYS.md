@@ -67,3 +67,18 @@ A passkey remains a device-/security-key-mediated proof; Face ID is not collecte
 by FullWorth and does not replace WebAuthn signature/origin/user-verification checks.
 Production feature enablement and actual iPhone/security-key acceptance remain
 separate gates. Existing production settings are not changed by this implementation.
+
+## Isolated browser regression
+
+`FullWorth.VisualTests/passkey-acceptance.mjs` runs only in GitHub Actions against
+`https://web.localhost`. CI temporarily applies the explicitly named
+`FullWorth.VisualTests/compose.passkeys-ci.yml` override to its disposable stack,
+then restores default feature flags even if the test fails. Production Compose
+and production passkey defaults are unchanged.
+
+Chromium's virtual user-verified resident authenticator exercises real browser
+enrollment and signed assertion through WebAuthn, the Web BFF and PostgreSQL API.
+The test verifies password-once continuation, simulated OS-prompt cancellation
+with authenticator fallback, and clearing pending sign-in state after success.
+It captures the mobile verification-choice screen before entering any code.
+This is not physical Face ID, iPhone WebView/Safari or USB/NFC key acceptance.

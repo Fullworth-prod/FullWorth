@@ -524,6 +524,56 @@ try {
   await page.goto("/app", { waitUntil: "domcontentloaded" });
   await settle(".app-shell");
 
+
+  // Synthetic BFF evidence only; no bank connection or production data is mutated.
+  const transactionEvidence = [
+    { id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", bankAccountId: "11111111-1111-1111-1111-111111111111",
+      name: "Euro utility", merchantName: "Synthetic Euro Utility", institutionName: "Synthetic Bank",
+      accountName: "Euro account", amount: 20, isoCurrencyCode: "EUR", postedDate: "2026-10-10", isPending: false },
+    { id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", bankAccountId: "22222222-2222-2222-2222-222222222222",
+      name: "Dollar purchase", merchantName: "Synthetic Dollar Purchase", institutionName: "Synthetic Bank",
+      accountName: "Dollar account", amount: 10, isoCurrencyCode: "USD", postedDate: "2026-10-11", isPending: false },
+    { id: "cccccccc-cccc-cccc-cccc-cccccccccccc", bankAccountId: "22222222-2222-2222-2222-222222222222",
+      name: "Unknown purchase", merchantName: "Synthetic Unknown Purchase", institutionName: "Synthetic Bank",
+      accountName: "Dollar account", amount: 42, isoCurrencyCode: null, postedDate: "2026-10-12", isPending: false },
+    { id: "dddddddd-dddd-dddd-dddd-dddddddddddd", bankAccountId: "22222222-2222-2222-2222-222222222222",
+      name: "Pending purchase", merchantName: "Synthetic Pending Purchase", institutionName: "Synthetic Bank",
+      accountName: "Dollar account", amount: 999, isoCurrencyCode: "USD", postedDate: "2026-10-13", isPending: true },
+    { id: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee", bankAccountId: "11111111-1111-1111-1111-111111111111",
+      name: "Refund", merchantName: "Synthetic Refund", institutionName: "Synthetic Bank",
+      accountName: "Euro account", amount: -5, isoCurrencyCode: "EUR", postedDate: "2026-10-14", isPending: false }
+  ];
+  const ledgerRoute = "**/bff/bank-transactions?*";
+  await page.route(ledgerRoute, route => route.fulfill({ json: transactionEvidence }));
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto("/app/account/transactions", { waitUntil: "domcontentloaded" });
+    await settle(".transaction-row");
+    assert.equal(await page.locator(".transaction-row").count(), 5);
+    const summary = await page.locator(".fw-transactions-total").innerText();
+    assert.ok(summary.includes("EUR 20.00 · $10.00"), summary);
+    assert.ok(summary.includes("1 posted outflow records"), summary);
+    assert.ok((await page.locator(".transaction-row").nth(2).innerText()).includes("-42.00 (Currency unavailable)"));
+    assert.ok((await page.locator(".transaction-row").nth(4).innerText()).includes("+EUR 5.00"));
+    await page.getByRole("searchbox", { name: "Search merchant or transaction" }).fill("Refund");
+    await page.waitForFunction(() =>
+      [...document.querySelectorAll(".transaction-row")].filter(row => !row.hidden).length === 1);
+    const visible = await page.locator(".transaction-row:visible").innerText();
+    assert.ok(visible.includes("Synthetic Refund"), visible);
+    assert.equal(await page.locator(".fw-transactions-total").innerText(), summary);
+    await page.screenshot({ path: path.join(outputDir, `transaction-evidence-${width}.png`), fullPage: true });
+  }
+  await page.getByRole("searchbox", { name: "Search merchant or transaction" }).fill("");
+  await page.route("**/bff/bill-monitoring/refresh", route => route.fulfill({ status: 503, json: {} }));
+  await page.getByRole("button", { name: "Sync now", exact: true }).click();
+  await page.getByRole("alert").filter({ hasText: "Sync failed." }).waitFor();
+  assert.equal(await page.locator(".transaction-row").count(), 5);
+  assert.equal(await page.locator(".app-error-state").count(), 0);
+  await page.unroute("**/bff/bill-monitoring/refresh");
+  await page.unroute(ledgerRoute);
+  await page.goto("/app", { waitUntil: "domcontentloaded" });
+  await settle(".app-shell");
+
   const serviceWorkerState = await page.evaluate(async () => {
     if (!("serviceWorker" in navigator)) {
       return {

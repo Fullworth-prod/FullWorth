@@ -2,6 +2,8 @@
 
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
+@using FullWorth.Web.Presentation
+
 @layout AppLayout
 
 @implements IAsyncDisposable
@@ -41,6 +43,7 @@
         <button type="button"
                 class="secondary-action"
                 disabled="@(_isLoading || _isRefreshing || _isLoadingMore)"
+                aria-busy="@_isRefreshing"
                 @onclick="SyncNowAsync">
             @(_isRefreshing
                 ? L["Syncing…"]
@@ -88,14 +91,29 @@
         var filteredTransactions =
             FilteredTransactions;
 
+        @if (!string.IsNullOrWhiteSpace(_syncError))
+        {
+            <div class="transaction-history-error" role="alert">@_syncError</div>
+        }
+
+        <section class="transaction-evidence-note" aria-labelledby="transaction-evidence-heading">
+            <h2 id="transaction-evidence-heading">@L["Spending is not the same as recurring bills"]</h2>
+            <p>@L["This ledger includes purchases, transfers, and other bank activity. Only supported recurring-payment evidence becomes a monitored bill; the bill total is not your total spending."]</p>
+            <a href="/app/bills">@L["Review monitored bills and discovery details"]</a>
+        </section>
+
         <section class="fw-transactions-pulse">
             <div class="fw-transactions-total">
                 <span>@L["Posted outflow"]</span>
                 <strong>
-                    @FormatMoney(
-                        _postedOutflow)
+                    @(_outflowSummary.Totals ?? L["No known-currency posted outflow"].Value)
                 </strong>
-                <small>@L["Across the currently loaded transaction history"]</small>
+                <small>@L["Across the currently loaded transaction history; filters below affect rows only."]</small>
+                <small>@L["Totals are separated by currency. No currency conversion is applied."]</small>
+                @if (_outflowSummary.UnknownCurrencyCount > 0)
+                {
+                    <small role="status">@L["{0} posted outflow records have unavailable currency and are excluded from totals.", _outflowSummary.UnknownCurrencyCount]</small>
+                }
             </div>
 
             <div class="fw-transactions-stats">
@@ -130,12 +148,14 @@
                         {
                             <input id="transaction-search-local"
                                    type="search"
+                                   aria-label="@L["Search merchant or transaction"]"
                                    placeholder="@L["Search merchant or transaction"]"
                                    autocomplete="off" />
                         }
                         else
                         {
                             <input type="search"
+                                   aria-label="@L["Search merchant or transaction"]"
                                    placeholder="@L["Search merchant or transaction"]"
                                    autocomplete="off"
                                    @bind="_searchText"
@@ -146,7 +166,8 @@
                     @if (_useLocalTransactionFiltering)
                     {
                         <select id="transaction-account-filter-local"
-                                class="transaction-account-filter">
+                                class="transaction-account-filter"
+                                aria-label="@L["Filter by account"]">
 
                             <option value="">
                                 @L["All accounts"]
@@ -165,6 +186,7 @@
                     else
                     {
                         <select class="transaction-account-filter"
+                                aria-label="@L["Filter by account"]"
                                 @bind="_selectedAccountId">
 
                             <option value="">
@@ -185,7 +207,7 @@
             </div>
 
             <div class="transaction-result-line">
-            <span id="@(_useLocalTransactionFiltering
+            <span aria-live="polite" aria-atomic="true" id="@(_useLocalTransactionFiltering
                         ? "transaction-result-count-local"
                         : null)"
                   data-singular-label="@L["1 transaction"]"
@@ -340,8 +362,7 @@
 
                         <div class="@GetAmountClass(
                                                                         transaction.Amount)">
-                            @FormatLedgerAmount(
-                                transaction.Amount)
+                            @TransactionLedgerPresentation.FormatSigned(transaction.Amount, transaction.IsoCurrencyCode, L["Currency unavailable"])
                         </div>
                     </article>
                 }
@@ -397,7 +418,9 @@
     private string _selectedAccountId =
         string.Empty;
 
-    private decimal _postedOutflow;
+    private TransactionLedgerPresentation.OutflowSummary _outflowSummary = new(null, 0);
+
+    private string? _syncError;
 
     private int _pendingCount;
 
@@ -497,8 +520,7 @@
         _isRefreshing =
             true;
 
-        _errorMessage =
-            null;
+        _syncError = null;
 
         StateHasChanged();
 
@@ -514,17 +536,15 @@
                 .InvokeAsync<object?>(
                     "refreshBillMonitoring");
 
-            await LoadAsync();
+            await LoadTransactionsCoreAsync();
         }
         catch (JSException)
         {
-            _errorMessage =
-                L["FullWorth could not refresh your bank data."];
+            _syncError = L["Sync failed. Your previously loaded transactions are still shown. Try syncing again."];
         }
         catch (Exception)
         {
-            _errorMessage =
-                L["Something went wrong while refreshing your bank data."];
+            _syncError = L["Sync failed. Your previously loaded transactions are still shown. Try syncing again."];
         }
         finally
         {
@@ -543,6 +563,7 @@
 
         _loadMoreError =
             null;
+        _syncError = null;
 
         try
         {
@@ -692,16 +713,9 @@
 
     private void UpdateTransactionSummaries()
     {
-        _postedOutflow =
-            _transactions
-                .Where(
-                    transaction =>
-                        !transaction.IsPending &&
-                        transaction.Amount >
-                            0m)
-                .Sum(
-                    transaction =>
-                        transaction.Amount);
+        _outflowSummary = TransactionLedgerPresentation.Summarize(
+            _transactions.Select(transaction =>
+                (transaction.Amount, transaction.IsoCurrencyCode, transaction.IsPending)));
 
         _pendingCount =
             _transactions.Count(
@@ -810,33 +824,6 @@
         }
 
         return L["Transaction"];
-    }
-
-    private static string FormatLedgerAmount(
-        decimal amount)
-    {
-        if (amount > 0m)
-        {
-            return
-                $"-{Math.Abs(amount):C2}";
-        }
-
-        if (amount < 0m)
-        {
-            return
-                $"+{Math.Abs(amount):C2}";
-        }
-
-        return
-            0m.ToString(
-                "C2");
-    }
-
-    private static string FormatMoney(
-        decimal amount)
-    {
-        return amount.ToString(
-            "C2");
     }
 
     private static string GetAmountClass(

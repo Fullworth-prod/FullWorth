@@ -41,4 +41,18 @@
   <data name="PERSONAL CARE" xml:space="preserve"><value>CUIDADO PERSONAL</value></data>
   <data name="LOAN PAYMENTS" xml:space="preserve"><value>PAGOS DE PRÉSTAMOS</value></data>
   <data name="BANK FEES" xml:space="preserve"><value>COMISIONES BANCARIAS</value></data>
+  <data name="Spending is not the same as recurring bills" xml:space="preserve"><value>Los gastos no son lo mismo que las facturas recurrentes</value></data>
+  <data name="This ledger includes purchases, transfers, and other bank activity. Only supported recurring-payment evidence becomes a monitored bill; the bill total is not your total spending." xml:space="preserve"><value>Este registro incluye compras, transferencias y otra actividad bancaria. Solo la evidencia respaldada de pagos recurrentes se convierte en una factura supervisada; el total de facturas no es tu gasto total.</value></data>
+  <data name="Review monitored bills and discovery details" xml:space="preserve"><value>Revisar facturas supervisadas y detalles de detección</value></data>
+  <data name="No known-currency posted outflow" xml:space="preserve"><value>No hay salidas contabilizadas con moneda conocida</value></data>
+  <data name="Across the currently loaded transaction history; filters below affect rows only." xml:space="preserve"><value>En el historial cargado actualmente; los filtros de abajo solo afectan a las filas.</value></data>
+  <data name="Totals are separated by currency. No currency conversion is applied." xml:space="preserve"><value>Los totales se separan por moneda. No se aplica conversión de moneda.</value></data>
+  <data name="{0} posted outflow records have unavailable currency and are excluded from totals." xml:space="preserve"><value>{0} registros de salidas contabilizadas no tienen moneda disponible y se excluyen de los totales.</value></data>
+  <data name="Filter by account" xml:space="preserve"><value>Filtrar por cuenta</value></data>
+  <data name="Currency unavailable" xml:space="preserve"><value>Moneda no disponible</value></data>
+  <data name="Sync failed. Your previously loaded transactions are still shown. Try syncing again." xml:space="preserve"><value>La sincronización falló. Se siguen mostrando las transacciones cargadas anteriormente. Intenta sincronizar de nuevo.</value></data>
+  <data name="Transaction ledger" xml:space="preserve"><value>Registro de transacciones</value></data>
+  <data name="Latest {0} records available in this view" xml:space="preserve"><value>Últimos {0} registros disponibles en esta vista</value></data>
+  <data name="Sync now" xml:space="preserve"><value>Sincronizar ahora</value></data>
+  <data name="Syncing…" xml:space="preserve"><value>Sincronizando…</value></data>
 </root>

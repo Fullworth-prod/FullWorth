@@ -352,3 +352,25 @@
         text-align: left;
     }
 }
+
+.transaction-evidence-note {
+    padding: 18px;
+    border: 1px solid var(--bw-border);
+    border-radius: 16px;
+    background: var(--bw-surface-soft);
+    line-height: 1.6;
+}
+.transaction-evidence-note h2 { margin: 0 0 8px; font-size: 1rem; }
+.transaction-evidence-note p { margin: 0 0 10px; color: var(--bw-text-muted); }
+.transaction-evidence-note a { display: inline-flex; align-items: center; min-height: 44px; color: var(--bw-accent); }
+.transaction-search:focus-within, .transaction-account-filter:focus-visible {
+    outline: 2px solid var(--bw-accent);
+    outline-offset: 3px;
+}
+.transaction-search input, .transaction-account-filter { min-width: 0; min-height: 44px; }
+.transaction-row[hidden], .transaction-empty[hidden] { display: none; }
+.fw-transactions-total strong, .transaction-amount { overflow-wrap: anywhere; }
+@media (max-width: 520px) {
+    .transaction-result-line { flex-wrap: wrap; }
+    .transaction-copy > span { overflow-wrap: anywhere; }
+}

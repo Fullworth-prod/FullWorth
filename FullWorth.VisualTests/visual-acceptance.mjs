@@ -553,6 +553,8 @@ try {
     const summary = await page.locator(".fw-transactions-total").innerText();
     assert.ok(summary.includes("EUR 20.00 · $10.00"), summary);
     assert.ok(summary.includes("1 posted outflow records"), summary);
+    assert.ok(summary.includes("This is not proof of complete bank coverage."), summary);
+    if (width === 390) assert.equal(await page.locator(".transaction-mobile-date:visible").count(), 5);
     assert.ok((await page.locator(".transaction-row").nth(2).innerText()).includes("-42.00 (Currency unavailable)"));
     assert.ok((await page.locator(".transaction-row").nth(4).innerText()).includes("+EUR 5.00"));
     await page.getByRole("searchbox", { name: "Search merchant or transaction" }).fill("Refund");

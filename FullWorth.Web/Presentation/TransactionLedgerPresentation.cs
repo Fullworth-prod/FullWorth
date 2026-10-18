@@ -26,6 +26,11 @@ public static class TransactionLedgerPresentation
         var sign = amount > 0m ? "-" : amount < 0m ? "+" : string.Empty;
         // Format first, then remove the negative sign: decimal.MinValue cannot be negated.
         var formatted = FinancialAmountFormatter.FormatOrUnspecified(amount, currencyCode, unspecifiedLabel);
-        return sign + (amount < 0m ? formatted.Replace("-", string.Empty, StringComparison.Ordinal) : formatted);
+        if (amount < 0m)
+        {
+            var minus = formatted.IndexOf('-', StringComparison.Ordinal);
+            formatted = formatted.Remove(minus, 1);
+        }
+        return sign + formatted;
     }
 }

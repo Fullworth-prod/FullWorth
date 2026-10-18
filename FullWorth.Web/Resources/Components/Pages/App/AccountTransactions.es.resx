@@ -55,4 +55,5 @@
   <data name="Latest {0} records available in this view" xml:space="preserve"><value>Últimos {0} registros disponibles en esta vista</value></data>
   <data name="Sync now" xml:space="preserve"><value>Sincronizar ahora</value></data>
   <data name="Syncing…" xml:space="preserve"><value>Sincronizando…</value></data>
+  <data name="Loaded dates: {0} – {1}. This is not proof of complete bank coverage." xml:space="preserve"><value>Fechas cargadas: {0} – {1}. Esto no demuestra una cobertura bancaria completa.</value></data>
 </root>

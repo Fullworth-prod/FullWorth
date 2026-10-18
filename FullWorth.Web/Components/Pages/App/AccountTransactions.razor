@@ -109,6 +109,12 @@
                     @(_outflowSummary.Totals ?? L["No known-currency posted outflow"].Value)
                 </strong>
                 <small>@L["Across the currently loaded transaction history; filters below affect rows only."]</small>
+                @if (_transactions.Count > 0)
+                {
+                    <small>@L["Loaded dates: {0} – {1}. This is not proof of complete bank coverage.",
+                        _transactions.Min(transaction => transaction.PostedDate).ToString("d", System.Globalization.CultureInfo.CurrentUICulture),
+                        _transactions.Max(transaction => transaction.PostedDate).ToString("d", System.Globalization.CultureInfo.CurrentUICulture)]</small>
+                }
                 <small>@L["Totals are separated by currency. No currency conversion is applied."]</small>
                 @if (_outflowSummary.UnknownCurrencyCount > 0)
                 {
@@ -336,6 +342,12 @@
                                     </text>
                                 }
                             </span>
+
+                            <small class="transaction-mobile-date">
+                                <time datetime="@transaction.PostedDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)">
+                                    @transaction.PostedDate.ToString("d MMM yyyy", System.Globalization.CultureInfo.CurrentUICulture)
+                                </time>
+                            </small>
 
                             @if (!string.IsNullOrWhiteSpace(
                                 transaction.CategoryPrimary))

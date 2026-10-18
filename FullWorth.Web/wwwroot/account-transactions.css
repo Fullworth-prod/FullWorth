@@ -374,3 +374,8 @@
     .transaction-result-line { flex-wrap: wrap; }
     .transaction-copy > span { overflow-wrap: anywhere; }
 }
+
+.transaction-copy > .transaction-mobile-date { display: none; }
+@media (max-width: 750px) {
+    .transaction-copy > .transaction-mobile-date { display: block; }
+}

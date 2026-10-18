@@ -1,3 +1,13 @@
+## Verified release checkpoint — 2026-10-17 UTC
+
+- The `master` release branch at candidate `422718fad7d05a3729b08d461929d0d60c6761a6` is verified live.
+
+Currently verified live production release: `422718fad7d05a3729b08d461929d0d60c6761a6`.
+
+[Guarded deployment #25](https://github.com/Fullworth/FullWorth/actions/runs/39053793950) and [authenticated smoke](https://github.com/Fullworth/FullWorth/actions/runs/39054021470) passed; the production checkout and release marker agreed. Backend/Android/container, CodeQL, repository governance and image provenance were checked against the master commit. Real clean-host/immutable backup, provider, installed-device, two-user/statement and legal acceptance remain open; do not infer their completion from deployment. What's New release-note improvement is development-only until a separately approved promotion/deployment.
+
+## Previous checkpoints (historical; superseded for current release)
+
 ## Verified release checkpoint — 2026-10-16 UTC
 
 - The `master` release branch at candidate `8c64cc8f7cdf519a6214be47c2016f601331150e` is verified live.

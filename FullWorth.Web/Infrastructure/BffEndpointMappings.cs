@@ -191,6 +191,20 @@ public static class BffEndpointMappings
             return sessionId == Guid.Empty ? Results.NotFound() : await proxy.ForwardPostAsync(context, $"/api/plaid/link-session/{sessionId}/complete", false, context.RequestAborted);
         }).RequireRateLimiting(
             FinancialProviderRateLimitPolicy);
+        bff.MapPost("/bank-connections/{connectionId:guid}/archive", async (HttpContext context, IAntiforgery antiforgery, FullWorthBffProxyService proxy, Guid connectionId) =>
+        {
+            await antiforgery.ValidateRequestAsync(context);
+            return connectionId == Guid.Empty ? Results.NotFound() :
+                await proxy.ForwardPostAsync(context, $"/api/bank-connections/{connectionId}/archive", includeEmptyJsonBody: false, cancellationToken: context.RequestAborted);
+        });
+
+        bff.MapPost("/bank-connections/{connectionId:guid}/restore", async (HttpContext context, IAntiforgery antiforgery, FullWorthBffProxyService proxy, Guid connectionId) =>
+        {
+            await antiforgery.ValidateRequestAsync(context);
+            return connectionId == Guid.Empty ? Results.NotFound() :
+                await proxy.ForwardPostAsync(context, $"/api/bank-connections/{connectionId}/restore", includeEmptyJsonBody: false, cancellationToken: context.RequestAborted);
+        });
+
         bff.MapDelete("/bank-connections/{connectionId:guid}", async (HttpContext context, IAntiforgery antiforgery, FullWorthBffProxyService proxy, Guid connectionId) =>
         {
             await antiforgery.ValidateRequestAsync(context);

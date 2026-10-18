@@ -37,6 +37,8 @@ public sealed class WebAntiforgeryBoundaryTests
         yield return ["POST", $"/bff/plaid/connections/{id:D}/update-link-session"];
         yield return ["POST", $"/bff/plaid/link-session/{id:D}/complete"];
         yield return ["DELETE", $"/bff/bank-connections/{id:D}"];
+        yield return ["POST", $"/bff/bank-connections/{id:D}/archive"];
+        yield return ["POST", $"/bff/bank-connections/{id:D}/restore"];
         yield return ["POST", $"/bff/bill-streams/{id:D}/statement-uploads"];
 
         yield return ["PUT", "/bff/account/preferences"];

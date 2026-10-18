@@ -10,9 +10,9 @@ class that the application actually exposes.
 
 | Host | Method-route exposures | Authenticated | Explicit anonymous | Implicit anonymous | Named rate limit |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| API | 89 | 73 | 8 | 8 | 39 |
-| Web | 123 | 92 | 5 | 26 | 13 |
-| **Total** | **212** | **165** | **13** | **34** | **52** |
+| API | 93 | 77 | 8 | 8 | 41 |
+| Web | 127 | 96 | 5 | 26 | 15 |
+| **Total** | **220** | **173** | **13** | **34** | **56** |
 
 The complete, reviewable list is embedded in
 `FullWorth.Tests/Security/EndpointSecurityInventoryTests.cs`. A route addition,
@@ -79,3 +79,11 @@ When adding or changing an endpoint:
 Static assets and framework infrastructure endpoints are excluded. The inventory
 contains route templates only; it never records customer identifiers, request
 values, credentials, or secrets.
+
+## Connection archiving
+
+Authenticated POST archive/restore routes under API and BFF bank-connections
+are owner-scoped. BFF mutations require antiforgery. Only disconnected connections
+with no retained provider credential can be archived or restored. Archiving is a
+reversible list preference, not provider revocation or deletion of financial history.
+An archived record that becomes active is always shown by both API projection and UI.

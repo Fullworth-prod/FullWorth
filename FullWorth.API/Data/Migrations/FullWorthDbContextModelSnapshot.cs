@@ -250,6 +250,9 @@ namespace FullWorth.API.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTimeOffset?>("LastSuccessfulSyncAtUtc")
                         .HasColumnType("timestamp with time zone");
 

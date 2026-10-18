@@ -104,7 +104,7 @@
         </div>
 
         <BankConnectionSummary
-            Connections="@_connections.Select(connection => new BankConnectionSummary.Connection(connection.Status, connection.LastSuccessfulSyncAtUtc)).ToArray()"
+            Connections="@_connections.Where(connection => !IsEffectivelyArchived(connection)).Select(connection => new BankConnectionSummary.Connection(connection.Status, connection.LastSuccessfulSyncAtUtc)).ToArray()"
             AccountCount="@_accounts.Count" IsLoading="@_isLoading"
             HasError="@(!_hasLoaded && !string.IsNullOrWhiteSpace(_errorMessage))"
             IsStale="@(!string.IsNullOrWhiteSpace(_refreshError))" />
@@ -262,7 +262,7 @@
                     </div>
 
                     <span class="account-count">
-                        @_connections.Count
+                        @VisibleConnections.Count()
                     </span>
                 </div>
 
@@ -285,11 +285,22 @@
                     </div>
                 }
 
-                @if (_connections.Count == 0)
+                @if (ArchivedCount > 0)
+                {
+                    <button type="button" class="secondary-action"
+                            aria-expanded="@(_showArchived ? "true" : "false")"
+                            disabled="@(_isMutating || _isRefreshing || _isConfirmingDisconnect)"
+                            @onclick="() => _showArchived = !_showArchived">
+                        @(_showArchived ? L["Hide archived"] : L["Show archived ({0})", ArchivedCount])
+                    </button>
+                    <p>@L["Archived connections keep their transaction and bill history. Restoring a connection does not reconnect your bank."]</p>
+                }
+
+                @if (!VisibleConnections.Any())
                 {
                     <div class="account-empty">
                         <strong>
-                            @L["No banks connected"]
+                            @(ArchivedCount > 0 ? L["No unarchived connections"] : L["No banks connected"])
                         </strong>
 
                         <span>
@@ -301,7 +312,7 @@
                 {
                     <div class="connection-list">
                         @foreach (var connection
-                            in _connections
+                            in VisibleConnections
                                 .OrderBy(
                                     item =>
                                         GetStatusSortOrder(
@@ -331,8 +342,7 @@
                                 <div class="connection-status">
                                     <span class="@GetConnectionStatusClass(
                                         connection.Status)">
-                                        @GetConnectionStatusText(
-                                            connection.Status)
+                                        @(IsEffectivelyArchived(connection) ? L["Archived"].Value : GetConnectionStatusText(connection.Status))
                                     </span>
 
                                     <small>
@@ -350,6 +360,15 @@
                                                 disabled="@(_isLoading || _isRefreshing || _isMutating || _isConfirmingDisconnect || _toolsError is not null)">
 
                                             @L["Reconnect"]
+                                        </button>
+                                    }
+
+                                    @if (connection.Status == 2)
+                                    {
+                                        <button type="button" class="secondary-action"
+                                                disabled="@(_isMutating || _isRefreshing || _isConfirmingDisconnect)"
+                                                @onclick="() => SetArchivedAsync(connection, !IsEffectivelyArchived(connection))">
+                                            @(IsEffectivelyArchived(connection) ? L["Restore connection"] : L["Archive connection"])
                                         </button>
                                     }
 
@@ -531,6 +550,13 @@
 
     private bool _isLoading =
         true;
+
+    private bool _showArchived;
+    private static bool IsEffectivelyArchived(BankConnectionViewModel connection) =>
+        connection.IsArchived && connection.Status == 2;
+    private int ArchivedCount => _connections.Count(IsEffectivelyArchived);
+    private IEnumerable<BankConnectionViewModel> VisibleConnections =>
+        _connections.Where(connection => _showArchived || !IsEffectivelyArchived(connection));
 
     private bool _isMutating;
     private bool _hasLoaded;
@@ -861,6 +887,37 @@
         }
     }
 
+    private async Task SetArchivedAsync(BankConnectionViewModel connection, bool archived)
+    {
+        if (_isLoading || _isRefreshing || _isMutating || _isConfirmingDisconnect ||
+            connection.Id == Guid.Empty || connection.Status != 2) return;
+
+        _isMutating = true;
+        _actionMessage = null;
+        _actionSucceeded = false;
+        try
+        {
+            var module = await GetBffModuleAsync();
+            await module.InvokeAsync<object?>("setBankConnectionArchived", connection.Id.ToString("D"), archived);
+            connection.IsArchived = archived;
+            _actionSucceeded = true;
+            _actionMessage = archived
+                ? L["Connection archived. Your transaction and bill history is unchanged."].Value
+                : L["Connection restored to the list. It remains disconnected."].Value;
+            await LoadAsync();
+        }
+        catch
+        {
+            _actionSucceeded = false;
+            _actionMessage = L["The connection could not be updated. Disconnect it successfully first, then try again."].Value;
+        }
+        finally
+        {
+            _isMutating = false;
+            if (!_isDisposed) StateHasChanged();
+        }
+    }
+
     private string GetActionMessageClass()
     {
         return _actionSucceeded
@@ -1102,6 +1159,8 @@
         } = string.Empty;
 
         public int Status { get; set; }
+
+        public bool IsArchived { get; set; }
 
         public DateTimeOffset?
             LastSuccessfulSyncAtUtc

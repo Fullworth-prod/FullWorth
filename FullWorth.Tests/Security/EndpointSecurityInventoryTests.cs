@@ -77,6 +77,8 @@ public sealed class EndpointSecurityInventoryTests
         "API|POST|/api/auth/register|anonymous-implicit|named:authentication",
         "API|POST|/api/auth/resendConfirmationEmail|anonymous-implicit|named:authentication",
         "API|POST|/api/auth/resetPassword|anonymous-implicit|named:authentication",
+        "API|POST|/api/bank-connections/{connectionId:guid}/archive|authenticated|global:300-per-minute",
+        "API|POST|/api/bank-connections/{connectionId:guid}/restore|authenticated|global:300-per-minute",
         "API|POST|/api/bill-discovery/run|authenticated|named:financial-refresh",
         "API|POST|/api/bill-monitoring/refresh|authenticated|named:financial-refresh",
         "API|POST|/api/bill-streams/{billStreamId:guid}/confirm|authenticated|named:financial-refresh",
@@ -203,6 +205,8 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|POST|/bff/admin/users/{targetUserId:guid}/roles/{roleName}|authenticated|none",
         "WEB|POST|/bff/alerts/{alertId:guid}/dismiss|authenticated|none",
         "WEB|POST|/bff/alerts/{alertId:guid}/read|authenticated|none",
+        "WEB|POST|/bff/bank-connections/{connectionId:guid}/archive|authenticated|none",
+        "WEB|POST|/bff/bank-connections/{connectionId:guid}/restore|authenticated|none",
         "WEB|POST|/bff/bill-monitoring/refresh|authenticated|named:financial-refresh",
         "WEB|POST|/bff/bill-streams/{billStreamId:guid}/confirm|authenticated|named:financial-refresh",
         "WEB|POST|/bff/bill-streams/{billStreamId:guid}/statement-uploads|authenticated|named:statement-upload",
@@ -266,11 +270,11 @@ public sealed class EndpointSecurityInventoryTests
     public void Snapshot_CoversEveryReviewedAccessAndRateLimitClass()
     {
         Assert.Equal(
-            216,
+            220,
             ExpectedInventory.Length);
 
         Assert.Equal(
-            91,
+            93,
             ExpectedInventory.Count(
                 row =>
                     row.StartsWith(
@@ -278,7 +282,7 @@ public sealed class EndpointSecurityInventoryTests
                         StringComparison.Ordinal)));
 
         Assert.Equal(
-            125,
+            127,
             ExpectedInventory.Count(
                 row =>
                     row.StartsWith(

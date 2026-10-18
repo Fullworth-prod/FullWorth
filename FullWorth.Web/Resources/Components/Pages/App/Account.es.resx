@@ -95,4 +95,14 @@
   <data name="Connections ended" xml:space="preserve"><value>Conexiones finalizadas</value></data>
   <data name="Awaiting first sync" xml:space="preserve"><value>Esperando la primera sincronización</value></data>
   <data name="Reported connected" xml:space="preserve"><value>Conexión indicada como activa</value></data>
+  <data name="Hide archived" xml:space="preserve"><value>Ocultar archivadas</value></data>
+  <data name="Show archived ({0})" xml:space="preserve"><value>Mostrar archivadas ({0})</value></data>
+  <data name="Archived connections keep their transaction and bill history. Restoring a connection does not reconnect your bank." xml:space="preserve"><value>Las conexiones archivadas conservan su historial de transacciones y facturas. Restaurar una conexión no vuelve a conectar tu banco.</value></data>
+  <data name="Restore connection" xml:space="preserve"><value>Restaurar conexión</value></data>
+  <data name="Archive connection" xml:space="preserve"><value>Archivar conexión</value></data>
+  <data name="Archived" xml:space="preserve"><value>Archivada</value></data>
+  <data name="No unarchived connections" xml:space="preserve"><value>No hay conexiones sin archivar</value></data>
+  <data name="Connection archived. Your transaction and bill history is unchanged." xml:space="preserve"><value>Conexión archivada. Tu historial de transacciones y facturas no ha cambiado.</value></data>
+  <data name="Connection restored to the list. It remains disconnected." xml:space="preserve"><value>Conexión restaurada en la lista. Sigue desconectada.</value></data>
+  <data name="The connection could not be updated. Disconnect it successfully first, then try again." xml:space="preserve"><value>No se pudo actualizar la conexión. Desconéctala correctamente primero y vuelve a intentarlo.</value></data>
 </root>

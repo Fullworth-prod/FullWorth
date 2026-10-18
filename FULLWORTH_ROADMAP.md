@@ -1,3 +1,19 @@
+## Active execution priorities — market research update, 2026-10-18
+
+This update changes planning, not production configuration or launch approval. The near-term job is **trustworthy, evidence-backed recurring-bill change monitoring**, initially validating internet/mobile bills for US household bill payers. This customer/category focus is a hypothesis to test, not proven demand or exclusive differentiation.
+
+**Do next, in order:**
+
+1. Correct financial coverage, comparison, and unavailable/zero states; reuse existing open work rather than duplicate it.
+2. Complete the remaining same-release security, recovery, provider, device, statement, and legal acceptance.
+3. Validate the problem with consented interviews and known-truth bill cases.
+4. Prove costs and the complete payment lifecycle, then offer a small controlled paid pilot.
+5. Observe repeat value, paid renewal, and contribution before scaling one acquisition channel.
+
+See [the execution queue](#22-market-validated-execution-queue), [current state](#4-current-development-snapshot), [sequencing rules](#5-roadmap-sequencing-rules), [measurement definitions](#27-product-metrics-roadmap), and [the critical path](#30-critical-path-from-today). Historical release notes below do not override the current snapshot or the open acceptance gates. No item is marked complete merely because this plan was written.
+
+---
+
 ## Verified release checkpoint — 2026-10-17 UTC
 
 - The `master` release branch at candidate `422718fad7d05a3729b08d461929d0d60c6761a6` is verified live.
@@ -45,7 +61,7 @@ On 2026-10-14 the owner explicitly approved removing the independent-review requ
 
 This decision supersedes earlier independent-approval requirements below. It does not mark production as deployed or waive data-recovery gates. Physical-device acceptance follows verified deployment.
 
-Last updated: 2026-10-14
+Last updated: 2026-10-18
 
 Status: Active planning document
 
@@ -59,7 +75,9 @@ Release branch: `master`
 
 Primary product direction: **PWA-first**
 
-Primary product promise: **Your entire financial life. One app.**
+Near-term product promise: **Know when your bills change — and why.**
+
+Long-term aspiration, not current coverage: **Your entire financial life. One app.**
 
 Strategic category: **Financial change intelligence**
 
@@ -105,7 +123,7 @@ The roadmap should be updated when major milestones are completed, when product 
 
 # 2. Product north star
 
-FullWorth is becoming a trusted financial-life hub centered on automatic financial awareness rather than manual bookkeeping.
+FullWorth's committed near-term focus is trustworthy recurring-bill change monitoring: what changed, what the available evidence supports, and what to check next. Broader financial-life coverage is a long-term option to earn through customer evidence, not the initial acquisition promise. Internet/mobile household bill review is the first validation focus; no demand or pricing result is assumed.
 
 The long-term customer experience should answer, with as little manual work as possible:
 
@@ -163,6 +181,44 @@ trustworthy monitoring
 → scalable recurring revenue.
 
 Detailed positioning, monetization, growth, moat, and business-stage guidance lives in `FULLWORTH_PRODUCT_STRATEGY.md`.
+
+## 2.2 Market-validated execution queue
+
+Research review: 2026-10-18. FullWorth must earn its differentiation: basic increase alerts already exist in [Capital One Eno](https://www.capitalone.com/digital/tools/eno/spending-insights/), and [BillInsight](https://billinsight.ca/pricing) already offers bill explanations. Public offers establish competition, not their accuracy or our customers' willingness to pay. Avoid asserting that AI explanation or subscription tracking alone is a moat.
+
+The following queue takes precedence over speculative expansion. IDs are durable planning references, not GitHub issue numbers. Every unchecked item remains unfinished. Owners below are roles, not newly assigned GitHub users. Target counts and durations are proposed pilot steering criteria, not population estimates, benchmarks, or promised launch dates.
+
+| ID / priority | Work and owner | Dependencies | Acceptance evidence |
+| --- | --- | --- | --- |
+| MV-01 / P0 | Financial truth and mobile first value — engineering | Existing bill/ledger/activity/connection work; #762; controlled fixtures | Posted outflow, recognized bill total, and cadence-normalized estimates are distinct. Currency/period/exclusions and account/date coverage are visible. Zero, unknown, missing history, stale and failed reads are distinct; no unsupported all-clear. Corrections survive sync; phone safe areas and fallback assets work. |
+| MV-02 / P0 | Same-release trust acceptance — engineering + operator; qualified reviewer for legal | Exact candidate and evidence bundle; #291, #669, #251, #258, applicable #293 | Remaining recovery/security gates plus controlled two-user, provider, statement, deletion, alert-receipt, and relevant installed-device proof; qualified Terms/Privacy/license review. Preserve the approved solo-maintainer governance policy. |
+| MV-03 / P1 | Problem and first-value validation — founder + consented reviewers | Interview consent; secure handling before documents | Initial target: 20 opt-in problem interviews and 10 consented known-truth bill comparisons, with recruitment/exclusions, error cases, and disagreements recorded privately. Seek at least 5 recent matching problems and 3 concrete pilot commitments as directional signals; revise the offer if absent. |
+| MV-04 / P1 | Actual cost and supplier lifecycle — founder + engineering | Authorized contracts/invoices and provider lifecycle review | Reconcile costs for paid, trial, dormant and errored connections; test disconnect separately from archive/delete. Record payment, infrastructure, usage and support costs. Actual costs replace scenario assumptions; no free connected tier or lifetime commitment is approved by this roadmap. |
+| MV-05 / P1 | Controlled paid pilot — founder + engineering | MV-01/02/03/04 and REVENUE_READINESS.md gates | Initial aim: 5–10 independent paying pilot customers, not staff/test/free accounts; complete signed-webhook/entitlement/cancellation/refund/failure proof, clear offer/support, reviewed terms and controlled cohort rollout. Proposed prices remain experiments, not enabled offers. |
+| MV-06 / P1 | Repeat value and retained contribution — founder + engineering | Mature MV-05 cohorts and authoritative payments/costs | Observe second monthly payment opportunities, 30/60/90-day contribution as cohorts mature, reasons for loss, quiet-month usefulness, and support burden. Include pre-renewal cancellations in the denominator; annual activity is not annual renewal. |
+| MV-07 / P2 | One repeatable acquisition channel — founder | Reliable first value, positive measured contribution, acceptable retention/support, approved cash budget | Test a bounded opt-in community/content/educator channel; measure qualified activation, independent paid conversion, retained contribution and fully loaded acquisition cost. No scraping, mass DMs, paid-positive reviews or spending authorization implied. |
+
+MV-03 interviews and MV-04 cost discovery may run alongside engineering; their customer-document or paid-product portions remain gated. No outreach, access to private billing records, production changes, spending or new supplier contracts are automatically authorized by a planning item.
+
+### MV-01 financial acceptance cases
+
+Use synthetic fixtures in Git and separately consented private real-world cases. Cover promotion expiry, one-time credit, usage/service changes, annual renewal, partial/catch-up payments, refunds, descriptor drift, pending-to-posted corrections, missing history and no-change/ambiguous evidence. Review amount, currency, period, source references, explanation support and unexplained residual. Ten cases are an initial learning set, not a claim of representative accuracy.
+
+A payment-amount change is not necessarily a rate increase. A one-time credit is not recurring savings. Annualized impact requires a supported period and explicit assumptions. No-data or no-history must not turn into a reassuring green state. A known unresolved critical money or unsupported-cause defect blocks the affected release/paid workflow until fixed and retested.
+
+### Pricing and cost hypotheses, not commitments
+
+After the gates pass, consider sequential small-cohort tests of USD 5.99/month versus USD 7.99/month; USD 59/year versus USD 79/year are optional later hypotheses. Record recruitment differences rather than claiming a causal price result from a tiny sample. Disclose actual renewal, currency, refund and trial terms. A trial must allow the promised job to occur; 14 days is only a starting hypothesis, not evidence that a complete billing cycle fits.
+
+[Plaid billing documentation](https://plaid.com/docs/account/billing/) describes subscriptions that can remain billable for errored or unused Items; [Item removal](https://plaid.com/docs/api/items/) has a separate lifecycle. Hiding a connection is not cost/access termination. Verify the actual contract and products.
+
+A planning example only: USD 5.99 minus assumed standard domestic web-card processing/Billing fees of 3.6% + USD 0.30 minus an assumed USD 2 monthly variable cost leaves USD 3.47436 contribution before fixed overhead, acquisition, founder pay, taxes and omitted costs. The USD 2 is not a Plaid quote or a measured FullWorth cost. See current [Payments](https://stripe.com/pricing) and [Billing](https://stripe.com/billing/pricing) schedules; actual agreements control. Annual cash collection is not immediate profit; App Store and web fees must not be stacked on the same sale.
+
+### Scope held back until evidence supports it
+
+Do not expand budgeting/net-worth parity, money movement, automated negotiation, unlimited AI chat, international distribution, speculative advisor white-labeling, or broad paid acquisition while the queue's trust and economics gates remain open. Keep existing supported functions safe; this does not authorize deleting modules or retiring MAUI.
+
+If users want a one-off explanation, test a bounded review offer rather than forcing recurring billing. If bank-link trust prevents activation, evaluate a secure statement-first route as an experiment, not a feature already shipped. A full research dossier is retained privately by the founder; only this execution summary and public supporting sources belong in this public roadmap.
 
 ### Experience principles
 
@@ -295,6 +351,45 @@ Never:
 
 This section is the current release-readiness snapshot. It must be refreshed when a major security/release milestone lands, when the live production release changes, or when acceptance evidence materially changes.
 
+## 4.1 Branch, release and acceptance position — reviewed 2026-10-18
+
+- Development snapshot: `41e72e0a9dd2f61d2c1a8bcb1bc23c6fc52938cb` (#777 merged). Branch heads and checks must be re-read before implementation or release.
+- Last verified live release recorded by [#291](https://github.com/Fullworth/FullWorth/issues/291): `422718fad7d05a3729b08d461929d0d60c6761a6`, supported by [deploy #25](https://github.com/Fullworth/FullWorth/actions/runs/39053793950) and [same-release authenticated smoke](https://github.com/Fullworth/FullWorth/actions/runs/39054021470). This planning update performs no new host inspection and establishes no newer deployment.
+- Security program: **62/65, three gates open** according to the current #291 issue body. They are independently verified provider-enforced immutable/off-host protection; separate clean/compromised-host recovery of real statement files, database and both key rings; and complete controlled two-user/provider/statement security acceptance on the exact deployed release.
+- Approved governance: zero required independent approvals under the owner's solo-maintainer decision, while mandatory PRs, strict required checks, thread/deletion/force-push restrictions and no bypass actors remain. Re-read actual saved rules before merging; do not reopen the resolved independent-review policy merely because old snapshots below require it.
+- Recovery, provider/device, legal/commercial and payment acceptance remain separate from source implementation, green CI, a deployed endpoint, or an encrypted snapshot's presence.
+
+### Work already in progress — do not duplicate
+
+| Work | Snapshot status | Roadmap relationship |
+| --- | --- | --- |
+| [#773](https://github.com/Fullworth/FullWorth/pull/773), sign in once then choose secure verification | Open, targeting development | MV-01/02 authentication usability; no waiver of MFA or passkey verification |
+| [#774](https://github.com/Fullworth/FullWorth/pull/774), transaction ledger trust | Open, targeting development | MV-01 outflow/currency/coverage and refresh behavior |
+| [#775](https://github.com/Fullworth/FullWorth/pull/775), Activity reliability | Open, targeting development | MV-01 truthful alert scope and failed-read handling |
+| [#776](https://github.com/Fullworth/FullWorth/pull/776), account trust and reversible archive | Open, targeting development | MV-01/04; archiving does not disconnect or delete financial history |
+| [#777](https://github.com/Fullworth/FullWorth/pull/777), curated What's New | Merged into development | Implementation is not a production-promotion or installed-device claim |
+| [#724](https://github.com/Fullworth/FullWorth/pull/724), saved guarded-deploy host | Open, targeting master | Separate operational proposal; not approved or executed by this roadmap update |
+
+Existing discovery/financial-evidence changes #767–#770 are already represented in development. [#762](https://github.com/Fullworth/FullWorth/issues/762) records that Bills review/diagnostics, currency-safe totals and the no-eligible-history guard are deployed, while private expected-payment/rejection verification, cadence and ambiguity work remain open. Review that evidence before choosing new bill work; the narrower acquisition hypothesis does not defer existing customer correctness failures. The remaining likely independent MV-01 slice is Overview's recognized-total/coverage/no-history/zero-state clarity, subject to fresh code inspection and existing-PR checks.
+
+## 4.2 Acceptance still required
+
+Use [RELEASE_CANDIDATE.md](RELEASE_CANDIDATE.md), [#669](https://github.com/Fullworth/FullWorth/issues/669), [#291](https://github.com/Fullworth/FullWorth/issues/291) and [REVENUE_READINESS.md](REVENUE_READINESS.md) for actual evidence; do not fabricate completion here.
+
+- Exact-release two-controlled-user ownership and authorized mutation proof.
+- Plaid connect/update/reconnect, human return, provider failure and controlled revoke; applicable payroll acceptance in #293.
+- Representative digital/scanned PDF/JPG/PNG statements, known-truth extraction, matching, comparison and explanations.
+- Disposable account deletion and independent intended-destination alert receipt.
+- Provider-enforced immutable/off-host protection and separate real-data clean-host recovery with both key rings.
+- Applicable controlled reboot/runtime verification and installed-device acceptance (#251 Android; #258 iOS).
+- Qualified review of the actual Terms/Privacy/commercial licenses and working support/billing routes.
+- Actual costs, configured payment offer, signed webhook/entitlement/cancellation/failure proof and reviewed cohort rollout before routine charging.
+
+The roadmap does not change subscription or AI persistence flags. Preserve deterministic financial authority and existing guarded deployment boundaries.
+
+<details>
+<summary>Historical 2026-10-14 and earlier development snapshots — superseded, not current instructions</summary>
+
 ## 4.1 Branch and release position
 
 Current state as of 2026-10-14: see the authoritative continuation checkpoint in `FULLWORTH_CONTEXT.md` for repository work and recovery evidence. The operator reports no running production server. The recorded candidate artifact expiry has elapsed. The reported snapshot `726a1e85` restore had zero statement uploads and does not prove statement-file recovery or a separate clean-host exercise. PR #724's dispatch behavior is not approved by this documentation change.
@@ -417,6 +512,9 @@ Still open where applicable:
 - qualified commercial legal/license review;
 - the intentional production-release decision needed to collect deployed-host containment evidence.
 
+
+</details>
+
 ## 4.3 Recently completed engineering position
 
 The recent development cycle materially advanced release safety rather than adding speculative product surface.
@@ -442,9 +540,7 @@ AI-derived persistence remains disabled. Deterministic extraction remains the pr
 
 ## 4.4 Production state
 
-Currently verified live production release: `none`.
-
-The operator reports no production server is running. Guarded deployment run #7 (`36221860082`) proved a historical deployment of `7e8571a26447538db249c862ad009487cce119bc`; it does not establish current runtime state.
+Last verified live production release recorded by the current release checkpoint: `422718fad7d05a3729b08d461929d0d60c6761a6` (deploy #25 and authenticated smoke). This documentation-only update did not re-inspect the host or deploy anything. Earlier reports of no running server and older candidates are historical, not the current planning baseline.
 
 The current release/acceptance model must continue to distinguish:
 
@@ -466,13 +562,13 @@ This table summarizes where the roadmap stands without pretending that feature c
 
 | Milestone | Current status | Release interpretation |
 | --- | --- | --- |
-| 0 — Stabilize integration branch | **Active** | Branch cleanup run #120 completed and no PRs are open; `development` differs from `master` only in the three handoff documents. Three branches lacking merged-PR proof remain preserved, and required-check enforcement plus release-freeze reconciliation remain open. |
+| 0 — Stabilize integration branch | **Active** | Development includes #777 and the bill fixes; #773–#776 remain open. Review current exact heads and required checks; do not equate open work or development merges with production. |
 | 1 — PWA performance baseline | **Substantially implemented** | Major browser/render/performance work exists; installed-device acceptance still matters before calling the client release-complete. |
 | 2 — Installed PWA parity / MAUI retirement | **Partially complete** | PWA parity is advanced; Android physical acceptance is open and MAUI has not yet been deliberately retired. |
 | 3 — Recurring bill discovery quality | **Core implemented; quality work ongoing** | Recurring discovery is production-capable, but broader real-world recurrence/accuracy evidence remains ongoing product-quality work. |
 | 4 — Statement intelligence / “why” engine | **Core implemented; acceptance incomplete** | Deterministic ingestion/extraction/matching/change logic exists and parser/OCR containment is strong in repo; representative same-release semantics/OCR and AI-quality gates remain. |
 | 5 — Alerts and proactive monitoring | **Core implemented; operational proof incomplete** | Financial/security/provider alerting exists; real destination receipt/noise acceptance remains part of release proof. |
-| 6 — Financial Home expansion | **Substantial product surface exists** | Accounts, transactions, bills, cash-flow/planning and related views are present; additional expansion is not the current release priority. |
+| 6 — Financial Home expansion | **Deferred expansion; existing functionality preserved** | New domains require evidence of retained paid value and healthy economics; first finish MV-01–MV-06. Existing accounts, ledger and bill context remain supported. |
 | 7 — Account, privacy, and trust | **Technically advanced; external gates remain** | Strong auth, export, deletion, privacy/security surfaces are implemented; legal/provider/human proof remains. |
 | 8 — Real production/private-beta acceptance | **Current critical milestone** | This is the main release bottleneck: same-release production, device, provider, recovery, statement and isolation evidence must be completed. |
 | 9 — Internal Beta 0 | **Blocked on Milestone 8 evidence** | Do not broaden testing until the release candidate can prove its own critical trust boundaries. |
@@ -505,16 +601,17 @@ FullWorth should not attempt every product category at once.
 
 The critical sequence is:
 
-1. Stabilize the current integration branch.
-2. Finish Web/PWA performance and parity.
-3. Prove the installed PWA can replace MAUI.
-4. Improve recurring-bill intelligence quality.
-5. Complete statement-to-change explanation reliability.
-6. Complete real production/private-beta acceptance.
-7. Run trusted internal/beta use on real controlled bills.
-8. Only then expand the broader “financial life” surface aggressively.
-9. Turn on billing only after product trust and payment lifecycle evidence are real.
-10. Scale infrastructure only after actual traffic or operational need justifies it.
+1. Address security/ownership, financial correctness, data-loss and release-critical reliability defects first.
+2. Reuse existing open PRs; complete the smallest independent MV-01 trust/first-value slice.
+3. Prove same-release production, recovery, provider, statement, device and legal acceptance (MV-02).
+4. In parallel where safe, run opt-in problem discovery and establish actual costs (MV-03/04); no private documents without appropriate consent and storage.
+5. Complete Internal Beta 0 and a bounded trusted external learning cohort.
+6. Prove the full payment lifecycle and offer a small controlled paid pilot only after REVENUE_READINESS.md gates (MV-05).
+7. Observe mature second-cycle retention, useful quiet-month monitoring, costs and retained contribution (MV-06).
+8. Test one repeatable acquisition channel within an approved budget (MV-07).
+9. Expand product breadth or infrastructure only when real customer, load, or operational evidence justifies it.
+
+Calendar windows are planning aids; a failed gate delays dependent work rather than authorizing a shortcut. No large feature wave, MAUI retirement, purchase, merge or production deployment is authorized merely by updating the roadmap.
 
 A lower-priority expansion must not distract from a current P0 security, data-integrity, CI, deployment, or acceptance defect.
 
@@ -1201,7 +1298,7 @@ Notification preference requirements:
 
 # 12. Milestone 6 — FullWorth Financial Home expansion
 
-Priority: P2, after bill-intelligence trust
+Priority: Deferred expansion, after MV-01–MV-06 evidence
 
 Goal: Expand from bill monitoring into a broader financial-life overview without turning FullWorth into a generic cluttered budget dashboard.
 
@@ -1291,7 +1388,7 @@ Do not provide fabricated APR/payment data.
 
 ### Exit gate for Milestone 6
 
-- expansion strengthens the “one app” promise;
+- expansion solves a customer problem demonstrated by the validated segment, rather than merely strengthening a broad slogan;
 - bill-change intelligence remains prominent;
 - no duplicate financial truth models;
 - each feature has a reliable data source and freshness model.
@@ -2211,78 +2308,26 @@ Done only when:
 
 # 27. Product metrics roadmap
 
-Metrics should answer whether FullWorth is actually delivering value and whether that value can become a durable business.
+The paid-pilot scorecard below supersedes the earlier activation/coverage/engagement list as the primary commercial decision framework. Existing quality and monitored-state measures remain diagnostics, not discarded evidence. This is proposed instrumentation, not measured performance.
 
-## Primary business scorecard
+## 27.1 Three primary outcomes
 
-Use a small set of outcomes rather than a wall of vanity metrics:
+1. **Verified first value within seven days.** Denominator: unique eligible pilot users whose first live processing consent occurs in the cohort window, including later link/sync failures. Define supported-region/product eligibility before outcomes. Numerator: within 7 × 24 hours, users review a useful watchlist/comparison with coverage visible and confirm the intended job is answered, with no unresolved critical error identified by pilot review. A click or successful bank link alone is a weaker proxy. Drivers: first usable data retrieval and time to understandable result. Show signup-to-consent separately so trust refusals remain visible.
+2. **Realized paid-cohort contribution at 30/60/90 days.** Retain all initial independent payers in each cohort denominator, including cancellations. Reconcile net receipts, refunds, fees, actual supplier/usage/support and attributable trial-service costs; show total and per initial payer. Separate cash receipts from service-period revenue, especially annual plans; flag estimates/late invoices for true-up. Subtract acquisition and fixed overhead explicitly in separate views. Contribution is not profit. Drivers: actual cost per served user/Item, including unpaid users, and net receipts per initial payer.
+3. **Second paid-cycle retention, monthly plans.** Denominator: all first-time monthly payers whose next renewal opportunity has matured, including cancellations before renewal. Numerator: successful second recurring charges, net of reversals known at the cutoff, with a documented refund-observation window. Separate voluntary cancellation from payment failure. Annual users require a separate service/coverage view; 90 days cannot establish annual renewal. Drivers: ongoing understandable monitoring value and avoidable access/payment failures.
 
-1. **Activation to monitored state** — percentage of eligible new users who connect data and reach at least one trustworthy monitored recurring stream.
-2. **Trusted change coverage** — ability to detect and correctly explain meaningful financial changes using controlled ground truth, evidence support, and user-confirmed outcomes where available.
-3. **Monitored-user retention** — percentage of activated users who remain connected and meaningfully monitored over 30/90/180-day periods.
+Use stable pseudonymous IDs, UTC boundaries, release/cohort, and consent-permitted channel metadata. Exclude/report staff, tests, free entitlements, bots and duplicate accounts. Report immature cohorts and unknown costs, not invented zeros. Billing records/webhooks, not client button clicks, establish financial outcomes. No CAC, retention, revenue or conversion benchmark is assumed.
 
-For paid cohorts, also track retained subscription revenue.
+## 27.2 Two guardrail families
 
-Cross-user disclosure incidents remain a zero-tolerance security guardrail and must never be traded for growth.
+- **Truth and safety:** reviewed critical money/unsupported-cause errors; false positives and missed known bills with separate known-truth denominators; coverage/freshness failures; ownership/security incidents. Zero known critical errors is a release-blocking safety target, not proof of population-wide accuracy or security certification.
+- **Customer burden and cost:** support minutes, complaint/refund reasons, broken disconnect/delete/cancel flows, and cost of nonpaying/dormant/errored connections. Set affordable support and acquisition limits from actual costs and cash capacity, not generic finance-app benchmarks.
 
-## Acquisition/setup
+Preserve unknowns, reviewer disagreement and data gaps. Financial documents, raw statement text, credentials, account numbers and transaction histories do not belong in general analytics events. Any minimal instrumentation must respect consent, access and retention policies.
 
-- registration completion;
-- first successful bank connection;
-- time to first transaction sync.
+## 27.3 Secondary diagnostics
 
-## Activation
-
-- time to first recurring bill;
-- percentage of connected users with at least one detected recurring bill;
-- time to first useful change explanation.
-
-## Quality
-
-- recurring detection precision;
-- recurring detection recall;
-- duplicate Bill Stream rate;
-- false alert rate;
-- missed meaningful-change rate;
-- statement parse success;
-- explanation support rate.
-
-## Engagement
-
-- weekly active users;
-- Activity review;
-- Bills review;
-- statement upload use;
-- reconnect completion.
-
-## Trust
-
-- account disconnect rate after false detection;
-- corrected/ignored alerts;
-- statement failure rate;
-- support contacts caused by incorrect financial facts;
-- unsupported explanation rate;
-- user correction rate;
-- unresolved evidence-gap rate.
-
-## Monetization and growth
-
-After paid rollout begins, measure:
-
-- free → paid conversion;
-- trial → paid conversion if applicable;
-- paid retention;
-- logo churn;
-- revenue churn;
-- realized ARPU;
-- gross margin;
-- CAC by channel;
-- payback period;
-- provider/infrastructure/support cost per active user.
-
-Measure acquisition quality by downstream activation, retention, and paid conversion rather than by cheap registrations alone.
-
-Do not optimize vanity metrics at the expense of accuracy, trust, privacy, or cancellation fairness.
+Track discovery precision/recall, duplicate streams, statement-field accuracy, supported/unknown explanations, meaningful alert noise, reconnect success and time to first sync. Use corrections and loss reasons to diagnose the primary outcomes. Downloads, daily opens, registrations, raw alert counts and gross ARR scenarios do not prove useful retained paid monitoring.
 
 ---
 
@@ -2339,6 +2384,23 @@ Easy visible rename candidates can happen earlier only when compatibility is irr
 Persistent identifiers require explicit migration.
 
 ---
+
+# 30. Critical path from today
+
+Planning baseline: 2026-10-18. Do not repeat already verified deployment #25 merely because older instructions below describe a failed deployment. A new release still needs the normal PR → development → promotion → exact-master checks → separately approved guarded deployment path.
+
+1. **MV-01:** inspect Overview's recognized-total/coverage and no-history/zero-state behavior, then deliver the smallest independent correction with money/cadence/currency and mobile regressions. Do not duplicate #773–#776 or already integrated #767–#770.
+2. **MV-02:** collect the remaining exact-release trust bundle, keeping #291 at 62/65 until operator-verifiable evidence closes its three remaining gates. Preserve real statements, database and both key rings; never substitute fixture restore or one-user smoke for clean-host/two-user proof.
+3. **MV-03/04, safe parallel track:** founder-led opt-in interviews, securely consented truth cases and actual invoice/support-cost discovery. Initial planning windows are days 1–7 discovery and days 8–21 first-value review, not promised completion dates.
+4. **MV-05:** after internal/trusted-beta and revenue gates, validate a clear paid offer with 5–10 independent customers. Suggested days 22–45 are conditional; no automatic billing/flag changes, annual-plan commitments or supplier purchases.
+5. **MV-06:** as cohorts mature, review repeat value, second monthly payments, 30/60/90-day contribution and loss/support reasons. Suggested days 46–70 do not make immature cohorts mature.
+6. **MV-07:** use days 71–90 as a possible bounded channel-learning window only if accuracy, retention, support and contribution justify growth. Establish an affordable acquisition budget from measured economics; spending/outreach need their own authority.
+7. **Review the hypothesis:** if the customer wants a one-off review, bank-link trust blocks value, or the accepted price does not cover costs, change segment/scope/offer before adding broad features or buying traffic.
+
+Stop scaling and repair critical monetary, ownership, security, recovery, billing-rights or data-loss failures. Publish only sanitized aggregate evidence; keep customer documents and case-level answers private. This roadmap revision does not complete any acceptance gate or grant launch approval.
+
+<details>
+<summary>Historical pre-2026-10-18 critical path — retained evidence, not the active queue</summary>
 
 # 30. Critical path from today
 
@@ -2486,6 +2548,11 @@ Revenue enforcement and broader launch require:
 - trustworthy bill/statement/change intelligence;
 - acceptable beta retention and support burden;
 - no unresolved P0/P1 security or financial-correctness defect.
+
+---
+
+
+</details>
 
 ---
 

@@ -70,7 +70,7 @@
 .account-action-message .secondary-action { margin: 8px; min-height: 44px; }
 .connection-copy, .financial-account-copy { min-width: 0; overflow-wrap: anywhere; }
 
-.connection-archive-tools { padding: 0 0 16px; }
+.connection-archive-tools { padding: 0 20px 16px; }
 .connection-archive-tools button { min-height: 44px; }
 .connection-archive-tools p {
     margin: 10px 0 0;

@@ -1,3 +1,14 @@
+## Release evidence reconciled — 2026-10-18 UTC
+
+- The `master` release branch at candidate `422718fad7d05a3729b08d461929d0d60c6761a6` matches the last verified guarded deployment.
+Currently verified live production release: `422718fad7d05a3729b08d461929d0d60c6761a6`.
+
+[Guarded deployment #25](https://github.com/Fullworth/FullWorth/actions/runs/39053793950) and [same-release authentication smoke](https://github.com/Fullworth/FullWorth/actions/runs/39054021470) both completed successfully for this exact SHA. This is the last verified deployment record, not a new host inspection. Issue #291 still has three open security evidence gates: provider-enforced immutable/off-host recovery protection, separate clean/compromised-host real-data restore including statements and both key rings, and complete exact-release controlled security acceptance. A one-user smoke or CI fixture restore does not close them.
+
+Current development base is `db4248d78b6ec0ccec290e7ebd6b0b49bfac466d`. PR #773 (password-once verification) and PR #774 (transaction evidence/resilience) are unmerged development work, not live changes. Passkeys remain disabled pending Apple association and physical-device acceptance; no payment/AI/security controls are enabled by this checkpoint.
+
+## Earlier checkpoints (historical; current release identities below are superseded)
+
 ## Verified release checkpoint — 2026-10-16 UTC
 
 - The `master` release branch at candidate `8c64cc8f7cdf519a6214be47c2016f601331150e` is verified live.

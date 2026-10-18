@@ -28,7 +28,24 @@
                 @L["Manage the institutions and financial accounts FullWorth can see, plus your transaction and privacy controls."]
             </p>
         </div>
+        <button type="button" class="secondary-action account-refresh-button"
+                disabled="@(_isLoading || _isRefreshing || _isMutating || _isConfirmingDisconnect)"
+                aria-busy="@(_isRefreshing ? "true" : "false")" @onclick="ReloadAsync">
+            @(_isRefreshing ? L["Refreshing…"] : L["Refresh account"])
+        </button>
     </header>
+
+    @if (!string.IsNullOrWhiteSpace(_refreshError))
+    {
+        <div class="account-action-message" role="alert">@_refreshError</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(_toolsError))
+    {
+        <div class="account-action-message" role="alert">
+            @_toolsError
+            <button type="button" class="secondary-action" @onclick="RetryConnectionToolsAsync">@L["Retry connection tools"]</button>
+        </div>
+    }
 
     <section class="fw-account-hero">
         <div class="fw-account-identity">
@@ -86,29 +103,11 @@
             </div>
         </div>
 
-        <div class="fw-account-stats">
-            <div>
-                <span>@L["Institutions"]</span>
-                <strong>@(_isLoading ? "—" : _connections.Count.ToString())</strong>
-                <small>@L["Connected bank relationships"]</small>
-            </div>
-
-            <div>
-                <span>@L["Financial accounts"]</span>
-                <strong>@(_isLoading ? "—" : _accounts.Count.ToString())</strong>
-                <small>@L["Accounts currently available"]</small>
-            </div>
-
-            <div class="@(AttentionCount > 0 ? "has-attention" : "is-healthy")">
-                <span>@L["Needs attention"]</span>
-                <strong>@(_isLoading ? "—" : AttentionCount.ToString())</strong>
-                <small>
-                    @(AttentionCount > 0
-                        ? L["Connection repair required"]
-                        : L["Connections look healthy"])
-                </small>
-            </div>
-        </div>
+        <BankConnectionSummary
+            Connections="@_connections.Select(connection => new BankConnectionSummary.Connection(connection.Status, connection.LastSuccessfulSyncAtUtc)).ToArray()"
+            AccountCount="@_accounts.Count" IsLoading="@_isLoading"
+            HasError="@(!_hasLoaded && !string.IsNullOrWhiteSpace(_errorMessage))"
+            IsStale="@(!string.IsNullOrWhiteSpace(_refreshError))" />
     </section>
 
     <section class="fw-account-shortcuts" aria-label="@L["Account tools"]">
@@ -186,7 +185,8 @@
         <div class="connect-bank-actions">
             <button id="connect-bank-button"
                     class="connect-bank-button"
-                    type="button">
+                    type="button"
+                    disabled="@(!_connectButtonWired || _isLoading || _isRefreshing || _isMutating || _isConfirmingDisconnect)">
 
                 @L["Connect bank"]
 
@@ -207,7 +207,7 @@
     @if (!string.IsNullOrWhiteSpace(
         _actionMessage))
     {
-        <div class="@GetActionMessageClass()">
+        <div class="@GetActionMessageClass()" role="@(_actionSucceeded ? "status" : "alert")" aria-live="polite">
             @_actionMessage
         </div>
     }
@@ -310,7 +310,7 @@
                                     item =>
                                         item.InstitutionName))
                         {
-                            <article class="@GetConnectionRowClass(
+                            <article @key="connection.Id" class="@GetConnectionRowClass(
                                 connection.Status)">
 
                                 <div class="connection-logo">
@@ -346,7 +346,8 @@
                                         <button id="@GetReconnectButtonId(
                                             connection.Id)"
                                                 type="button"
-                                                class="reconnect-button">
+                                                class="reconnect-button"
+                                                disabled="@(_isLoading || _isRefreshing || _isMutating || _isConfirmingDisconnect || _toolsError is not null)">
 
                                             @L["Reconnect"]
                                         </button>
@@ -356,7 +357,7 @@
                                     {
                                         <button type="button"
                                                 class="disconnect-button"
-                                                disabled="@_isMutating"
+                                                disabled="@(_isMutating || _isRefreshing || _isConfirmingDisconnect)"
                                                 @onclick="() => DisconnectAsync(connection)">
 
                                             @L["Disconnect"]
@@ -427,7 +428,7 @@
                                     item =>
                                         item.Name))
                         {
-                            <article class="financial-account-row">
+                            <article @key="account.Id" class="financial-account-row">
                                 <div class="financial-icon">
                                     @GetAccountIconText(
                                         account.AccountType)
@@ -532,6 +533,12 @@
         true;
 
     private bool _isMutating;
+    private bool _hasLoaded;
+    private bool _isRefreshing;
+    private bool _isDisposed;
+    private bool _toolsAttempted;
+    private string? _refreshError;
+    private string? _toolsError;
 
     private bool _isConfirmingDisconnect;
 
@@ -550,73 +557,46 @@
             connection =>
                 connection.Status == 1);
 
-    protected override async Task
-        OnAfterRenderAsync(
-            bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (_isDisposed) return;
+        if (firstRender)
+        {
+            // Read data independently of optional connection-button wiring.
+            await LoadAsync();
+            if (!_isDisposed) StateHasChanged();
+            return;
+        }
+        if (_isLoading || (_toolsAttempted && !_reconnectButtonsNeedWiring)) return;
+        _toolsAttempted = true;
+        var wireReconnect = _reconnectButtonsNeedWiring;
+        _reconnectButtonsNeedWiring = false;
         try
         {
-            var module =
-                await GetBffModuleAsync();
-
+            var module = await GetBffModuleAsync();
             if (!_connectButtonWired)
             {
-                await module.InvokeVoidAsync(
-                    "wirePlaidConnectButton",
-                    "connect-bank-button",
-                    "connect-bank-status");
-
-                _connectButtonWired =
-                    true;
+                await module.InvokeVoidAsync("wirePlaidConnectButton", "connect-bank-button", "connect-bank-status");
+                _connectButtonWired = true;
             }
-
-            if (firstRender)
-            {
-                await LoadAsync();
-
-                StateHasChanged();
-
-                return;
-            }
-
-            if (_reconnectButtonsNeedWiring &&
-                !_isLoading &&
-                string.IsNullOrWhiteSpace(
-                    _errorMessage))
-            {
-                await WireReconnectButtonsAsync(
-                    module);
-
-                _reconnectButtonsNeedWiring =
-                    false;
-            }
-        }
-        catch (JSException)
-        {
-            if (firstRender)
-            {
-                _isLoading =
-                    false;
-
-                _errorMessage =
-                    L["FullWorth could not initialize the secure account connection tools."].Value;
-
-                StateHasChanged();
-            }
+            if (wireReconnect) await WireReconnectButtonsAsync(module);
+            _toolsError = null;
         }
         catch (Exception)
         {
-            if (firstRender)
-            {
-                _isLoading =
-                    false;
-
-                _errorMessage =
-                    L["Something went wrong while opening your FullWorth account."].Value;
-
-                StateHasChanged();
-            }
+            _toolsError = L["Connection tools are unavailable. Your loaded account data is still available; try the connection tools again."].Value;
         }
+        if (!_isDisposed) StateHasChanged();
+    }
+
+    private Task RetryConnectionToolsAsync()
+    {
+        if (_isLoading || _isRefreshing || _isMutating || _isConfirmingDisconnect) return Task.CompletedTask;
+        _toolsAttempted = false;
+        _connectButtonWired = false;
+        _reconnectButtonsNeedWiring = true;
+        _toolsError = null;
+        return Task.CompletedTask;
     }
 
     private async Task<IJSObjectReference>
@@ -666,16 +646,16 @@
 
     private async Task ReloadAsync()
     {
+        if (_isLoading || _isRefreshing || _isMutating || _isConfirmingDisconnect) return;
         await LoadAsync();
     }
 
     private async Task LoadAsync()
     {
-        _isLoading =
-            true;
-
-        _errorMessage =
-            null;
+        _isLoading = !_hasLoaded;
+        _isRefreshing = _hasLoaded;
+        _errorMessage = null;
+        _refreshError = null;
 
         try
         {
@@ -700,38 +680,33 @@
                 connectionTask,
                 accountTask);
 
-            _connections =
-                connectionTask.Result?
-                    .ToList()
-                ?? [];
-
-            _accounts =
-                accountTask.Result?
-                    .Where(
-                        account =>
-                            account.IsActive)
-                    .ToList()
-                ?? [];
+            if (_isDisposed) return;
+            var connections = connectionTask.Result;
+            var accounts = accountTask.Result;
+            // Commit one complete snapshot only after both reads validate.
+            if (connections is null || accounts is null ||
+                connections.Any(connection => connection is null) || accounts.Any(account => account is null))
+                throw new InvalidOperationException("Invalid account snapshot.");
+            _connections = connections.ToList();
+            _accounts = accounts.Where(account => account.IsActive).ToList();
+            _hasLoaded = true;
 
             _reconnectButtonsNeedWiring =
                 true;
 
             await PopulateConnectionDisplayTimesAsync();
         }
-        catch (JSException)
-        {
-            _errorMessage =
-                L["FullWorth could not reach the secure API."].Value;
-        }
         catch (Exception)
         {
-            _errorMessage =
-                L["Something went wrong while loading your account information."].Value;
+            if (_hasLoaded)
+                _refreshError = L["Account refresh failed. Previously loaded data is still shown and may be out of date. Try refreshing again."].Value;
+            else
+                _errorMessage = L["FullWorth could not load your account information. Try again."].Value;
         }
         finally
         {
-            _isLoading =
-                false;
+            _isLoading = false;
+            _isRefreshing = false;
         }
     }
 
@@ -807,7 +782,7 @@
                 }
             }
         }
-        catch (JSException)
+        catch (Exception)
         {
             // UTC fallback text is already applied.
             // Timestamp formatting should never prevent
@@ -834,7 +809,7 @@
     private async Task DisconnectAsync(
         BankConnectionViewModel connection)
     {
-        if (_isMutating || _isConfirmingDisconnect ||
+        if (_isLoading || _isRefreshing || _isMutating || _isConfirmingDisconnect ||
             connection.Id == Guid.Empty || connection.Status == 2)
         {
             return;
@@ -864,6 +839,9 @@
                 "disconnectBankConnection",
                 connection.Id.ToString("D"));
 
+            // A successful write remains authoritative if the follow-up read fails.
+            connection.Status = 2;
+            _accounts.RemoveAll(account => account.BankConnectionId == connection.Id);
             _actionMessage = L["{0} was disconnected.",
                 connection.InstitutionName].Value;
             _actionSucceeded = true;
@@ -879,7 +857,7 @@
         {
             _isConfirmingDisconnect = false;
             _isMutating = false;
-            StateHasChanged();
+            if (!_isDisposed) StateHasChanged();
         }
     }
 
@@ -1087,6 +1065,7 @@
 
     public async ValueTask DisposeAsync()
     {
+        _isDisposed = true;
         await DisposeModuleAsync(
             _localTimeModule);
 

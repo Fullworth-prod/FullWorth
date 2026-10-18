@@ -32,7 +32,8 @@ public sealed class AlertCardReviewLinkTests
     public async Task UnmatchedOrExternalDestinationsAreNotRendered(string href)
     {
         var html = await Render(new() { AlertType = "ConnectionIssue" }, href, false);
-        Assert.DoesNotContain("href=", html);
+        Assert.DoesNotContain("<a ", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain($"href=\"{href}\"", html);
     }
 
     [Fact]

@@ -2,7 +2,7 @@
 
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FullWorth.Web.Components.Pages.App.Activity> L
 
-<article class="@GetCardClass()" aria-busy="@IsBusy" aria-labelledby="@($"alert-title-{Alert.Id:D}")">
+<article class="@GetCardClass()" aria-busy="@(IsBusy ? "true" : "false")" aria-labelledby="@($"alert-title-{Alert.Id:D}")">
     <div class="@GetIconClass()"
          aria-hidden="true">
         <svg class="bw-sprite alert-sprite">

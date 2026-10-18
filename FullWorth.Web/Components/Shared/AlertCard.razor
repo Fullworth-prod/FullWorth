@@ -1,8 +1,8 @@
 @using FullWorth.Web.Presentation
 
-﻿@inject Microsoft.Extensions.Localization.IStringLocalizer<FullWorth.Web.Components.Pages.App.Activity> L
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FullWorth.Web.Components.Pages.App.Activity> L
 
-<article class="@GetCardClass()" aria-busy="@IsBusy">
+<article class="@GetCardClass()" aria-busy="@IsBusy" aria-labelledby="@($"alert-title-{Alert.Id:D}")">
     <div class="@GetIconClass()"
          aria-hidden="true">
         <svg class="bw-sprite alert-sprite">
@@ -20,7 +20,7 @@
                               title="@L["Unread"]"></span>
                     }
 
-                    <strong>
+                    <strong id="@($"alert-title-{Alert.Id:D}")">
                         @Alert.Title
                     </strong>
                 </div>

@@ -21,6 +21,7 @@ public sealed class AlertCardReviewLinkTests
         Assert.Contains("&lt;script&gt;", html);
         Assert.DoesNotContain("javascript:", html);
         Assert.Contains("aria-busy=\"true\"", html);
+        Assert.Contains("aria-labelledby=\"alert-title-", html);
     }
 
     [Theory]

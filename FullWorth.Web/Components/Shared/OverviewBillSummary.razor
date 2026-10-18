@@ -1,0 +1,112 @@
+@using FullWorth.Core.Formatting
+@using FullWorth.Web.Services
+@inject Microsoft.Extensions.Localization.IStringLocalizer<OverviewBillSummary> L
+
+@if (StatusOnly)
+{
+    <div class="fw-signal-top">
+        <span class="fw-signal-label">@L["Comparison status"]</span>
+    </div>
+    <h2>@StatusHeading</h2>
+    <p>@L["{0} of {1} active bills have usable amount and prior-average evidence.", Summary.ComparableCount, Summary.ActiveCount]</p>
+    @if (Summary.LargestIncrease is { } bill)
+    {
+        <p><strong>@bill.ProviderName</strong></p>
+        <div class="fw-signal-change">+@FinancialAmountFormatter.FormatOrUnspecified(OverviewBillCoverage.Difference(bill), bill.CurrencyCode)</div>
+        <p>@L["Above its prior transaction average; this does not establish a provider rate increase or its cause."]</p>
+        <a class="fw-signal-action" href="@($"/app/bills/{bill.Id:D}")">
+            @L["Review evidence"] <span aria-hidden="true">→</span>
+        </a>
+    }
+    else
+    {
+        @if (Summary.IncreaseCount > 0)
+        {
+            <p>@L["Review increases in their original currencies. Different currencies are not ranked together."]</p>
+        }
+        <a class="fw-signal-action" href="/app/bills">
+            @L["Review bills and history"] <span aria-hidden="true">→</span>
+        </a>
+    }
+    <p class="fw-coverage-note">@L["This comparison does not confirm complete bank history or explain why a charge changed."]</p>
+}
+else
+{
+    <section class="fw-pulse" aria-label="@L["Recognized bill coverage"]">
+        <div class="fw-pulse-main">
+            <span class="fw-pulse-label">@L["Latest recognized bill charges"]</span>
+            <strong class="fw-pulse-amount">@(Summary.RecognizedTotal ?? L["Amount unavailable"].Value)</strong>
+            <p class="fw-pulse-summary">@L["Only active recognized bills are included. This is not total spending or a monthly budget; billing periods may differ."]</p>
+            <p>@L["{0} of {1} active bills have a usable amount and currency.", Summary.KnownAmountCount, Summary.ActiveCount]</p>
+            @if (Summary.MissingAmountCount > 0)
+            {
+                <p>@L["{0} bills are excluded because a supported amount or currency is unavailable.", Summary.MissingAmountCount]</p>
+            }
+            <p class="fw-coverage-note">@L["Totals stay in each stated currency. No currency conversion is performed."]</p>
+            <div class="fw-pulse-actions">
+                <a class="fw-primary-action" href="/app/bills">@L["Review bills"] <span aria-hidden="true">→</span></a>
+                <a class="fw-quiet-action" href="/app/account/transactions">@L["Compare with transactions"]</a>
+            </div>
+        </div>
+        <div class="fw-pulse-rail">
+            <div class="fw-pulse-stat">
+                <span>@L["Recognized active bills"]</span>
+                <strong>@Summary.ActiveCount</strong>
+                <small>@L["This count is not all household bills."]</small>
+            </div>
+            <div class="fw-pulse-stat @(Summary.IncreaseCount > 0 ? "is-alert" : "")">
+                <span>@L["Increases in compared bills"]</span>
+                <strong>@(Summary.IncreaseTotal ?? L["Comparison history needed"].Value)</strong>
+                <small>@L["{0} of {1} active bills have usable amount and prior-average evidence.", Summary.ComparableCount, Summary.ActiveCount]</small>
+                @if (Summary.UncomparedCount > 0)
+                {
+                    <small>@L["Uncompared bills are not confirmed unchanged."]</small>
+                }
+            </div>
+            <div class="fw-pulse-stat">
+                <span>@L["Annualized increase estimate"]</span>
+                <strong>@AnnualizedLabel</strong>
+                <small>@(Summary.IncreaseCount > 0
+                    ? L["Only projected when every detected increase has monthly timing evidence; not a savings claim."]
+                    : L["Based only on compared bills, not a forecast for unrecognized or uncomparable bills."])</small>
+            </div>
+            <div class="fw-sync-line">
+                <span>@L["Most recent reported bank sync"]</span>
+                @if (LatestSuccessfulSync is { } sync)
+                {
+                    <strong><time datetime="@sync.ToString("O")">@sync.ToUniversalTime().ToString("MM/dd/yyyy HH:mm 'UTC'")</time></strong>
+                }
+                else
+                {
+                    <strong>@L["Not yet available"]</strong>
+                }
+            </div>
+            <small class="fw-coverage-note">@L["A sync timestamp does not confirm every connection is current or every transaction was imported."]</small>
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public OverviewBillCoverage Summary { get; set; } = OverviewBillCoverage.Create([]);
+
+    [Parameter]
+    public DateTimeOffset? LatestSuccessfulSync { get; set; }
+
+    [Parameter]
+    public bool StatusOnly { get; set; }
+
+    private string StatusHeading => Summary.IncreaseCount > 0
+        ? L["Bills need review"].Value
+        : Summary.ComparableCount == 0
+            ? L["Comparison history needed"].Value
+            : Summary.UncomparedCount > 0
+                ? L["Only some bills can be compared"].Value
+                : L["No increases in compared bills"].Value;
+
+    private string AnnualizedLabel => Summary.ComparableCount == 0
+        ? L["Comparison history needed"].Value
+        : Summary.IncreaseCount == 0
+            ? L["No increase to project"].Value
+            : Summary.AnnualizedIncreaseTotal ?? L["Monthly timing not established"].Value;
+}

@@ -1,0 +1,23 @@
+.fw-pulse-main, .fw-pulse-rail, .fw-pulse-stat, .fw-signal-change {
+    min-width: 0;
+}
+.fw-pulse-amount, .fw-pulse-stat strong, .fw-signal-change {
+    overflow-wrap: anywhere;
+}
+.fw-coverage-note {
+    display: block;
+    line-height: 1.55;
+}
+.fw-pulse-actions a, .fw-signal-action {
+    min-height: 44px;
+}
+@media (max-width: 600px) {
+    .fw-pulse .fw-pulse-amount {
+        font-size: clamp(2rem, 9vw, 3.25rem);
+        line-height: 1.1;
+    }
+    .fw-pulse .fw-pulse-stat strong {
+        font-size: clamp(1.15rem, 5vw, 1.7rem);
+        line-height: 1.25;
+    }
+}

@@ -647,6 +647,7 @@ try {
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false);
     await page.screenshot({ path: path.join(outputDir, `account-archive-${width}.png`), fullPage: true });
     await page.getByRole("button", { name: "Hide archived", exact: true }).click();
+    await endedRow.waitFor({ state: "detached" });
     assert.equal(await endedRow.count(), 0);
   }
   await page.getByRole("button", { name: "Show archived (1)", exact: true }).click();

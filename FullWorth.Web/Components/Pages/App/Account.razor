@@ -287,6 +287,7 @@
 
                 @if (ArchivedCount > 0)
                 {
+                    <div class="connection-archive-tools">
                     <button type="button" class="secondary-action"
                             aria-expanded="@(_showArchived ? "true" : "false")"
                             disabled="@(_isMutating || _isRefreshing || _isConfirmingDisconnect)"
@@ -294,6 +295,7 @@
                         @(_showArchived ? L["Hide archived"] : L["Show archived ({0})", ArchivedCount])
                     </button>
                     <p>@L["Archived connections keep their transaction and bill history. Restoring a connection does not reconnect your bank."]</p>
+                    </div>
                 }
 
                 @if (!VisibleConnections.Any())

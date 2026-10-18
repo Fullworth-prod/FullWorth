@@ -1,3 +1,12 @@
+## Verified release checkpoint — 2026-10-17 UTC
+
+- current release candidate on `master`: `422718fad7d05a3729b08d461929d0d60c6761a6`.
+- Verified live production release: `422718fad7d05a3729b08d461929d0d60c6761a6`.
+
+[Guarded deployment #25](https://github.com/Fullworth/FullWorth/actions/runs/39053793950) and [same-release authenticated smoke](https://github.com/Fullworth/FullWorth/actions/runs/39054021470) passed; deployed checkout and release marker agreed. Exact-master build/test, CodeQL, governance and attested images passed. Previously development-only Bills review/diagnostics and financial evidence safeguards are now deployed. Real physical-device, Plaid/provider, controlled statement/two-user, clean-host restore of actual statements and both key rings, immutability and legal acceptance remain open. This What's New improvement is only an unmerged development PR until independently promoted and deployed; do not claim it is live.
+
+## Previous checkpoints (historical; superseded for release identity)
+
 ## Verified release checkpoint — 2026-10-16 UTC
 
 - current release candidate on `master`: `8c64cc8f7cdf519a6214be47c2016f601331150e`.

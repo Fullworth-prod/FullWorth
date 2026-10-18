@@ -605,89 +605,47 @@ public sealed class WebPwaBoundaryTests
             StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
-    public void WhatsNewDialog_IsBoundToTheExactDeployedRelease()
+    public void WhatsNewDialog_UsesPublishedNotesWhileDeploymentIdentityRemainsVerified()
     {
-        var repositoryRoot =
-            FindRepositoryRoot();
+        var repositoryRoot = FindRepositoryRoot();
+        var dialog = File.ReadAllText(Path.Combine(
+            repositoryRoot, "FullWorth.Web", "Components", "Layout", "WhatsNewDialog.razor"));
+        var layout = File.ReadAllText(Path.Combine(
+            repositoryRoot, "FullWorth.Web", "Components", "Layout", "AppLayout.razor"));
+        var client = File.ReadAllText(Path.Combine(
+            repositoryRoot, "FullWorth.Web", "wwwroot", "js", "whats-new.js"));
+        var productionCompose = File.ReadAllText(Path.Combine(
+            repositoryRoot, "compose.production.yml"));
 
-        var dialog =
-            File.ReadAllText(
-                Path.Combine(
-                    repositoryRoot,
-                    "FullWorth.Web",
-                    "Components",
-                    "Layout",
-                    "WhatsNewDialog.razor"));
+        Assert.Contains("<WhatsNewDialog />", layout, StringComparison.Ordinal);
 
-        var layout =
-            File.ReadAllText(
-                Path.Combine(
-                    repositoryRoot,
-                    "FullWorth.Web",
-                    "Components",
-                    "Layout",
-                    "AppLayout.razor"));
+        // The dialog must never announce generic changes just because the
+        // immutable deployment SHA advanced. Only authored release notes
+        // with a new ID are announcements.
+        Assert.Contains("OnNotesAvailable", dialog, StringComparison.Ordinal);
+        Assert.Contains("_notes.Highlights", dialog, StringComparison.Ordinal);
+        Assert.DoesNotContain("Configuration[\"BILLWATCH_RELEASE_ID\"]",
+            dialog, StringComparison.Ordinal);
+        Assert.DoesNotContain("Sharper bill intelligence",
+            dialog, StringComparison.Ordinal);
 
-        var productionCompose =
-            File.ReadAllText(
-                Path.Combine(
-                    repositoryRoot,
-                    "compose.production.yml"));
+        Assert.Contains("\"/release-notes.json\"", client, StringComparison.Ordinal);
+        Assert.Contains("cache: \"no-store\"", client, StringComparison.Ordinal);
+        Assert.Contains("\"fullworth.whats-new.seen-notes\"",
+            client, StringComparison.Ordinal);
+        Assert.Contains("localStorage.getItem", client, StringComparison.Ordinal);
+        Assert.Contains("localStorage.setItem", client, StringComparison.Ordinal);
+        Assert.Contains("visibilitychange", client, StringComparison.Ordinal);
+        Assert.Contains("pageshow", client, StringComparison.Ordinal);
+        Assert.Contains("focus", client, StringComparison.Ordinal);
+        Assert.Contains("setInterval", client, StringComparison.Ordinal);
 
-        Assert.Contains(
-            "<WhatsNewDialog />",
-            layout,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            "Configuration[\"BILLWATCH_RELEASE_ID\"]",
-            dialog,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            "\"fullworth.whats-new.seen-release\"",
-            dialog,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            "\"localStorage.getItem\"",
-            dialog,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            "\"localStorage.setItem\"",
-            dialog,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            "releaseId.Length != 40",
-            dialog,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            "character is >= '0' and <= '9' or",
-            dialog,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            ">= 'a' and <= 'f'",
-            dialog,
-            StringComparison.Ordinal);
-
+        // The production runtime still pins its deployment release SHA.
         Assert.Contains(
             "BILLWATCH_RELEASE_ID: ${BILLWATCH_RELEASE_ID:?Set BILLWATCH_RELEASE_ID}",
-            productionCompose,
-            StringComparison.Ordinal);
-
-        Assert.DoesNotContain(
-            "/bff/",
-            dialog,
-            StringComparison.OrdinalIgnoreCase);
-
-        Assert.DoesNotContain(
-            "/api/",
-            dialog,
-            StringComparison.OrdinalIgnoreCase);
+            productionCompose, StringComparison.Ordinal);
+        Assert.DoesNotContain("/bff/", dialog, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("/api/", dialog, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

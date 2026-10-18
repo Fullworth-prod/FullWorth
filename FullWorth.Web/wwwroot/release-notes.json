@@ -1,0 +1,28 @@
+{
+  "id": "2026-10-18-bill-intelligence-and-updates",
+  "title": "Your bills, with more clarity",
+  "summary": "Here’s what actually changed in this release of FullWorth.",
+  "version": "October 2026 · bill intelligence",
+  "highlights": [
+    {
+      "icon": "scan",
+      "title": "Find out why a bill is missing",
+      "description": "The Bills page now has a Missing a bill? explanation of imported payment coverage and why recurring candidates were rejected. It does not change your bank data."
+    },
+    {
+      "icon": "trend-up",
+      "title": "Keep important bills in view",
+      "description": "Previously detected bills that need another look have their own review list. Confirm a bill to keep monitoring it, even when newer transaction history is sparse."
+    },
+    {
+      "icon": "shield",
+      "title": "More trustworthy bill amounts",
+      "description": "Bill totals now rely on eligible posted charges, exclude pending payments and credits, and preserve the original currency without inventing conversions."
+    },
+    {
+      "icon": "check",
+      "title": "Updates that explain what changed",
+      "description": "What’s New now uses published release notes, remembers what you have already read, and checks for new updates when you return to FullWorth."
+    }
+  ]
+}

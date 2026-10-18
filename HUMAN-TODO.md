@@ -1,3 +1,17 @@
+## Verified release checkpoint — 2026-10-17 UTC
+
+Current release candidate on `master`:
+
+`422718fad7d05a3729b08d461929d0d60c6761a6`
+
+Current verified live production release marker:
+
+`422718fad7d05a3729b08d461929d0d60c6761a6`
+
+[Guarded deployment #25](https://github.com/Fullworth/FullWorth/actions/runs/39053793950), [authenticated smoke](https://github.com/Fullworth/FullWorth/actions/runs/39054021470), exact-master [CI](https://github.com/Fullworth/FullWorth/actions/runs/38994138677), CodeQL and governance succeeded. The deployed host's checkout and verified release marker matched. Real-device, Plaid/provider, clean-host statement/key restoration, immutable backup and qualified legal acceptance remain separate open gates. New What's New release-note behavior is currently **a development PR only**, not deployed.
+
+## Previous release checkpoints (historical)
+
 ## Verified release checkpoint — 2026-10-16 UTC
 
 Current release candidate on `master`:

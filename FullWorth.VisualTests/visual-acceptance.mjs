@@ -646,16 +646,15 @@ try {
   const toolsPage = await toolsContext.newPage();
   await toolsPage.route("**/bff/bank-connections", route => route.fulfill({ json: syntheticConnections }));
   await toolsPage.route("**/bff/bank-accounts", route => route.fulfill({ json: syntheticAccounts }));
-  let toolsStubServed = false;
-  await toolsPage.route("**/js/bff.js*", async route => {
-    toolsStubServed = true;
-    const response = await route.fetch();
-    const original = await response.text();
-    const opening = /export function wirePlaidConnectButton\(\s*buttonId,\s*statusId\) \{/;
-    assert.ok(opening.test(original));
-    const body = original.replace(opening, match => match +
-      '\n    if (!globalThis.__ciToolsRecovered) throw new Error("Synthetic tool initialization failure");');
-    await route.fulfill({ response, body, contentType: "text/javascript" });
+  await toolsPage.addInitScript(() => {
+    const getElementById = Document.prototype.getElementById;
+    Document.prototype.getElementById = function(id) {
+      if (id === "connect-bank-button" && !globalThis.__ciToolsRecovered) {
+        globalThis.__ciToolFailures = (globalThis.__ciToolFailures ?? 0) + 1;
+        throw new Error("Synthetic connection-tool DOM lookup failure");
+      }
+      return getElementById.call(this, id);
+    };
   });
   await toolsPage.goto("/app/account", { waitUntil: "domcontentloaded" });
   await toolsPage.locator(".app-shell").waitFor();
@@ -668,7 +667,7 @@ try {
   } catch (error) {
     await toolsPage.screenshot({ path: path.join(outputDir, "account-tool-initialization-failure.png"), fullPage: true });
     console.error("Synthetic tool fixture state", {
-      stubServed: toolsStubServed,
+      injectedFailures: await toolsPage.evaluate(() => globalThis.__ciToolFailures ?? 0),
       path: new URL(toolsPage.url()).pathname,
       connectionRows: await toolsPage.locator(".connection-row").count(),
       initialError: await toolsPage.locator(".app-error-state").count(),
@@ -676,7 +675,7 @@ try {
     });
     throw error;
   }
-  assert.equal(toolsStubServed, true);
+  assert.ok((await toolsPage.evaluate(() => globalThis.__ciToolFailures ?? 0)) > 0);
   assert.equal(await toolsPage.locator(".connection-row").count(), 2);
   assert.equal(await toolsPage.locator(".financial-account-row").count(), 1);
   assert.equal(await toolsPage.locator(".app-error-state").count(), 0);

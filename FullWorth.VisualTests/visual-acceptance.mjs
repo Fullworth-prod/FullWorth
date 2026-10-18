@@ -524,6 +524,117 @@ try {
   await page.goto("/app", { waitUntil: "domcontentloaded" });
   await settle(".app-shell");
 
+
+  // Disposable CI user + synthetic responses: never mutate real bank data.
+  const activityFixtures = [
+    { id: "11111111-aaaa-aaaa-aaaa-111111111111", alertType: "ConnectionIssue", severity: "Warning",
+      title: "Synthetic connection repair", message: "Reconnect the café account to restore monitoring.",
+      isRead: false, isDismissed: false, createdAtUtc: "2026-10-17T10:00:00Z", updatedAtUtc: "2026-10-17T10:00:00Z" },
+    { id: "22222222-aaaa-aaaa-aaaa-222222222222", billStreamId: "11111111-1111-1111-1111-111111111111",
+      alertType: "BillIncrease", severity: "Critical", title: "Synthetic utility change", message: "Posted amount increased.",
+      isRead: false, isDismissed: false, createdAtUtc: "2026-10-16T10:00:00Z", updatedAtUtc: "2026-10-16T10:00:00Z" },
+    { id: "33333333-aaaa-aaaa-aaaa-333333333333", alertType: "NewBill", severity: "Info",
+      title: "Synthetic recurring bill", message: "A monthly payment was discovered.",
+      isRead: true, isDismissed: false, createdAtUtc: "2026-10-15T10:00:00Z", updatedAtUtc: "2026-10-15T10:00:00Z" },
+    { id: "44444444-aaaa-aaaa-aaaa-444444444444", alertType: "ConnectionIssue", severity: "Critical",
+      title: "Synthetic dismissed item", message: "Not active.", isRead: false, isDismissed: true,
+      createdAtUtc: "2026-10-14T10:00:00Z", updatedAtUtc: "2026-10-14T10:00:00Z" }
+  ];
+  let activityResponse = "good";
+  let mutationStatus = 503;
+  let alertMutationRequests = 0;
+  await page.route("**/bff/alerts?*", route => route.fulfill(activityResponse === "failed"
+    ? { status: 503, json: {} } : { json: activityResponse === "null" ? null : activityFixtures }));
+  const mutationRoute = /\/bff\/alerts\/[^/]+\/(read|dismiss)$/;
+  await page.route(mutationRoute, route => {
+    alertMutationRequests++;
+    return route.fulfill(mutationStatus === 204 ? { status: 204 } : { status: 503, json: {} });
+  });
+  async function refreshActivity() {
+    await Promise.all([
+      page.waitForResponse(response => response.url().includes("/bff/alerts?")),
+      page.getByRole("button", { name: "Refresh", exact: true }).click()
+    ]);
+    await page.waitForFunction(() => {
+      const button = document.querySelector(".activity-refresh-button");
+      return button && !button.disabled;
+    });
+  }
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto("/app/activity", { waitUntil: "domcontentloaded" });
+    await settle(".alert-card");
+    assert.equal(await page.locator(".alert-card").count(), 3);
+    assert.ok((await page.locator(".activity-scope-note").first().innerText()).includes("not your entire history"));
+    const search = page.getByRole("searchbox", { name: "Search activity", exact: true });
+    await search.fill("CAFÉ");
+    await page.waitForFunction(() => document.querySelectorAll(".alert-card").length === 1);
+    assert.ok((await page.locator(".alert-card").innerText()).includes("Synthetic connection repair"));
+    await page.locator(".activity-filters").getByRole("button", { name: /^Unread/ }).click();
+    assert.equal(await page.locator(".alert-card").count(), 1);
+    await search.fill("no matching synthetic alert");
+    await page.locator(".alerts-filter-empty").waitFor();
+    await page.getByRole("button", { name: "Clear filters", exact: true }).click();
+    await page.waitForFunction(() => document.querySelectorAll(".alert-card").length === 3);
+    activityResponse = "failed";
+    await refreshActivity();
+    await page.getByRole("alert").filter({ hasText: "Previously loaded alerts are still shown" }).waitFor();
+    assert.equal(await page.locator(".alert-card").count(), 3);
+    assert.equal(await page.locator(".app-error-state").count(), 0);
+    activityResponse = "null";
+    await refreshActivity();
+    await page.getByRole("alert").filter({ hasText: "Previously loaded alerts are still shown" }).waitFor();
+    assert.equal(await page.locator(".alert-card").count(), 3);
+    activityResponse = "good";
+    await refreshActivity();
+    await page.waitForFunction(() => !document.querySelector(".activity-action-error"));
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: path.join(outputDir, `activity-resilience-${width}.png`), fullPage: true });
+  }
+  const connectionAlert = page.locator(".alert-card").filter({ hasText: "Synthetic connection repair" });
+  await Promise.all([
+    page.waitForResponse(response => response.url().endsWith("/read") && response.request().method() === "POST"),
+    connectionAlert.getByRole("button", { name: "Mark read", exact: true }).click()
+  ]);
+  await page.waitForFunction(() => [...document.querySelectorAll(".alert-secondary-action")].every(button => !button.disabled));
+  await page.getByRole("alert").filter({ hasText: "could not update that alert" }).waitFor();
+  assert.equal(await connectionAlert.locator(".unread-dot").count(), 1);
+  await Promise.all([
+    page.waitForResponse(response => response.url().endsWith("/dismiss") && response.request().method() === "POST"),
+    connectionAlert.getByRole("button", { name: "Dismiss", exact: true }).click()
+  ]);
+  await page.waitForFunction(() => [...document.querySelectorAll(".alert-secondary-action")].every(button => !button.disabled));
+  await page.getByRole("alert").filter({ hasText: "could not update that alert" }).waitFor();
+  assert.equal(await page.locator(".alert-card").count(), 3);
+  const requestsBeforeReview = alertMutationRequests;
+  await connectionAlert.getByRole("link", { name: "Review", exact: true }).click();
+  await page.waitForURL(url => url.pathname === "/app/account");
+  assert.equal(alertMutationRequests, requestsBeforeReview, "Opening evidence must not depend on an alert write.");
+  await page.goto("/app/activity", { waitUntil: "domcontentloaded" });
+  await settle(".alert-card");
+  mutationStatus = 204;
+  await page.locator(".activity-filters").getByRole("button", { name: /^Unread/ }).click();
+  await page.locator(".alert-card").filter({ hasText: "Synthetic connection repair" })
+    .getByRole("button", { name: "Mark read", exact: true }).click();
+  await page.waitForFunction(() => document.querySelectorAll(".alert-card").length === 1);
+  assert.ok((await page.locator(".alert-card").innerText()).includes("Synthetic utility change"));
+  await page.getByRole("button", { name: "Clear filters", exact: true }).click();
+  await page.locator(".alert-card").filter({ hasText: "Synthetic recurring bill" })
+    .getByRole("button", { name: "Dismiss", exact: true }).click();
+  await page.waitForFunction(() => document.querySelectorAll(".alert-card").length === 2);
+  activityResponse = "failed";
+  await page.goto("/app/activity", { waitUntil: "domcontentloaded" });
+  await settle(".app-error-state");
+  assert.equal(await page.locator(".alert-card").count(), 0);
+  assert.equal(await page.locator(".alerts-empty").count(), 0);
+  activityResponse = "good";
+  await page.getByRole("button", { name: "Try again", exact: true }).click();
+  await page.locator(".alert-card").first().waitFor();
+  await page.unroute("**/bff/alerts?*");
+  await page.unroute(mutationRoute);
+  await page.goto("/app", { waitUntil: "domcontentloaded" });
+  await settle(".app-shell");
+
   const serviceWorkerState = await page.evaluate(async () => {
     if (!("serviceWorker" in navigator)) {
       return {

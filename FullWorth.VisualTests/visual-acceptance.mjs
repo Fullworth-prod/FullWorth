@@ -562,7 +562,14 @@ try {
       [...document.querySelectorAll(".transaction-row")].filter(row => !row.hidden).length === 1);
     const visible = await page.locator(".transaction-row:visible").innerText();
     assert.ok(visible.includes("Synthetic Refund"), visible);
+    assert.ok(!visible.includes(".ToString"), visible);
+    if (width === 390) {
+      assert.ok((await page.locator(".transaction-row:visible .transaction-mobile-date").innerText()).includes("14 Oct 2026"), visible);
+    } else {
+      assert.ok((await page.locator(".transaction-row:visible .transaction-date").innerText()).includes("Oct 14"), visible);
+    }
     assert.equal(await page.locator(".fw-transactions-total").innerText(), summary);
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: path.join(outputDir, `transaction-evidence-${width}.png`), fullPage: true });
   }
   await page.getByRole("searchbox", { name: "Search merchant or transaction" }).fill("");

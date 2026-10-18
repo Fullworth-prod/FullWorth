@@ -306,7 +306,7 @@
                 @foreach (var transaction
                     in filteredTransactions)
                 {
-                    <article class="transaction-row"
+                    <article class="transaction-row" @key="transaction.Id"
                              data-fullworth-transaction-id="@transaction.Id.ToString("D")">
                         <div class="@GetTransactionIconClass(
                                                                         transaction.Amount)">
@@ -344,9 +344,7 @@
                             </span>
 
                             <small class="transaction-mobile-date">
-                                <time datetime="@transaction.PostedDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)">
-                                    @transaction.PostedDate.ToString("d MMM yyyy", System.Globalization.CultureInfo.CurrentUICulture)
-                                </time>
+                                @(transaction.PostedDate.ToString("d MMM yyyy", System.Globalization.CultureInfo.CurrentUICulture))
                             </small>
 
                             @if (!string.IsNullOrWhiteSpace(
@@ -361,10 +359,7 @@
 
                         <div class="transaction-date">
                             <strong>
-                                @transaction.PostedDate
-                                    .ToString(
-                                        "MMM d",
-                                        System.Globalization.CultureInfo.CurrentUICulture)
+                                @(transaction.PostedDate.ToString("MMM d", System.Globalization.CultureInfo.CurrentUICulture))
                             </strong>
 
                             <span>

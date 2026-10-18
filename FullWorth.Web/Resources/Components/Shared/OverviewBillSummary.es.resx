@@ -36,4 +36,6 @@
   <data name="No increases in compared bills" xml:space="preserve"><value>Sin aumentos en las facturas comparadas</value></data>
   <data name="No increase to project" xml:space="preserve"><value>No hay aumento que proyectar</value></data>
   <data name="Monthly timing not established" xml:space="preserve"><value>Periodicidad mensual no confirmada</value></data>
+  <data name="Bill amounts need review" xml:space="preserve"><value>Hay importes de facturas que necesitan revisión</value></data>
+  <data name="Amount or currency unavailable" xml:space="preserve"><value>Importe o moneda no disponible</value></data>
 </root>

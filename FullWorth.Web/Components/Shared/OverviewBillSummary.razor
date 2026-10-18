@@ -56,7 +56,7 @@ else
             </div>
             <div class="fw-pulse-stat @(Summary.IncreaseCount > 0 ? "is-alert" : "")">
                 <span>@L["Increases in compared bills"]</span>
-                <strong>@(Summary.IncreaseTotal ?? L["Comparison history needed"].Value)</strong>
+                <strong>@(Summary.IncreaseTotal ?? ComparisonUnavailableLabel)</strong>
                 <small>@L["{0} of {1} active bills have usable amount and prior-average evidence.", Summary.ComparableCount, Summary.ActiveCount]</small>
                 @if (Summary.UncomparedCount > 0)
                 {
@@ -98,14 +98,20 @@ else
 
     private string StatusHeading => Summary.IncreaseCount > 0
         ? L["Bills need review"].Value
+        : Summary.ActiveCount > 0 && Summary.KnownAmountCount == 0
+            ? L["Bill amounts need review"].Value
         : Summary.ComparableCount == 0
             ? L["Comparison history needed"].Value
             : Summary.UncomparedCount > 0
                 ? L["Only some bills can be compared"].Value
                 : L["No increases in compared bills"].Value;
 
+    private string ComparisonUnavailableLabel => Summary.ActiveCount > 0 && Summary.KnownAmountCount == 0
+        ? L["Amount or currency unavailable"].Value
+        : L["Comparison history needed"].Value;
+
     private string AnnualizedLabel => Summary.ComparableCount == 0
-        ? L["Comparison history needed"].Value
+        ? ComparisonUnavailableLabel
         : Summary.IncreaseCount == 0
             ? L["No increase to project"].Value
             : Summary.AnnualizedIncreaseTotal ?? L["Monthly timing not established"].Value;

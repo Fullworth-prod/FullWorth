@@ -1,0 +1,41 @@
+/* Keep retry/connection notices usable with large text and narrow viewports. */
+.overview-page .connection-warning {
+    min-width: 0;
+    flex-wrap: wrap;
+}
+.overview-page .connection-warning > p,
+.overview-page .connection-warning > div:not(.connection-warning-icon) {
+    min-width: 0;
+    flex: 1 1 14rem;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+.overview-page .connection-warning > a {
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.overview-page .page-heading > div {
+    min-width: 0;
+}
+.overview-page .page-heading h1 {
+    overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+    .overview-page .connection-warning {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    .overview-page .connection-warning > p,
+    .overview-page .connection-warning > div:not(.connection-warning-icon) {
+        flex: none;
+    }
+    .overview-page .connection-warning > a {
+        align-self: flex-start;
+    }
+}

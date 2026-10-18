@@ -306,7 +306,7 @@ try {
     ], "Only some bills can be compared", "$42.80"],
     ["unknown-currency", [
       exampleBill("11111111-1111-1111-1111-111111111111", 999, 10, {currencyCode: null})
-    ], "Comparison history needed", "Amount unavailable"],
+    ], "Bill amounts need review", "Amount unavailable"],
     ["nonmonthly-increase", [
       exampleBill("11111111-1111-1111-1111-111111111111", 29, 20,
         {hasMonthlyCadenceEvidence: false})

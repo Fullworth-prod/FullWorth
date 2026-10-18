@@ -104,6 +104,21 @@ public sealed class OverviewBillSummaryTests
         Assert.DoesNotContain("$108.00", html);
     }
 
+    [Theory]
+    [InlineData("en", "Bill amounts need review", "Amount or currency unavailable")]
+    [InlineData("es", "Hay importes de facturas que necesitan revisión", "Importe o moneda no disponible")]
+    public async Task NoUsableAmounts_IsNotMisdiagnosedAsMissingHistory(
+        string culture, string status, string unavailable)
+    {
+        var summary = OverviewBillCoverage.Create([
+            OverviewBillCoverageTests.Bill(29m, 20m, currency: null)]);
+        Assert.Contains(status, await RenderAsync(culture, summary, true));
+        var html = await RenderAsync(culture, summary);
+        Assert.Contains(unavailable, html);
+        Assert.DoesNotContain("$0.00", html);
+        Assert.DoesNotContain("Comparison history needed", html);
+    }
+
     private static async Task<string> RenderAsync(string culture, OverviewBillCoverage summary,
         bool statusOnly = false, bool decode = true)
     {

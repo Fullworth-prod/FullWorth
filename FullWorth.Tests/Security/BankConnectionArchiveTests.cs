@@ -10,10 +10,12 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace FullWorth.Tests.Security;
 
-public sealed class BankConnectionArchiveTests : IClassFixture<FullWorthApiFactory>
+public sealed class BankConnectionArchiveTests : IDisposable
 {
-    private readonly FullWorthApiFactory _factory;
-    public BankConnectionArchiveTests(FullWorthApiFactory factory) => _factory = factory;
+    // Each case has its own real authentication limiter and database.
+    // Sharing a factory would exhaust the per-IP login budget during test setup.
+    private readonly FullWorthApiFactory _factory = new();
+    public void Dispose() => _factory.Dispose();
 
     [Fact]
     public Task OtherUser_CannotArchive() => AssertOtherUserAsync("archive", false);

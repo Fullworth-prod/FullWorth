@@ -565,6 +565,11 @@ try {
     await page.goto("/app/activity", { waitUntil: "domcontentloaded" });
     await settle(".alert-card");
     assert.equal(await page.locator(".alert-card").count(), 3);
+    const actionStyle = await page.locator(".alert-secondary-action").first().evaluate(element => {
+      const style = getComputedStyle(element);
+      return { height: parseFloat(style.minHeight), radius: parseFloat(style.borderRadius) };
+    });
+    assert.ok(actionStyle.height >= 44 && actionStyle.radius >= 8, JSON.stringify(actionStyle));
     assert.ok((await page.locator(".activity-scope-note").first().innerText()).includes("not your entire history"));
     const search = page.getByRole("searchbox", { name: "Search activity", exact: true });
     await search.fill("CAFÉ");

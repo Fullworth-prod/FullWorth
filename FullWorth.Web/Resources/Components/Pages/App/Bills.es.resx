@@ -51,4 +51,51 @@
   <data name="No active monitored bills" xml:space="preserve"><value>No hay facturas activas monitoreadas</value></data>
   <data name="Previously discovered bills are listed below for review. Their amounts are excluded from monitored totals." xml:space="preserve"><value>Las facturas detectadas anteriormente se muestran abajo para su revisión. Sus importes se excluyen de los totales monitoreados.</value></data>
   <data name="Currency unavailable" xml:space="preserve"><value>Moneda no disponible</value></data>
+  <data name="Recurring commitments" xml:space="preserve"><value>Compromisos recurrentes</value></data>
+  <data name="Explore recurring charges, compare recent amounts, and open the evidence behind each bill." xml:space="preserve"><value>Explora los cargos recurrentes, compara importes recientes y consulta la evidencia de cada factura.</value></data>
+  <data name="Refreshing…" xml:space="preserve"><value>Actualizando…</value></data>
+  <data name="Refresh bills" xml:space="preserve"><value>Actualizar facturas</value></data>
+  <data name="Find bills" xml:space="preserve"><value>Buscar facturas</value></data>
+  <data name="Search bills" xml:space="preserve"><value>Buscar facturas</value></data>
+  <data name="Currency" xml:space="preserve"><value>Moneda</value></data>
+  <data name="All currencies" xml:space="preserve"><value>Todas las monedas</value></data>
+  <data name="Sort active bills" xml:space="preserve"><value>Ordenar facturas activas</value></data>
+  <data name="Provider name" xml:space="preserve"><value>Nombre del proveedor</value></data>
+  <data name="Latest charge within currency" xml:space="preserve"><value>Último cargo por moneda</value></data>
+  <data name="Change within currency" xml:space="preserve"><value>Cambio por moneda</value></data>
+  <data name="Clear filters" xml:space="preserve"><value>Borrar filtros</value></data>
+  <data name="Search applies to all sections. Currency and change filters apply to active rows only. Summary totals do not change with filters." xml:space="preserve"><value>La búsqueda se aplica a todas las secciones. Los filtros de moneda y cambio solo se aplican a las filas activas. Los filtros no modifican los totales del resumen.</value></data>
+  <data name="Saved review and inactive bills remain available below. They are excluded from active totals." xml:space="preserve"><value>Las facturas guardadas para revisión e inactivas siguen disponibles abajo. Se excluyen de los totales activos.</value></data>
+  <data name="Bill summary" xml:space="preserve"><value>Resumen de facturas</value></data>
+  <data name="Latest recognized charges" xml:space="preserve"><value>Últimos cargos reconocidos</value></data>
+  <data name="Across {0} monitored recurring bills" xml:space="preserve"><value>En {0} facturas recurrentes supervisadas</value></data>
+  <data name="Active recognized charges only—not total spending or a normalized monthly budget." xml:space="preserve"><value>Solo cargos activos reconocidos; no representa el gasto total ni un presupuesto mensual normalizado.</value></data>
+  <data name="Usable amount and currency: {0} of {1} active bills." xml:space="preserve"><value>Importe y moneda disponibles: {0} de {1} facturas activas.</value></data>
+  <data name="Compared charges only" xml:space="preserve"><value>Solo cargos comparados</value></data>
+  <data name="Below prior averages" xml:space="preserve"><value>Por debajo de los promedios anteriores</value></data>
+  <data name="Waiting for comparison evidence" xml:space="preserve"><value>Esperando evidencia para comparar</value></data>
+  <data name="Bills with increases" xml:space="preserve"><value>Facturas con aumentos</value></data>
+  <data name="Worth a closer look" xml:space="preserve"><value>Conviene revisarlo</value></data>
+  <data name="{0} in current recurring increases" xml:space="preserve"><value>{0} en aumentos recurrentes actuales</value></data>
+  <data name="That is {0} annualized if these increases persist. Transaction amounts show what changed; provider evidence is still required to explain why." xml:space="preserve"><value>Equivale a {0} al año si estos aumentos persisten. Los importes de las transacciones muestran qué cambió; todavía se necesita evidencia del proveedor para explicar por qué.</value></data>
+  <data name="Review increases" xml:space="preserve"><value>Revisar aumentos</value></data>
+  <data name="Recurring bills" xml:space="preserve"><value>Facturas recurrentes</value></data>
+  <data name="Bill ledger" xml:space="preserve"><value>Registro de facturas</value></data>
+  <data name="Showing {0} of {1}" xml:space="preserve"><value>Mostrando {0} de {1}</value></data>
+  <data name="Filter bills by change" xml:space="preserve"><value>Filtrar facturas por cambio</value></data>
+  <data name="Additional bill filters" xml:space="preserve"><value>Filtros adicionales de facturas</value></data>
+  <data name="Amount sorting groups currencies separately and performs no conversion. No-history and unavailable bills are not confirmed unchanged." xml:space="preserve"><value>La ordenación por importe agrupa las monedas por separado, sin conversión. Las facturas sin historial o no disponibles no se consideran sin cambios.</value></data>
+  <data name="No active bills match these filters. Saved review and inactive records are separate below." xml:space="preserve"><value>Ninguna factura activa coincide con estos filtros. Los registros guardados para revisión e inactivos aparecen por separado abajo.</value></data>
+  <data name="Current" xml:space="preserve"><value>Actual</value></data>
+  <data name="Change" xml:space="preserve"><value>Cambio</value></data>
+  <data name="Comparison unavailable" xml:space="preserve"><value>Comparación no disponible</value></data>
+  <data name="Review matches: {0} of {1}" xml:space="preserve"><value>Coincidencias para revisión: {0} de {1}</value></data>
+  <data name="No review bills match your search. Clear the search to see saved records." xml:space="preserve"><value>Ninguna factura para revisión coincide con tu búsqueda. Borra la búsqueda para ver los registros guardados.</value></data>
+  <data name="Inactive bill history ({0})" xml:space="preserve"><value>Historial de facturas inactivas ({0})</value></data>
+  <data name="These saved bills are not actively monitored and do not contribute to active totals. Opening history does not reactivate a bill." xml:space="preserve"><value>Estas facturas guardadas no se supervisan activamente y no se incluyen en los totales activos. Abrir el historial no reactiva una factura.</value></data>
+  <data name="Review bill" xml:space="preserve"><value>Revisar factura</value></data>
+  <data name="No inactive bills match your search." xml:space="preserve"><value>Ninguna factura inactiva coincide con tu búsqueda.</value></data>
+  <data name="Previously loaded discovery counts are shown and may be out of date." xml:space="preserve"><value>Se muestran los recuentos de detección cargados anteriormente; pueden estar desactualizados.</value></data>
+  <data name="Bills could not be refreshed. Previously loaded records are still shown and may be out of date. Refresh bills to retry." xml:space="preserve"><value>No se pudieron actualizar las facturas. Se siguen mostrando los registros anteriores y pueden estar desactualizados. Pulsa Actualizar facturas para reintentar.</value></data>
+  <data name="Refresh discovery details" xml:space="preserve"><value>Actualizar detalles de detección</value></data>
 </root>

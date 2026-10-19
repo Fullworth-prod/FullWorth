@@ -269,6 +269,8 @@ try {
 
   // Exercise the real authenticated Bills page, not duplicated fixture markup.
   // This account and every bank/transaction record are disposable CI data.
+  await (await import("./bills-workspace.test.mjs")).verifyBillsWorkspace(page, outputDir);
+
   const billsDestinations = [
     ["Check bank connections", "/app/account"],
     ["Review imported transactions", "/app/account/transactions"],

@@ -124,8 +124,17 @@ export async function verifyBillsWorkspace(page, outputDir) {
         assert.ok(geometry.height >= 44 && geometry.left >= 0 && geometry.right <= geometry.width + 1,
           "Workspace controls must be usable at narrow widths and enlarged text: " + selector);
       }
+      for (const filter of await page.locator(".fw-bills-filters .bill-filter").all()) {
+        const geometry = await filter.evaluate(element => {
+          const rect = element.getBoundingClientRect();
+          return { height: rect.height, left: rect.left, right: rect.right, width: innerWidth };
+        });
+        assert.ok(geometry.height >= 44 && geometry.left >= 0 && geometry.right <= geometry.width + 1,
+          "All evidence filters must wrap into view with 44px touch targets, not hide in a horizontal strip.");
+      }
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false,
         "Bills workspace must not introduce horizontal scrolling.");
+      await page.evaluate(() => { document.activeElement?.blur(); window.scrollTo(0, 0); });
       await page.screenshot({ path: path.join(outputDir,
         "bills-workspace-" + width + "-" + theme + (enlarged ? "-large-text" : "") + ".png"), fullPage: true });
     }
@@ -140,6 +149,7 @@ export async function verifyBillsWorkspace(page, outputDir) {
     await waitRows(1);
     assert.equal(await page.locator("#bill-search").inputValue(), "Café");
     assert.equal((await page.locator(".fw-bills-total > strong").innerText()).trim(), "EUR 20.00 · $34.00");
+    await page.evaluate(() => { document.activeElement?.blur(); window.scrollTo(0, 0); });
     await page.screenshot({ path: path.join(outputDir, "bills-refresh-preserved.png"), fullPage: true });
     listMode = "ok";
     await page.getByRole("button", { name: "Refresh bills", exact: true }).click();
@@ -178,6 +188,7 @@ export async function verifyBillsWorkspace(page, outputDir) {
     assert.ok((await page.locator(".bill-monitoring-choice").innerText()).includes("Your monitoring choice was saved."));
     assert.equal(await keep.count(), 0);
     assert.equal(posts, 1);
+    await page.evaluate(() => { document.activeElement?.blur(); window.scrollTo(0, 0); });
     await page.screenshot({ path: path.join(outputDir, "bill-detail-saved-read-failed.png"), fullPage: true });
     await page.getByRole("button", { name: "Refresh bill", exact: true }).click();
     await page.locator(".bill-detail-warning").waitFor({ state: "detached" });

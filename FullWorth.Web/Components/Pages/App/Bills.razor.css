@@ -40,3 +40,24 @@
     .bill-workspace-tools p, .bill-filter-scope, .bill-read-warning { overflow-wrap: anywhere; }
     .bills-refresh { width: 100%; white-space: normal; }
 }
+
+/* Keep every evidence filter visible rather than relying on a hidden mobile scroller. */
+.bills-page .fw-bills-filters {
+    width: auto; min-width: 0; flex-wrap: wrap; overflow: visible;
+}
+.bills-page .fw-bills-filters .bill-filter {
+    min-height: 44px; height: auto; max-width: 100%; white-space: normal;
+    overflow-wrap: anywhere; padding-block: 8px;
+}
+.bills-page .fw-bills-filters .bill-filter:focus-visible {
+    outline: 3px solid var(--fw-accent, #6b8dff); outline-offset: 2px;
+}
+.bills-page .fw-bills-total small + small { margin-top: 6px; }
+.bills-page .fw-bills-stats { grid-template-columns: minmax(0, 1fr); }
+.bills-page .fw-bills-stat, .bills-page .fw-bills-stat:last-child {
+    grid-column: auto; min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) auto; align-content: center;
+    align-items: center; gap: 10px 16px; padding: 18px;
+}
+.bills-page .fw-bills-stat strong { margin: 0; }
+.bills-page .fw-bills-stat small { grid-column: 1 / -1; margin: 0; padding: 0; }

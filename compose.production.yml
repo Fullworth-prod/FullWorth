@@ -252,7 +252,7 @@ services:
       - web_session
 
   database:
-    image: postgres:17-bookworm@sha256:639ab7ceb90e13123085b741fb31ef493fba25463002f6da665352e7b534b652
+    image: postgres:17-bookworm@sha256:3645570cccdfa447589da9f57dd740faa29b30938e861289a5574b6ca6b03826
     restart: unless-stopped
     stop_grace_period: 60s
     logging: *default-logging
@@ -278,7 +278,7 @@ services:
   database-role-provisioner:
     profiles:
       - operations
-    image: postgres:17-bookworm@sha256:639ab7ceb90e13123085b741fb31ef493fba25463002f6da665352e7b534b652
+    image: postgres:17-bookworm@sha256:3645570cccdfa447589da9f57dd740faa29b30938e861289a5574b6ca6b03826
     restart: "no"
     read_only: true
     user: postgres

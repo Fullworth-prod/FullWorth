@@ -753,7 +753,10 @@ export async function getRecentPaydayPlans(
         `/bff/planning/payday-plans/recent?take=${safeTake}`);
 }
 
-export { downloadAccountExport } from "./account-export.js";
+export async function downloadAccountExport(currentPassword, twoFactorCode) {
+    const module = await import("./account-export.js");
+    return await module.downloadAccountExport(currentPassword, twoFactorCode);
+}
 
 export async function deleteFullWorthAccount(
     confirmation) {

@@ -78,6 +78,8 @@ export async function verifyPrivacyControls(page, outputDir) {
     assert.equal(await page.getByRole("button", { name: "Download securely", exact: true }).isDisabled(), true);
 
     await page.getByRole("button", { name: "Delete account permanently", exact: true }).click();
+    await page.locator(".delete-confirmation").waitFor();
+    await page.locator(".export-confirmation").waitFor({ state: "detached" });
     assert.equal(await page.locator(".export-confirmation").count(), 0);
     await page.locator(".delete-confirmation input[type=password]").fill(proof);
     await page.locator(".delete-confirmation input[inputmode=numeric]").fill("123456");
@@ -103,6 +105,8 @@ export async function verifyPrivacyControls(page, outputDir) {
     assert.equal(deletes, 2);
 
     await page.getByRole("button", { name: "Download data", exact: true }).click();
+    await page.locator(".export-confirmation").waitFor();
+    await page.locator(".delete-confirmation").waitFor({ state: "detached" });
     assert.equal(await page.locator(".delete-confirmation").count(), 0);
     await page.locator(".export-confirmation input[type=password]").fill(proof);
     exportMode = "html";
@@ -133,7 +137,10 @@ export async function verifyPrivacyControls(page, outputDir) {
         if (selector === ".delete-confirmation") {
           await page.getByRole("button", { name: "Delete account permanently", exact: true }).click();
         }
-        for (const control of await page.locator(selector + " input, " + selector + " button").all()) {
+        await page.locator(selector).waitFor();
+        const controls = await page.locator(selector + " input, " + selector + " button").all();
+        assert.ok(controls.length >= 4, "The real confirmation form must render before checking its controls.");
+        for (const control of controls) {
           const rect = await control.evaluate(element => {
             const box = element.getBoundingClientRect();
             return { height: box.height, left: box.left, right: box.right, width: innerWidth };

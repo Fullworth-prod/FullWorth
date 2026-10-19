@@ -1,96 +1,23 @@
-async function getSafeErrorMessage(response) {
-    const contentType =
-        response.headers.get("content-type") ?? "";
+import { privacyAntiforgeryToken, privacyError } from "./account-privacy-requests.js";
 
-    if (contentType.includes("application/json")) {
-        try {
-            const payload = await response.clone().json();
+export async function deleteFullWorthAccount(confirmation, currentPassword, twoFactorCode) {
+    if (confirmation !== "DELETE")
+        throw new Error("Type DELETE to confirm permanent account deletion.");
+    if (typeof currentPassword !== "string" || !currentPassword.trim())
+        throw new Error("Enter your current password to confirm permanent account deletion.");
 
-            if (typeof payload?.message === "string" &&
-                payload.message.trim()) {
-                return payload.message.trim();
-            }
-
-            if (typeof payload?.title === "string" &&
-                payload.title.trim()) {
-                return payload.title.trim();
-            }
-        } catch {
-        }
-    }
-
-    return `FullWorth request failed with status ${response.status}.`;
-}
-
-async function getAntiforgeryToken() {
-    const response = await fetch(
-        "/bff/antiforgery",
-        {
-            method: "GET",
-            credentials: "same-origin",
-            headers: {
-                "Accept": "application/json"
-            },
-            cache: "no-store"
-        });
-
-    if (!response.ok) {
-        throw new Error(
-            await getSafeErrorMessage(response));
-    }
-
-    const payload = await response.json();
-
-    if (!payload?.requestToken) {
-        throw new Error(
-            "FullWorth could not establish a secure request token.");
-    }
-
-    return payload.requestToken;
-}
-
-export async function deleteFullWorthAccount(
-    confirmation,
-    currentPassword,
-    twoFactorCode) {
-
-    if (confirmation !== "DELETE") {
-        throw new Error(
-            "Type DELETE to confirm permanent account deletion.");
-    }
-
-    if (!currentPassword ||
-        !currentPassword.trim()) {
-        throw new Error(
-            "Enter your current password to confirm permanent account deletion.");
-    }
-
-    const requestToken =
-        await getAntiforgeryToken();
-
-    const response = await fetch(
-        "/bff/account",
-        {
-            method: "DELETE",
-            credentials: "same-origin",
-            headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "X-CSRF-TOKEN": requestToken
-            },
-            body: JSON.stringify({
-                confirmation,
-                currentPassword,
-                twoFactorCode:
-                    twoFactorCode?.trim() || null
-            }),
-            cache: "no-store"
-        });
-
-    if (!response.ok) {
-        throw new Error(
-            await getSafeErrorMessage(response));
-    }
-
+    const requestToken = await privacyAntiforgeryToken();
+    const response = await fetch("/bff/account", {
+        method: "DELETE", credentials: "same-origin",
+        headers: { Accept: "application/json", "Content-Type": "application/json", "X-CSRF-TOKEN": requestToken },
+        body: JSON.stringify({ confirmation, currentPassword,
+            twoFactorCode: typeof twoFactorCode === "string" && twoFactorCode.trim() ? twoFactorCode.trim() : null }),
+        cache: "no-store"
+    });
+    if (!response.ok) throw new Error(await privacyError(response));
+    // The API commits account deletion before either response. A 202 still means
+    // quarantined file cleanup is pending; this does not certify immediate file erasure.
+    if (response.status !== 204 && response.status !== 202)
+        throw new Error("FullWorth could not confirm the deletion result.");
     return true;
 }

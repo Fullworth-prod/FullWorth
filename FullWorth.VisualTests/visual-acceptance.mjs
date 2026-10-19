@@ -11,6 +11,8 @@ const password = "FullWorth!Visual123";
 
 await mkdir(outputDir, { recursive: true });
 
+await (await import("./privacy-requests.test.mjs")).verifyPrivacyRequestModules();
+
 const browser = await chromium.launch({
   headless: true,
   args: ["--ignore-certificate-errors"]
@@ -477,6 +479,8 @@ try {
       `Expected browser Back to restore Overview as the active mobile route; got ${overviewBackActiveHref ?? "none"}.`
     );
   }
+
+  await (await import("./privacy-controls.test.mjs")).verifyPrivacyControls(page, outputDir);
 
   await page.goto("/app/account/settings", { waitUntil: "domcontentloaded" });
   await settle(".settings-page");

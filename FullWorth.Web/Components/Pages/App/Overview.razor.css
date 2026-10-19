@@ -1,5 +1,6 @@
 /* Keep retry/connection notices usable with large text and narrow viewports. */
 .overview-page .connection-warning {
+    display: flex;
     min-width: 0;
     flex-wrap: wrap;
 }

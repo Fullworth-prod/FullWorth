@@ -360,6 +360,16 @@ try {
     assert.ok((await page.locator(".app-page").innerText()).includes("These are saved bill records."));
     assert.equal((await page.locator(".fw-pulse-amount").innerText()).trim(), "$42.80");
     await page.evaluate(() => document.documentElement.style.fontSize = "200%");
+    const noticeLayout = await page.getByRole("status").filter({hasText: "These are saved bill records."})
+      .evaluate(notice => {
+        const text = notice.querySelector("p").getBoundingClientRect();
+        const link = notice.querySelector("a").getBoundingClientRect();
+        return {textBottom: text.bottom, linkTop: link.top, linkWidth: link.width, linkHeight: link.height};
+      });
+    assert.ok(noticeLayout.linkTop >= noticeLayout.textBottom,
+      "At phone width, the connection action must stack below notice text, not squeeze beside it");
+    assert.ok(noticeLayout.linkWidth >= 100 && noticeLayout.linkHeight >= 44,
+      "The connection link must remain readable and touch-sized with enlarged text");
     assert.ok(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)),
       "Overview must support enlarged text without horizontal overflow");
     await page.screenshot({path: path.join(outputDir, "overview-saved-records-enlarged.png"), fullPage: true});

@@ -56,7 +56,7 @@ else
             </div>
             <div class="fw-pulse-stat @(Summary.IncreaseCount > 0 ? "is-alert" : "")">
                 <span>@L["Increases in compared bills"]</span>
-                <strong>@(Summary.IncreaseTotal ?? ComparisonUnavailableLabel)</strong>
+                <strong class="@(Summary.IncreaseTotal is null ? "fw-summary-text" : "")">@(Summary.IncreaseTotal ?? ComparisonUnavailableLabel)</strong>
                 <small>@L["{0} of {1} active bills have usable amount and prior-average evidence.", Summary.ComparableCount, Summary.ActiveCount]</small>
                 @if (Summary.UncomparedCount > 0)
                 {
@@ -65,7 +65,7 @@ else
             </div>
             <div class="fw-pulse-stat">
                 <span>@L["Annualized increase estimate"]</span>
-                <strong>@AnnualizedLabel</strong>
+                <strong class="@(Summary.AnnualizedIncreaseTotal is null ? "fw-summary-text" : "")">@AnnualizedLabel</strong>
                 <small>@(Summary.IncreaseCount > 0
                     ? L["Only projected when every detected increase has monthly timing evidence; not a savings claim."]
                     : L["Based only on compared bills, not a forecast for unrecognized or uncomparable bills."])</small>

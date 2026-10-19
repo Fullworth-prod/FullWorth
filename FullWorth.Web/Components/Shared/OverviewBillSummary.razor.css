@@ -21,3 +21,11 @@
         line-height: 1.25;
     }
 }
+.fw-pulse .fw-pulse-stat strong.fw-summary-text {
+    font-size: 1.05rem;
+    line-height: 1.35;
+    letter-spacing: -0.015em;
+}
+.fw-pulse .fw-pulse-label {
+    margin-top: 0;
+}

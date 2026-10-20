@@ -81,7 +81,10 @@ export async function verifyExperienceSetup(page, outputDir) {
     saveMode = "hold-lost";
     await page.getByRole("button", { name: "Save setup", exact: true }).click();
     await waitHeld();
-    assert.equal(await page.locator(".setup-fields").isDisabled(), true);
+    await page.locator(".setup-fields[disabled]").waitFor();
+    assert.equal(await page.locator(".setup-fields").evaluate(element => element.disabled), true);
+    for (const button of await page.locator(".setup-fields button").all())
+      assert.equal(await button.isDisabled(), true, "Busy and uncertain drafts must disable every editable action.");
     for (const button of await page.locator(".setup-progress button").all())
       assert.equal(await button.isDisabled(), true);
     release();
@@ -89,7 +92,10 @@ export async function verifyExperienceSetup(page, outputDir) {
     assert.equal(puts, 1);
     assert.equal(await page.locator(".settings-toast[role=alert]").evaluate(element =>
       getComputedStyle(element).position), "static", "Recovery feedback must stay beside the draft, not cover the mobile header.");
-    assert.equal(await page.locator(".setup-fields").isDisabled(), true);
+    await page.locator(".setup-fields[disabled]").waitFor();
+    assert.equal(await page.locator(".setup-fields").evaluate(element => element.disabled), true);
+    for (const button of await page.locator(".setup-fields button").all())
+      assert.equal(await button.isDisabled(), true, "Busy and uncertain drafts must disable every editable action.");
     getFails = true;
     await page.getByRole("button", { name: "Check saved setup", exact: true }).click();
     await page.getByText("Saved setup could not be checked. Your edits are kept. Retry the read when the connection is available.",

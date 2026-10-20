@@ -1,3 +1,4 @@
+import { verifyPlanningWorkspace } from "./planning-workspace.test.mjs";
 import { chromium } from "playwright";
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
@@ -614,6 +615,8 @@ try {
 
   await page.goto("/app", { waitUntil: "domcontentloaded" });
   await settle(".app-shell");
+
+  await verifyPlanningWorkspace(page, outputDir);
 
   await context.clearCookies();
 

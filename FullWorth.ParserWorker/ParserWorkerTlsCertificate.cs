@@ -8,7 +8,8 @@ public static class ParserWorkerTlsCertificate
         "1.3.6.1.5.5.7.3.1";
 
     public static X509Certificate2 CreateAndPublish(
-        string? publicCertificatePath)
+        string? publicCertificatePath,
+        TimeProvider? clock = null)
     {
         if (string.IsNullOrWhiteSpace(publicCertificatePath) ||
             !Path.IsPathFullyQualified(publicCertificatePath))
@@ -63,7 +64,7 @@ public static class ParserWorkerTlsCertificate
         request.CertificateExtensions.Add(
             subjectAlternativeNames.Build(critical: true));
 
-        var now = DateTimeOffset.UtcNow;
+        var now = (clock ?? TimeProvider.System).GetUtcNow();
         using var generated = request.CreateSelfSigned(
             now.AddMinutes(-5),
             now.AddDays(2));

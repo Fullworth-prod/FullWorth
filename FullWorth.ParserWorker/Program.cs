@@ -227,12 +227,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddKeyPerFile(
     "/run/secrets",
     optional: true);
-var tlsCertificate =
+using var tlsCertificates =
     builder.Environment.IsDevelopment()
         ? null
-        : ParserWorkerTlsCertificate.CreateAndPublish(
+        : new ParserWorkerTlsCertificateProvider(
             builder.Configuration[
-                "ParserWorker:TlsCertificatePath"]);
+                "ParserWorker:TlsCertificatePath"] ?? string.Empty);
 
 builder.WebHost.ConfigureKestrel(options =>
 {
@@ -240,12 +240,17 @@ builder.WebHost.ConfigureKestrel(options =>
     options.Limits.MaxRequestLineSize = 8 * 1024;
     options.Limits.MaxRequestHeadersTotalSize = 32 * 1024;
 
-    if (tlsCertificate is not null)
+    if (tlsCertificates is not null)
     {
         options.ListenAnyIP(
             8081,
             listenOptions =>
-                listenOptions.UseHttps(tlsCertificate));
+                listenOptions.UseHttps(httpsOptions =>
+                {
+                    httpsOptions.HandshakeTimeout = TimeSpan.FromSeconds(10);
+                    httpsOptions.ServerCertificateSelector =
+                        (_, _) => tlsCertificates.GetCertificate();
+                }));
     }
 });
 

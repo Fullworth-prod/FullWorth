@@ -45,4 +45,23 @@
   <data name="Critical" xml:space="preserve"><value>Crítica</value></data>
   <data name="Today" xml:space="preserve"><value>Hoy</value></data>
   <data name="Yesterday" xml:space="preserve"><value>Ayer</value></data>
+  <data name="Refreshing…" xml:space="preserve"><value>Actualizando…</value></data>
+  <data name="No attention alerts loaded" xml:space="preserve"><value>No se han cargado alertas que requieran atención</value></data>
+  <data name="No alerts loaded" xml:space="preserve"><value>No se han cargado alertas</value></data>
+  <data name="No warning or critical alerts appear in the loaded feed. Check bank connections if expected activity is missing." xml:space="preserve"><value>No aparecen alertas de advertencia o críticas en la vista cargada. Revisa las conexiones bancarias si falta actividad esperada.</value></data>
+  <data name="View limit" xml:space="preserve"><value>Límite de la vista</value></data>
+  <data name="recent active alerts" xml:space="preserve"><value>alertas activas recientes</value></data>
+  <data name="Filter activity" xml:space="preserve"><value>Filtrar actividad</value></data>
+  <data name="Search activity" xml:space="preserve"><value>Buscar actividad</value></data>
+  <data name="Search titles and messages" xml:space="preserve"><value>Buscar en títulos y mensajes</value></data>
+  <data name="Clear filters" xml:space="preserve"><value>Borrar filtros</value></data>
+  <data name="Showing {0} of {1} loaded alerts" xml:space="preserve"><value>Mostrando {0} de {1} alertas cargadas</value></data>
+  <data name="No recent active alerts loaded." xml:space="preserve"><value>No se han cargado alertas activas recientes.</value></data>
+  <data name="FullWorth shows alerts when evidence supports them. This is not a guarantee that every bill or bank connection is being monitored." xml:space="preserve"><value>FullWorth muestra alertas cuando hay evidencia que las respalda. Esto no garantiza que se estén supervisando todas las facturas o conexiones bancarias.</value></data>
+  <data name="Check bank connections" xml:space="preserve"><value>Revisar conexiones bancarias</value></data>
+  <data name="Change the search or filter, or clear filters to return to the loaded feed." xml:space="preserve"><value>Cambia la búsqueda o el filtro, o borra los filtros para volver a la vista cargada.</value></data>
+  <data name="Refresh failed. Previously loaded alerts are still shown; they may be out of date. Try refreshing again." xml:space="preserve"><value>La actualización falló. Se siguen mostrando las alertas cargadas anteriormente; pueden estar desactualizadas. Intenta actualizar de nuevo.</value></data>
+  <data name="FullWorth could not load your activity. Try again." xml:space="preserve"><value>FullWorth no pudo cargar tu actividad. Inténtalo de nuevo.</value></data>
+  <data name="Showing up to 100 recent active alerts, not your entire history. Counts describe loaded alerts only; no alerts does not prove that monitoring is complete." xml:space="preserve"><value>Se muestran hasta 100 alertas activas recientes, no todo tu historial. Los recuentos describen solo las alertas cargadas; la ausencia de alertas no demuestra que la supervisión sea completa.</value></data>
+  <data name="Opening evidence does not mark an alert as read. Use Mark read when you have reviewed it; dismissing an alert does not fix a bank connection or bill." xml:space="preserve"><value>Abrir la evidencia no marca una alerta como leída. Usa Marcar como leída cuando la hayas revisado; descartar una alerta no corrige una conexión bancaria ni una factura.</value></data>
 </root>

@@ -14,6 +14,9 @@ await mkdir(outputDir, { recursive: true });
 
 await (await import("./privacy-requests.test.mjs")).verifyPrivacyRequestModules();
 
+await (await import("./experience-preferences.test.mjs")).verifyExperiencePreferenceModule();
+await (await import("./navigation-viewport.test.mjs")).verifyNavigationViewportModule();
+
 const browser = await chromium.launch({
   headless: true,
   args: ["--ignore-certificate-errors"]
@@ -133,6 +136,14 @@ try {
     localStorage.setItem("billwatch-theme", "dark");
   });
   await page.reload({ waitUntil: "domcontentloaded" });
+  await settle(".app-shell");
+
+  await (await import("./experience-setup.test.mjs")).verifyExperienceSetup(page, outputDir);
+  await page.goto("/app", { waitUntil: "domcontentloaded" });
+  await settle(".app-shell");
+
+  await (await import("./ui-polish.test.mjs")).verifyUiPolish(page, outputDir);
+  await page.goto("/app", { waitUntil: "domcontentloaded" });
   await settle(".app-shell");
 
   const desktopRoutes = [
@@ -652,6 +663,181 @@ try {
   await page.keyboard.press("Escape");
   await emailDialog.waitFor({ state: "detached", timeout: 10000 });
 
+  await page.goto("/app", { waitUntil: "domcontentloaded" });
+  await settle(".app-shell");
+
+
+  // Synthetic BFF evidence only; no bank connection or production data is mutated.
+  const transactionEvidence = [
+    { id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", bankAccountId: "11111111-1111-1111-1111-111111111111",
+      name: "Euro utility", merchantName: "Synthetic Euro Utility", institutionName: "Synthetic Bank",
+      accountName: "Euro account", amount: 20, isoCurrencyCode: "EUR", postedDate: "2026-10-10", isPending: false },
+    { id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", bankAccountId: "22222222-2222-2222-2222-222222222222",
+      name: "Dollar purchase", merchantName: "Synthetic Dollar Purchase", institutionName: "Synthetic Bank",
+      accountName: "Dollar account", amount: 10, isoCurrencyCode: "USD", postedDate: "2026-10-11", isPending: false },
+    { id: "cccccccc-cccc-cccc-cccc-cccccccccccc", bankAccountId: "22222222-2222-2222-2222-222222222222",
+      name: "Unknown purchase", merchantName: "Synthetic Unknown Purchase", institutionName: "Synthetic Bank",
+      accountName: "Dollar account", amount: 42, isoCurrencyCode: null, postedDate: "2026-10-12", isPending: false },
+    { id: "dddddddd-dddd-dddd-dddd-dddddddddddd", bankAccountId: "22222222-2222-2222-2222-222222222222",
+      name: "Pending purchase", merchantName: "Synthetic Pending Purchase", institutionName: "Synthetic Bank",
+      accountName: "Dollar account", amount: 999, isoCurrencyCode: "USD", postedDate: "2026-10-13", isPending: true },
+    { id: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee", bankAccountId: "11111111-1111-1111-1111-111111111111",
+      name: "Refund", merchantName: "Synthetic Refund", institutionName: "Synthetic Bank",
+      accountName: "Euro account", amount: -5, isoCurrencyCode: "EUR", postedDate: "2026-10-14", isPending: false }
+  ];
+  const ledgerRoute = "**/bff/bank-transactions?*";
+  await page.route(ledgerRoute, route => route.fulfill({ json: transactionEvidence }));
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto("/app/account/transactions", { waitUntil: "domcontentloaded" });
+    await settle(".transaction-row");
+    assert.equal(await page.locator(".transaction-row").count(), 5);
+    const summary = await page.locator(".fw-transactions-total").innerText();
+    assert.ok(summary.includes("EUR 20.00 · $10.00"), summary);
+    assert.ok(summary.includes("1 posted outflow records"), summary);
+    assert.ok(summary.includes("This is not proof of complete bank coverage."), summary);
+    if (width === 390) assert.equal(await page.locator(".transaction-mobile-date:visible").count(), 5);
+    assert.ok((await page.locator(".transaction-row").nth(2).innerText()).includes("-42.00 (Currency unavailable)"));
+    assert.ok((await page.locator(".transaction-row").nth(4).innerText()).includes("+EUR 5.00"));
+    await page.getByRole("searchbox", { name: "Search merchant or transaction" }).fill("Refund");
+    await page.waitForFunction(() =>
+      [...document.querySelectorAll(".transaction-row")].filter(row => !row.hidden).length === 1);
+    const visible = await page.locator(".transaction-row:visible").innerText();
+    assert.ok(visible.includes("Synthetic Refund"), visible);
+    assert.ok(!visible.includes(".ToString"), visible);
+    if (width === 390) {
+      assert.ok((await page.locator(".transaction-row:visible .transaction-mobile-date").innerText()).includes("14 Oct 2026"), visible);
+    } else {
+      assert.ok((await page.locator(".transaction-row:visible .transaction-date").innerText()).includes("Oct 14"), visible);
+    }
+    assert.equal(await page.locator(".fw-transactions-total").innerText(), summary);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: path.join(outputDir, `transaction-evidence-${width}.png`), fullPage: true });
+  }
+  await page.getByRole("searchbox", { name: "Search merchant or transaction" }).fill("");
+  await page.route("**/bff/bill-monitoring/refresh", route => route.fulfill({ status: 503, json: {} }));
+  await page.getByRole("button", { name: "Sync now", exact: true }).click();
+  await page.getByRole("alert").filter({ hasText: "Sync failed." }).waitFor();
+  assert.equal(await page.locator(".transaction-row").count(), 5);
+  assert.equal(await page.locator(".app-error-state").count(), 0);
+  await page.unroute("**/bff/bill-monitoring/refresh");
+  await page.unroute(ledgerRoute);
+  await page.goto("/app", { waitUntil: "domcontentloaded" });
+  await settle(".app-shell");
+
+
+  // Disposable CI user + synthetic responses: never mutate real bank data.
+  const activityFixtures = [
+    { id: "11111111-aaaa-aaaa-aaaa-111111111111", alertType: "ConnectionIssue", severity: "Warning",
+      title: "Synthetic connection repair", message: "Reconnect the café account to restore monitoring.",
+      isRead: false, isDismissed: false, createdAtUtc: "2026-10-17T10:00:00Z", updatedAtUtc: "2026-10-17T10:00:00Z" },
+    { id: "22222222-aaaa-aaaa-aaaa-222222222222", billStreamId: "11111111-1111-1111-1111-111111111111",
+      alertType: "BillIncrease", severity: "Critical", title: "Synthetic utility change", message: "Posted amount increased.",
+      isRead: false, isDismissed: false, createdAtUtc: "2026-10-16T10:00:00Z", updatedAtUtc: "2026-10-16T10:00:00Z" },
+    { id: "33333333-aaaa-aaaa-aaaa-333333333333", alertType: "NewBill", severity: "Info",
+      title: "Synthetic recurring bill", message: "A monthly payment was discovered.",
+      isRead: true, isDismissed: false, createdAtUtc: "2026-10-15T10:00:00Z", updatedAtUtc: "2026-10-15T10:00:00Z" },
+    { id: "44444444-aaaa-aaaa-aaaa-444444444444", alertType: "ConnectionIssue", severity: "Critical",
+      title: "Synthetic dismissed item", message: "Not active.", isRead: false, isDismissed: true,
+      createdAtUtc: "2026-10-14T10:00:00Z", updatedAtUtc: "2026-10-14T10:00:00Z" }
+  ];
+  let activityResponse = "good";
+  let mutationStatus = 503;
+  let alertMutationRequests = 0;
+  await page.route("**/bff/alerts?*", route => route.fulfill(activityResponse === "failed"
+    ? { status: 503, json: {} } : { json: activityResponse === "null" ? null : activityFixtures }));
+  const mutationRoute = /\/bff\/alerts\/[^/]+\/(read|dismiss)$/;
+  await page.route(mutationRoute, route => {
+    alertMutationRequests++;
+    return route.fulfill(mutationStatus === 204 ? { status: 204 } : { status: 503, json: {} });
+  });
+  async function refreshActivity() {
+    await Promise.all([
+      page.waitForResponse(response => response.url().includes("/bff/alerts?")),
+      page.getByRole("button", { name: "Refresh", exact: true }).click()
+    ]);
+    await page.waitForFunction(() => {
+      const button = document.querySelector(".activity-refresh-button");
+      return button && !button.disabled;
+    });
+  }
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto("/app/activity", { waitUntil: "domcontentloaded" });
+    await settle(".alert-card");
+    assert.equal(await page.locator(".alert-card").count(), 3);
+    const actionStyle = await page.locator(".alert-secondary-action").first().evaluate(element => {
+      const style = getComputedStyle(element);
+      return { height: parseFloat(style.minHeight), radius: parseFloat(style.borderRadius) };
+    });
+    assert.ok(actionStyle.height >= 44 && actionStyle.radius >= 8, JSON.stringify(actionStyle));
+    assert.ok((await page.locator(".activity-scope-note").first().innerText()).includes("not your entire history"));
+    const search = page.getByRole("searchbox", { name: "Search activity", exact: true });
+    await search.fill("CAFÉ");
+    await page.waitForFunction(() => document.querySelectorAll(".alert-card").length === 1);
+    assert.ok((await page.locator(".alert-card").innerText()).includes("Synthetic connection repair"));
+    await page.locator(".activity-filters").getByRole("button", { name: /^Unread/ }).click();
+    assert.equal(await page.locator(".alert-card").count(), 1);
+    await search.fill("no matching synthetic alert");
+    await page.locator(".alerts-filter-empty").waitFor();
+    await page.getByRole("button", { name: "Clear filters", exact: true }).click();
+    await page.waitForFunction(() => document.querySelectorAll(".alert-card").length === 3);
+    activityResponse = "failed";
+    await refreshActivity();
+    await page.getByRole("alert").filter({ hasText: "Previously loaded alerts are still shown" }).waitFor();
+    assert.equal(await page.locator(".alert-card").count(), 3);
+    assert.equal(await page.locator(".app-error-state").count(), 0);
+    activityResponse = "null";
+    await refreshActivity();
+    await page.getByRole("alert").filter({ hasText: "Previously loaded alerts are still shown" }).waitFor();
+    assert.equal(await page.locator(".alert-card").count(), 3);
+    activityResponse = "good";
+    await refreshActivity();
+    await page.waitForFunction(() => !document.querySelector(".activity-action-error"));
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: path.join(outputDir, `activity-resilience-${width}.png`), fullPage: true });
+  }
+  const connectionAlert = page.locator(".alert-card").filter({ hasText: "Synthetic connection repair" });
+  await Promise.all([
+    page.waitForResponse(response => response.url().endsWith("/read") && response.request().method() === "POST"),
+    connectionAlert.getByRole("button", { name: "Mark read", exact: true }).click()
+  ]);
+  await page.waitForFunction(() => [...document.querySelectorAll(".alert-secondary-action")].every(button => !button.disabled));
+  await page.getByRole("alert").filter({ hasText: "could not update that alert" }).waitFor();
+  assert.equal(await connectionAlert.locator(".unread-dot").count(), 1);
+  await Promise.all([
+    page.waitForResponse(response => response.url().endsWith("/dismiss") && response.request().method() === "POST"),
+    connectionAlert.getByRole("button", { name: "Dismiss", exact: true }).click()
+  ]);
+  await page.waitForFunction(() => [...document.querySelectorAll(".alert-secondary-action")].every(button => !button.disabled));
+  await page.getByRole("alert").filter({ hasText: "could not update that alert" }).waitFor();
+  assert.equal(await page.locator(".alert-card").count(), 3);
+  const requestsBeforeReview = alertMutationRequests;
+  await connectionAlert.getByRole("link", { name: "Review", exact: true }).click();
+  await page.waitForURL(url => url.pathname === "/app/account");
+  assert.equal(alertMutationRequests, requestsBeforeReview, "Opening evidence must not depend on an alert write.");
+  await page.goto("/app/activity", { waitUntil: "domcontentloaded" });
+  await settle(".alert-card");
+  mutationStatus = 204;
+  await page.locator(".activity-filters").getByRole("button", { name: /^Unread/ }).click();
+  await page.locator(".alert-card").filter({ hasText: "Synthetic connection repair" })
+    .getByRole("button", { name: "Mark read", exact: true }).click();
+  await page.waitForFunction(() => document.querySelectorAll(".alert-card").length === 1);
+  assert.ok((await page.locator(".alert-card").innerText()).includes("Synthetic utility change"));
+  await page.getByRole("button", { name: "Clear filters", exact: true }).click();
+  await page.locator(".alert-card").filter({ hasText: "Synthetic recurring bill" })
+    .getByRole("button", { name: "Dismiss", exact: true }).click();
+  await page.waitForFunction(() => document.querySelectorAll(".alert-card").length === 2);
+  activityResponse = "failed";
+  await page.goto("/app/activity", { waitUntil: "domcontentloaded" });
+  await settle(".app-error-state");
+  assert.equal(await page.locator(".alert-card").count(), 0);
+  assert.equal(await page.locator(".alerts-empty").count(), 0);
+  activityResponse = "good";
+  await page.getByRole("button", { name: "Try again", exact: true }).click();
+  await page.locator(".alert-card").first().waitFor();
+  await page.unroute("**/bff/alerts?*");
+  await page.unroute(mutationRoute);
   await page.goto("/app", { waitUntil: "domcontentloaded" });
   await settle(".app-shell");
 

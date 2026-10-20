@@ -1,433 +1,203 @@
 import { getBankTransactions } from "./bff.js";
 
+// Financial data stays in memory and is erased on page disposal.
 let currentTransactionIndex = [];
 let filterWorker = null;
 let filterCleanup = null;
+let bindingVersion = 0;
+let loadVersion = 0;
 let nextWorkerRequestId = 1;
-let filterState = {
-    searchText: "",
-    selectedAccountId: ""
-};
-
-const pendingWorkerRequests =
-    new Map();
+let filterState = { searchText: "", selectedAccountId: "" };
+const pendingWorkerRequests = new Map();
 
 function getExecutionMode() {
-    return globalThis.FullWorthPerformance
-        ?.getExecutionMode?.() ??
-        "server";
+    return globalThis.FullWorthPerformance?.getExecutionMode?.() ?? "server";
 }
 
-function buildTransactionIndex(
-    transactions) {
-
-    return transactions.map(
-        transaction => ({
-            id:
-                String(
-                    transaction?.id ??
-                    ""),
-
-            accountId:
-                String(
-                    transaction?.bankAccountId ??
-                    ""),
-
-            searchText: [
-                transaction?.name,
-                transaction?.merchantName,
-                transaction?.institutionName,
-                transaction?.accountName,
-                transaction?.categoryPrimary,
-                transaction?.categoryDetailed
-            ]
-                .filter(value =>
-                    typeof value === "string" &&
-                    value.trim())
-                .join("\n")
-        }));
+function normalize(value) {
+    return String(value ?? "").trim().toLocaleLowerCase();
 }
 
-function rejectPendingWorkerRequests() {
-    for (const pending
-        of pendingWorkerRequests.values()) {
-
-        window.clearTimeout(
-            pending.timeoutId);
-
-        pending.reject(
-            new Error(
-                "FullWorth local transaction processing stopped."));
-    }
-
-    pendingWorkerRequests.clear();
+function buildTransactionIndex(transactions) {
+    return transactions.map(transaction => ({
+        id: String(transaction?.id ?? ""),
+        accountId: normalize(transaction?.bankAccountId),
+        searchText: normalize([
+            transaction?.name, transaction?.merchantName,
+            transaction?.institutionName, transaction?.accountName,
+            transaction?.categoryPrimary, transaction?.categoryDetailed
+        ].filter(value => typeof value === "string" && value.trim()).join("\n"))
+    }));
 }
 
 function disposeFilterWorker() {
-    if (!filterWorker) {
-        return;
+    const worker = filterWorker;
+    filterWorker = null;
+    worker?.terminate();
+    for (const pending of pendingWorkerRequests.values()) {
+        window.clearTimeout(pending.timeoutId);
+        pending.reject(new Error("FullWorth local transaction processing stopped."));
     }
-
-    filterWorker.terminate();
-    filterWorker =
-        null;
-
-    rejectPendingWorkerRequests();
+    pendingWorkerRequests.clear();
 }
 
 function ensureFilterWorker() {
-    if (filterWorker) {
-        return filterWorker;
-    }
-
-    const worker =
-        new Worker(
-            new URL(
-                "./transaction-filter-worker.js",
-                import.meta.url));
-
-    worker.addEventListener(
-        "message",
-        event => {
-            const requestId =
-                Number(
-                    event.data?.requestId ??
-                    0);
-
-            const pending =
-                pendingWorkerRequests.get(
-                    requestId);
-
-            if (!pending) {
-                return;
-            }
-
-            pendingWorkerRequests.delete(
-                requestId);
-
-            window.clearTimeout(
-                pending.timeoutId);
-
-            if (event.data?.ok !== true) {
-                pending.reject(
-                    new Error(
-                        "FullWorth local transaction processing failed."));
-
-                return;
-            }
-
-            pending.resolve(
-                event.data);
-        });
-
-    worker.addEventListener(
-        "error",
-        () => {
-            disposeFilterWorker();
-        });
-
-    filterWorker =
-        worker;
-
-    return filterWorker;
-}
-
-function sendWorkerRequest(
-    type,
-    payload = {}) {
-
-    const worker =
-        ensureFilterWorker();
-
-    const requestId =
-        nextWorkerRequestId++;
-
-    return new Promise(
-        (resolve, reject) => {
-            const timeoutId =
-                window.setTimeout(
-                    () => {
-                        pendingWorkerRequests.delete(
-                            requestId);
-
-                        reject(
-                            new Error(
-                                "FullWorth local transaction processing timed out."));
-                    },
-                    3000);
-
-            pendingWorkerRequests.set(
-                requestId,
-                {
-                    resolve,
-                    reject,
-                    timeoutId
-                });
-
-            worker.postMessage({
-                requestId,
-                type,
-                ...payload
-            });
-        });
-}
-
-function updateResultLabel(
-    element,
-    count) {
-
-    if (!element) {
-        return;
-    }
-
-    const singular =
-        element.dataset
-            .singularLabel ??
-        "1 transaction";
-
-    const pluralTemplate =
-        element.dataset
-            .pluralTemplate ??
-        "{count} transactions";
-
-    element.textContent =
-        count === 1
-            ? singular
-            : pluralTemplate.replace(
-                "{count}",
-                String(count));
-}
-
-async function applyLocalFilter(
-    searchInput,
-    accountSelect,
-    resultCount,
-    emptyState,
-    rows) {
-
-    filterState = {
-        searchText:
-            searchInput.value ??
-            "",
-
-        selectedAccountId:
-            accountSelect.value ??
-            ""
-    };
-
-    const result =
-        await sendWorkerRequest(
-            "filter",
-            filterState);
-
-    const visibleIds =
-        new Set(
-            Array.isArray(
-                result?.ids)
-                ? result.ids
-                : []);
-
-    let visibleCount =
-        0;
-
-    for (const row of rows) {
-        const transactionId =
-            row.dataset
-                .fullworthTransactionId ??
-            "";
-
-        const isVisible =
-            visibleIds.has(
-                transactionId);
-
-        row.hidden =
-            !isVisible;
-
-        if (isVisible) {
-            visibleCount++;
+    if (filterWorker) return filterWorker;
+    const worker = new Worker(new URL("./transaction-filter-worker.js", import.meta.url));
+    worker.addEventListener("message", event => {
+        if (worker !== filterWorker) return;
+        const pending = pendingWorkerRequests.get(Number(event.data?.requestId ?? 0));
+        if (!pending) return;
+        pendingWorkerRequests.delete(event.data.requestId);
+        window.clearTimeout(pending.timeoutId);
+        if (event.data?.ok !== true) {
+            pending.reject(new Error("FullWorth local transaction processing failed."));
+        } else {
+            pending.resolve(event.data);
         }
-    }
+    });
+    worker.addEventListener("error", () => {
+        if (worker === filterWorker) disposeFilterWorker();
+    });
+    filterWorker = worker;
+    return worker;
+}
 
-    updateResultLabel(
-        resultCount,
-        visibleCount);
+function sendWorkerRequest(type, payload = {}) {
+    const worker = ensureFilterWorker();
+    const requestId = nextWorkerRequestId++;
+    return new Promise((resolve, reject) => {
+        const timeoutId = window.setTimeout(() => {
+            pendingWorkerRequests.delete(requestId);
+            reject(new Error("FullWorth local transaction processing timed out."));
+        }, 3000);
+        pendingWorkerRequests.set(requestId, { resolve, reject, timeoutId });
+        try {
+            worker.postMessage({ requestId, type, ...payload });
+        } catch (error) {
+            pendingWorkerRequests.delete(requestId);
+            window.clearTimeout(timeoutId);
+            reject(error);
+        }
+    });
+}
 
-    if (emptyState) {
-        emptyState.hidden =
-            visibleCount !== 0;
-    }
+function updateResultLabel(element, count) {
+    const singular = element.dataset.singularLabel ?? "1 transaction";
+    const plural = element.dataset.pluralTemplate ?? "{count} transactions";
+    element.textContent = count === 1 ? singular : plural.replace("{count}", String(count));
 }
 
 export async function getBankTransactionsStream(take) {
+    const version = ++loadVersion;
     const transactions = await getBankTransactions(take);
+    if (version !== loadVersion) throw new Error("FullWorth transaction load was superseded.");
     if (!Array.isArray(transactions) || transactions.length > 500) {
         throw new Error("FullWorth received an invalid transaction response.");
     }
-
-    currentTransactionIndex =
-        getExecutionMode() === "local"
-            ? buildTransactionIndex(
-                transactions)
-            : [];
-
-    if (currentTransactionIndex.length === 0) {
-        disposeFilterWorker();
-    }
-
-    // Stream the result so a full history never becomes one oversized
-    // browser-to-server SignalR message. Keep financial data in memory only.
-    const payload = new Blob([JSON.stringify(transactions)], {
-        type: "application/json"
-    });
+    // Stream instead of sending financial history as an oversized SignalR message.
+    const payload = new Blob([JSON.stringify(transactions)], { type: "application/json" });
     if (payload.size > 4 * 1024 * 1024) {
         throw new Error("FullWorth received an oversized transaction response.");
     }
-
-    // IJSStreamReference interop wraps this Blob automatically.
+    // Never replace the working index with an invalid or failed refresh.
+    currentTransactionIndex = getExecutionMode() === "local" ? buildTransactionIndex(transactions) : [];
     return payload;
 }
 
-export async function activateLocalTransactionFiltering(
-    searchInputId,
-    accountSelectId,
-    resultCountId,
-    emptyStateId) {
+export async function activateLocalTransactionFiltering(searchInputId, accountSelectId, resultCountId, emptyStateId) {
+    filterCleanup?.();
+    filterCleanup = null;
+    const version = ++bindingVersion;
+    if (getExecutionMode() !== "local" || currentTransactionIndex.length === 0) return false;
 
-    if (getExecutionMode() !== "local" ||
-        currentTransactionIndex.length === 0) {
-        return false;
-    }
+    const searchInput = document.getElementById(searchInputId);
+    const accountSelect = document.getElementById(accountSelectId);
+    const resultCount = document.getElementById(resultCountId);
+    const emptyState = document.getElementById(emptyStateId);
+    const rows = Array.from(document.querySelectorAll("[data-fullworth-transaction-id]"));
+    if (!searchInput || !accountSelect || !resultCount || rows.length === 0) return false;
 
-    const searchInput =
-        document.getElementById(
-            searchInputId);
-
-    const accountSelect =
-        document.getElementById(
-            accountSelectId);
-
-    const resultCount =
-        document.getElementById(
-            resultCountId);
-
-    const emptyState =
-        document.getElementById(
-            emptyStateId);
-
-    const rows =
-        Array.from(
-            document.querySelectorAll(
-                "[data-fullworth-transaction-id]"));
-
-    if (!searchInput ||
-        !accountSelect ||
-        !resultCount ||
-        rows.length === 0) {
-        return false;
-    }
-
-    if (filterCleanup) {
-        filterCleanup();
-        filterCleanup =
-            null;
-    }
-
+    const index = currentTransactionIndex;
+    let workerAvailable = true;
     try {
-        await sendWorkerRequest(
-            "initialize",
-            {
-                rows:
-                    currentTransactionIndex
-            });
-    }
-    catch {
+        await sendWorkerRequest("initialize", { rows: index });
+    } catch {
+        if (version !== bindingVersion) return false;
         disposeFilterWorker();
-        return false;
+        workerAvailable = false;
     }
+    if (version !== bindingVersion || document.getElementById(searchInputId) !== searchInput) return false;
 
-    searchInput.value =
-        filterState.searchText;
+    searchInput.value = filterState.searchText;
+    accountSelect.value = filterState.selectedAccountId;
+    // An account can disappear after a refresh. Do not retain an invisible filter.
+    if (!accountSelect.value) filterState.selectedAccountId = "";
 
-    accountSelect.value =
-        filterState.selectedAccountId;
+    let sequence = 0;
+    let debounceTimer = null;
+    const isCurrent = requestSequence => version === bindingVersion &&
+        requestSequence === sequence && document.getElementById(searchInputId) === searchInput;
 
-    let debounceTimer =
-        null;
-
-    const apply =
-        async () => {
-            try {
-                await applyLocalFilter(
-                    searchInput,
-                    accountSelect,
-                    resultCount,
-                    emptyState,
-                    rows);
-            }
-            catch {
-                disposeFilterWorker();
-            }
-        };
-
-    const onSearchInput =
-        () => {
-            if (debounceTimer !== null) {
-                window.clearTimeout(
-                    debounceTimer);
-            }
-
-            debounceTimer =
-                window.setTimeout(
-                    apply,
-                    60);
-        };
-
-    const onAccountChange =
-        () => {
-            if (debounceTimer !== null) {
-                window.clearTimeout(
-                    debounceTimer);
-
-                debounceTimer =
-                    null;
-            }
-
-            void apply();
-        };
-
-    searchInput.addEventListener(
-        "input",
-        onSearchInput);
-
-    accountSelect.addEventListener(
-        "change",
-        onAccountChange);
-
-    filterCleanup =
-        () => {
-            searchInput.removeEventListener(
-                "input",
-                onSearchInput);
-
-            accountSelect.removeEventListener(
-                "change",
-                onAccountChange);
-
-            if (debounceTimer !== null) {
-                window.clearTimeout(
-                    debounceTimer);
-            }
-        };
-
+    const apply = async () => {
+        const requestSequence = ++sequence;
+        const state = { searchText: searchInput.value ?? "", selectedAccountId: accountSelect.value ?? "" };
+        filterState = state;
+        let ids;
+        try {
+            if (!workerAvailable) throw new Error("Use bounded in-memory fallback.");
+            ids = (await sendWorkerRequest("filter", state))?.ids;
+            if (!Array.isArray(ids)) throw new Error("Invalid worker result.");
+        } catch {
+            if (!isCurrent(requestSequence)) return;
+            disposeFilterWorker();
+            workerAvailable = false;
+            // Keep controls working even if Web Workers are unavailable or crash.
+            const search = normalize(state.searchText);
+            const account = normalize(state.selectedAccountId);
+            ids = index.filter(row => (!account || row.accountId === account) &&
+                (!search || row.searchText.includes(search))).map(row => row.id);
+        }
+        if (!isCurrent(requestSequence)) return;
+        const visibleIds = new Set(ids);
+        let count = 0;
+        for (const row of rows) {
+            row.hidden = !visibleIds.has(row.dataset.fullworthTransactionId ?? "");
+            if (!row.hidden) count++;
+        }
+        updateResultLabel(resultCount, count);
+        if (emptyState) emptyState.hidden = count !== 0;
+    };
+    const onSearchInput = () => {
+        // Invalidate outstanding results immediately, before the debounce elapses.
+        sequence++;
+        if (debounceTimer !== null) window.clearTimeout(debounceTimer);
+        debounceTimer = window.setTimeout(() => { debounceTimer = null; void apply(); }, 60);
+    };
+    const onAccountChange = () => {
+        sequence++;
+        if (debounceTimer !== null) window.clearTimeout(debounceTimer);
+        debounceTimer = null;
+        void apply();
+    };
+    searchInput.addEventListener("input", onSearchInput);
+    accountSelect.addEventListener("change", onAccountChange);
+    filterCleanup = () => {
+        sequence++;
+        searchInput.removeEventListener("input", onSearchInput);
+        accountSelect.removeEventListener("change", onAccountChange);
+        if (debounceTimer !== null) window.clearTimeout(debounceTimer);
+    };
     await apply();
-
-    return true;
+    return version === bindingVersion && document.getElementById(searchInputId) === searchInput;
 }
 
 export function deactivateLocalTransactionFiltering() {
-    if (filterCleanup) {
-        filterCleanup();
-        filterCleanup =
-            null;
-    }
+    bindingVersion++;
+    loadVersion++;
+    filterCleanup?.();
+    filterCleanup = null;
+    disposeFilterWorker();
+    currentTransactionIndex = [];
+    filterState = { searchText: "", selectedAccountId: "" };
 }

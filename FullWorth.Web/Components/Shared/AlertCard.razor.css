@@ -245,3 +245,17 @@
             flex: 1;
         }
 }
+
+.alert-primary-action { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.alert-secondary-action { min-height: 44px; }
+.alert-primary-action:focus-visible, .alert-secondary-action:focus-visible { outline: 2px solid var(--bw-accent); outline-offset: 3px; }
+.alert-title-line, .alert-card-content { min-width: 0; }
+.alert-title-line strong, .alert-card-content p { overflow-wrap: anywhere; }
+
+@media (max-width: 680px) {
+    .alert-actions a { flex: 1; }
+}
+
+/* Outrank the global feed theme without replacing its colors or layout. */
+.alert-card .alert-actions .alert-secondary-action,
+.alert-card .alert-actions .alert-primary-action { min-height: 44px; }

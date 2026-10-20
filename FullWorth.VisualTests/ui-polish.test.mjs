@@ -129,6 +129,18 @@ export async function verifyUiPolish(page, outputDir) {
               r.bottom <= other.top + 1 || r.top >= other.bottom - 1, "Tab targets must not overlap.");
             rects.push(r);
           }
+          const rows = new Map();
+          for (const r of rects) {
+            const key = Math.round(r.top);
+            if (!rows.has(key)) rows.set(key, []);
+            rows.get(key).push(r);
+          }
+          if (rows.size > 1) {
+            const lastRow = rows.get([...rows.keys()].sort((a, b) => a - b).at(-1));
+            if (lastRow.length === 1) assert.ok(lastRow[0].right - lastRow[0].left >=
+              Math.max(...rects.map(r => r.right)) - Math.min(...rects.map(r => r.left)) - 2,
+              "A lone final tab should fill the row rather than leave an empty grid.");
+          }
           if (enlarged) assert.ok(await page.locator(".mobile-bottom-nav").evaluate(element =>
             parseFloat(getComputedStyle(element).fontSize)) >= normalFont * 1.9,
             "Layout must reflow, not shrink away the user's enlarged text.");
@@ -159,6 +171,11 @@ export async function verifyUiPolish(page, outputDir) {
           const spotify = page.locator(".fw-bills-row").filter({ hasText: "Spotify" });
           await spotify.locator(".bill-category-sprite").waitFor();
           assert.equal(await spotify.locator("img.provider-logo-image").count(), 0, "Bill rows must retain their category fallback after logo failure.");
+          const filterLayout = await page.locator(".fw-bills-filters").evaluate(element => ({
+            wrap: getComputedStyle(element).flexWrap, fits: element.scrollWidth <= element.clientWidth + 1
+          }));
+          assert.equal(filterLayout.wrap, "wrap", "Bill filters must wrap instead of hiding behind a horizontal strip.");
+          assert.equal(filterLayout.fits, true, "Every bill filter should fit in the card without sideways scrolling.");
           await verifyControls(".fw-bills-filters button");
           await page.locator(".fw-bills-filters button").nth(1).click();
           await page.waitForFunction(() => document.querySelectorAll(".fw-bills-row").length === 1);

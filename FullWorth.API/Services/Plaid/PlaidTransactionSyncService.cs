@@ -4,6 +4,7 @@ using System.Text.Json;
 using FullWorth.API.Data;
 using FullWorth.API.Data.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace FullWorth.API.Services.Plaid;
 
@@ -348,59 +349,100 @@ public sealed class PlaidTransactionSyncService
             }
         }
 
-        var now =
-            DateTimeOffset.UtcNow;
-
-        foreach (var plaidTransaction in
-                 delta.Added)
-        {
-            UpsertTransaction(
+        // Resolve removals before staging any writes: a failed lookup must not
+        // leave partially applied upserts in this request's shared DbContext.
+        var removedTransactions =
+            await LoadRemovedTransactionsAsync(
                 userId,
-                accountsByPlaidId,
-                existingTransactions,
-                plaidTransaction,
-                now);
-        }
+                accountIds,
+                delta.RemovedIds,
+                cancellationToken);
 
-        foreach (var plaidTransaction in
-                 delta.Modified)
+        var existingEntities = existingTransactions.Values
+            .Concat(removedTransactions)
+            .Distinct()
+            .ToArray();
+        var snapshots = existingEntities
+            .Select(transaction => new SyncEntrySnapshot(_dbContext.Entry(transaction)))
+            .Append(new SyncEntrySnapshot(_dbContext.Entry(connection)))
+            .ToArray();
+        var existingEntitySet = existingEntities.ToHashSet();
+
+        try
         {
-            UpsertTransaction(
-                userId,
-                accountsByPlaidId,
-                existingTransactions,
-                plaidTransaction,
-                now);
+            var now =
+                DateTimeOffset.UtcNow;
+
+            foreach (var plaidTransaction in
+                     delta.Added)
+            {
+                UpsertTransaction(
+                    userId,
+                    accountsByPlaidId,
+                    existingTransactions,
+                    plaidTransaction,
+                    now);
+            }
+
+            foreach (var plaidTransaction in
+                     delta.Modified)
+            {
+                UpsertTransaction(
+                    userId,
+                    accountsByPlaidId,
+                    existingTransactions,
+                    plaidTransaction,
+                    now);
+            }
+
+            foreach (var transaction in removedTransactions)
+            {
+                transaction.IsRemoved = true;
+                transaction.UpdatedAtUtc = now;
+            }
+
+            /*
+             * Advance the cursor only after every page has been validated and
+             * every local change is ready to commit.
+             *
+             * If SaveChanges fails, the previous cursor remains authoritative
+             * and the delta can safely be replayed.
+             */
+            connection.TransactionsCursor =
+                delta.NextCursor;
+
+            connection.Status =
+                BankConnectionStatus.Active;
+
+            connection.LastSuccessfulSyncAtUtc =
+                now;
+
+            connection.UpdatedAtUtc =
+                now;
+
+            await _dbContext.SaveChangesAsync(
+                cancellationToken);
         }
+        catch
+        {
+            // SaveChanges rolls back relational writes, but EF retains staged
+            // values. Do not let a later save persist a failed delta/cursor.
+            // Restore only this sync's entities; retain unrelated caller work.
+            foreach (var transaction in existingTransactions.Values)
+            {
+                if (!existingEntitySet.Contains(transaction))
+                {
+                    _dbContext.Entry(transaction).State = EntityState.Detached;
+                }
+            }
 
-        await ApplyRemovedTransactionsAsync(
-            userId,
-            accountIds,
-            delta.RemovedIds,
-            now,
-            cancellationToken);
+            foreach (var snapshot in snapshots)
+            {
+                snapshot.Restore();
+            }
 
-        /*
-         * Advance the cursor only after every page has been validated and
-         * every local change is ready to commit.
-         *
-         * If SaveChanges fails, the previous cursor remains authoritative
-         * and the delta can safely be replayed.
-         */
-        connection.TransactionsCursor =
-            delta.NextCursor;
-
-        connection.Status =
-            BankConnectionStatus.Active;
-
-        connection.LastSuccessfulSyncAtUtc =
-            now;
-
-        connection.UpdatedAtUtc =
-            now;
-
-        await _dbContext.SaveChangesAsync(
-            cancellationToken);
+            throw;
+        }
 
         return new PlaidTransactionConnectionSyncResult(
             connection.Id,
@@ -657,61 +699,64 @@ public sealed class PlaidTransactionSyncService
         return result;
     }
 
-    private async Task ApplyRemovedTransactionsAsync(
+    private async Task<List<BankTransactionEntity>> LoadRemovedTransactionsAsync(
         Guid userId,
         IReadOnlySet<Guid> accountIds,
         IReadOnlyList<string> removedIds,
-        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        if (removedIds.Count ==
-            0)
-        {
-            return;
-        }
+        var result = new List<BankTransactionEntity>();
+        var accountIdArray = accountIds.ToArray();
 
-        var accountIdArray =
-            accountIds.ToArray();
-
-        for (var offset = 0;
-             offset < removedIds.Count;
-             offset += DatabaseLookupChunkSize)
+        for (var offset = 0; offset < removedIds.Count; offset += DatabaseLookupChunkSize)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var chunk = removedIds.Skip(offset).Take(DatabaseLookupChunkSize).ToArray();
 
-            var chunk =
-                removedIds
-                    .Skip(
-                        offset)
-                    .Take(
-                        DatabaseLookupChunkSize)
-                    .ToArray();
+            // Keep the database lookup scoped to this owner and connection.
+            result.AddRange(await _dbContext.BankTransactions
+                .Where(transaction =>
+                    transaction.UserId == userId &&
+                    accountIdArray.Contains(transaction.BankAccountId) &&
+                    chunk.Contains(transaction.PlaidTransactionId))
+                .ToListAsync(cancellationToken));
+        }
 
-            /*
-             * Scope removal by both UserId and the current connection's
-             * owned account IDs.
-             */
-            var transactionsToRemove =
-                await _dbContext.BankTransactions
-                    .Where(
-                        transaction =>
-                            transaction.UserId ==
-                                userId &&
-                            accountIdArray.Contains(
-                                transaction.BankAccountId) &&
-                            chunk.Contains(
-                                transaction.PlaidTransactionId))
-                    .ToListAsync(
-                        cancellationToken);
+        return result;
+    }
 
-            foreach (var transaction in
-                     transactionsToRemove)
+    private sealed class SyncEntrySnapshot
+    {
+        private readonly EntityEntry _entry;
+        private readonly PropertyValues _current;
+        private readonly PropertyValues _original;
+        private readonly EntityState _state;
+        private readonly HashSet<string> _modified;
+
+        public SyncEntrySnapshot(EntityEntry entry)
+        {
+            _entry = entry;
+            _current = entry.CurrentValues.Clone();
+            _original = entry.OriginalValues.Clone();
+            _state = entry.State;
+            _modified = entry.Properties
+                .Where(property => property.IsModified)
+                .Select(property => property.Metadata.Name)
+                .ToHashSet(StringComparer.Ordinal);
+        }
+
+        public void Restore()
+        {
+            _entry.CurrentValues.SetValues(_current);
+            _entry.OriginalValues.SetValues(_original);
+            _entry.State = _state;
+
+            if (_state == EntityState.Modified)
             {
-                transaction.IsRemoved =
-                    true;
-
-                transaction.UpdatedAtUtc =
-                    now;
+                foreach (var property in _entry.Properties)
+                {
+                    property.IsModified = _modified.Contains(property.Metadata.Name);
+                }
             }
         }
     }

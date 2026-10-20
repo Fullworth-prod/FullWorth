@@ -187,11 +187,18 @@ export async function verifyUiPolish(page, outputDir) {
           const spotify = page.locator(".fw-bills-row").filter({ hasText: "Spotify" });
           await spotify.locator(".bill-category-sprite").waitFor();
           assert.equal(await spotify.locator("img.provider-logo-image").count(), 0, "Bill rows must retain their category fallback after logo failure.");
-          const filterLayout = await page.locator(".fw-bills-filters").evaluate(element => ({
-            wrap: getComputedStyle(element).flexWrap, fits: element.scrollWidth <= element.clientWidth + 1
-          }));
-          assert.equal(filterLayout.wrap, "wrap", "Bill filters must wrap instead of hiding behind a horizontal strip.");
-          assert.equal(filterLayout.fits, true, "Every bill filter should fit in the card without sideways scrolling.");
+          // Bills now has separate primary and additional filter groups. Verify
+          // both groups reflow correctly rather than assuming one CSS match.
+          const filterLayouts = await page.locator(".fw-bills-filters").evaluateAll(elements =>
+            elements.map(element => ({
+              wrap: getComputedStyle(element).flexWrap,
+              fits: element.scrollWidth <= element.clientWidth + 1
+            })));
+          assert.ok(filterLayouts.length >= 2, "Both bill filter groups should be present.");
+          for (const layout of filterLayouts) {
+            assert.equal(layout.wrap, "wrap", "Bill filters must wrap instead of hiding behind a horizontal strip.");
+            assert.equal(layout.fits, true, "Every bill filter group must fit without horizontal scrolling.");
+          }
           await verifyControls(".fw-bills-filters button");
           await page.locator(".fw-bills-filters button").nth(1).click();
           await page.waitForFunction(() => document.querySelectorAll(".fw-bills-row").length === 1);

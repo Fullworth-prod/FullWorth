@@ -223,3 +223,13 @@
     min-height: 44px; height: auto; box-sizing: border-box; padding: 10px 14px;
     font-size: .8rem; line-height: 1.4; white-space: normal; border-radius: 12px;
 }
+
+/* Neutral counters and long evidence labels must remain legible in both themes. */
+.app-shell.app-shell .fw-bills-stat:not(.is-alert):not(.is-positive) > strong,
+.app-shell.app-shell .fw-activity-pulse-stats strong { color: var(--bw-text); }
+.app-shell.app-shell .fw-signal-provider strong {
+    white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere;
+    font-size: .9rem; line-height: 1.5;
+}
+.app-shell.app-shell .fw-signal-provider { margin-top: 20px; }
+.app-shell.app-shell .fw-signal-change { font-size: clamp(2rem, 5vw, 3rem); line-height: 1.2; margin-top: 18px; letter-spacing: -.04em; }

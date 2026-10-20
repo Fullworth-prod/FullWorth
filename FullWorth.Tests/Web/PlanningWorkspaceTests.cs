@@ -205,6 +205,21 @@ public sealed class PlanningWorkspaceTests
         Assert.DoesNotContain(module.Calls, c => c.Name.StartsWith("put") || c.Name.StartsWith("delete"));
     }
 
+    [Fact]
+    public async Task MissingProviderName_UsesFallbackAndRemainsSearchableWithoutCrashing()
+    {
+        var module = new Module(); var normal = module.Reply;
+        module.Reply = (name, args) => name == "getBillStreams"
+            ? Task.FromResult<string?>(Bills.Replace("\"Example Utility\"", "null")) : normal(name, args);
+        var page = Page(module); await Run(page, "LoadAsync");
+        Assert.Empty(Get<HashSet<string>>(page, "_loadErrors"));
+        Assert.Equal(string.Empty, Get<string>(Bill(page), "ProviderName"));
+        Set(page, "_billSearch", "utility");
+        Assert.Empty(Get<IEnumerable>(page, "FilteredBills").Cast<object>());
+        Set(page, "_billSearch", string.Empty);
+        Assert.Single(Get<IEnumerable>(page, "FilteredBills").Cast<object>());
+    }
+
     [Theory]
     [InlineData("read")]
     [InlineData("save")]

@@ -493,7 +493,7 @@
             .OrderBy(item => item.ProviderName, StringComparer.CurrentCultureIgnoreCase)
             .Select(item => new PlanningBillViewModel
             {
-                Id = item.Id, ProviderName = item.ProviderName, CurrentAmount = item.CurrentAmount,
+                Id = item.Id, ProviderName = item.ProviderName ?? string.Empty, CurrentAmount = item.CurrentAmount,
                 CurrencyCode = item.CurrencyCode,
                 SelectedOverride = overrides.TryGetValue(item.Id, out var count) ? count.ToString(System.Globalization.CultureInfo.InvariantCulture) : string.Empty,
                 SavedOverride = overrides.TryGetValue(item.Id, out var saved) ? saved.ToString(System.Globalization.CultureInfo.InvariantCulture) : string.Empty

@@ -176,6 +176,24 @@ export async function verifyExperienceSetup(page, outputDir) {
             "Setup controls must fit with reachable 44px targets.");
         }
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false);
+        if (width <= 390) {
+          assert.equal(await page.locator(".setup-progress ol").evaluate(element =>
+            getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length), 1,
+            "Narrow or enlarged setup navigation must stack rather than split step names into tiny tiles.");
+        }
+        for (const action of await page.locator(".setup-fields .settings-actions button").all()) {
+          await action.evaluate(element => element.scrollIntoView({ block: "center", behavior: "instant" }));
+          const bounds = await action.evaluate(element => {
+            const rect = element.getBoundingClientRect();
+            const nav = document.querySelector(".mobile-bottom-nav");
+            const navRect = nav?.getBoundingClientRect();
+            return { top: rect.top, bottom: rect.bottom,
+              navTop: nav && getComputedStyle(nav).display !== "none" ? navRect.top : innerHeight };
+          });
+          assert.ok(bounds.top >= 0 && bounds.bottom <= bounds.navTop,
+            "Setup actions must remain reachable above the fixed mobile navigation.");
+        }
+
         await page.evaluate(() => { document.activeElement?.blur(); window.scrollTo(0, 0); });
         await page.screenshot({ path: path.join(outputDir, "setup-" + (index ? "review" : "readability") +
           "-" + width + "-" + theme + (enlarged ? "-large-text" : "") + "-" + language + ".png"), fullPage: true });

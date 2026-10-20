@@ -21,12 +21,12 @@ export async function verifyUiPolish(page, outputDir) {
     { id: "bb222222-2222-4222-8222-222222222222", alertType: "ConnectionIssue", severity: "Info",
       title: "Synthetic bank connection update", message: "Review your saved bank connections for the current status.",
       isRead: true, isDismissed: false, createdAtUtc: "2026-09-30T12:00:00Z", updatedAtUtc: "2026-09-30T12:00:00Z" }];
-  let fail = false;
+  let fail = false, empty = false;
   const read = async route => {
     assert.equal(route.request().method(), "GET");
     const pathname = new URL(route.request().url()).pathname;
     if (fail && pathname !== "/bff/bank-connections") return route.fulfill({ status: 503, body: "{}" });
-    const json = pathname === "/bff/bill-streams" ? bills : pathname === "/bff/alerts" ? alerts :
+    const json = pathname === "/bff/bill-streams" ? (empty ? [] : bills) : pathname === "/bff/alerts" ? (empty ? [] : alerts) : empty ? [] :
       [{ id: "cc111111-1111-4111-8111-111111111111", institutionName: "Synthetic Community Bank",
         status: 0, lastSuccessfulSyncAtUtc: "2026-10-01T12:00:00Z", createdAtUtc: "2026-09-01T12:00:00Z" }];
     return route.fulfill({ json });
@@ -181,6 +181,23 @@ export async function verifyUiPolish(page, outputDir) {
       }
     }
 
+    empty = true;
+    await setCulture("en-US");
+    await page.evaluate(() => localStorage.setItem("billwatch-theme", "dark"));
+    const emptyReady = [".onboarding-card", ".bills-empty-state", ".alerts-empty"];
+    for (let index = 0; index < routes.length; index++) {
+      const [label, url] = routes[index];
+      await page.goto(url, { waitUntil: "domcontentloaded" });
+      await page.locator(emptyReady[index]).waitFor();
+      await waitInset();
+      if (label === "overview") await verifyControls(".onboarding-primary-action");
+      if (label === "bills") await verifyControls(".bills-empty-actions a");
+      if (label === "activity") await verifyControls(".activity-refresh-button");
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.screenshot({ path: path.join(outputDir, "polish-empty-" + label + ".png"), fullPage: true });
+    }
+    empty = false;
     fail = true;
     await setCulture("en-US");
     for (const [label, url] of routes) {

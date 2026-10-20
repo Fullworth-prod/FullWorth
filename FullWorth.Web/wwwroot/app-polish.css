@@ -233,3 +233,9 @@
 }
 .app-shell.app-shell .fw-signal-provider { margin-top: 20px; }
 .app-shell.app-shell .fw-signal-change { font-size: clamp(2rem, 5vw, 3rem); line-height: 1.2; margin-top: 18px; letter-spacing: -.04em; }
+
+/* Compact, useful empty states use the same rhythm as populated screens. */
+.app-shell.app-shell .empty-dashboard { min-height: 0; padding: 28px 24px; border-radius: 20px; }
+.app-shell.app-shell .empty-dashboard h2 { font-size: 1.5rem; line-height: 1.25; letter-spacing: -.03em; }
+.app-shell.app-shell .empty-dashboard p { font-size: .88rem; line-height: 1.7; }
+.app-shell.app-shell .empty-icon { width: 44px; height: 44px; border-radius: 14px; margin-bottom: 16px; }

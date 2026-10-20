@@ -48,3 +48,9 @@
     .experience-setup-page .setup-review dl > div { grid-template-columns: minmax(0, 1fr); gap: 4px; }
     .experience-setup-page .settings-actions button { width: 100%; }
 }
+
+/* Recovery feedback belongs beside the retained draft, not over the mobile header. */
+.experience-setup-page .settings-toast {
+    position: static; width: auto; box-sizing: border-box; margin-block: 16px;
+    grid-template-columns: auto minmax(0, 1fr);
+}

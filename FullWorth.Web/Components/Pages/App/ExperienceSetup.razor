@@ -102,8 +102,8 @@
                             </div>
 
                             <label class="settings-field">
-                                <span>@L["Interface language"]</span>
-                                <select @bind="_language">
+                                <span id="setup-language-label">@L["Interface language"]</span>
+                                <select aria-labelledby="setup-language-label" @bind="_language">
                                     <option value="en-US">English</option>
                                     <option value="es">Español</option>
                                 </select>
@@ -117,8 +117,8 @@
                             </div>
 
                             <label class="settings-field">
-                                <span>@L["Theme"]</span>
-                                <select @bind="_theme">
+                                <span id="setup-theme-label">@L["Theme"]</span>
+                                <select aria-labelledby="setup-theme-label" @bind="_theme">
                                     <option value="System">@L["System"]</option>
                                     <option value="Light">@L["Light"]</option>
                                     <option value="Dark">@L["Dark"]</option>
@@ -137,8 +137,8 @@
                             </div>
 
                             <label class="settings-field">
-                                <span>@L["Text size"]</span>
-                                <select @bind="_textSize">
+                                <span id="setup-text-size-label">@L["Text size"]</span>
+                                <select aria-labelledby="setup-text-size-label" @bind="_textSize">
                                     <option value="Standard">@L["Standard"]</option>
                                     <option value="Large">@L["Large"]</option>
                                     <option value="ExtraLarge">@L["Extra large"]</option>

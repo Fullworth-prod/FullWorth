@@ -87,6 +87,8 @@ export async function verifyExperienceSetup(page, outputDir) {
     release();
     await page.getByRole("button", { name: "Check saved setup", exact: true }).waitFor();
     assert.equal(puts, 1);
+    assert.equal(await page.locator(".settings-toast[role=alert]").evaluate(element =>
+      getComputedStyle(element).position), "static", "Recovery feedback must stay beside the draft, not cover the mobile header.");
     assert.equal(await page.locator(".setup-fields").isDisabled(), true);
     getFails = true;
     await page.getByRole("button", { name: "Check saved setup", exact: true }).click();

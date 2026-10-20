@@ -1,3 +1,63 @@
 .bill-discovery-panel { padding: 24px; }
 .bill-discovery-panel h2 { margin-block: 0 16px; }
 .bill-discovery-panel p { max-width: 70ch; line-height: 1.6; }
+
+.bills-refresh { min-height: 44px; }
+.bill-workspace-tools {
+    display: grid; grid-template-columns: minmax(180px, 2fr) repeat(2, minmax(150px, 1fr)) auto;
+    align-items: end; gap: 16px; padding: 20px; margin-block: 20px;
+    border: 1px solid var(--border-color, #52617b); border-radius: 20px;
+    background: var(--surface, transparent);
+}
+.bill-workspace-tools > div { min-width: 0; display: grid; gap: 8px; }
+.bill-workspace-tools label { font-weight: 700; }
+.bill-workspace-tools input, .bill-workspace-tools select {
+    box-sizing: border-box; width: 100%; min-width: 0; min-height: 48px;
+    font: inherit; color: inherit; background: var(--input-bg, transparent);
+    border: 1px solid var(--border-color, #52617b); border-radius: 12px; padding: 10px;
+}
+.bill-workspace-tools select option { color: #111827; background: #fff; }
+.bill-workspace-tools button { min-height: 48px; white-space: normal; }
+.bill-workspace-tools p { grid-column: 1 / -1; margin: 0; line-height: 1.5; }
+.bill-read-warning { padding: 16px; border: 1px solid #b88b35; border-radius: 16px; line-height: 1.6; }
+.bill-filter-scope, .bill-section-count { padding-inline: 20px; line-height: 1.6; }
+.bill-extra-filters { flex-wrap: wrap; }
+.bill-extra-filters button, .bill-inactive-history summary { min-height: 44px; }
+.bill-inactive-history { padding: 20px; margin-block: 20px; }
+.bill-inactive-history summary { cursor: pointer; font-weight: 700; line-height: 1.6; }
+.bill-inactive-history p { max-width: 70ch; line-height: 1.6; }
+.bill-inactive-history ul { margin: 0; padding-inline-start: 20px; }
+.bill-inactive-history a { display: inline-block; padding-block: 12px; overflow-wrap: anywhere; }
+.bill-workspace-tools :is(input, select, button):focus-visible,
+.bills-refresh:focus-visible, .bill-inactive-history :is(summary, a):focus-visible {
+    outline: 3px solid var(--accent, #6b8dff); outline-offset: 3px;
+}
+@media (max-width: 1000px) {
+    .bill-workspace-tools { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 580px) {
+    .bill-workspace-tools { grid-template-columns: minmax(0, 1fr); padding: 16px; }
+    .bill-workspace-tools p, .bill-filter-scope, .bill-read-warning { overflow-wrap: anywhere; }
+    .bills-refresh { width: 100%; white-space: normal; }
+}
+
+/* Keep every evidence filter visible rather than relying on a hidden mobile scroller. */
+.bills-page .fw-bills-filters {
+    width: auto; min-width: 0; flex-wrap: wrap; overflow: visible;
+}
+.bills-page .fw-bills-filters .bill-filter {
+    min-height: 44px; height: auto; max-width: 100%; white-space: normal;
+    overflow-wrap: anywhere; padding-block: 8px;
+}
+.bills-page .fw-bills-filters .bill-filter:focus-visible {
+    outline: 3px solid var(--fw-accent, #6b8dff); outline-offset: 2px;
+}
+.bills-page .fw-bills-total small + small { margin-top: 6px; }
+.bills-page .fw-bills-stats { grid-template-columns: minmax(0, 1fr); }
+.bills-page .fw-bills-stat, .bills-page .fw-bills-stat:last-child {
+    grid-column: auto; min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) auto; align-content: center;
+    align-items: center; gap: 10px 16px; padding: 18px;
+}
+.bills-page .fw-bills-stat strong { margin: 0; }
+.bills-page .fw-bills-stat small { grid-column: 1 / -1; margin: 0; padding: 0; }

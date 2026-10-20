@@ -33,8 +33,7 @@
             </p>
         </div>
 
-        @if (!_isLoading &&
-             HasActiveConnection)
+        @if (_hasLoadedData)
         {
             <button class="status-check-button"
                     type="button"
@@ -56,6 +55,21 @@
             </button>
         }
     </header>
+
+    @if (!string.IsNullOrWhiteSpace(_refreshError))
+    {
+        <div class="connection-warning" role="status">
+            <p>@_refreshError</p>
+        </div>
+    }
+
+    @if (_hasLoadedData && !HasActiveConnection && _billStreams.Count > 0)
+    {
+        <div class="connection-warning" role="status">
+            <p>@L["These are saved bill records. No bank connection currently reports active monitoring; review your connections."]</p>
+            <a href="/app/account">@L["Review connection"]</a>
+        </div>
+    }
 
     @if (_isLoading)
     {
@@ -94,7 +108,7 @@
             </button>
         </div>
     }
-    else if (!HasActiveConnection)
+    else if (!HasActiveConnection && _billStreams.Count == 0)
     {
         @if (HasConnectionNeedingAttention)
         {
@@ -147,7 +161,7 @@
                     </span>
 
                     <h2>
-                        @L["Connect your bank once. FullWorth handles the rest."]
+                        @L["Connect a bank to start reviewing your bills."]
                     </h2>
 
                     <p>
@@ -332,7 +346,7 @@
         <section class="onboarding-card history-state">
             <div class="onboarding-copy">
                 <span class="page-kicker">
-                    @L["Monitoring active"]
+                    @L["No recognized bills yet"]
                 </span>
 
                 <h2>
@@ -340,7 +354,7 @@
                 </h2>
 
                 <p>
-                    @L["FullWorth has successfully synchronized your connection, but the available transaction history does not currently support a recurring Bill Stream. It will keep checking automatically as new transactions arrive."]
+                    @L["No active recurring bills were returned. This does not prove that you have no bills or that every transaction has been imported. Review your bills, connections, and transaction history."]
                 </p>
 
                 @if (LatestSuccessfulSync is not null)
@@ -360,8 +374,8 @@
                 }
 
                 <a class="onboarding-secondary-action link-action"
-                   href="/app/account">
-                    @L["View connected accounts"]
+                   href="/app/bills">
+                    @L["Review bills and history"]
                     <svg class="bw-sprite" aria-hidden="true">
                         <use href="/assets/billwatch-sprites.svg#arrow-right"></use>
                     </svg>
@@ -422,110 +436,7 @@
             </div>
         }
 
-        <section class="fw-pulse" aria-label="@L["FullWorth status"]">
-            <div class="fw-pulse-main">
-                <div class="fw-pulse-state">
-                    <span class="fw-live-dot" aria-hidden="true"></span>
-                    @L["Monitoring your recurring bills"]
-                </div>
-
-                <span class="fw-pulse-label">
-                    @L["Latest recurring total"]
-                </span>
-
-                <strong class="fw-pulse-amount">
-                    @CurrentTotal
-                </strong>
-
-                @if (_billStreams.Any(bill => !bill.HasTransactionEvidence ||
-                    !FinancialAmountFormatter.TryNormalizeCurrency(bill.CurrencyCode, out _)))
-                {
-                    <p>@L["Some bill amounts are unavailable and excluded from this total."]</p>
-                }
-
-                <p class="fw-pulse-summary">
-                    @if (BillsAbovePriorAverage == 1)
-                    {
-                        @L["One recurring bill is currently above its prior transaction average."]
-                    }
-                    else if (BillsAbovePriorAverage > 1)
-                    {
-                        @L["{0} recurring bills are currently above their prior transaction average.", BillsAbovePriorAverage]
-                    }
-                    else
-                    {
-                        @L["Your latest recognized recurring charges are currently at or below their available prior averages."]
-                    }
-                </p>
-
-                <div class="fw-pulse-actions">
-                    <a class="fw-primary-action" href="/app/bills">
-                        @L["Review bills"]
-                        <svg class="bw-sprite" aria-hidden="true">
-                            <use href="/assets/billwatch-sprites.svg#arrow-right"></use>
-                        </svg>
-                    </a>
-
-                    <a class="fw-quiet-action" href="/app/account/transactions">
-                        <svg class="bw-sprite" aria-hidden="true">
-                            <use href="/assets/billwatch-sprites.svg#transactions"></use>
-                        </svg>
-                        @L["Transactions"]
-                    </a>
-                </div>
-            </div>
-
-            <div class="fw-pulse-rail">
-                <div class="fw-pulse-stat">
-                    <span>@L["Bills watched"]</span>
-                    <strong>@_billStreams.Count</strong>
-                    <small>@L["Active recurring Bill Streams"]</small>
-                </div>
-
-                <div class="fw-pulse-stat @(BillsAbovePriorAverage > 0 ? "is-alert" : "is-calm")">
-                    <span>@L["Current increases"]</span>
-                    <strong>
-                        @CurrentIncreaseTotal
-                    </strong>
-                    <small>
-                        @if (BillsAbovePriorAverage > 0)
-                        {
-                            @L["Across {0} bills to review", BillsAbovePriorAverage]
-                        }
-                        else
-                        {
-                            @L["No increases to review"]
-                        }
-                    </small>
-                </div>
-
-                <div class="fw-pulse-stat">
-                    <span>@L["Annualized impact"]</span>
-                    <strong>
-                        @AnnualizedIncreaseTotal
-                    </strong>
-                    <small>@L["If current increases persisted for 12 months"]</small>
-                </div>
-
-                <div class="fw-sync-line">
-                    <span>@L["Last successful bank sync"]</span>
-
-                    @if (LatestSuccessfulSync is not null)
-                    {
-                        <strong>
-                            <time datetime="@LatestSuccessfulSync.Value.ToString("O")">
-                                @FormatTimestampFallback(
-                                    LatestSuccessfulSync.Value)
-                            </time>
-                        </strong>
-                    }
-                    else
-                    {
-                        <strong>@L["Not yet available"]</strong>
-                    }
-                </div>
-            </div>
-        </section>
+        <OverviewBillSummary Summary="_summary" LatestSuccessfulSync="LatestSuccessfulSync" />
 
         <section class="fw-overview-grid">
             <article class="fw-watchlist">
@@ -583,7 +494,7 @@
                                     @(bill.HasTransactionEvidence ? FormatMoney(bill.CurrentAmount, bill.CurrencyCode) : L["Amount unavailable"].Value)
                                 </strong>
 
-                                @if (bill.PreviousAverage > 0m)
+                                @if (OverviewBillCoverage.CanCompare(ToFact(bill)))
                                 {
                                     <span class="@GetDifferenceClass(
                                         difference)">
@@ -593,7 +504,7 @@
                                 else
                                 {
                                     <span>
-                                        @L["Building history"]
+                                        @L["Comparison unavailable"]
                                     </span>
                                 }
                             </div>
@@ -606,86 +517,7 @@
             </article>
 
             <aside class="fw-signal-card">
-                @if (LargestIncrease is not null)
-                {
-                    var increase =
-                        GetDifference(
-                            LargestIncrease);
-
-                    <div class="fw-signal-top">
-                        <span class="fw-signal-label">
-                            @L["Needs attention"]
-                        </span>
-
-                        <span class="fw-signal-count">
-                            @BillsAbovePriorAverage
-                        </span>
-                    </div>
-
-                    <div class="fw-signal-provider">
-                        <div class="fw-signal-logo">
-                            <ProviderLogo ProviderName="@LargestIncrease.ProviderName" />
-                        </div>
-
-                        <div>
-                            <span>@L["Largest current increase"]</span>
-                            <strong>@LargestIncrease.ProviderName</strong>
-                        </div>
-                    </div>
-
-                    <div class="fw-signal-change">
-                        +@FormatMoney(increase, LargestIncrease.CurrencyCode)
-                    </div>
-
-                    <span class="fw-signal-period">
-                        @L["above its prior transaction average"]
-                    </span>
-
-                    <div class="fw-signal-impact">
-                        <span>@L["Annualized difference"]</span>
-                        <strong>
-                            @(LargestIncrease.HasMonthlyCadenceEvidence ? "+" + FormatMoney(increase * 12m, LargestIncrease.CurrencyCode) : L["Yearly estimate unavailable"].Value)
-                        </strong>
-                    </div>
-
-                    <p>
-                        @L["Transaction history confirms the amount changed. FullWorth will only explain why when provider evidence supports it."]
-                    </p>
-
-                    <a class="fw-signal-action"
-                       href="@($"/app/bills/{LargestIncrease.Id}")">
-                        @L["Review evidence"]
-                        <span aria-hidden="true">→</span>
-                    </a>
-                }
-                else
-                {
-                    <div class="fw-signal-top">
-                        <span class="fw-signal-label">
-                            @L["Current status"]
-                        </span>
-                    </div>
-
-                    <div class="fw-calm-orb" aria-hidden="true">
-                        ✓
-                    </div>
-
-                    <h2>
-                        @(BillsAbovePriorAverage > 0 ? L["Bills need review"] : L["Everything looks steady"])
-                    </h2>
-
-                    <p>
-                        @(BillsAbovePriorAverage > 0
-                            ? L["Review increases in their original currencies. Amounts in different currencies cannot be ranked together."]
-                            : L["None of the latest recognized bill amounts are above their available prior transaction averages."])
-                    </p>
-
-                    <a class="fw-signal-action"
-                       href="/app/activity">
-                        @L["View activity"]
-                        <span aria-hidden="true">→</span>
-                    </a>
-                }
+                <OverviewBillSummary Summary="_summary" StatusOnly="true" />
             </aside>
         </section>
 
@@ -773,15 +605,10 @@
 
     private DateTimeOffset? LatestSuccessfulSync { get; set; }
 
-    private string CurrentTotal { get; set; } = string.Empty;
-
-    private int BillsAbovePriorAverage { get; set; }
-
-    private string CurrentIncreaseTotal { get; set; } = string.Empty;
-
-    private string AnnualizedIncreaseTotal { get; set; } = string.Empty;
-
-    private BillStreamViewModel? LargestIncrease { get; set; }
+    private OverviewBillCoverage _summary = OverviewBillCoverage.Create([]);
+    private bool _hasLoadedData;
+    private bool _disposed;
+    private string? _refreshError;
 
     protected override async Task
         OnAfterRenderAsync(
@@ -794,7 +621,8 @@
 
         await LoadAsync();
 
-        StateHasChanged();
+        if (!_disposed)
+            StateHasChanged();
     }
 
     private async Task<
@@ -817,17 +645,22 @@
 
     private async Task CheckStatusAsync()
     {
-        if (_isCheckingStatus)
+        if (_isCheckingStatus || _isLoading || _disposed)
         {
             return;
         }
 
-        _isCheckingStatus =
-            true;
+        _isCheckingStatus = true;
+        _refreshError = null;
 
         try
         {
             await LoadDataAsync();
+        }
+        catch (Exception)
+        {
+            if (!_disposed)
+                _refreshError = L["The overview could not be refreshed. Previously loaded records are still shown and may be out of date. Check status to retry."].Value;
         }
         finally
         {
@@ -884,37 +717,52 @@
                     "getBillStreams")
                 .AsTask();
 
-        var preferenceTask =
-            module
-                .InvokeAsync<
-                    ExperiencePreferenceViewModel>(
-                    "getExperiencePreferences")
-                .AsTask();
+        var preferenceTask = LoadOptionalPreferencesAsync(module);
 
         await Task.WhenAll(
             connectionTask,
             billStreamTask,
             preferenceTask);
 
-        _connections =
-            connectionTask.Result?
-                .ToList()
-            ?? [];
+        var connections = connectionTask.Result
+            ?? throw new InvalidOperationException("Connection snapshot unavailable.");
+        var bills = billStreamTask.Result
+            ?? throw new InvalidOperationException("Bill snapshot unavailable.");
+        if (connections.Any(connection => connection is null || connection.Id == Guid.Empty) ||
+            bills.Any(bill => bill is null || bill.Id == Guid.Empty) ||
+            connections.Select(connection => connection.Id).Distinct().Count() != connections.Length ||
+            bills.Select(bill => bill.Id).Distinct().Count() != bills.Length)
+        {
+            throw new InvalidOperationException("Invalid overview snapshot.");
+        }
 
-        _billStreams =
-            billStreamTask.Result?
-                .Where(
-                    bill =>
-                        bill.IsActive)
-                .ToList()
-            ?? [];
+        var activeBills = bills.Where(bill => bill.IsActive).ToList();
+        var summary = OverviewBillCoverage.Create(activeBills.Select(ToFact));
+        if (_disposed)
+            return;
 
-        _quickLinkOrder =
-            ExperienceFocusOrdering.OrderQuickLinks(
-                preferenceTask.Result?
-                    .ExperienceFocus);
-
+        // Commit a complete, validated snapshot together; partial reads cannot erase it.
+        _connections = connections.ToList();
+        _billStreams = activeBills;
+        _summary = summary;
+        if (preferenceTask.Result is { } preferences)
+            _quickLinkOrder = ExperienceFocusOrdering.OrderQuickLinks(preferences.ExperienceFocus);
         UpdateOverviewSummaries();
+        _hasLoadedData = true;
+    }
+
+    private static async Task<ExperiencePreferenceViewModel?> LoadOptionalPreferencesAsync(
+        IJSObjectReference module)
+    {
+        try
+        {
+            return await module.InvokeAsync<ExperiencePreferenceViewModel>("getExperiencePreferences");
+        }
+        catch (Exception)
+        {
+            // Optional presentation preferences must not hide readable financial records.
+            return null;
+        }
     }
 
     private void UpdateOverviewSummaries()
@@ -950,52 +798,17 @@
                         value)
                 .FirstOrDefault();
 
-        CurrentTotal = FormatTotals(_billStreams.Where(bill => bill.HasTransactionEvidence)
-            .Select(bill => (bill.CurrentAmount, bill.CurrencyCode)));
-
-        BillsAbovePriorAverage =
-            _billStreams.Count(
-                bill =>
-                    bill.PreviousAverage > 0m &&
-                    bill.CurrentAmount >
-                        bill.PreviousAverage);
-
-        var increases = _billStreams.Where(bill => GetDifference(bill) > 0m).ToArray();
-        CurrentIncreaseTotal = FormatTotals(increases.Select(bill => (GetDifference(bill), bill.CurrencyCode)));
-        AnnualizedIncreaseTotal = increases.Length > 0 && increases.All(bill => bill.HasMonthlyCadenceEvidence)
-            ? FormatTotals(increases.Select(bill => (GetDifference(bill) * 12m, bill.CurrencyCode)))
-            : L["Yearly estimate unavailable"].Value;
-
-        LargestIncrease =
-            increases.Select(bill => bill.CurrencyCode).Distinct().Count() > 1 ? null :
-            _billStreams
-                .Where(
-                    bill =>
-                        bill.PreviousAverage > 0m &&
-                        bill.CurrentAmount >
-                            bill.PreviousAverage)
-                .OrderByDescending(
-                    GetDifference)
-                .FirstOrDefault();
     }
 
-    private static decimal GetDifference(
-        BillStreamViewModel bill)
-    {
-        if (bill.PreviousAverage <= 0m)
-        {
-            return 0m;
-        }
+    private static OverviewBillFact ToFact(BillStreamViewModel bill) => new(
+        bill.Id, bill.ProviderName, bill.IsActive, bill.HasTransactionEvidence,
+        bill.HasMonthlyCadenceEvidence, bill.CurrentAmount, bill.PreviousAverage, bill.CurrencyCode);
 
-        return bill.CurrentAmount -
-            bill.PreviousAverage;
-    }
+    private static decimal GetDifference(BillStreamViewModel bill) =>
+        OverviewBillCoverage.Difference(ToFact(bill));
 
     private string FormatMoney(decimal amount, string? currencyCode) =>
         FinancialAmountFormatter.FormatOrUnspecified(amount, currencyCode, L["Currency unavailable"].Value);
-
-    private string FormatTotals(IEnumerable<(decimal Amount, string? CurrencyCode)> amounts) =>
-        FinancialAmountFormatter.FormatTotals(amounts) ?? L["Amount unavailable"].Value;
 
     private string FormatDifference(
         decimal difference, string? currencyCode)
@@ -1066,6 +879,7 @@
 
     public async ValueTask DisposeAsync()
     {
+        _disposed = true;
         if (_bffModule is null)
         {
             return;

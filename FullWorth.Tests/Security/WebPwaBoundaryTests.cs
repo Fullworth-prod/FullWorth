@@ -347,70 +347,37 @@ public sealed class WebPwaBoundaryTests
     [Fact]
     public void AccountExportClient_UsesReauthenticatedPostWithoutMisclassifyingCredentialFailures()
     {
-        var repositoryRoot =
-            FindRepositoryRoot();
+        var root = FindRepositoryRoot();
+        var bff = File.ReadAllText(Path.Combine(root, "FullWorth.Web", "wwwroot", "js", "bff.js"));
+        var exportClient = File.ReadAllText(Path.Combine(root, "FullWorth.Web", "wwwroot", "js", "account-export.js"));
+        var privacyRequests = File.ReadAllText(Path.Combine(root, "FullWorth.Web", "wwwroot", "js", "account-privacy-requests.js"));
 
-        var bff =
-            File.ReadAllText(
-                Path.Combine(
-                    repositoryRoot,
-                    "FullWorth.Web",
-                    "wwwroot",
-                    "js",
-                    "bff.js"));
+        // Existing callers keep the same signature, without eagerly loading privacy
+        // download dependencies for every unrelated BFF import.
+        var exportStart = bff.IndexOf("export async function downloadAccountExport(", StringComparison.Ordinal);
+        Assert.True(exportStart >= 0);
+        var exportEnd = bff.IndexOf("export async function deleteFullWorthAccount(", exportStart, StringComparison.Ordinal);
+        Assert.True(exportEnd > exportStart);
+        var wrapper = bff[exportStart..exportEnd];
+        Assert.Contains("import(\"./account-export.js\")", wrapper, StringComparison.Ordinal);
+        Assert.Contains("module.downloadAccountExport(currentPassword, twoFactorCode)", wrapper, StringComparison.Ordinal);
 
-        var exportStart =
-            bff.IndexOf(
-                "export async function downloadAccountExport(",
-                StringComparison.Ordinal);
+        Assert.Contains("privacyAntiforgeryToken(operation.signal)", exportClient, StringComparison.Ordinal);
+        Assert.Contains("\"POST\"", exportClient, StringComparison.Ordinal);
+        Assert.Contains("currentPassword", exportClient, StringComparison.Ordinal);
+        Assert.Contains("twoFactorCode", exportClient, StringComparison.Ordinal);
+        Assert.Contains("\"X-CSRF-TOKEN\"", exportClient, StringComparison.Ordinal);
+        Assert.Contains("\"same-origin\"", exportClient, StringComparison.Ordinal);
+        Assert.Contains("\"no-store\"", exportClient, StringComparison.Ordinal);
+        Assert.Contains("application/problem+json", privacyRequests, StringComparison.Ordinal);
 
-        var exportEnd =
-            bff.IndexOf(
-                "export async function deleteFullWorthAccount(",
-                exportStart,
-                StringComparison.Ordinal);
-
-        Assert.True(
-            exportStart >= 0 &&
-            exportEnd > exportStart);
-
-        var exportClient =
-            bff[exportStart..exportEnd];
-
-        Assert.Contains(
-            "getAntiforgeryToken()",
-            exportClient,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            "\"POST\"",
-            exportClient,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            "currentPassword",
-            exportClient,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            "\"X-CSRF-TOKEN\"",
-            exportClient,
-            StringComparison.Ordinal);
-
-        var credentialFailureIndex =
-            exportClient.IndexOf(
-                "current password is incorrect",
-                StringComparison.Ordinal);
-
-        var redirectIndex =
-            exportClient.IndexOf(
-                "window.location.assign(",
-                StringComparison.Ordinal);
-
-        Assert.True(
-            credentialFailureIndex >= 0 &&
-            redirectIndex > credentialFailureIndex,
-            "Expected export credential failures to be handled before the expired-session redirect.");
+        var credentialFailureIndex = privacyRequests.IndexOf("current password is incorrect", StringComparison.Ordinal);
+        var sessionFailureIndex = privacyRequests.IndexOf("response.status === 401", StringComparison.Ordinal);
+        Assert.True(credentialFailureIndex >= 0 && sessionFailureIndex > credentialFailureIndex,
+            "Credential rejection must be classified before a generic expired-session result.");
+        Assert.DoesNotContain("window.location.assign(", exportClient, StringComparison.Ordinal);
+        Assert.Contains("blob.size === 0", exportClient, StringComparison.Ordinal);
+        Assert.Contains("cancelAccountExport", exportClient, StringComparison.Ordinal);
     }
 
     [Fact]

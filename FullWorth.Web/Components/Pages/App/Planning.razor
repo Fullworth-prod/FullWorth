@@ -19,31 +19,33 @@
         <a class="planning-activity-link" href="/app/activity">@L["View payday guidance"]</a>
     </header>
 
-    @if (_isLoading)
+    <nav class="planning-jump-links" aria-label="@L["Planning sections"]">
+        <a href="#planning-schedule-title">@L["Pay schedule"]</a>
+        <a href="#planning-bills-title">@L["Bill preferences"]</a>
+        <a href="#planning-recent-title">@L["Payday history"]</a>
+        <a href="#planning-changes-title">@L["Upcoming bill changes"]</a>
+    </nav>
+    <aside class="planning-guidance" role="note">
+        <strong>@L["Guidance, not a bank balance"]</strong>
+        <span>@L["Recommendations are not transfers or reserved funds."]</span>
+    </aside>
+
+    @if (_isInitializing)
     {
         <div class="planning-loading" aria-label="@L["Loading planning"]">
             <div></div><div></div>
         </div>
     }
-    else if (!string.IsNullOrWhiteSpace(_error))
+    else if (_moduleError)
     {
         <section class="planning-message planning-error" role="alert">
-            <strong>@L["We couldn't load your planning settings"]</strong>
-            <p>@_error</p>
+            <strong>@L["FullWorth could not reach the secure API."]</strong>
             <button type="button" class="planning-secondary-button" @onclick="LoadAsync">@L["Try again"]</button>
         </section>
     }
     else
     {
-        @if (!string.IsNullOrWhiteSpace(_notice))
-        {
-            <div class="planning-message @(_noticeIsError ? "planning-error" : "planning-success")"
-                 role="@(_noticeIsError ? "alert" : "status")"
-                 aria-live="polite">
-                @_notice
-            </div>
-        }
-
+    <div class="planning-workspace">
         <section class="planning-card" aria-labelledby="planning-schedule-title">
             <div class="planning-card-heading">
                 <div>
@@ -52,8 +54,24 @@
                     <p>@L["Use a recent or upcoming payday as the anchor. You can change this any time."]</p>
                 </div>
             </div>
+            @if (_loading.Contains("schedule"))
+            {
+                <p class="planning-section-loading" role="status">@L["Loading planning"]…</p>
+            }
+            else if (_loadErrors.Contains("schedule"))
+            {
+                <div class="planning-message planning-error" role="alert">
+                    <strong>@L["This section could not be loaded."]</strong>
+                    <p>@L["Other planning sections are still available."]</p>
+                    <button type="button" class="planning-secondary-button" @onclick="RetryScheduleAsync">@L["Try again"]</button>
+                </div>
+            }
+            else
+            {
 
-            <div class="planning-fields">
+
+            <p class="planning-save-state" role="status">@(ScheduleDirty ? L["Unsaved changes"] : _hasSchedule ? L["Saved schedule"] : L["Not configured"])</p>
+            <fieldset class="planning-fields" disabled="@(_isSavingSchedule || _scheduleUncertain)" aria-label="@L["Pay schedule"]">
                 <label>
                     <span>@L["Pay frequency"]</span>
                     <select @bind="_frequency">
@@ -84,17 +102,113 @@
                     <input type="number" min="1" max="26" @bind="_defaultPaychecksAhead" />
                     <small>@L["Bills can use this default or have their own override."]</small>
                 </label>
-            </div>
+            </fieldset>
 
             <div class="planning-card-actions">
-                <span class="planning-honesty-note">@L["Recommendations are not transfers or reserved funds."]</span>
+                <button type="button" class="planning-secondary-button" disabled="@(_isSavingSchedule || _scheduleUncertain || !ScheduleDirty)" @onclick="ResetSchedule">@L["Discard edits"]</button>
                 <button type="button"
                         class="planning-primary-button"
-                        disabled="@_isSavingSchedule"
+                        disabled="@(_isSavingSchedule || _scheduleUncertain || !ScheduleDirty)"
                         @onclick="SaveScheduleAsync">
                     @(_isSavingSchedule ? L["Saving…"] : L["Save schedule"])
                 </button>
             </div>
+            @if (_scheduleUncertain)
+            {
+                <button type="button" class="planning-secondary-button planning-check-saved" disabled="@_isSavingSchedule" @onclick="CheckScheduleAsync">@L["Check saved schedule"]</button>
+            }
+            @if (_scheduleNotice is not null)
+            {
+                <p class="planning-inline-notice @(_scheduleNoticeError ? "planning-error" : "planning-success")" role="@(_scheduleNoticeError ? "alert" : "status")">@_scheduleNotice</p>
+            }
+
+            }
+        </section>
+
+        <section class="planning-card" aria-labelledby="planning-bills-title">
+            <div class="planning-card-heading">
+                <div>
+                    <span class="planning-kicker">@L["Bill preferences"]</span>
+                    <h2 id="planning-bills-title">@L["When should planning start?"]</h2>
+                    <p>@L["Set how many paychecks ahead FullWorth should include each known bill."]</p>
+                </div>
+            </div>
+            @if (_loading.Contains("bills"))
+            {
+                <p class="planning-section-loading" role="status">@L["Loading planning"]…</p>
+            }
+            else if (_loadErrors.Contains("bills"))
+            {
+                <div class="planning-message planning-error" role="alert">
+                    <strong>@L["This section could not be loaded."]</strong>
+                    <p>@L["Other planning sections are still available."]</p>
+                    <button type="button" class="planning-secondary-button" @onclick="RetryBillsAsync">@L["Try again"]</button>
+                </div>
+            }
+            else
+            {
+
+
+            @if (_bills.Count == 0)
+            {
+                <div class="planning-empty">
+                    <strong>@L["No active bills to plan yet"]</strong>
+                    <p>@L["Once FullWorth identifies recurring bills, you can set a funding preference for each one."]</p>
+                    <a href="/app/bills">@L["Review bills"]</a>
+                </div>
+            }
+            else
+            {
+                <label class="planning-search">
+                    <span>@L["Find a bill"]</span>
+                    <input type="search" @bind="_billSearch" @bind:event="oninput" placeholder="@L["Search provider names"]" />
+                </label>
+                @if (!FilteredBills.Any())
+                {
+                    <div class="planning-empty"><strong>@L["No matching bills"]</strong>
+                        <button type="button" class="planning-secondary-button" @onclick="() => _billSearch = string.Empty">@L["Clear search"]</button>
+                    </div>
+                }
+                <div class="planning-bill-list">
+                    @foreach (var bill in FilteredBills)
+                    {
+                        <fieldset class="planning-bill-row" @key="bill.Id" data-bill-id="@bill.Id" disabled="@(bill.IsBusy || bill.SaveUncertain)" aria-label="@(string.IsNullOrWhiteSpace(bill.ProviderName) ? L["Recurring bill"].Value : bill.ProviderName)">
+                            <div class="planning-bill-copy">
+                                <strong>@(string.IsNullOrWhiteSpace(bill.ProviderName) ? L["Recurring bill"].Value : bill.ProviderName)</strong>
+                                <span>@FormatAmount(bill.CurrentAmount, bill.CurrencyCode)</span>
+                                <small class="planning-save-state">@(bill.IsDirty ? L["Unsaved changes"] : L["Saved preference"])</small>
+                            </div>
+                            <label>
+                                <span>@L["Paychecks ahead"]</span>
+                                <select @bind="bill.SelectedOverride">
+                                    <option value="">@L["Use default"]</option>
+                                    @for (var count = 1; count <= 26; count++)
+                                    {
+                                        <option value="@count">@count</option>
+                                    }
+                                </select>
+                            </label>
+                            <button type="button"
+                                    class="planning-secondary-button"
+                                    disabled="@(bill.IsBusy || bill.SaveUncertain || !bill.IsDirty)"
+                                    @onclick="() => SaveBillPreferenceAsync(bill)">
+                                @(bill.IsBusy ? L["Saving…"] : L["Save"])
+                            </button>
+                            <button type="button" class="planning-secondary-button planning-discard" disabled="@(!bill.IsDirty)" @onclick="() => ResetBill(bill)">@L["Discard edits"]</button>
+                        </fieldset>
+                        @if (bill.SaveUncertain)
+                        {
+                            <button type="button" class="planning-secondary-button" disabled="@bill.IsBusy" @onclick="() => CheckBillAsync(bill)">@L["Check saved preference"]</button>
+                        }
+                        @if (bill.Notice is not null)
+                        {
+                            <p class="planning-inline-notice @(bill.NoticeError ? "planning-error" : "planning-success")" role="@(bill.NoticeError ? "alert" : "status")">@bill.Notice</p>
+                        }
+                    }
+                </div>
+            }
+
+            }
         </section>
 
         <section class="planning-card" aria-labelledby="planning-recent-title">
@@ -105,6 +219,21 @@
                     <p>@L["These are frozen recommendations from your recent posted paychecks. Later bank-data changes do not rewrite them."]</p>
                 </div>
             </div>
+            @if (_loading.Contains("recent"))
+            {
+                <p class="planning-section-loading" role="status">@L["Loading planning"]…</p>
+            }
+            else if (_loadErrors.Contains("recent"))
+            {
+                <div class="planning-message planning-error" role="alert">
+                    <strong>@L["This section could not be loaded."]</strong>
+                    <p>@L["Other planning sections are still available."]</p>
+                    <button type="button" class="planning-secondary-button" @onclick="RetryRecentAsync">@L["Try again"]</button>
+                </div>
+            }
+            else
+            {
+
 
             @if (_recentPlans.Count == 0)
             {
@@ -175,56 +304,11 @@
                     }
                 </div>
             }
-        </section>
 
-        <section class="planning-card" aria-labelledby="planning-bills-title">
-            <div class="planning-card-heading">
-                <div>
-                    <span class="planning-kicker">@L["Bill preferences"]</span>
-                    <h2 id="planning-bills-title">@L["When should planning start?"]</h2>
-                    <p>@L["Set how many paychecks ahead FullWorth should include each known bill."]</p>
-                </div>
-            </div>
-
-            @if (_bills.Count == 0)
-            {
-                <div class="planning-empty">
-                    <strong>@L["No active bills to plan yet"]</strong>
-                    <p>@L["Once FullWorth identifies recurring bills, you can set a funding preference for each one."]</p>
-                    <a href="/app/bills">@L["Review bills"]</a>
-                </div>
-            }
-            else
-            {
-                <div class="planning-bill-list">
-                    @foreach (var bill in _bills)
-                    {
-                        <article class="planning-bill-row" @key="bill.Id">
-                            <div class="planning-bill-copy">
-                                <strong>@(string.IsNullOrWhiteSpace(bill.ProviderName) ? L["Recurring bill"].Value : bill.ProviderName)</strong>
-                                <span>@FormatAmount(bill.CurrentAmount, bill.CurrencyCode)</span>
-                            </div>
-                            <label>
-                                <span>@L["Paychecks ahead"]</span>
-                                <select @bind="bill.SelectedOverride">
-                                    <option value="">@L["Use default"]</option>
-                                    @for (var count = 1; count <= 26; count++)
-                                    {
-                                        <option value="@count">@count</option>
-                                    }
-                                </select>
-                            </label>
-                            <button type="button"
-                                    class="planning-secondary-button"
-                                    disabled="@_savingBillId.HasValue"
-                                    @onclick="() => SaveBillPreferenceAsync(bill)">
-                                @(_savingBillId == bill.Id ? L["Saving…"] : L["Save"])
-                            </button>
-                        </article>
-                    }
-                </div>
             }
         </section>
+
+
 
         <section class="planning-card" aria-labelledby="planning-changes-title">
             <div class="planning-card-heading">
@@ -234,6 +318,21 @@
                     <p>@L["Confirmed statement changes can affect what you plan to set aside."]</p>
                 </div>
             </div>
+            @if (_loading.Contains("changes"))
+            {
+                <p class="planning-section-loading" role="status">@L["Loading planning"]…</p>
+            }
+            else if (_loadErrors.Contains("changes"))
+            {
+                <div class="planning-message planning-error" role="alert">
+                    <strong>@L["This section could not be loaded."]</strong>
+                    <p>@L["Other planning sections are still available."]</p>
+                    <button type="button" class="planning-secondary-button" @onclick="RetryChangesAsync">@L["Try again"]</button>
+                </div>
+            }
+            else
+            {
+
 
             @if (_changes.Count == 0)
             {
@@ -275,242 +374,292 @@
                     }
                 </div>
             }
+
+            }
         </section>
+    </div>
     }
 </div>
 
 @code {
     private IJSObjectReference? _bffModule;
-    private bool _isLoading = true;
-    private bool _isSavingSchedule;
-    private Guid? _savingBillId;
-    private string? _error;
-    private string? _notice;
-    private bool _noticeIsError;
+    private bool _disposed, _renderReady, _starting, _moduleError;
+    private bool _isInitializing = true;
+    private readonly HashSet<string> _loading = [];
+    private readonly HashSet<string> _loadErrors = [];
+    private bool _isSavingSchedule, _scheduleUncertain, _hasSchedule, _scheduleNoticeError;
+    private string? _scheduleNotice;
     private string _frequency = "Biweekly";
     private DateTime? _anchorPayDate;
     private string _secondaryDayOfMonth = "15";
     private string _defaultPaychecksAhead = "1";
+    private ScheduleValues? _savedSchedule;
+    private string _billSearch = string.Empty;
     private List<PlanningBillViewModel> _bills = [];
     private List<PlanningBillChangeViewModel> _changes = [];
     private List<PlanningRecentPaydayPlanViewModel> _recentPlans = [];
 
+    private sealed record ScheduleValues(string Frequency, DateTime? Anchor, string SecondDay, string Ahead);
+    private ScheduleValues Draft => new(_frequency, _anchorPayDate, _frequency == "SemiMonthly" ? _secondaryDayOfMonth : "15", _defaultPaychecksAhead);
+    private bool ScheduleDirty => _savedSchedule is not null && Draft != _savedSchedule;
+    private IEnumerable<PlanningBillViewModel> FilteredBills => _bills.Where(bill =>
+        string.IsNullOrWhiteSpace(_billSearch) ||
+        bill.ProviderName.Contains(_billSearch.Trim(), StringComparison.CurrentCultureIgnoreCase));
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
-        {
-            return;
-        }
+        if (!firstRender) return;
+        _renderReady = true;
+        await LoadAsync();
+    }
 
-        try
-        {
-            _bffModule = await JS.InvokeAsync<IJSObjectReference>(
-                "import",
-                "./js/bff.js");
-            await LoadAsync();
-        }
-        catch
-        {
-            _error = L["FullWorth could not reach the secure API."].Value;
-            _isLoading = false;
-        }
-
-        StateHasChanged();
+    private void Notify()
+    {
+        if (_renderReady && !_disposed) StateHasChanged();
     }
 
     private async Task LoadAsync()
     {
-        if (_bffModule is null)
-        {
-            return;
-        }
-
-        _isLoading = true;
-        _error = null;
+        if (_disposed || _starting) return;
+        _starting = true;
+        _moduleError = false;
+        _isInitializing = true;
+        Notify();
+        IJSObjectReference? imported = null;
         try
         {
-            var scheduleTask =
-                _bffModule.InvokeAsync<PlanningPayScheduleViewModel?>(
-                    "getPlanningPaySchedule").AsTask();
-            var billTask =
-                _bffModule.InvokeAsync<PlanningBillViewModel[]>(
-                    "getBillStreams").AsTask();
-            var preferenceTask =
-                _bffModule.InvokeAsync<PlanningBillPreferenceViewModel[]>(
-                    "getPlanningBillFundingPreferences").AsTask();
-            var changesTask =
-                _bffModule.InvokeAsync<PlanningBillChangeViewModel[]>(
-                    "getUpcomingBillChanges").AsTask();
-            var recentPlansTask =
-                _bffModule.InvokeAsync<PlanningRecentPaydayPlanViewModel[]>(
-                    "getRecentPaydayPlans",
-                    3).AsTask();
-
-            await Task.WhenAll(
-                scheduleTask,
-                billTask,
-                preferenceTask,
-                changesTask,
-                recentPlansTask);
-
-            var schedule = scheduleTask.Result;
-            if (schedule is not null)
+            if (_bffModule is null)
             {
-                _frequency = schedule.Frequency;
-                _anchorPayDate =
-                    DateTime.TryParseExact(
-                        schedule.AnchorPayDate,
-                        "yyyy-MM-dd",
-                        System.Globalization.CultureInfo.InvariantCulture,
-                        System.Globalization.DateTimeStyles.None,
-                        out var parsedAnchorDate)
-                        ? parsedAnchorDate
-                        : null;
-                _secondaryDayOfMonth = schedule.SecondaryDayOfMonth?.ToString(
-                    System.Globalization.CultureInfo.InvariantCulture) ?? "15";
-                _defaultPaychecksAhead = schedule.DefaultPaychecksAhead.ToString(
-                    System.Globalization.CultureInfo.InvariantCulture);
+                imported = await JS.InvokeAsync<IJSObjectReference>("import", "./js/bff.js");
+                if (_disposed) return;
+                _bffModule = imported;
+                imported = null;
             }
-
-            var overrides = (preferenceTask.Result ?? [])
-                .ToDictionary(item => item.BillStreamId, item => item.PaychecksAheadOverride);
-
-            _bills = (billTask.Result ?? [])
-                .Where(item => item.IsActive)
-                .OrderBy(item => item.ProviderName, StringComparer.OrdinalIgnoreCase)
-                .Select(item => new PlanningBillViewModel
-                {
-                    Id = item.Id,
-                    ProviderName = item.ProviderName,
-                    CurrentAmount = item.CurrentAmount,
-                    CurrencyCode = item.CurrencyCode,
-                    SelectedOverride = overrides.TryGetValue(item.Id, out var value)
-                        ? value.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                        : string.Empty
-                })
-                .ToList();
-
-            _changes = (changesTask.Result ?? []).ToList();
-            _recentPlans = (recentPlansTask.Result ?? []).ToList();
+            _isInitializing = false;
+            Notify();
+            await Task.WhenAll(RetryScheduleAsync(), RetryBillsAsync(), RetryRecentAsync(), RetryChangesAsync());
         }
-        catch
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or System.Text.Json.JsonException)
         {
-            _error = L["Something went wrong while loading your planning details."].Value;
+            if (!_disposed) _moduleError = true;
         }
         finally
         {
-            _isLoading = false;
+            if (imported is not null) await ReleaseAsync(imported);
+            _isInitializing = false;
+            _starting = false;
+            Notify();
         }
+    }
+
+    // Each panel commits its own complete result. A failed read never fabricates an empty result.
+    private async Task LoadSectionAsync(string section, Func<Task> read)
+    {
+        if (_disposed || _bffModule is null || _loading.Contains(section)) return;
+        _loading.Add(section);
+        _loadErrors.Remove(section);
+        Notify();
+        try { await read(); }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or InvalidOperationException or System.Text.Json.JsonException)
+        {
+            if (!_disposed) _loadErrors.Add(section);
+        }
+        finally { _loading.Remove(section); Notify(); }
+    }
+
+    private Task RetryScheduleAsync() => LoadSectionAsync("schedule", async () =>
+    {
+        var value = await _bffModule!.InvokeAsync<PlanningPayScheduleViewModel?>("getPlanningPaySchedule");
+        if (_disposed) return;
+        var saved = ReadSchedule(value);
+        _savedSchedule = saved;
+        _hasSchedule = value is not null;
+        ApplySchedule(saved);
+    });
+
+    private Task RetryBillsAsync() => LoadSectionAsync("bills", async () =>
+    {
+        var module = _bffModule ?? throw new InvalidOperationException();
+        var billsTask = module.InvokeAsync<PlanningBillViewModel[]>("getBillStreams").AsTask();
+        var prefsTask = module.InvokeAsync<PlanningBillPreferenceViewModel[]>("getPlanningBillFundingPreferences").AsTask();
+        await Task.WhenAll(billsTask, prefsTask);
+        var preferences = prefsTask.Result ?? throw new InvalidOperationException();
+        var bills = billsTask.Result ?? throw new InvalidOperationException();
+        if (preferences.Any(item => item.PaychecksAheadOverride is < 1 or > 26) ||
+            preferences.Select(item => item.BillStreamId).Distinct().Count() != preferences.Length)
+            throw new InvalidOperationException();
+        var overrides = preferences.ToDictionary(item => item.BillStreamId, item => item.PaychecksAheadOverride);
+        var result = bills.Where(item => item.IsActive)
+            .OrderBy(item => item.ProviderName, StringComparer.CurrentCultureIgnoreCase)
+            .Select(item => new PlanningBillViewModel
+            {
+                Id = item.Id, ProviderName = item.ProviderName ?? string.Empty, CurrentAmount = item.CurrentAmount,
+                CurrencyCode = item.CurrencyCode,
+                SelectedOverride = overrides.TryGetValue(item.Id, out var count) ? count.ToString(System.Globalization.CultureInfo.InvariantCulture) : string.Empty,
+                SavedOverride = overrides.TryGetValue(item.Id, out var saved) ? saved.ToString(System.Globalization.CultureInfo.InvariantCulture) : string.Empty
+            }).ToList();
+        if (!_disposed) _bills = result;
+    });
+
+    private Task RetryRecentAsync() => LoadSectionAsync("recent", async () =>
+    {
+        var result = await _bffModule!.InvokeAsync<PlanningRecentPaydayPlanViewModel[]>("getRecentPaydayPlans", 3)
+            ?? throw new InvalidOperationException();
+        if (!_disposed) _recentPlans = result.ToList();
+    });
+
+    private Task RetryChangesAsync() => LoadSectionAsync("changes", async () =>
+    {
+        var result = await _bffModule!.InvokeAsync<PlanningBillChangeViewModel[]>("getUpcomingBillChanges")
+            ?? throw new InvalidOperationException();
+        if (!_disposed) _changes = result.ToList();
+    });
+
+    private static ScheduleValues ReadSchedule(PlanningPayScheduleViewModel? value)
+    {
+        if (value is null) return new("Biweekly", null, "15", "1");
+        if (value.Frequency is not ("Weekly" or "Biweekly" or "SemiMonthly" or "Monthly") ||
+            !DateTime.TryParseExact(value.AnchorPayDate, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var anchor) ||
+            value.DefaultPaychecksAhead is < 1 or > 26 ||
+            (value.Frequency == "SemiMonthly" && (value.SecondaryDayOfMonth is null or < 1 or > 31 || value.SecondaryDayOfMonth == anchor.Day)))
+            throw new InvalidOperationException("Invalid pay schedule response.");
+        return new(value.Frequency, anchor, value.Frequency == "SemiMonthly" ? value.SecondaryDayOfMonth!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "15",
+            value.DefaultPaychecksAhead.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    private void ApplySchedule(ScheduleValues value)
+    {
+        _frequency = value.Frequency;
+        _anchorPayDate = value.Anchor;
+        _secondaryDayOfMonth = value.SecondDay;
+        _defaultPaychecksAhead = value.Ahead;
+    }
+
+    private void ResetSchedule()
+    {
+        if (_disposed || _isSavingSchedule || _scheduleUncertain || _savedSchedule is null) return;
+        ApplySchedule(_savedSchedule);
+        _scheduleNotice = null;
     }
 
     private async Task SaveScheduleAsync()
     {
-        if (_bffModule is null || _isSavingSchedule)
+        if (_disposed || _bffModule is null || _isSavingSchedule || _scheduleUncertain ||
+            _loadErrors.Contains("schedule") || _loading.Contains("schedule") || !ScheduleDirty) return;
+        var draft = Draft;
+        if (draft.Frequency is not ("Weekly" or "Biweekly" or "SemiMonthly" or "Monthly"))
+        { ScheduleNotice("Choose a supported pay frequency.", true); return; }
+        if (!draft.Anchor.HasValue)
+        { ScheduleNotice("Choose a valid anchor payday.", true); return; }
+        if (!int.TryParse(draft.Ahead, out var ahead) || ahead is < 1 or > 26)
+        { ScheduleNotice("Default paychecks ahead must be between 1 and 26.", true); return; }
+        int? secondDay = null;
+        if (draft.Frequency == "SemiMonthly")
         {
-            return;
+            if (!int.TryParse(draft.SecondDay, out var second) || second is < 1 or > 31 || second == draft.Anchor.Value.Day)
+            { ScheduleNotice("Choose a different second payday day between 1 and 31.", true); return; }
+            secondDay = second;
         }
-
-        if (!_anchorPayDate.HasValue)
-        {
-            SetNotice(L["Choose a valid anchor payday."].Value, isError: true);
-            return;
-        }
-
-        var anchorDate =
-            DateOnly.FromDateTime(
-                _anchorPayDate.Value);
-
-        if (!int.TryParse(_defaultPaychecksAhead, out var ahead) || ahead is < 1 or > 26)
-        {
-            SetNotice(L["Default paychecks ahead must be between 1 and 26."].Value, isError: true);
-            return;
-        }
-
-        int? secondaryDay = null;
-        if (_frequency == "SemiMonthly")
-        {
-            if (!int.TryParse(_secondaryDayOfMonth, out var parsedSecondary) ||
-                parsedSecondary is < 1 or > 31 ||
-                parsedSecondary == anchorDate.Day)
-            {
-                SetNotice(L["Choose a different second payday day between 1 and 31."].Value, isError: true);
-                return;
-            }
-
-            secondaryDay = parsedSecondary;
-        }
-
         _isSavingSchedule = true;
-        _notice = null;
+        _scheduleNotice = null;
         try
         {
-            await _bffModule.InvokeAsync<object?>(
-                "putPlanningPaySchedule",
-                new
-                {
-                    frequency = _frequency,
-                    anchorPayDate = anchorDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
-                    secondaryDayOfMonth = secondaryDay,
-                    defaultPaychecksAhead = ahead
-                });
-            SetNotice(L["Your pay schedule is saved."].Value, isError: false);
+            await _bffModule.InvokeAsync<object?>("putPlanningPaySchedule", new {
+                frequency = draft.Frequency,
+                anchorPayDate = draft.Anchor.Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+                secondaryDayOfMonth = secondDay, defaultPaychecksAhead = ahead
+            });
+            if (_disposed) return;
+            _savedSchedule = draft;
+            _hasSchedule = true;
+            ScheduleNotice("Your pay schedule is saved.", false);
         }
-        catch
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or System.Text.Json.JsonException)
         {
-            SetNotice(L["FullWorth could not save your pay schedule. Please try again."].Value, isError: true);
+            if (_disposed) return;
+            _scheduleUncertain = true;
+            ScheduleNotice("The save could not be confirmed. Your edits are kept here. Check the saved value before trying again.", true);
         }
-        finally
+        finally { _isSavingSchedule = false; Notify(); }
+    }
+
+    private async Task CheckScheduleAsync()
+    {
+        if (_disposed || _bffModule is null || _isSavingSchedule || !_scheduleUncertain) return;
+        _isSavingSchedule = true;
+        try
         {
-            _isSavingSchedule = false;
+            var result = await _bffModule.InvokeAsync<PlanningPayScheduleViewModel?>("getPlanningPaySchedule");
+            var saved = ReadSchedule(result);
+            if (_disposed) return;
+            _savedSchedule = saved;
+            _hasSchedule = result is not null;
+            _scheduleUncertain = false;
+            ScheduleNotice(Draft == saved ? "Your pay schedule is saved." : "Saved values differ from your edits. Review your draft, then save or discard it.", false);
         }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or InvalidOperationException or System.Text.Json.JsonException)
+        { if (!_disposed) ScheduleNotice("Saved values could not be checked. Your edits are still here.", true); }
+        finally { _isSavingSchedule = false; Notify(); }
+    }
+
+    private void ScheduleNotice(string text, bool error) { _scheduleNotice = L[text]; _scheduleNoticeError = error; }
+
+    private void ResetBill(PlanningBillViewModel bill)
+    {
+        if (_disposed || bill.IsBusy || bill.SaveUncertain) return;
+        bill.SelectedOverride = bill.SavedOverride;
+        bill.Notice = null;
     }
 
     private async Task SaveBillPreferenceAsync(PlanningBillViewModel bill)
     {
-        if (_bffModule is null || _savingBillId.HasValue)
-        {
-            return;
-        }
-
-        _savingBillId = bill.Id;
-        _notice = null;
+        if (_disposed || _bffModule is null || bill.IsBusy || bill.SaveUncertain || !bill.IsDirty ||
+            _loadErrors.Contains("bills") || _loading.Contains("bills") || !_bills.Contains(bill)) return;
+        var selected = bill.SelectedOverride;
+        if (!string.IsNullOrEmpty(selected) && (!int.TryParse(selected, out var count) || count is < 1 or > 26))
+        { bill.Notice = L["Choose a value between 1 and 26 paychecks."]; bill.NoticeError = true; return; }
+        bill.IsBusy = true;
+        bill.Notice = null;
         try
         {
-            if (string.IsNullOrWhiteSpace(bill.SelectedOverride))
-            {
-                await _bffModule.InvokeAsync<object?>(
-                    "deletePlanningBillFundingPreference",
-                    bill.Id.ToString("D"));
-            }
-            else if (int.TryParse(bill.SelectedOverride, out var ahead) && ahead is >= 1 and <= 26)
-            {
-                await _bffModule.InvokeAsync<object?>(
-                    "putPlanningBillFundingPreference",
-                    bill.Id.ToString("D"),
-                    ahead);
-            }
+            if (string.IsNullOrEmpty(selected))
+                await _bffModule.InvokeAsync<object?>("deletePlanningBillFundingPreference", bill.Id.ToString("D"));
             else
-            {
-                SetNotice(L["Choose a value between 1 and 26 paychecks."].Value, isError: true);
-                return;
-            }
-
-            SetNotice(L["Bill planning preference saved."].Value, isError: false);
+                await _bffModule.InvokeAsync<object?>("putPlanningBillFundingPreference", bill.Id.ToString("D"), int.Parse(selected, System.Globalization.CultureInfo.InvariantCulture));
+            if (_disposed) return;
+            bill.SavedOverride = selected;
+            bill.Notice = L["Bill planning preference saved."];
+            bill.NoticeError = false;
         }
-        catch
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or System.Text.Json.JsonException)
         {
-            SetNotice(L["FullWorth could not save that bill preference. Please try again."].Value, isError: true);
+            if (_disposed) return;
+            bill.SaveUncertain = true;
+            bill.Notice = L["The save could not be confirmed. Your edits are kept here. Check the saved value before trying again."];
+            bill.NoticeError = true;
         }
-        finally
-        {
-            _savingBillId = null;
-        }
+        finally { bill.IsBusy = false; Notify(); }
     }
 
-    private void SetNotice(string message, bool isError)
+    private async Task CheckBillAsync(PlanningBillViewModel bill)
     {
-        _notice = message;
-        _noticeIsError = isError;
+        if (_disposed || _bffModule is null || bill.IsBusy || !bill.SaveUncertain || !_bills.Contains(bill)) return;
+        bill.IsBusy = true;
+        try
+        {
+            var result = await _bffModule.InvokeAsync<PlanningBillPreferenceViewModel[]>("getPlanningBillFundingPreferences") ?? throw new InvalidOperationException();
+            var preference = result.SingleOrDefault(item => item.BillStreamId == bill.Id);
+            if (preference is not null && preference.PaychecksAheadOverride is < 1 or > 26) throw new InvalidOperationException();
+            if (_disposed) return;
+            bill.SavedOverride = preference?.PaychecksAheadOverride.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+            bill.SaveUncertain = false;
+            bill.Notice = L[bill.IsDirty ? "Saved values differ from your edits. Review your draft, then save or discard it." : "Bill planning preference saved."];
+            bill.NoticeError = false;
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or InvalidOperationException or System.Text.Json.JsonException)
+        { if (!_disposed) { bill.Notice = L["Saved values could not be checked. Your edits are still here."]; bill.NoticeError = true; } }
+        finally { bill.IsBusy = false; Notify(); }
     }
 
     private static string FormatAmount(decimal amount, string? currencyCode)
@@ -541,28 +690,27 @@
     private static string GetStatusClass(string? status) =>
         status == "Ready" ? "is-ready" : "needs-review";
 
+
+    private static async ValueTask ReleaseAsync(IJSObjectReference module)
+    {
+        try { await module.DisposeAsync(); }
+        catch (JSDisconnectedException) { }
+        catch (JSException) { }
+    }
+
     public async ValueTask DisposeAsync()
     {
-        if (_bffModule is null)
-        {
-            return;
-        }
-
-        try
-        {
-            await _bffModule.DisposeAsync();
-        }
-        catch (JSDisconnectedException)
-        {
-        }
+        if (_disposed) return;
+        _disposed = true;
+        if (_bffModule is not null) { var module = _bffModule; _bffModule = null; await ReleaseAsync(module); }
     }
 
     private sealed class PlanningPayScheduleViewModel
     {
-        public string Frequency { get; set; } = "Biweekly";
+        public string Frequency { get; set; } = string.Empty;
         public string AnchorPayDate { get; set; } = string.Empty;
         public int? SecondaryDayOfMonth { get; set; }
-        public int DefaultPaychecksAhead { get; set; } = 1;
+        public int DefaultPaychecksAhead { get; set; }
     }
 
     private sealed class PlanningBillViewModel
@@ -573,6 +721,13 @@
         public decimal CurrentAmount { get; set; }
         public string? CurrencyCode { get; set; }
         public string SelectedOverride { get; set; } = string.Empty;
+        public string SavedOverride { get; set; } = string.Empty;
+        public bool IsDirty => SelectedOverride != SavedOverride;
+        public bool IsBusy { get; set; }
+        public bool SaveUncertain { get; set; }
+        public string? Notice { get; set; }
+        public bool NoticeError { get; set; }
+
     }
 
     private sealed class PlanningBillPreferenceViewModel
@@ -616,4 +771,5 @@
         public decimal? RemainingAmountToPlan { get; set; }
     }
 }
+
 

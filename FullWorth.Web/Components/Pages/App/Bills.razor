@@ -2,6 +2,7 @@
 
 @using FullWorth.Web.Components.Shared
 @using FullWorth.Core.Formatting
+@using FullWorth.Web.Services
 
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
@@ -30,8 +31,49 @@
                 @L["Explore recurring charges, compare recent amounts, and open the evidence behind each bill."]
             </p>
         </div>
-
+        @if (_hasSnapshot)
+        {
+            <button type="button" class="secondary-action bills-refresh"
+                    disabled="@_isRefreshing" @onclick="ReloadAsync">
+                @(_isRefreshing ? L["Refreshing…"] : L["Refresh bills"])
+            </button>
+        }
     </header>
+
+    @if (!string.IsNullOrWhiteSpace(_refreshError))
+    {
+        <div class="bill-read-warning" role="status">@_refreshError</div>
+    }
+    @if (_hasSnapshot && _snapshot.TotalCount > 0)
+    {
+        <section class="bill-workspace-tools" aria-label="@L["Find bills"]">
+            <div>
+                <label for="bill-search">@L["Search bills"]</label>
+                <input id="bill-search" type="search" maxlength="120" autocomplete="off"
+                       @bind="_search" @bind:event="oninput" aria-describedby="bill-search-scope" />
+            </div>
+            <div>
+                <label for="bill-currency">@L["Currency"]</label>
+                <select id="bill-currency" @bind="_currency">
+                    <option value="">@L["All currencies"]</option>
+                    @foreach (var currency in Currencies)
+                    {
+                        <option value="@currency">@(currency == "?" ? L["Currency unavailable"].Value : currency)</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label for="bill-sort">@L["Sort active bills"]</label>
+                <select id="bill-sort" @bind="_sort">
+                    <option value="@BillLedgerSort.Name">@L["Provider name"]</option>
+                    <option value="@BillLedgerSort.LatestCharge">@L["Latest charge within currency"]</option>
+                    <option value="@BillLedgerSort.Increase">@L["Change within currency"]</option>
+                </select>
+            </div>
+            <button type="button" class="secondary-action" @onclick="ClearFilters">@L["Clear filters"]</button>
+            <p id="bill-search-scope">@L["Search applies to all sections. Currency and change filters apply to active rows only. Summary totals do not change with filters."]</p>
+        </section>
+    }
 
     @if (_isLoading)
     {
@@ -73,7 +115,7 @@
     }
     else if (_billStreams.Count == 0)
     {
-        @if (_reviewBills.Count == 0)
+        @if (_snapshot.TotalCount == 0)
         {
             <BillsEmptyState />
         }
@@ -81,7 +123,7 @@
         {
             <section class="app-panel bill-discovery-panel">
                 <h2>@L["No active monitored bills"]</h2>
-                <p>@L["Previously discovered bills are listed below for review. Their amounts are excluded from monitored totals."]</p>
+                <p>@L["Saved review and inactive bills remain available below. They are excluded from active totals."]</p>
             </section>
         }
     }
@@ -92,38 +134,40 @@
 
         <section class="fw-bills-pulse" aria-label="@L["Bill summary"]">
             <div class="fw-bills-total">
-                <span>@L["Latest recurring total"]</span>
-                <strong>@FormatTotals(_billStreams.Where(bill => bill.HasTransactionEvidence).Select(bill => (bill.CurrentAmount, bill.CurrencyCode)))</strong>
+                <span>@L["Latest recognized charges"]</span>
+                <strong>@(_snapshot.RecognizedTotal ?? L["Amount unavailable"].Value)</strong>
                 <small>@L["Across {0} monitored recurring bills", _billStreams.Count]</small>
-                @if (_billStreams.Any(bill => !bill.HasTransactionEvidence || !FinancialAmountFormatter.TryNormalizeCurrency(bill.CurrencyCode, out _)))
+                @if (_snapshot.UnavailableCount > 0)
                 {
                     <small>@L["Some bill amounts are unavailable and excluded from this total."]</small>
                 }
+                <small>@L["Active recognized charges only—not total spending or a normalized monthly budget."]</small>
+                <small>@L["Usable amount and currency: {0} of {1} active bills.", _snapshot.KnownAmountCount, _billStreams.Count]</small>
             </div>
 
             <div class="fw-bills-stats">
                 <button type="button"
-                        class="@GetPulseFilterClass(BillFilter.Increased, "is-alert")"
-                        aria-pressed="@(_filter == BillFilter.Increased)"
-                        @onclick="() => SetFilter(BillFilter.Increased)">
+                        class="@GetPulseFilterClass(BillLedgerFilter.Increased, "is-alert")"
+                        aria-pressed="@(_filter == BillLedgerFilter.Increased)"
+                        @onclick="() => SetFilter(BillLedgerFilter.Increased)">
                     <span>@L["Increased"]</span>
                     <strong>@_increasedCount</strong>
-                    <small>@FormatIncreaseTotals() @L["more per cycle"]</small>
+                    <small>@FormatIncreaseTotals() — @L["Compared charges only"]</small>
                 </button>
 
                 <button type="button"
-                        class="@GetPulseFilterClass(BillFilter.Decreased, "is-positive")"
-                        aria-pressed="@(_filter == BillFilter.Decreased)"
-                        @onclick="() => SetFilter(BillFilter.Decreased)">
+                        class="@GetPulseFilterClass(BillLedgerFilter.Decreased, "is-positive")"
+                        aria-pressed="@(_filter == BillLedgerFilter.Decreased)"
+                        @onclick="() => SetFilter(BillLedgerFilter.Decreased)">
                     <span>@L["Decreased"]</span>
                     <strong>@_decreasedCount</strong>
                     <small>@L["Below prior averages"]</small>
                 </button>
 
                 <button type="button"
-                        class="@GetPulseFilterClass(BillFilter.NoHistory, string.Empty)"
-                        aria-pressed="@(_filter == BillFilter.NoHistory)"
-                        @onclick="() => SetFilter(BillFilter.NoHistory)">
+                        class="@GetPulseFilterClass(BillLedgerFilter.NoHistory, string.Empty)"
+                        aria-pressed="@(_filter == BillLedgerFilter.NoHistory)"
+                        @onclick="() => SetFilter(BillLedgerFilter.NoHistory)">
                     <span>@L["Building history"]</span>
                     <strong>@_noHistoryCount</strong>
                     <small>@L["Waiting for comparison evidence"]</small>
@@ -146,10 +190,9 @@
                         @L["{0} in current recurring increases", FormatIncreaseTotals()]
                     </strong>
                     <small>
-                        @if (_billStreams.Where(bill => GetDifference(bill) > 0m)
-                            .All(bill => bill.HasMonthlyCadenceEvidence))
+                        @if (_snapshot.AnnualizedIncreaseTotal is not null)
                         {
-                            @L["That is {0} annualized if these increases persist. Transaction amounts show what changed; provider evidence is still required to explain why.", FormatIncreaseTotals(12m)]
+                            @L["That is {0} annualized if these increases persist. Transaction amounts show what changed; provider evidence is still required to explain why.", _snapshot.AnnualizedIncreaseTotal]
                         }
                         else
                         {
@@ -160,7 +203,7 @@
 
                 <button type="button"
                         class="fw-bills-alert-action"
-                        @onclick="() => SetFilter(BillFilter.Increased)">
+                        @onclick="() => SetFilter(BillLedgerFilter.Increased)">
                     <svg class="bw-sprite fw-bills-alert-action-icon"
                          aria-hidden="true">
                         <use href="/assets/billwatch-sprites.svg#trend-up"></use>
@@ -190,42 +233,55 @@
                  role="group"
                  aria-label="@L["Filter bills by change"]">
                 <button type="button"
-                        class="@GetFilterClass(BillFilter.All)"
-                        aria-pressed="@(_filter == BillFilter.All)"
-                        @onclick="() => SetFilter(BillFilter.All)">
+                        class="@GetFilterClass(BillLedgerFilter.All)"
+                        aria-pressed="@(_filter == BillLedgerFilter.All)"
+                        @onclick="() => SetFilter(BillLedgerFilter.All)">
                     @L["All"]
                     <span>@_billStreams.Count</span>
                 </button>
 
                 <button type="button"
-                        class="@GetFilterClass(BillFilter.Increased)"
-                        aria-pressed="@(_filter == BillFilter.Increased)"
-                        @onclick="() => SetFilter(BillFilter.Increased)">
+                        class="@GetFilterClass(BillLedgerFilter.Increased)"
+                        aria-pressed="@(_filter == BillLedgerFilter.Increased)"
+                        @onclick="() => SetFilter(BillLedgerFilter.Increased)">
                     @L["Increased"]
                     <span>@_increasedCount</span>
                 </button>
 
                 <button type="button"
-                        class="@GetFilterClass(BillFilter.Decreased)"
-                        aria-pressed="@(_filter == BillFilter.Decreased)"
-                        @onclick="() => SetFilter(BillFilter.Decreased)">
+                        class="@GetFilterClass(BillLedgerFilter.Decreased)"
+                        aria-pressed="@(_filter == BillLedgerFilter.Decreased)"
+                        @onclick="() => SetFilter(BillLedgerFilter.Decreased)">
                     @L["Decreased"]
                     <span>@_decreasedCount</span>
                 </button>
 
                 <button type="button"
-                        class="@GetFilterClass(BillFilter.NoHistory)"
-                        aria-pressed="@(_filter == BillFilter.NoHistory)"
-                        @onclick="() => SetFilter(BillFilter.NoHistory)">
+                        class="@GetFilterClass(BillLedgerFilter.NoHistory)"
+                        aria-pressed="@(_filter == BillLedgerFilter.NoHistory)"
+                        @onclick="() => SetFilter(BillLedgerFilter.NoHistory)">
                     @L["Building history"]
                     <span>@_noHistoryCount</span>
                 </button>
             </div>
 
+            <div class="fw-bills-filters bill-extra-filters" role="group" aria-label="@L["Additional bill filters"]">
+                @foreach (var item in new[] { BillLedgerFilter.Unchanged, BillLedgerFilter.Unavailable })
+                {
+                    <button type="button" class="@GetFilterClass(item)"
+                            aria-pressed="@(_filter == item)" @onclick="() => SetFilter(item)">
+                        @(item == BillLedgerFilter.Unchanged ? L["No change"] : L["Amount unavailable"])
+                        <span>@(item == BillLedgerFilter.Unchanged ? _snapshot.UnchangedCount : _snapshot.UnavailableCount)</span>
+                    </button>
+                }
+            </div>
+            <p class="bill-filter-scope">@L["Amount sorting groups currencies separately and performs no conversion. No-history and unavailable bills are not confirmed unchanged."]</p>
+
             @if (filteredBills.Count == 0)
             {
                 <div class="filtered-empty">
-                    @L["No bills match this filter."]
+                    <p>@L["No active bills match these filters. Saved review and inactive records are separate below."]</p>
+                    <button type="button" class="secondary-action" @onclick="ClearFilters">@L["Clear filters"]</button>
                 </div>
             }
             else
@@ -237,7 +293,7 @@
                             GetDifference(
                                 bill);
 
-                        <a class="fw-bills-row"
+                        <a @key="bill.Id" class="fw-bills-row"
                            href="@($"/app/bills/{bill.Id}")">
                             <div class="@GetBillAvatarClass(bill.Category)"
                                  aria-hidden="true">
@@ -260,7 +316,7 @@
                                 <strong>@(bill.HasTransactionEvidence ? FormatMoney(bill.CurrentAmount, bill.CurrencyCode) : L["Amount unavailable"].Value)</strong>
                             </div>
 
-                            @if (bill.PreviousAverage > 0m)
+                            @if (BillLedgerSnapshot.CanCompare(bill))
                             {
                                 <div class="@GetLedgerChangeClass(difference)">
                                     <span>@L["Change"]</span>
@@ -276,7 +332,7 @@
                             {
                                 <div class="fw-bills-evidence">
                                     <span class="history-dot"></span>
-                                    <span>@L["Building history"]</span>
+                                    <span>@(BillLedgerSnapshot.HasAmount(bill) ? L["Building history"] : L["Comparison unavailable"])</span>
                                 </div>
                             }
 
@@ -287,18 +343,42 @@
             }
         </section>
     }
-    @if (!_isLoading && string.IsNullOrWhiteSpace(_errorMessage) && _reviewBills.Count > 0)
+    @if (_hasSnapshot && !_isLoading && _snapshot.Review.Count > 0)
     {
-        <BillReviewList Bills="_reviewBills" />
+        <p class="bill-section-count" role="status">@L["Review matches: {0} of {1}", ReviewItems.Count, _snapshot.Review.Count]</p>
+        @if (ReviewItems.Count > 0)
+        {
+            <BillReviewList Bills="ReviewItems" />
+        }
+        else
+        {
+            <p>@L["No review bills match your search. Clear the search to see saved records."]</p>
+        }
+    }
+    @if (_hasSnapshot && !_isLoading && _snapshot.Inactive.Count > 0)
+    {
+        <details class="app-panel bill-inactive-history">
+            <summary>@L["Inactive bill history ({0})", _snapshot.Inactive.Count]</summary>
+            <p>@L["These saved bills are not actively monitored and do not contribute to active totals. Opening history does not reactivate a bill."]</p>
+            <ul>
+                @foreach (var bill in InactiveItems)
+                {
+                    <li @key="bill.Id"><a href="@($"/app/bills/{bill.Id:D}")">@bill.ProviderName — @L["Review bill"]</a></li>
+                }
+            </ul>
+            @if (InactiveItems.Count == 0)
+            {
+                <p>@L["No inactive bills match your search."]</p>
+            }
+        </details>
     }
 
     <section class="app-panel bill-discovery-panel" aria-labelledby="discovery-heading">
         <h2 id="discovery-heading">@L["Missing a bill?"]</h2>
         <button type="button" class="secondary-action"
                 aria-expanded="@_showDiscovery" aria-controls="discovery-details"
-                disabled="@_discoveryLoading" @onclick="ToggleDiscoveryAsync">
-            @(_discoveryLoading ? L["Checking imported history…"]
-                : _showDiscovery ? L["Hide discovery details"] : L["Check discovery details"])
+                @onclick="ToggleDiscoveryAsync">
+            @(_showDiscovery ? L["Hide discovery details"] : L["Check discovery details"])
         </button>
         @if (_showDiscovery)
         {
@@ -307,15 +387,18 @@
                 {
                     <p role="status">@L["Checking imported history…"]</p>
                 }
-                else if (_discoveryError)
+                @if (_discoveryError)
                 {
                     <p role="alert">@L["Discovery details could not be loaded. Try again."]</p>
-                    <button type="button" class="secondary-action" @onclick="LoadDiscoveryAsync">
-                        @L["Try again"]
-                    </button>
+                    @if (_discovery is not null)
+                    {
+                        <p>@L["Previously loaded discovery counts are shown and may be out of date."]</p>
+                    }
+                    <button type="button" class="secondary-action" disabled="@_discoveryLoading" @onclick="LoadDiscoveryAsync">@L["Try again"]</button>
                 }
-                else if (_discovery is not null)
+                @if (_discovery is not null)
                 {
+                    <button type="button" class="secondary-action" disabled="@_discoveryLoading" @onclick="LoadDiscoveryAsync">@L["Refresh discovery details"]</button>
                     <BillDiscoverySummary Data="_discovery" />
                 }
             </div>
@@ -324,93 +407,95 @@
 </div>
 
 @code {
-    private List<BillReviewList.Item> _reviewBills = [];
+    private BillLedgerSnapshot _snapshot = BillLedgerSnapshot.Create([]);
+    private IReadOnlyList<BillLedgerEntry> _billStreams => _snapshot.Active;
+    private List<BillReviewList.Item> ReviewItems => _snapshot.Review
+        .Where(bill => BillLedgerSnapshot.Matches(bill, _search))
+        .Select(bill => new BillReviewList.Item(bill.Id, bill.ProviderName)).ToList();
+    private IReadOnlyList<BillLedgerEntry> InactiveItems => _snapshot.Inactive
+        .Where(bill => BillLedgerSnapshot.Matches(bill, _search)).ToArray();
+    private string[] Currencies => _snapshot.Active.Select(BillLedgerSnapshot.CurrencyKey)
+        .Distinct().OrderBy(value => value, StringComparer.Ordinal).ToArray();
+    private IReadOnlyList<BillLedgerEntry> FilteredBills => _snapshot.Select(_search, _filter, _sort, _currency);
+    private int _increasedCount => _snapshot.IncreasedCount;
+    private int _decreasedCount => _snapshot.DecreasedCount;
+    private int _noHistoryCount => _snapshot.NoHistoryCount;
+    private BillLedgerFilter _filter = BillLedgerFilter.All;
+    private BillLedgerSort _sort = BillLedgerSort.Name;
+    private string _search = string.Empty;
+    private string _currency = string.Empty;
+    private bool _hasSnapshot;
+    private bool _isLoading = true;
+    private bool _isRefreshing;
+    private bool _disposed;
+    private string? _errorMessage;
+    private string? _refreshError;
+    private IJSObjectReference? _bffModule;
     private BillDiscoverySummary.Snapshot? _discovery;
     private bool _showDiscovery;
     private bool _discoveryLoading;
     private bool _discoveryError;
+    private long _discoveryVersion;
+
+    private void ClearFilters()
+    {
+        _search = string.Empty;
+        _currency = string.Empty;
+        _filter = BillLedgerFilter.All;
+        _sort = BillLedgerSort.Name;
+    }
 
     private async Task ToggleDiscoveryAsync()
     {
         _showDiscovery = !_showDiscovery;
-        if (_showDiscovery)
-        {
-            await LoadDiscoveryAsync();
-        }
+        if (_showDiscovery) await LoadDiscoveryAsync();
         else
         {
+            _discoveryVersion++;
+            _discoveryLoading = false;
             _discovery = null;
         }
     }
 
     private async Task LoadDiscoveryAsync()
     {
-        if (_discoveryLoading) return;
+        if (_discoveryLoading || _disposed || !_showDiscovery) return;
+        var version = ++_discoveryVersion;
         _discoveryLoading = true;
         _discoveryError = false;
-        _discovery = null;
         try
         {
             _bffModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/bff.js");
-            _discovery = await _bffModule.InvokeAsync<BillDiscoverySummary.Snapshot?>(
-                "getBillDiscoveryDiagnostics");
-            _discoveryError = _discovery is null;
+            var data = await _bffModule.InvokeAsync<BillDiscoverySummary.Snapshot?>("getBillDiscoveryDiagnostics");
+            if (_disposed || !_showDiscovery || version != _discoveryVersion) return;
+            if (!ValidDiscovery(data)) throw new InvalidOperationException("Invalid discovery snapshot.");
+            _discovery = data;
         }
-        catch (JSException) { _discoveryError = true; }
-        catch (Exception) { _discoveryError = true; }
-        finally { _discoveryLoading = false; }
+        catch (Exception)
+        {
+            if (!_disposed && _showDiscovery && version == _discoveryVersion)
+                _discoveryError = true;
+        }
+        finally
+        {
+            if (version == _discoveryVersion) _discoveryLoading = false;
+        }
     }
 
-    private IJSObjectReference?
-        _bffModule;
-
-    private List<BillStreamViewModel>
-        _billStreams = [];
-
-    private bool _isLoading =
-        true;
-
-    private string? _errorMessage;
-
-    private BillFilter _filter =
-        BillFilter.All;
-
-
-    private int _increasedCount;
-
-    private int _decreasedCount;
-
-    private int _noHistoryCount;
-
-
-    private IReadOnlyList<BillStreamViewModel>
-        FilteredBills =>
-            _billStreams
-                .Where(
-                    bill =>
-                        _filter switch
-                        {
-                            BillFilter.Increased =>
-                                bill.PreviousAverage > 0m &&
-                                GetDifference(bill) > 0m,
-
-                            BillFilter.Decreased =>
-                                bill.PreviousAverage > 0m &&
-                                GetDifference(bill) < 0m,
-
-                            BillFilter.NoHistory =>
-                                bill.PreviousAverage <= 0m,
-
-                            _ =>
-                                true
-                        })
-                .OrderByDescending(
-                    bill =>
-                        bill.CurrentAmount)
-                .ThenBy(
-                    bill =>
-                        bill.ProviderName)
-                .ToList();
+    private static bool ValidDiscovery(BillDiscoverySummary.Snapshot? data) =>
+        data is not null &&
+        new[] { data.ImportedTransactions, data.ExcludedPendingOrNonDebitTransactions,
+            data.ExcludedMissingMerchantTransactions, data.EligiblePostedTransactions,
+            data.SingleObservationGroups, data.GroupsWithoutSupportedMonthlyCadence,
+            data.DetectedMonthlyCandidates, data.RejectedCurrencyAmbiguity,
+            data.RejectedExplicitFallbackCategories, data.RejectedInsufficientTwoObservationEvidence,
+            data.RejectedOtherWeakOrVariableEvidence, data.AcceptedCandidates }.All(value => value >= 0) &&
+        data.EligiblePostedTransactions <= data.ImportedTransactions &&
+        data.AcceptedCandidates <= data.DetectedMonthlyCandidates &&
+        (data.EligiblePostedTransactions == 0 ||
+            (data.FirstEligiblePostedDate is not null && data.LastEligiblePostedDate is not null)) &&
+        (data.FirstEligiblePostedDate is null || data.LastEligiblePostedDate is null ||
+            data.FirstEligiblePostedDate <= data.LastEligiblePostedDate);
 
     protected override async Task
         OnAfterRenderAsync(
@@ -423,7 +508,7 @@
 
         await LoadAsync();
 
-        StateHasChanged();
+        if (!_disposed) StateHasChanged();
     }
 
     private async Task ReloadAsync()
@@ -432,14 +517,14 @@
     }
 
     private void SetFilter(
-        BillFilter filter)
+        BillLedgerFilter filter)
     {
         _filter =
             filter;
     }
 
     private string GetFilterClass(
-        BillFilter filter)
+        BillLedgerFilter filter)
     {
         return _filter == filter
             ? "bill-filter active"
@@ -447,7 +532,7 @@
     }
 
     private string GetPulseFilterClass(
-        BillFilter filter,
+        BillLedgerFilter filter,
         string stateClass)
     {
         var className =
@@ -471,94 +556,44 @@
 
     private async Task LoadAsync()
     {
-        _isLoading =
-            true;
-
-        _errorMessage =
-            null;
-
+        if (_isRefreshing || _disposed) return;
+        _isRefreshing = true;
+        _isLoading = !_hasSnapshot;
+        _errorMessage = null;
+        _refreshError = null;
         try
         {
-            _bffModule ??=
-                await JS.InvokeAsync<
-                    IJSObjectReference>(
-                    "import",
-                    "./js/bff.js");
-
-            var result =
-                await _bffModule
-                    .InvokeAsync<
-                        BillStreamViewModel[]>(
-                        "getBillStreams", true);
-
-            _reviewBills = result?
-                .Where(bill => !bill.IsActive && bill.Source == "AutomaticDiscovery")
-                .Select(bill => new BillReviewList.Item(bill.Id, bill.ProviderName))
-                .ToList() ?? [];
-
-            _billStreams =
-                result?
-                    .Where(
-                        bill =>
-                            bill.IsActive)
-                    .ToList()
-                ?? [];
-
-            UpdateBillSummaries();
-        }
-        catch (JSException)
-        {
-            _errorMessage =
-                L["FullWorth could not reach the secure API."].Value;
+            _bffModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/bff.js");
+            var result = await _bffModule.InvokeAsync<BillStreamViewModel[]>("getBillStreams", true);
+            if (result is null || result.Any(bill => bill is null))
+                throw new InvalidOperationException("Bill snapshot unavailable.");
+            var snapshot = BillLedgerSnapshot.Create(result.Select(bill => new BillLedgerEntry(
+                bill.Id, bill.ProviderName, bill.Category, bill.IsActive, bill.Source,
+                bill.HasTransactionEvidence, bill.HasMonthlyCadenceEvidence,
+                bill.CurrentAmount, bill.PreviousAverage, bill.CurrencyCode)));
+            if (_disposed) return;
+            _snapshot = snapshot;
+            _hasSnapshot = true;
+            if (!Currencies.Contains(_currency, StringComparer.Ordinal)) _currency = string.Empty;
         }
         catch (Exception)
         {
-            _errorMessage =
-                L["Something went wrong while loading your bills."].Value;
+            if (!_disposed)
+            {
+                if (_hasSnapshot)
+                    _refreshError = L["Bills could not be refreshed. Previously loaded records are still shown and may be out of date. Refresh bills to retry."].Value;
+                else
+                    _errorMessage = L["FullWorth could not reach the secure API."].Value;
+            }
         }
         finally
         {
-            _isLoading =
-                false;
+            _isRefreshing = false;
+            _isLoading = false;
         }
     }
 
-    private void UpdateBillSummaries()
-    {
-        _increasedCount =
-            _billStreams.Count(
-                bill =>
-                    bill.PreviousAverage > 0m &&
-                    GetDifference(bill) > 0m);
-
-        _decreasedCount =
-            _billStreams.Count(
-                bill =>
-                    bill.PreviousAverage > 0m &&
-                    GetDifference(bill) < 0m);
-
-        _noHistoryCount =
-            _billStreams.Count(
-                bill =>
-                    bill.PreviousAverage <= 0m);
-
-
-    }
-
-    private static decimal GetDifference(
-        BillStreamViewModel bill)
-    {
-        if (bill.PreviousAverage <= 0m)
-        {
-            return 0m;
-        }
-
-        return decimal.Round(
-            bill.CurrentAmount -
-                bill.PreviousAverage,
-            2,
-            MidpointRounding.AwayFromZero);
-    }
+    private static decimal GetDifference(BillLedgerEntry bill) => BillLedgerSnapshot.Difference(bill);
 
     private string FormatMoney(decimal amount, string? currencyCode) =>
         FinancialAmountFormatter.FormatOrUnspecified(amount, currencyCode, L["Currency unavailable"].Value);
@@ -567,9 +602,8 @@
         decimal multiplier = 1m) =>
         FinancialAmountFormatter.FormatTotals(amounts, multiplier) ?? L["Amount unavailable"].Value;
 
-    private string FormatIncreaseTotals(decimal multiplier = 1m) =>
-        FormatTotals(_billStreams.Where(bill => GetDifference(bill) > 0m)
-            .Select(bill => (GetDifference(bill), bill.CurrencyCode)), multiplier);
+    private string FormatIncreaseTotals() =>
+        _snapshot.IncreaseTotal ?? L["Comparison unavailable"].Value;
 
     private string FormatDifference(
         decimal difference, string? currencyCode)
@@ -596,10 +630,12 @@
     }
 
     private string FormatAnnualized(
-        BillStreamViewModel bill,
+        BillLedgerEntry bill,
         decimal difference)
     {
-        if (!bill.HasMonthlyCadenceEvidence || !FinancialAmountFormatter.TryNormalizeCurrency(bill.CurrencyCode, out _))
+        if (!bill.HasMonthlyCadenceEvidence ||
+            Math.Abs(difference == 0m ? bill.CurrentAmount : difference) > decimal.MaxValue / 12m ||
+            !FinancialAmountFormatter.TryNormalizeCurrency(bill.CurrencyCode, out _))
         {
             return L["Not available"].Value;
         }
@@ -749,6 +785,11 @@
 
     public async ValueTask DisposeAsync()
     {
+        _disposed = true;
+        _discoveryVersion++;
+        _search = string.Empty;
+        _discovery = null;
+        _snapshot = BillLedgerSnapshot.Create([]);
         if (_bffModule is null)
         {
             return;
@@ -762,14 +803,6 @@
         catch (JSDisconnectedException)
         {
         }
-    }
-
-    private enum BillFilter
-    {
-        All,
-        Increased,
-        Decreased,
-        NoHistory
     }
 
     public sealed class BillStreamViewModel

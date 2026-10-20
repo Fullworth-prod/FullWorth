@@ -1,3 +1,4 @@
+import { verifyPlanningWorkspace } from "./planning-workspace.test.mjs";
 import { chromium } from "playwright";
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
@@ -10,6 +11,8 @@ const email = `ci-visual-${runId}@fullworth.local`;
 const password = "FullWorth!Visual123";
 
 await mkdir(outputDir, { recursive: true });
+
+await (await import("./privacy-requests.test.mjs")).verifyPrivacyRequestModules();
 
 const browser = await chromium.launch({
   headless: true,
@@ -267,8 +270,134 @@ try {
     await page.unroute("**/bff/bank-connections", currencyConnectionRoute);
   }
 
+  // MV-01: real authenticated Overview with controlled BFF snapshots, not fixture markup.
+  const overviewBillPattern = /\/bff\/bill-streams(?:\?.*)?$/;
+  let overviewBills = [];
+  let overviewFailure = false;
+  let overviewConnections = [{ id: "88888888-8888-8888-8888-888888888888",
+    institutionName: "Synthetic bank", status: 0,
+    lastSuccessfulSyncAtUtc: "2026-02-01T00:00:00Z" }];
+  const overviewWrites = [];
+  const observeOverviewWrites = request => {
+    if (/\/bff\/(bill-streams|bank-connections)/.test(new URL(request.url()).pathname) &&
+        request.method() !== "GET") overviewWrites.push(request.method());
+  };
+  const overviewBillRoute = async route => {
+    await route.fulfill({ status: overviewFailure ? 503 : 200,
+      contentType: "application/json",
+      body: overviewFailure ? '{"error":"Controlled failure"}' : JSON.stringify(overviewBills) });
+  };
+  const overviewBankRoute = async route => {
+    await route.fulfill({ status: 200, contentType: "application/json",
+      body: JSON.stringify(overviewConnections) });
+  };
+  const exampleBill = (id, amount, previous, extra = {}) => ({
+    id, providerName: "Synthetic bill", category: "Other", isActive: true,
+    currentAmount: amount, previousAverage: previous, currencyCode: "USD",
+    hasTransactionEvidence: true, hasMonthlyCadenceEvidence: true, ...extra
+  });
+  const overviewCases = [
+    ["no-history", [
+      exampleBill("11111111-1111-1111-1111-111111111111", 29, 0),
+      exampleBill("22222222-2222-2222-2222-222222222222", 13.8, 0)
+    ], "Comparison history needed", "$42.80"],
+    ["compared-zero", [exampleBill("11111111-1111-1111-1111-111111111111", 29, 29)],
+      "No increases in compared bills", "$29.00"],
+    ["partial", [
+      exampleBill("11111111-1111-1111-1111-111111111111", 29, 29),
+      exampleBill("22222222-2222-2222-2222-222222222222", 13.8, 0)
+    ], "Only some bills can be compared", "$42.80"],
+    ["unknown-currency", [
+      exampleBill("11111111-1111-1111-1111-111111111111", 999, 10, {currencyCode: null})
+    ], "Bill amounts need review", "Amount unavailable"],
+    ["nonmonthly-increase", [
+      exampleBill("11111111-1111-1111-1111-111111111111", 29, 20,
+        {hasMonthlyCadenceEvidence: false})
+    ], "Bills need review", "$29.00"]
+  ];
+  page.on("request", observeOverviewWrites);
+  await page.route(overviewBillPattern, overviewBillRoute);
+  await page.route("**/bff/bank-connections", overviewBankRoute);
+  try {
+    for (const [width, theme] of [[320, "dark"], [1440, "light"]]) {
+      await page.setViewportSize({ width, height: 1000 });
+      await page.evaluate(value => localStorage.setItem("billwatch-theme", value), theme);
+      for (const [name, bills, heading, amount] of overviewCases) {
+        overviewBills = bills;
+        await page.goto("/app", {waitUntil: "domcontentloaded"});
+        await settle(".fw-pulse-amount");
+        assert.equal((await page.locator(".fw-pulse-amount").innerText()).trim(), amount);
+        assert.equal(await page.locator(".fw-signal-card h2").innerText(), heading);
+        assert.ok((await page.locator(".fw-pulse").innerText()).includes(
+          "This is not total spending or a monthly budget"));
+        assert.ok(!(await page.locator(".app-page").innerText()).includes("Everything looks steady"));
+        if (name === "compared-zero") {
+          assert.ok((await page.locator(".fw-pulse-rail").innerText()).includes("$0.00"));
+          assert.ok((await page.locator(".fw-pulse-rail").innerText()).includes("No increase to project"));
+        }
+        if (name === "nonmonthly-increase") {
+          assert.ok((await page.locator(".fw-pulse-rail").innerText()).includes("Monthly timing not established"));
+        }
+        assert.ok(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)),
+          "Overview coverage and money states must fit the viewport");
+        await page.screenshot({path: path.join(outputDir, "overview-" + name + "-" + width + ".png"),
+          fullPage: true});
+      }
+    }
+
+    overviewBills = overviewCases[0][1];
+    await page.setViewportSize({width: 390, height: 844});
+    await page.goto("/app", {waitUntil: "domcontentloaded"});
+    await settle(".fw-pulse-amount");
+    overviewFailure = true;
+    await page.getByRole("button", {name: "Check status", exact: true}).click();
+    await page.getByRole("status").filter({hasText: "Previously loaded records"}).waitFor();
+    assert.equal((await page.locator(".fw-pulse-amount").innerText()).trim(), "$42.80");
+    overviewFailure = false;
+    await page.getByRole("button", {name: "Check status", exact: true}).click();
+    await page.getByRole("status").filter({hasText: "Previously loaded records"}).waitFor({state: "hidden"});
+
+    overviewConnections = [];
+    await page.goto("/app", {waitUntil: "domcontentloaded"});
+    await settle(".fw-pulse-amount");
+    assert.ok((await page.locator(".app-page").innerText()).includes("These are saved bill records."));
+    assert.equal((await page.locator(".fw-pulse-amount").innerText()).trim(), "$42.80");
+    await page.evaluate(() => document.documentElement.style.fontSize = "200%");
+    const noticeLayout = await page.getByRole("status").filter({hasText: "These are saved bill records."})
+      .evaluate(notice => {
+        const text = notice.querySelector("p").getBoundingClientRect();
+        const link = notice.querySelector("a").getBoundingClientRect();
+        return {textBottom: text.bottom, linkTop: link.top, linkWidth: link.width, linkHeight: link.height};
+      });
+    assert.ok(noticeLayout.linkTop >= noticeLayout.textBottom,
+      "At phone width, the connection action must stack below notice text, not squeeze beside it");
+    assert.ok(noticeLayout.linkWidth >= 100 && noticeLayout.linkHeight >= 44,
+      "The connection link must remain readable and touch-sized with enlarged text");
+    assert.ok(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)),
+      "Overview must support enlarged text without horizontal overflow");
+    await page.screenshot({path: path.join(outputDir, "overview-saved-records-enlarged.png"), fullPage: true});
+
+    overviewFailure = true;
+    await page.goto("/app", {waitUntil: "domcontentloaded"});
+    await settle(".app-error-state");
+    assert.equal(await page.locator(".fw-pulse-amount").count(), 0);
+    overviewFailure = false;
+    await page.getByRole("button", {name: "Try again", exact: true}).click();
+    await settle(".fw-pulse-amount");
+    assert.deepEqual(overviewWrites, [], "Overview status checks and evidence links must not mutate data");
+  } catch (error) {
+    await page.screenshot({path: path.join(outputDir, "overview-trust-failure.png"), fullPage: true});
+    throw error;
+  } finally {
+    page.off("request", observeOverviewWrites);
+    await page.unroute(overviewBillPattern, overviewBillRoute);
+    await page.unroute("**/bff/bank-connections", overviewBankRoute);
+  }
+
   // Exercise the real authenticated Bills page, not duplicated fixture markup.
   // This account and every bank/transaction record are disposable CI data.
+  await (await import("./bills-workspace.test.mjs")).verifyBillsWorkspace(page, outputDir);
+
   const billsDestinations = [
     ["Check bank connections", "/app/account"],
     ["Review imported transactions", "/app/account/transactions"],
@@ -478,6 +607,8 @@ try {
     );
   }
 
+  await (await import("./privacy-controls.test.mjs")).verifyPrivacyControls(page, outputDir);
+
   await page.goto("/app/account/settings", { waitUntil: "domcontentloaded" });
   await settle(".settings-page");
 
@@ -614,6 +745,8 @@ try {
 
   await page.goto("/app", { waitUntil: "domcontentloaded" });
   await settle(".app-shell");
+
+  await verifyPlanningWorkspace(page, outputDir);
 
   await context.clearCookies();
 

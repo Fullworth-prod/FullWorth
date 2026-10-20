@@ -54,6 +54,10 @@ public sealed class CrossUserIdentifierCoverageTests
                         nameof(
                             BillAlertOwnershipTests
                                 .OtherUser_CannotMarkAlertRead)),
+                ["POST|/api/bank-connections/{connectionId:guid}/archive"] =
+                    new(typeof(BankConnectionArchiveTests), nameof(BankConnectionArchiveTests.OtherUser_CannotArchive)),
+                ["POST|/api/bank-connections/{connectionId:guid}/restore"] =
+                    new(typeof(BankConnectionArchiveTests), nameof(BankConnectionArchiveTests.OtherUser_CannotRestore)),
                 ["POST|/api/bill-streams/{billStreamId:guid}/confirm"] =
                     new(typeof(BillReviewWorkflowTests),
                         nameof(BillReviewWorkflowTests.ConfirmForeignBill_ReturnsNotFoundWithoutMutation_AndUsesExactOwnedId)),

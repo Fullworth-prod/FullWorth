@@ -1,0 +1,58 @@
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FullWorth.Web.Components.Pages.App.Account> L
+
+<div class="fw-account-stats" aria-label="@L["Account connection summary"]">
+    <div>
+        <span>@L["Bank connections"]</span>
+        <strong>@(Unavailable ? "—" : Connections.Count.ToString())</strong>
+        <small>@L["Includes ended connections"]</small>
+    </div>
+    <div>
+        <span>@L["Financial accounts"]</span>
+        <strong>@(Unavailable ? "—" : AccountCount.ToString())</strong>
+        <small>@(IsStale ? L["Previously loaded accounts"] : L["Accounts currently available"])</small>
+    </div>
+    <div class="@(Health == HealthState.Reconnect ? "has-attention" : string.Empty)">
+        <span>@L["Connection state"]</span>
+        <strong>@L[Heading]</strong>
+        <small>@L["Connection status alone does not prove complete or current monitoring."]</small>
+    </div>
+</div>
+
+@code {
+    public sealed record Connection(int Status, DateTimeOffset? LastSuccessfulSyncAtUtc);
+    public enum HealthState { Loading, Unavailable, Stale, Empty, Reconnect, Unknown, Ended, AwaitingSync, Connected }
+
+    [Parameter] public IReadOnlyList<Connection> Connections { get; set; } = [];
+    [Parameter] public int AccountCount { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public bool HasError { get; set; }
+    [Parameter] public bool IsStale { get; set; }
+
+    private bool Unavailable => IsLoading || HasError;
+    private HealthState Health => Evaluate(Connections, IsLoading, HasError, IsStale);
+    private string Heading => Health switch
+    {
+        HealthState.Loading => "Checking connection state",
+        HealthState.Unavailable => "Connection state unavailable",
+        HealthState.Stale => "Previously loaded state",
+        HealthState.Empty => "No banks connected",
+        HealthState.Reconnect => "Reconnect needed",
+        HealthState.Unknown => "Unknown connection state",
+        HealthState.Ended => "Connections ended",
+        HealthState.AwaitingSync => "Awaiting first sync",
+        _ => "Reported connected"
+    };
+
+    public static HealthState Evaluate(IReadOnlyList<Connection> connections, bool loading = false, bool error = false, bool stale = false)
+    {
+        if (loading) return HealthState.Loading;
+        if (error) return HealthState.Unavailable;
+        if (stale) return HealthState.Stale;
+        if (connections.Count == 0) return HealthState.Empty;
+        if (connections.Any(connection => connection.Status == 1)) return HealthState.Reconnect;
+        if (connections.Any(connection => connection.Status is not (0 or 1 or 2))) return HealthState.Unknown;
+        if (connections.All(connection => connection.Status == 2)) return HealthState.Ended;
+        if (connections.Any(connection => connection.Status == 0 && connection.LastSuccessfulSyncAtUtc is null)) return HealthState.AwaitingSync;
+        return HealthState.Connected;
+    }
+}

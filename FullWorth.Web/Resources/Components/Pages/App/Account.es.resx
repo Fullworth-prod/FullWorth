@@ -75,4 +75,34 @@
   <data name="Disconnect bank?" xml:space="preserve"><value>¿Desconectar banco?</value></data>
   <data name="Keep connected" xml:space="preserve"><value>Mantener conectado</value></data>
   <data name="Disconnect bank" xml:space="preserve"><value>Desconectar banco</value></data>
+  <data name="Refreshing…" xml:space="preserve"><value>Actualizando…</value></data>
+  <data name="Refresh account" xml:space="preserve"><value>Actualizar cuenta</value></data>
+  <data name="Account refresh failed. Previously loaded data is still shown and may be out of date. Try refreshing again." xml:space="preserve"><value>La actualización de la cuenta falló. Se siguen mostrando los datos cargados anteriormente y pueden estar desactualizados. Intenta actualizar de nuevo.</value></data>
+  <data name="FullWorth could not load your account information. Try again." xml:space="preserve"><value>FullWorth no pudo cargar la información de tu cuenta. Inténtalo de nuevo.</value></data>
+  <data name="Connection tools are unavailable. Your loaded account data is still available; try the connection tools again." xml:space="preserve"><value>Las herramientas de conexión no están disponibles. Tus datos cargados siguen disponibles; vuelve a intentar las herramientas de conexión.</value></data>
+  <data name="Retry connection tools" xml:space="preserve"><value>Reintentar herramientas de conexión</value></data>
+  <data name="Account connection summary" xml:space="preserve"><value>Resumen de conexiones de la cuenta</value></data>
+  <data name="Bank connections" xml:space="preserve"><value>Conexiones bancarias</value></data>
+  <data name="Includes ended connections" xml:space="preserve"><value>Incluye conexiones finalizadas</value></data>
+  <data name="Previously loaded accounts" xml:space="preserve"><value>Cuentas cargadas anteriormente</value></data>
+  <data name="Connection state" xml:space="preserve"><value>Estado de conexión</value></data>
+  <data name="Connection status alone does not prove complete or current monitoring." xml:space="preserve"><value>El estado de conexión por sí solo no demuestra una supervisión completa ni actualizada.</value></data>
+  <data name="Checking connection state" xml:space="preserve"><value>Comprobando el estado de conexión</value></data>
+  <data name="Connection state unavailable" xml:space="preserve"><value>Estado de conexión no disponible</value></data>
+  <data name="Previously loaded state" xml:space="preserve"><value>Estado cargado anteriormente</value></data>
+  <data name="Reconnect needed" xml:space="preserve"><value>Se necesita reconectar</value></data>
+  <data name="Unknown connection state" xml:space="preserve"><value>Estado de conexión desconocido</value></data>
+  <data name="Connections ended" xml:space="preserve"><value>Conexiones finalizadas</value></data>
+  <data name="Awaiting first sync" xml:space="preserve"><value>Esperando la primera sincronización</value></data>
+  <data name="Reported connected" xml:space="preserve"><value>Conexión indicada como activa</value></data>
+  <data name="Hide archived" xml:space="preserve"><value>Ocultar archivadas</value></data>
+  <data name="Show archived ({0})" xml:space="preserve"><value>Mostrar archivadas ({0})</value></data>
+  <data name="Archived connections keep their transaction and bill history. Restoring a connection does not reconnect your bank." xml:space="preserve"><value>Las conexiones archivadas conservan su historial de transacciones y facturas. Restaurar una conexión no vuelve a conectar tu banco.</value></data>
+  <data name="Restore connection" xml:space="preserve"><value>Restaurar conexión</value></data>
+  <data name="Archive connection" xml:space="preserve"><value>Archivar conexión</value></data>
+  <data name="Archived" xml:space="preserve"><value>Archivada</value></data>
+  <data name="No unarchived connections" xml:space="preserve"><value>No hay conexiones sin archivar</value></data>
+  <data name="Connection archived. Your transaction and bill history is unchanged." xml:space="preserve"><value>Conexión archivada. Tu historial de transacciones y facturas no ha cambiado.</value></data>
+  <data name="Connection restored to the list. It remains disconnected." xml:space="preserve"><value>Conexión restaurada en la lista. Sigue desconectada.</value></data>
+  <data name="The connection could not be updated. Disconnect it successfully first, then try again." xml:space="preserve"><value>No se pudo actualizar la conexión. Desconéctala correctamente primero y vuelve a intentarlo.</value></data>
 </root>

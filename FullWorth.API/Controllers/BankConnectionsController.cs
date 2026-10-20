@@ -60,7 +60,8 @@ public sealed class BankConnectionsController : ControllerBase
                         connection.InstitutionName,
                         connection.Status,
                         connection.LastSuccessfulSyncAtUtc,
-                        connection.CreatedAtUtc))
+                        connection.CreatedAtUtc,
+                        connection.IsArchived && connection.Status == BankConnectionStatus.Disconnected))
                 .ToListAsync(
                     cancellationToken);
 
@@ -93,6 +94,40 @@ public sealed class BankConnectionsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{connectionId:guid}/archive")]
+    public Task<IActionResult> Archive(Guid connectionId, CancellationToken cancellationToken) =>
+        SetArchivedAsync(connectionId, true, cancellationToken);
+
+    [HttpPost("{connectionId:guid}/restore")]
+    public Task<IActionResult> Restore(Guid connectionId, CancellationToken cancellationToken) =>
+        SetArchivedAsync(connectionId, false, cancellationToken);
+
+    private async Task<IActionResult> SetArchivedAsync(
+        Guid connectionId, bool archived, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+        if (connectionId == Guid.Empty) return NotFound();
+
+        var connection = await _dbContext.BankConnections.SingleOrDefaultAsync(
+            item => item.Id == connectionId && item.UserId == userId, cancellationToken);
+        if (connection is null) return NotFound();
+
+        // An ended status alone does not prove that provider revocation completed.
+        // Never hide a connection whose provider access still needs to be removed.
+        if (connection.Status != BankConnectionStatus.Disconnected ||
+            !string.IsNullOrEmpty(connection.ProtectedPlaidAccessToken))
+            return Conflict(new { message = "Disconnect this bank successfully before archiving or restoring it." });
+
+        if (connection.IsArchived != archived)
+        {
+            connection.IsArchived = archived;
+            connection.UpdatedAtUtc = DateTimeOffset.UtcNow;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        // This operation does not change connection status, credentials, accounts or transactions.
+        return NoContent();
+    }
+
     private bool TryGetUserId(
         out Guid userId)
     {
@@ -102,7 +137,7 @@ public sealed class BankConnectionsController : ControllerBase
 
         return Guid.TryParse(
             userIdText,
-            out userId);
+            out userId) && userId != Guid.Empty;
     }
 }
 
@@ -111,4 +146,5 @@ public sealed record BankConnectionResult(
     string InstitutionName,
     BankConnectionStatus Status,
     DateTimeOffset? LastSuccessfulSyncAtUtc,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc,
+    bool IsArchived = false);

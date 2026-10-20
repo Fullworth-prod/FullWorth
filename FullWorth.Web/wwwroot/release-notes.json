@@ -1,28 +1,38 @@
 {
-  "id": "2026-10-18-bill-intelligence-and-updates",
-  "title": "Your bills, with more clarity",
-  "summary": "Here’s what actually changed in this release of FullWorth.",
-  "version": "October 2026 · bill intelligence",
+  "id": "2026-10-20-evidence-first-experience",
+  "title": "More clarity across FullWorth",
+  "summary": "A focused update to make bills, transactions, connections and account actions easier to understand and safer to use.",
+  "version": "October 2026 · experience and reliability",
   "highlights": [
     {
-      "icon": "scan",
-      "title": "Find out why a bill is missing",
-      "description": "The Bills page now has a Missing a bill? explanation of imported payment coverage and why recurring candidates were rejected. It does not change your bank data."
-    },
-    {
       "icon": "trend-up",
-      "title": "Keep important bills in view",
-      "description": "Previously detected bills that need another look have their own review list. Confirm a bill to keep monitoring it, even when newer transaction history is sparse."
+      "title": "Clearer bill and transaction totals",
+      "description": "Bills and Overview now distinguish comparable bill changes from missing history. Transactions show posted outflows separately by currency, without mixing refunds or pending charges."
     },
     {
-      "icon": "shield",
-      "title": "More trustworthy bill amounts",
-      "description": "Bill totals now rely on eligible posted charges, exclude pending payments and credits, and preserve the original currency without inventing conversions."
+      "icon": "scan",
+      "title": "Find and review your bills faster",
+      "description": "Search, sort, and filter Bills without changing loaded totals. The Missing a bill? panel explains discovery evidence; failed refreshes preserve prior bill data with a warning."
     },
     {
       "icon": "check",
-      "title": "Updates that explain what changed",
-      "description": "What’s New now uses published release notes, remembers what you have already read, and checks for new updates when you return to FullWorth."
+      "title": "Activity that stays useful during errors",
+      "description": "Search activity and review linked evidence independently of marking an alert read or dismissing it. Failed refreshes no longer imply there are no alerts."
+    },
+    {
+      "icon": "shield",
+      "title": "Safer account and privacy actions",
+      "description": "Disconnect and archive states are clearer. Ended connections can be archived or restored to the list without reconnecting; uncertain privacy requests never claim success prematurely."
+    },
+    {
+      "icon": "scan",
+      "title": "Save drafts without guessing",
+      "description": "Planning and personal setup preserve edits when save responses are uncertain, with read-only verification before another attempt. Your bank balances and payment history are not rewritten."
+    },
+    {
+      "icon": "check",
+      "title": "Better phone usability and reliability",
+      "description": "Mobile navigation adapts to larger text, provider logos fall back gracefully, and background parser HTTPS certificates renew before expiry."
     }
   ]
 }

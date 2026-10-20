@@ -1242,3 +1242,12 @@ export function wirePlaidReconnectButton(
 export function confirmBankDisconnect(title, message, cancelText, confirmText) {
     return confirmAction({ title, message, cancelText, confirmText });
 }
+
+
+export async function setBankConnectionArchived(connectionId, archived) {
+    if (!connectionId || typeof archived !== "boolean")
+        throw new Error("A bank connection and archive choice are required.");
+    return await mutateJson(
+        `/bff/bank-connections/${encodeURIComponent(connectionId)}/${archived ? "archive" : "restore"}`,
+        "POST");
+}

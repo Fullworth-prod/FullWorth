@@ -841,6 +841,224 @@ try {
   await page.goto("/app", { waitUntil: "domcontentloaded" });
   await settle(".app-shell");
 
+
+  // Synthetic account snapshots only. No provider connection is opened or modified.
+  const accountConnectionId = "11111111-bbbb-bbbb-bbbb-111111111111";
+  const accountRecordId = "22222222-bbbb-bbbb-bbbb-222222222222";
+  const syntheticConnections = [
+    { id: accountConnectionId, institutionName: "Synthetic first-sync bank", status: 0,
+      createdAtUtc: "2026-10-17T10:00:00Z", lastSuccessfulSyncAtUtc: null },
+    { id: "33333333-bbbb-bbbb-bbbb-333333333333", institutionName: "Synthetic ended bank", status: 2,
+      createdAtUtc: "2026-10-16T10:00:00Z", lastSuccessfulSyncAtUtc: "2026-10-16T11:00:00Z" }
+  ];
+  const syntheticAccounts = [{ id: accountRecordId, bankConnectionId: accountConnectionId,
+    institutionName: "Synthetic first-sync bank", name: "Synthetic checking", officialName: "Synthetic checking",
+    mask: "1234", accountType: "Depository", accountSubtype: "checking", isActive: true }];
+  let snapshotMode = "good";
+  let syntheticArchived = false;
+  let archiveStatus = 503;
+  let archiveWrites = 0;
+  let syntheticDisconnected = false;
+  let disconnectStatus = 503;
+  let syntheticDeletes = 0;
+  const connectionsSnapshot = () => syntheticConnections.map((item, index) => ({
+    ...item, isArchived: index === 1 && syntheticArchived, status: snapshotMode === "ended" || syntheticDisconnected ? 2 :
+      snapshotMode === "unknown" && index === 0 ? 99 : item.status,
+    institutionName: snapshotMode === "partial" && index === 0 ? "Must not replace the old snapshot" : item.institutionName
+  }));
+  await page.route("**/bff/bank-connections", route => {
+    if (snapshotMode === "failed") return route.fulfill({ status: 503, json: {} });
+    return route.fulfill({ json: snapshotMode === "empty" ? [] : connectionsSnapshot() });
+  });
+  await page.route("**/bff/bank-accounts", route => {
+    if (snapshotMode === "failed" || snapshotMode === "partial") return route.fulfill({ status: 503, json: {} });
+    return route.fulfill({ json: snapshotMode === "invalid" ? null :
+      syntheticDisconnected || snapshotMode === "empty" || snapshotMode === "ended" ? [] : syntheticAccounts });
+  });
+  await page.route(`**/bff/bank-connections/${accountConnectionId}`, route => {
+    assert.equal(route.request().method(), "DELETE");
+    syntheticDeletes++;
+    if (disconnectStatus === 204) {
+      syntheticDisconnected = true;
+      snapshotMode = "failed";
+      return route.fulfill({ status: 204 });
+    }
+    return route.fulfill({ status: 503, json: {} });
+  });
+  async function refreshAccount() {
+    await Promise.all([
+      page.waitForResponse(response => response.url().endsWith("/bff/bank-accounts")),
+      page.getByRole("button", { name: "Refresh account", exact: true }).click()
+    ]);
+    await page.waitForFunction(() => {
+      const button = document.querySelector(".account-refresh-button");
+      return button && !button.disabled;
+    });
+  }
+  for (const width of [390, 1440]) {
+    snapshotMode = "good";
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto("/app/account", { waitUntil: "domcontentloaded" });
+    await settle(".connection-row");
+    assert.ok((await page.locator(".fw-account-stats").innerText()).includes("Awaiting first sync"));
+    assert.equal(await page.locator(".financial-account-row").count(), 1);
+    snapshotMode = "partial";
+    await refreshAccount();
+    await page.getByRole("alert").filter({ hasText: "Previously loaded data is still shown" }).waitFor();
+    assert.ok((await page.locator(".fw-account-stats").innerText()).includes("Previously loaded state"));
+    assert.ok(!(await page.locator(".connection-list").innerText()).includes("Must not replace"));
+    assert.equal(await page.locator(".financial-account-row").count(), 1);
+    snapshotMode = "invalid";
+    await refreshAccount();
+    assert.equal(await page.locator(".connection-row").count(), 2);
+    snapshotMode = "unknown";
+    await refreshAccount();
+    assert.ok((await page.locator(".fw-account-stats").innerText()).includes("Unknown connection state"));
+    snapshotMode = "ended";
+    await refreshAccount();
+    assert.ok((await page.locator(".fw-account-stats").innerText()).includes("Connections ended"));
+    assert.ok(!(await page.locator(".fw-account-stats").innerText()).includes("healthy"));
+    snapshotMode = "empty";
+    await refreshAccount();
+    assert.ok((await page.locator(".fw-account-stats").innerText()).includes("No banks connected"));
+    snapshotMode = "good";
+    await refreshAccount();
+    assert.ok((await page.locator(".fw-account-stats").innerText()).includes("Awaiting first sync"));
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: path.join(outputDir, `account-connection-state-${width}.png`), fullPage: true });
+  }
+  const endedConnectionId = syntheticConnections[1].id;
+  const archivePattern = `**/bff/bank-connections/${endedConnectionId}/{archive,restore}`;
+  const archiveHandler = route => {
+    assert.equal(route.request().method(), "POST");
+    archiveWrites++;
+    if (archiveStatus !== 204) return route.fulfill({ status: archiveStatus, json: {} });
+    syntheticArchived = route.request().url().endsWith("/archive");
+    return route.fulfill({ status: 204 });
+  };
+  await page.route(archivePattern, archiveHandler);
+  const endedRow = page.locator(".connection-row").filter({ hasText: "Synthetic ended bank" });
+  await endedRow.getByRole("button", { name: "Archive connection", exact: true }).click();
+  await page.getByRole("alert").filter({ hasText: "The connection could not be updated" }).waitFor();
+  assert.equal(await endedRow.count(), 1, "A failed archive must leave the connection visible.");
+  assert.equal(archiveWrites, 1);
+  archiveStatus = 204;
+  await endedRow.getByRole("button", { name: "Archive connection", exact: true }).click();
+  await page.getByRole("status").filter({ hasText: "Connection archived." }).waitFor();
+  assert.equal(await endedRow.count(), 0);
+  assert.equal(await page.locator(".financial-account-row").count(), 1);
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto("/app/account", { waitUntil: "domcontentloaded" });
+    await settle(".connection-row");
+    assert.equal(await endedRow.count(), 0, "A fresh page must respect the server archive preference.");
+    const showArchived = page.getByRole("button", { name: "Show archived (1)", exact: true });
+    await showArchived.click();
+    await endedRow.getByRole("button", { name: "Restore connection", exact: true }).waitFor();
+    assert.ok((await endedRow.innerText()).includes("Archived"));
+    assert.ok((await page.locator(".fw-account-stats").innerText()).includes("Awaiting first sync"));
+    const restore = endedRow.getByRole("button", { name: "Restore connection", exact: true });
+    await restore.evaluate(element => element.scrollIntoView({ block: "center", behavior: "instant" }));
+    const bounds = await restore.boundingBox();
+    assert.ok(bounds && bounds.height >= 44);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false);
+    await page.screenshot({ path: path.join(outputDir, `account-archive-${width}.png`), fullPage: true });
+    await page.getByRole("button", { name: "Hide archived", exact: true }).click();
+    await endedRow.waitFor({ state: "detached" });
+    assert.equal(await endedRow.count(), 0);
+  }
+  await page.getByRole("button", { name: "Show archived (1)", exact: true }).click();
+  await endedRow.getByRole("button", { name: "Restore connection", exact: true }).click();
+  await page.getByRole("status").filter({ hasText: "Connection restored to the list." }).waitFor();
+  assert.ok((await endedRow.innerText()).includes("Connection ended"));
+  assert.equal(await endedRow.getByRole("button", { name: "Disconnect", exact: true }).count(), 0);
+  assert.equal(await page.getByRole("button", { name: "Hide archived", exact: true }).count(), 0);
+  assert.equal(archiveWrites, 3);
+  assert.equal(syntheticDeletes, 0, "Archive and restore must never invoke provider disconnection.");
+  await page.unroute(archivePattern, archiveHandler);
+  const firstSyncRow = page.locator(".connection-row").filter({ hasText: "Synthetic first-sync bank" });
+  await firstSyncRow.getByRole("button", { name: "Disconnect", exact: true }).click();
+  await page.locator(".fw-confirm-dialog").getByRole("button", { name: "Keep connected", exact: true }).click();
+  assert.equal(syntheticDeletes, 0);
+  await firstSyncRow.getByRole("button", { name: "Disconnect", exact: true }).click();
+  await page.locator(".fw-confirm-dialog").getByRole("button", { name: "Disconnect bank", exact: true }).click();
+  await page.getByRole("alert").filter({ hasText: "could not disconnect" }).waitFor();
+  assert.equal(syntheticDeletes, 1);
+  assert.equal(await page.locator(".financial-account-row").count(), 1);
+  disconnectStatus = 204;
+  await firstSyncRow.getByRole("button", { name: "Disconnect", exact: true }).click();
+  await page.locator(".fw-confirm-dialog").getByRole("button", { name: "Disconnect bank", exact: true }).click();
+  await page.getByRole("alert").filter({ hasText: "Previously loaded data is still shown" }).waitFor();
+  assert.equal(syntheticDeletes, 2);
+  assert.equal(await page.locator(".financial-account-row").count(), 0);
+  assert.equal(await page.getByRole("button", { name: "Disconnect", exact: true }).count(), 0);
+  assert.ok((await page.locator(".account-action-message.success").innerText()).includes("was disconnected"));
+  snapshotMode = "good";
+  await refreshAccount();
+  assert.equal(syntheticDeletes, 2, "Retry refresh must not repeat a disconnect write.");
+  assert.ok((await page.locator(".fw-account-stats").innerText()).includes("Connections ended"));
+  snapshotMode = "failed";
+  await page.goto("/app/account", { waitUntil: "domcontentloaded" });
+  await settle(".app-error-state");
+  assert.ok((await page.locator(".fw-account-stats").innerText()).includes("Connection state unavailable"));
+  assert.ok(!(await page.locator(".fw-account-stats").innerText()).includes("healthy"));
+  snapshotMode = "good";
+  await page.getByRole("button", { name: "Try again", exact: true }).click();
+  await page.locator(".connection-row").first().waitFor();
+  await page.unroute("**/bff/bank-connections");
+  await page.unroute("**/bff/bank-accounts");
+  await page.unroute(`**/bff/bank-connections/${accountConnectionId}`);
+
+  // Isolate optional button-wiring failure from authenticated data reads.
+  const toolsContext = await browser.newContext({ baseURL: baseUrl, ignoreHTTPSErrors: true, serviceWorkers: "block" });
+  await toolsContext.addCookies(await context.cookies());
+  const toolsPage = await toolsContext.newPage();
+  await toolsPage.route("**/bff/bank-connections", route => route.fulfill({ json: syntheticConnections }));
+  await toolsPage.route("**/bff/bank-accounts", route => route.fulfill({ json: syntheticAccounts }));
+  await toolsPage.addInitScript(() => {
+    const getElementById = Document.prototype.getElementById;
+    Document.prototype.getElementById = function(id) {
+      if (id === "connect-bank-button" && !globalThis.__ciToolsRecovered) {
+        globalThis.__ciToolFailures = (globalThis.__ciToolFailures ?? 0) + 1;
+        throw new Error("Synthetic connection-tool DOM lookup failure");
+      }
+      return getElementById.call(this, id);
+    };
+  });
+  await toolsPage.goto("/app/account", { waitUntil: "domcontentloaded" });
+  await toolsPage.locator(".app-shell").waitFor();
+  await toolsPage.waitForTimeout(900);
+  if (await toolsPage.locator(".whats-new-dialog").isVisible()) {
+    await toolsPage.locator(".whats-new-primary").click();
+  }
+  try {
+    await toolsPage.getByRole("alert").filter({ hasText: "Connection tools are unavailable" }).waitFor();
+  } catch (error) {
+    await toolsPage.screenshot({ path: path.join(outputDir, "account-tool-initialization-failure.png"), fullPage: true });
+    console.error("Synthetic tool fixture state", {
+      injectedFailures: await toolsPage.evaluate(() => globalThis.__ciToolFailures ?? 0),
+      path: new URL(toolsPage.url()).pathname,
+      connectionRows: await toolsPage.locator(".connection-row").count(),
+      initialError: await toolsPage.locator(".app-error-state").count(),
+      welcomeVisible: await toolsPage.locator(".whats-new-dialog").isVisible()
+    });
+    throw error;
+  }
+  assert.ok((await toolsPage.evaluate(() => globalThis.__ciToolFailures ?? 0)) > 0);
+  assert.equal(await toolsPage.locator(".connection-row").count(), 2);
+  assert.equal(await toolsPage.locator(".financial-account-row").count(), 1);
+  assert.equal(await toolsPage.locator(".app-error-state").count(), 0);
+  await toolsPage.evaluate(() => { globalThis.__ciToolsRecovered = true; });
+  await toolsPage.getByRole("button", { name: "Retry connection tools", exact: true }).click();
+  await toolsPage.waitForFunction(() => {
+    const button = document.getElementById("connect-bank-button");
+    return button && !button.disabled;
+  });
+  assert.equal(await toolsPage.getByRole("alert").filter({ hasText: "Connection tools are unavailable" }).count(), 0);
+  await toolsContext.close();
+  await page.goto("/app", { waitUntil: "domcontentloaded" });
+  await settle(".app-shell");
+
   const serviceWorkerState = await page.evaluate(async () => {
     if (!("serviceWorker" in navigator)) {
       return {

@@ -1,0 +1,50 @@
+
+.experience-setup-page .onboarding-card {
+    align-items: start; grid-template-columns: minmax(0, 1fr) minmax(200px, .36fr);
+    gap: 28px; padding: 28px; overflow: visible;
+}
+.experience-setup-page .onboarding-copy { min-width: 0; max-width: none; }
+.experience-setup-page .onboarding-copy > h2 { font-size: clamp(1.5rem, 3vw, 2.2rem); line-height: 1.15; scroll-margin-top: 120px; }
+.experience-setup-page .setup-fields { border: 0; margin: 20px 0 0; padding: 0; min-width: 0; }
+.experience-setup-page .setup-fields .settings-card-grid { grid-template-columns: minmax(0, 1fr); }
+.experience-setup-page .setup-fields .settings-card { min-width: 0; }
+.experience-setup-page .setup-fields select {
+    min-height: 48px; max-width: 100%; width: 100%; box-sizing: border-box;
+}
+.experience-setup-page .setup-fields .remember-option { min-height: 48px; min-width: 0; padding-block: 12px; align-items: start; }
+.experience-setup-page .setup-fields .remember-option input { flex: 0 0 auto; margin-top: 3px; }
+.experience-setup-page .setup-fields .remember-option span { min-width: 0; overflow-wrap: anywhere; }
+.experience-setup-page .setup-fields .two-column { grid-template-columns: minmax(0, 1fr); }
+.experience-setup-page button, .experience-setup-page .setup-load-error a {
+    min-height: 48px; max-width: 100%; height: auto; padding-block: 12px;
+    white-space: normal; overflow-wrap: anywhere;
+}
+.experience-setup-page .settings-actions { flex-wrap: wrap; }
+.experience-setup-page .setup-progress ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.experience-setup-page .setup-progress button {
+    width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px;
+    text-align: start; border: 1px solid var(--bw-border); border-radius: 14px;
+    background: var(--bw-surface-soft); color: var(--bw-text); font: inherit;
+}
+.experience-setup-page .setup-progress button[aria-current=step] { border-color: var(--fw-accent, #7381ff); background: var(--fw-accent-soft, #26335b); }
+.experience-setup-page .setup-progress button span { font-weight: 800; }
+.experience-setup-page .setup-review { padding: 20px; border: 1px solid var(--bw-border); border-radius: 16px; }
+.experience-setup-page .setup-review dl { margin: 0; display: grid; gap: 16px; }
+.experience-setup-page .setup-review dl > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.experience-setup-page .setup-review dt { color: var(--bw-text-muted); }
+.experience-setup-page .setup-review dd { margin: 0; overflow-wrap: anywhere; }
+.experience-setup-page .setup-focus-summary { display: block; margin-bottom: 6px; }
+.experience-setup-page .setup-review p, .experience-setup-page .setup-notice, .experience-setup-page .setup-recovery p { line-height: 1.6; overflow-wrap: anywhere; }
+.experience-setup-page .setup-recovery { padding: 16px; margin-top: 16px; border: 1px solid #a58039; border-radius: 14px; }
+.experience-setup-page :is(button, select, input, a):focus-visible { outline: 3px solid var(--fw-accent, #7381ff); outline-offset: 3px; }
+@media (max-width: 950px) {
+    .experience-setup-page .onboarding-card { grid-template-columns: minmax(0, 1fr); }
+    .experience-setup-page .setup-progress { grid-row: 1; }
+    .experience-setup-page .setup-progress ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 580px) {
+    .experience-setup-page .onboarding-card { padding: 18px; }
+    .experience-setup-page .setup-review { padding: 14px; }
+    .experience-setup-page .setup-review dl > div { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+    .experience-setup-page .settings-actions button { width: 100%; }
+}

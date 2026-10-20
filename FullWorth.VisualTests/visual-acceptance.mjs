@@ -11,6 +11,8 @@ const password = "FullWorth!Visual123";
 
 await mkdir(outputDir, { recursive: true });
 
+await (await import("./experience-preferences.test.mjs")).verifyExperiencePreferenceModule();
+
 const browser = await chromium.launch({
   headless: true,
   args: ["--ignore-certificate-errors"]
@@ -130,6 +132,10 @@ try {
     localStorage.setItem("billwatch-theme", "dark");
   });
   await page.reload({ waitUntil: "domcontentloaded" });
+  await settle(".app-shell");
+
+  await (await import("./experience-setup.test.mjs")).verifyExperienceSetup(page, outputDir);
+  await page.goto("/app", { waitUntil: "domcontentloaded" });
   await settle(".app-shell");
 
   const desktopRoutes = [

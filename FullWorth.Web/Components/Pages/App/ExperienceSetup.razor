@@ -1,17 +1,19 @@
 @page "/app/setup"
 
+@using FullWorth.Web.Services
+
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @layout AppLayout
 @implements IAsyncDisposable
 
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
-@inject Microsoft.Extensions.Localization.IStringLocalizer<FullWorth.Web.Components.App> L
+@inject Microsoft.Extensions.Localization.IStringLocalizer<ExperienceSetup> L
 
 <PageTitle>@L["Set up FullWorth"]</PageTitle>
 <link rel="stylesheet" href="/account-settings.css" />
 
-<div class="app-page settings-page">
+<div class="app-page settings-page experience-setup-page" aria-busy="@(_isLoading || _isSaving || _isChecking)">
     <header class="settings-header">
         <div>
             <span class="page-kicker">@L["Personal setup"]</span>
@@ -23,6 +25,10 @@
                 : L["Choose how FullWorth should look, read, and prioritize your financial information. You can change these preferences later."])</p>
         </div>
     </header>
+    @if (IsSettingsEdit && _hasLoaded && !IsLocked)
+    {
+        <a class="secondary-action setup-exit" href="/app/account/settings">@L["Leave without saving"]</a>
+    }
 
     @if (_isLoading)
     {
@@ -34,12 +40,26 @@
             </div>
         </section>
     }
+    else if (!_hasLoaded)
+    {
+        <section class="onboarding-card setup-load-error">
+            <div class="onboarding-copy">
+                <h2>@L["Your saved setup is unavailable"]</h2>
+                <p role="alert">@L["We could not load a valid saved setup. Retry before editing so defaults do not overwrite your preferences."]</p>
+                <button type="button" class="primary-action" @onclick="LoadAsync">@L["Retry loading setup"]</button>
+                @if (IsSettingsEdit)
+                {
+                    <a class="secondary-action" href="/app/account/settings">@L["Back to settings"]</a>
+                }
+            </div>
+        </section>
+    }
     else
     {
         <section class="onboarding-card">
             <div class="onboarding-copy">
                 <span class="page-kicker">@GetStepKicker()</span>
-                <h2>@GetStepTitle()</h2>
+                <h2 tabindex="-1" @ref="_stepHeading" id="setup-step-heading">@GetStepTitle()</h2>
                 <p>@GetStepDescription()</p>
 
                 @if (!string.IsNullOrWhiteSpace(_error))
@@ -53,6 +73,25 @@
                     </div>
                 }
 
+                @if (!string.IsNullOrWhiteSpace(_notice))
+                {
+                    <p class="setup-notice" role="status">@_notice</p>
+                }
+                @if (_saveUncertain)
+                {
+                    <div class="setup-recovery">
+                        <p>@L["Your edits are kept. This check only reads saved preferences; it does not repeat the save."]</p>
+                        <button type="button" class="secondary-action" disabled="@_isChecking" @onclick="CheckSavedAsync">
+                            @(_isChecking ? L["Checking saved setup…"] : L["Check saved setup"])
+                        </button>
+                    </div>
+                }
+                @if (_saveConfirmed)
+                {
+                    <p role="status">@L["Your personal setup was saved."]</p>
+                    <button type="button" class="primary-action" @onclick="ContinueAfterSave">@L["Continue to FullWorth"]</button>
+                }
+                <fieldset class="setup-fields" disabled="@IsLocked" aria-labelledby="setup-step-heading">
                 @if (_step == 1)
                 {
                     <div class="settings-card-grid">
@@ -118,7 +157,7 @@
                         </section>
                     </div>
                 }
-                else
+                else if (_step == 3)
                 {
                     <div class="settings-card-grid">
                         <section class="settings-card settings-card-wide">
@@ -145,22 +184,42 @@
                     </div>
                 }
 
+                else
+                {
+                    <section class="setup-review" aria-label="@L["Review your setup"]">
+                        <dl>
+                            <div><dt>@L["Interface language"]</dt><dd>@(_language == "es" ? "Español" : "English")</dd></div>
+                            <div><dt>@L["Theme"]</dt><dd>@L[_theme]</dd></div>
+                            <div><dt>@L["Text size"]</dt><dd>@L[_textSize == "ExtraLarge" ? "Extra large" : _textSize]</dd></div>
+                            <div><dt>@L["Stronger contrast"]</dt><dd>@L[_highContrast ? "On" : "Off"]</dd></div>
+                            <div><dt>@L["Reduced motion"]</dt><dd>@L[_reduceMotion ? "On" : "Off"]</dd></div>
+                            <div><dt>@L["Your priorities"]</dt><dd>
+                                @foreach (var option in FocusOptions.Where(option => _focus.Contains(option.Value)))
+                                {
+                                    <span class="setup-focus-summary">@L[option.Title]</span>
+                                }
+                                @if (_focus.Count == 0) { <span>@L["Choose at least one priority before saving."]</span> }
+                            </dd></div>
+                        </dl>
+                        <p>@L["These choices change presentation only. They do not connect a bank, start monitoring, or change your financial records."]</p>
+                    </section>
+                }
                 <div class="settings-actions">
                     @if (_step > 1)
                     {
                         <button type="button"
                                 class="secondary-action"
-                                disabled="@_isSaving"
+                                disabled="@IsLocked"
                                 @onclick="PreviousStep">
                             @L["Back"]
                         </button>
                     }
 
-                    @if (_step < 3)
+                    @if (_step < 4)
                     {
                         <button type="button"
                                 class="primary-action"
-                                disabled="@_isSaving"
+                                disabled="@IsLocked"
                                 @onclick="NextStep">
                             @L["Continue"]
                         </button>
@@ -169,45 +228,32 @@
                     {
                         <button type="button"
                                 class="primary-action"
-                                disabled="@_isSaving"
+                                disabled="@IsLocked"
                                 @onclick="FinishAsync">
                             @(_isSaving
                                 ? L["Saving your setup…"]
-                                : L["Finish setup"])
+                                : L["Save setup"])
                         </button>
                     }
                 </div>
+                </fieldset>
             </div>
 
-            <div class="onboarding-steps" aria-label="@L["Setup progress"]">
-                <div class="onboarding-step @(_step >= 1 ? "active" : string.Empty)">
-                    <span>1</span>
-                    <div>
-                        <strong>@L["Language & theme"]</strong>
-                        <small>@L["How FullWorth looks and speaks"]</small>
-                    </div>
-                </div>
-
-                <div class="onboarding-line"></div>
-
-                <div class="onboarding-step @(_step >= 2 ? "active" : string.Empty)">
-                    <span>2</span>
-                    <div>
-                        <strong>@L["Readability"]</strong>
-                        <small>@L["Text size, contrast, and motion"]</small>
-                    </div>
-                </div>
-
-                <div class="onboarding-line"></div>
-
-                <div class="onboarding-step @(_step >= 3 ? "active" : string.Empty)">
-                    <span>3</span>
-                    <div>
-                        <strong>@L["Your priorities"]</strong>
-                        <small>@L["What FullWorth should emphasize"]</small>
-                    </div>
-                </div>
-            </div>
+            <nav class="setup-progress" aria-label="@L["Setup progress"]">
+                <ol>
+                    @foreach (var stage in new[] { 1, 2, 3, 4 })
+                    {
+                        <li>
+                            <button type="button" disabled="@IsLocked"
+                                    aria-current="@(stage == _step ? "step" : null)"
+                                    @onclick="() => GoToStep(stage)">
+                                <span aria-hidden="true">@stage</span>
+                                @L[stage switch { 1 => "Language & theme", 2 => "Readability", 3 => "Your priorities", _ => "Review & save" }]
+                            </button>
+                        </li>
+                    }
+                </ol>
+            </nav>
         </section>
     }
 </div>
@@ -270,176 +316,205 @@
             ],
             StringComparer.Ordinal);
 
+    private bool _disposed;
+    private bool _hasLoaded;
+    private bool _readPending;
+    private bool _saveUncertain;
+    private bool _saveConfirmed;
+    private bool _isChecking;
+    private bool _focusHeadingPending;
+    private string? _notice;
+    private long _readVersion;
+    private ExperienceSetupValues? _submitted;
+    private ElementReference _stepHeading;
+    private bool IsLocked => _isLoading || _isSaving || _isChecking || _saveUncertain || _saveConfirmed;
+
+    private ExperienceSetupValues Draft => new(_language, _theme, _textSize, _highContrast,
+        _reduceMotion, ExperienceSetupValues.FocusOrder.Where(value => _focus.Contains(value)).ToArray());
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
+        if (_disposed) return;
+        if (firstRender)
         {
-            return;
+            await LoadAsync();
+            if (!_disposed) StateHasChanged();
         }
+        else if (_focusHeadingPending)
+        {
+            _focusHeadingPending = false;
+            try { await _stepHeading.FocusAsync(); }
+            catch (JSException) { }
+        }
+    }
 
+    private async Task<IJSObjectReference> ModuleAsync()
+    {
+        if (_preferencesModule is not null) return _preferencesModule;
+        var module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/local-time.js");
+        if (_disposed)
+        {
+            await module.DisposeAsync();
+            throw new ObjectDisposedException(nameof(ExperienceSetup));
+        }
+        return _preferencesModule = module;
+    }
+
+    private async Task LoadAsync()
+    {
+        if (_disposed || _hasLoaded || _readPending) return;
+        _readPending = true;
+        var version = ++_readVersion;
+        _isLoading = true;
         try
         {
-            _preferencesModule =
-                await JS.InvokeAsync<IJSObjectReference>(
-                    "import",
-                    "./js/local-time.js");
-
-            var preferences =
-                await _preferencesModule.InvokeAsync<ExperiencePreferenceViewModel>(
-                    "getExperiencePreferences");
-
-            _language =
-                NormalizeLanguage(
-                    preferences.PreferredUiLanguage);
-
-            _theme =
-                NormalizeTheme(
-                    preferences.ThemePreference);
-
-            _textSize =
-                NormalizeTextSize(
-                    preferences.TextSizePreference);
-
-            _highContrast =
-                preferences.HighContrastEnabled;
-
-            _reduceMotion =
-                preferences.ReduceMotionEnabled;
-
-            if (preferences.ExperienceFocus is { Length: > 0 })
-            {
-                _focus.Clear();
-
-                foreach (var focus in preferences.ExperienceFocus)
-                {
-                    if (FocusOptions.Any(
-                            option =>
-                                string.Equals(
-                                    option.Value,
-                                    focus,
-                                    StringComparison.Ordinal)))
-                    {
-                        _focus.Add(focus);
-                    }
-                }
-            }
+            var module = await ModuleAsync();
+            if (_disposed || version != _readVersion) return;
+            var response = await module.InvokeAsync<ExperienceSetupResponse>("getExperiencePreferences");
+            var values = ExperienceSetupValues.Read(response);
+            if (_disposed || version != _readVersion) return;
+            ApplyDraft(values);
+            _hasLoaded = true;
+            _error = null;
         }
-        catch (JSException)
+        catch (Exception)
         {
-            _error =
-                L["FullWorth could not load your saved setup. You can still choose your preferences below."];
+            if (!_disposed && version == _readVersion) _hasLoaded = false;
         }
-        finally
+        finally { if (version == _readVersion) { _isLoading = false; _readPending = false; } }
+    }
+
+    private void ApplyDraft(ExperienceSetupValues values)
+    {
+        _language = values.Language;
+        _theme = values.Theme;
+        _textSize = values.TextSize;
+        _highContrast = values.HighContrast;
+        _reduceMotion = values.ReduceMotion;
+        _focus.Clear();
+        foreach (var value in values.Focus) _focus.Add(value);
+        if (_focus.Count == 0)
         {
-            _isLoading = false;
-            StateHasChanged();
+            _focus.Add("BillChanges");
+            _focus.Add("AccountOverview");
         }
     }
 
-    private void NextStep()
+    private void GoToStep(int step)
     {
+        if (_disposed || !_hasLoaded || IsLocked) return;
+        _step = Math.Clamp(step, 1, 4);
         _error = null;
-        _step = Math.Min(3, _step + 1);
+        _focusHeadingPending = true;
     }
+    private void NextStep() => GoToStep(_step + 1);
+    private void PreviousStep() => GoToStep(_step - 1);
 
-    private void PreviousStep()
+    private void SetFocus(string value, ChangeEventArgs args)
     {
-        _error = null;
-        _step = Math.Max(1, _step - 1);
-    }
-
-    private void SetFocus(
-        string value,
-        ChangeEventArgs args)
-    {
-        var enabled =
-            args.Value is bool boolValue
-                ? boolValue
-                : bool.TryParse(
-                    args.Value?.ToString(),
-                    out var parsed) &&
-                  parsed;
-
-        if (enabled)
-        {
-            _focus.Add(value);
-        }
-        else
-        {
-            _focus.Remove(value);
-        }
+        if (_disposed || IsLocked || !ExperienceSetupValues.FocusOrder.Contains(value, StringComparer.Ordinal)) return;
+        if (args.Value is true) _focus.Add(value);
+        else _focus.Remove(value);
     }
 
     private async Task FinishAsync()
     {
-        if (_isSaving ||
-            _preferencesModule is null)
-        {
-            return;
-        }
-
+        if (_disposed || !_hasLoaded || IsLocked || _step != 4) return;
         if (_focus.Count == 0)
         {
-            _error =
-                L["Choose at least one area for FullWorth to emphasize."];
+            _error = L["Choose at least one area for FullWorth to emphasize."];
             return;
         }
-
+        var submitted = Draft;
+        _submitted = submitted;
         _isSaving = true;
         _error = null;
-
+        _notice = null;
         try
         {
-            await _preferencesModule.InvokeAsync<ExperiencePreferenceViewModel>(
-                "saveExperiencePreferences",
-                new
-                {
-                    preferredUiLanguage =
-                        _language,
-
-                    themePreference =
-                        _theme,
-
-                    textSizePreference =
-                        _textSize,
-
-                    highContrastEnabled =
-                        _highContrast,
-
-                    reduceMotionEnabled =
-                        _reduceMotion,
-
-                    experienceFocus =
-                        _focus.ToArray()
-                });
-
-            Navigation.NavigateTo(
-                string.Equals(
-                    ReturnTo,
-                    "settings",
-                    StringComparison.OrdinalIgnoreCase)
-                    ? "/app/account/settings"
-                    : "/app",
-                forceLoad: true);
+            var module = await ModuleAsync();
+            if (_disposed) return;
+            var response = await module.InvokeAsync<ExperienceSetupResponse>("persistExperiencePreferences", new
+            {
+                preferredUiLanguage = submitted.Language, themePreference = submitted.Theme,
+                textSizePreference = submitted.TextSize, highContrastEnabled = submitted.HighContrast,
+                reduceMotionEnabled = submitted.ReduceMotion, experienceFocus = submitted.Focus.ToArray()
+            });
+            var saved = ExperienceSetupValues.Read(response, requireComplete: true);
+            if (_disposed) return;
+            if (!submitted.Matches(saved)) throw new InvalidOperationException("Unconfirmed preference result.");
+            await ConfirmSaveAsync(module, response);
         }
-        catch (JSException)
+        catch (Exception)
         {
-            _error =
-                L["FullWorth could not save your setup. Please try again."];
+            if (!_disposed && !_saveConfirmed)
+            {
+                _saveUncertain = true;
+                _error = L["We could not confirm whether setup was saved. Check saved setup before deciding to retry."];
+            }
         }
-        finally
+        finally { _isSaving = false; }
+    }
+
+    private async Task CheckSavedAsync()
+    {
+        if (_disposed || !_saveUncertain || _isChecking || _submitted is null) return;
+        _isChecking = true;
+        try
         {
-            _isSaving = false;
-            StateHasChanged();
+            var module = await ModuleAsync();
+            if (_disposed) return;
+            var response = await module.InvokeAsync<ExperienceSetupResponse>("getExperiencePreferences");
+            var saved = ExperienceSetupValues.Read(response);
+            if (_disposed) return;
+            if (response.ExperienceSetupComplete == true && _submitted.Matches(saved))
+            {
+                await ConfirmSaveAsync(module, response);
+            }
+            else
+            {
+                _saveUncertain = false;
+                _error = null;
+                _notice = L["Saved preferences currently differ from your edits. Your edits are kept; review them before saving again. No save was retried."];
+            }
         }
+        catch (Exception)
+        {
+            if (!_disposed)
+                _error = L["Saved setup could not be checked. Your edits are kept. Retry the read when the connection is available."];
+        }
+        finally { _isChecking = false; }
+    }
+
+    private async Task ConfirmSaveAsync(IJSObjectReference module, ExperienceSetupResponse response)
+    {
+        _saveConfirmed = true;
+        _saveUncertain = false;
+        _error = null;
+        try
+        {
+            var applied = await module.InvokeAsync<bool>("applyExperiencePreferences", response, true);
+            if (_disposed) return;
+            if (applied) ContinueAfterSave();
+            else _notice = L["Your setup was saved. Some browser preferences could not be applied or remembered. Continue to reload FullWorth."];
+        }
+        catch (Exception)
+        {
+            if (!_disposed)
+                _notice = L["Your setup was saved. Some browser preferences could not be applied or remembered. Continue to reload FullWorth."];
+        }
+    }
+
+    private void ContinueAfterSave()
+    {
+        if (_disposed || !_saveConfirmed) return;
+        Navigation.NavigateTo(IsSettingsEdit ? "/app/account/settings" : "/app", forceLoad: true);
     }
 
     private string GetStepKicker() =>
         _step switch
         {
-            1 => L["Step 1 of 3"],
-            2 => L["Step 2 of 3"],
-            _ => L["Step 3 of 3"]
+            _ => L["Step {0} of 4", _step]
         };
 
     private string GetStepTitle() =>
@@ -447,7 +522,8 @@
         {
             1 => L["Start with the way you prefer to use FullWorth."],
             2 => L["Make FullWorth comfortable to read."],
-            _ => L["Tell FullWorth what matters most."]
+            3 => L["Tell FullWorth what matters most."],
+            _ => L["Review before you save."]
         };
 
     private string GetStepDescription() =>
@@ -455,37 +531,16 @@
         {
             1 => L["Choose your language and appearance. These are starting preferences, not permanent restrictions."],
             2 => L["Accessibility choices should make the app easier to use without hiding information or changing calculations."],
-            _ => L["FullWorth will use these choices to emphasize the right information while keeping every feature available."]
-        };
-
-    private static string NormalizeLanguage(
-        string? value) =>
-        value?.StartsWith(
-            "es",
-            StringComparison.OrdinalIgnoreCase) == true
-            ? "es"
-            : "en-US";
-
-    private static string NormalizeTheme(
-        string? value) =>
-        value?.Trim().ToLowerInvariant() switch
-        {
-            "light" => "Light",
-            "dark" => "Dark",
-            _ => "System"
-        };
-
-    private static string NormalizeTextSize(
-        string? value) =>
-        value?.Trim().ToLowerInvariant() switch
-        {
-            "large" => "Large",
-            "extralarge" or "extra-large" => "ExtraLarge",
-            _ => "Standard"
+            3 => L["FullWorth will use these choices to emphasize the right information while keeping every feature available."],
+            _ => L["Check your choices. Nothing is saved until you choose Save setup."]
         };
 
     public async ValueTask DisposeAsync()
     {
+        _disposed = true;
+        _readVersion++;
+        _submitted = null;
+        _focus.Clear();
         if (_preferencesModule is null)
         {
             return;
@@ -505,24 +560,4 @@
         string Title,
         string Description);
 
-    private sealed class ExperiencePreferenceViewModel
-    {
-        public bool ExperienceSetupComplete { get; set; }
-
-        public string PreferredUiLanguage { get; set; } =
-            "en-US";
-
-        public string ThemePreference { get; set; } =
-            "System";
-
-        public string TextSizePreference { get; set; } =
-            "Standard";
-
-        public bool HighContrastEnabled { get; set; }
-
-        public bool ReduceMotionEnabled { get; set; }
-
-        public string[] ExperienceFocus { get; set; } =
-            [];
-    }
 }

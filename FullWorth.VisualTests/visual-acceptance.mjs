@@ -11,6 +11,8 @@ const password = "FullWorth!Visual123";
 
 await mkdir(outputDir, { recursive: true });
 
+await (await import("./navigation-viewport.test.mjs")).verifyNavigationViewportModule();
+
 const browser = await chromium.launch({
   headless: true,
   args: ["--ignore-certificate-errors"]
@@ -130,6 +132,10 @@ try {
     localStorage.setItem("billwatch-theme", "dark");
   });
   await page.reload({ waitUntil: "domcontentloaded" });
+  await settle(".app-shell");
+
+  await (await import("./ui-polish.test.mjs")).verifyUiPolish(page, outputDir);
+  await page.goto("/app", { waitUntil: "domcontentloaded" });
   await settle(".app-shell");
 
   const desktopRoutes = [

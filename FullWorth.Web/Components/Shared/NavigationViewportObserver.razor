@@ -1,0 +1,62 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+@* Measures presentation geometry only. No network requests or account state. *@
+<span hidden aria-hidden="true" @ref="_anchor"></span>
+
+@code {
+    private ElementReference _anchor;
+    private IJSObjectReference? _module;
+    private long _lease;
+    private bool _disposed;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _disposed) return;
+        IJSObjectReference? pending = null;
+        long lease = 0;
+        try
+        {
+            pending = await JS.InvokeAsync<IJSObjectReference>("import", "./js/navigation-viewport.js");
+            if (_disposed) return;
+            lease = await pending.InvokeAsync<long>("observeNavigation", _anchor);
+            if (_disposed) return;
+            _module = pending;
+            _lease = lease;
+            pending = null;
+        }
+        catch (JSException)
+        {
+            // CSS supplies generous safe clearance without JavaScript.
+        }
+        finally
+        {
+            if (pending is not null) await ReleaseAsync(pending, lease);
+        }
+    }
+
+    private static async ValueTask ReleaseAsync(IJSObjectReference module, long lease)
+    {
+        try
+        {
+            if (lease > 0) await module.InvokeVoidAsync("disconnectNavigation", lease);
+        }
+        catch (JSException) { }
+        finally
+        {
+            try { await module.DisposeAsync(); }
+            catch (JSException) { }
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        if (_module is not null)
+        {
+            await ReleaseAsync(_module, _lease);
+            _module = null;
+        }
+    }
+}

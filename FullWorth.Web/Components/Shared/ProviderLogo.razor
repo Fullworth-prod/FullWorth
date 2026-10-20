@@ -4,14 +4,15 @@
     var logoUrl = ProviderLogoResolver.Resolve(ProviderName);
 }
 
-@if (!string.IsNullOrWhiteSpace(logoUrl))
+@if (!string.IsNullOrWhiteSpace(logoUrl) && logoUrl != _failedUrl)
 {
     <img src="@logoUrl"
          alt=""
          aria-hidden="true"
          referrerpolicy="no-referrer"
          decoding="async"
-         class="provider-logo-image" />
+         class="provider-logo-image"
+         @onerror="() => MarkUnavailable(logoUrl)" />
 }
 else if (FallbackContent is not null)
 {
@@ -23,6 +24,10 @@ else
 }
 
 @code {
+    private string? _failedUrl;
+
+    private void MarkUnavailable(string? url) => _failedUrl = url;
+
     [Parameter]
     public string? ProviderName { get; set; }
 

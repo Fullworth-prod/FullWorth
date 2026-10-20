@@ -25,6 +25,7 @@
             _lease = lease;
             pending = null;
         }
+        catch (JSDisconnectedException) { }
         catch (JSException)
         {
             // CSS supplies generous safe clearance without JavaScript.
@@ -41,10 +42,12 @@
         {
             if (lease > 0) await module.InvokeVoidAsync("disconnectNavigation", lease);
         }
+        catch (JSDisconnectedException) { }
         catch (JSException) { }
         finally
         {
             try { await module.DisposeAsync(); }
+            catch (JSDisconnectedException) { }
             catch (JSException) { }
         }
     }

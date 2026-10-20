@@ -217,3 +217,9 @@
 .app-shell.app-shell .fw-bills-total strong { color: var(--bw-text); }
 .app-shell.app-shell .fw-bills-total :is(span, small) { color: var(--bw-text-muted); }
 .app-shell.app-shell .fw-activity-pulse.has-attention .fw-activity-number { color: var(--fw-negative); }
+
+/* The real bill filter class is shared with the existing filter component. */
+.app-shell.app-shell .fw-bills-filters > button {
+    min-height: 44px; height: auto; box-sizing: border-box; padding: 10px 14px;
+    font-size: .8rem; line-height: 1.4; white-space: normal; border-radius: 12px;
+}

@@ -439,7 +439,7 @@
             Notify();
             await Task.WhenAll(RetryScheduleAsync(), RetryBillsAsync(), RetryRecentAsync(), RetryChangesAsync());
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or System.Text.Json.JsonException)
         {
             if (!_disposed) _moduleError = true;
         }
@@ -460,7 +460,7 @@
         _loadErrors.Remove(section);
         Notify();
         try { await read(); }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or InvalidOperationException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or InvalidOperationException or System.Text.Json.JsonException)
         {
             if (!_disposed) _loadErrors.Add(section);
         }
@@ -574,7 +574,7 @@
             _hasSchedule = true;
             ScheduleNotice("Your pay schedule is saved.", false);
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or System.Text.Json.JsonException)
         {
             if (_disposed) return;
             _scheduleUncertain = true;
@@ -597,7 +597,7 @@
             _scheduleUncertain = false;
             ScheduleNotice(Draft == saved ? "Your pay schedule is saved." : "Saved values differ from your edits. Review your draft, then save or discard it.", false);
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or InvalidOperationException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or InvalidOperationException or System.Text.Json.JsonException)
         { if (!_disposed) ScheduleNotice("Saved values could not be checked. Your edits are still here.", true); }
         finally { _isSavingSchedule = false; Notify(); }
     }
@@ -631,7 +631,7 @@
             bill.Notice = L["Bill planning preference saved."];
             bill.NoticeError = false;
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or System.Text.Json.JsonException)
         {
             if (_disposed) return;
             bill.SaveUncertain = true;
@@ -656,7 +656,7 @@
             bill.Notice = L[bill.IsDirty ? "Saved values differ from your edits. Review your draft, then save or discard it." : "Bill planning preference saved."];
             bill.NoticeError = false;
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or InvalidOperationException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or InvalidOperationException or System.Text.Json.JsonException)
         { if (!_disposed) { bill.Notice = L["Saved values could not be checked. Your edits are still here."]; bill.NoticeError = true; } }
         finally { bill.IsBusy = false; Notify(); }
     }
@@ -706,10 +706,10 @@
 
     private sealed class PlanningPayScheduleViewModel
     {
-        public string Frequency { get; set; } = "Biweekly";
+        public string Frequency { get; set; } = string.Empty;
         public string AnchorPayDate { get; set; } = string.Empty;
         public int? SecondaryDayOfMonth { get; set; }
-        public int DefaultPaychecksAhead { get; set; } = 1;
+        public int DefaultPaychecksAhead { get; set; }
     }
 
     private sealed class PlanningBillViewModel

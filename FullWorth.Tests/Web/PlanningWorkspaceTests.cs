@@ -233,6 +233,22 @@ public sealed class PlanningWorkspaceTests
         Assert.Equal(1, module.Disposals); Assert.Empty(module.Calls);
     }
 
+    [Theory]
+    [InlineData("getPlanningPaySchedule", """{"anchorPayDate":"2026-10-16","defaultPaychecksAhead":2}""", "schedule")]
+    [InlineData("getPlanningPaySchedule", """{"frequency":"Weekly","anchorPayDate":"2026-10-16"}""", "schedule")]
+    [InlineData("getPlanningPaySchedule", """{"frequency":"Unknown","anchorPayDate":"2026-10-16","defaultPaychecksAhead":2}""", "schedule")]
+    [InlineData("getPlanningPaySchedule", """{"frequency":"Weekly","anchorPayDate":"invalid","defaultPaychecksAhead":2}""", "schedule")]
+    [InlineData("getRecentPaydayPlans", "{}", "recent")]
+    [InlineData("getUpcomingBillChanges", "null", "changes")]
+    public async Task InvalidRead_IsNotRenderedAsSavedDefaultsOrEmptyEvidence(string method, string response, string panel)
+    {
+        var module = new Module(); var normal = module.Reply;
+        module.Reply = (name, args) => name == method ? Task.FromResult<string?>(response) : normal(name, args);
+        var page = Page(module); await Run(page, "LoadAsync");
+        Assert.Equal(panel, Assert.Single(Get<HashSet<string>>(page, "_loadErrors")));
+        Assert.False(Get<bool>(page, "_isInitializing"));
+    }
+
     [Fact]
     public async Task MissingBillResponse_DoesNotBecomeNoActiveBills()
     {

@@ -97,6 +97,8 @@ export async function verifyPlanningWorkspace(page, outputDir) {
         assert.ok(await input.evaluate(e => parseFloat(getComputedStyle(e).fontSize)) >= (large ? 32 : 16));
       await checkLayout();
       await photo("planning-" + width + "-" + theme + (large ? "-200pct" : "") + "-" + language);
+      if (width === 390 && theme === "dark" && !large && language === "en-US")
+        await page.screenshot({ path: path.join(outputDir, "planning-phone-preview.png"), fullPage: false });
     }
     await page.context().addCookies([{ name: ".AspNetCore.Culture", value: encodeURIComponent("c=en-US|uic=en-US"), url: new URL(page.url()).origin, secure: true, sameSite: "Lax" }]);
     await page.setViewportSize({ width: 390, height: 1000 });

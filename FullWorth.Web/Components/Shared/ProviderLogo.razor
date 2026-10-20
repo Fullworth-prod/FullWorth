@@ -1,46 +1,73 @@
 @using FullWorth.Web.Services
 
 @{
-    var logoUrl = ProviderLogoResolver.Resolve(ProviderName);
+    var logoUrl = _currentUrl;
+    var generation = _generation;
+    var canLoad = !string.IsNullOrWhiteSpace(logoUrl) && logoUrl != _failedUrl;
 }
 
-@if (!string.IsNullOrWhiteSpace(logoUrl) && logoUrl != _failedUrl)
+@if (canLoad)
 {
-    <img src="@logoUrl"
+    <img @key="logoUrl"
+         src="@logoUrl"
          alt=""
          aria-hidden="true"
          referrerpolicy="no-referrer"
          decoding="async"
          class="provider-logo-image"
-         @onerror="() => MarkUnavailable(logoUrl)" />
+         hidden="@(_loadedUrl != logoUrl)"
+         @onload="() => MarkLoaded(logoUrl, generation)"
+         @onerror="() => MarkUnavailable(logoUrl, generation)" />
 }
-else if (FallbackContent is not null)
+@if (!canLoad || _loadedUrl != logoUrl)
 {
-    @FallbackContent
-}
-else
-{
-    @GetInitial(ProviderName)
+    @if (FallbackContent is not null)
+    {
+        @FallbackContent
+    }
+    else
+    {
+        @GetInitial(ProviderName)
+    }
 }
 
 @code {
-    private string? _failedUrl;
-
-    private void MarkUnavailable(string? url) => _failedUrl = url;
-
     [Parameter]
     public string? ProviderName { get; set; }
 
     [Parameter]
     public RenderFragment? FallbackContent { get; set; }
 
+    private string? _currentUrl;
+    private string? _loadedUrl;
+    private string? _failedUrl;
+    private long _generation;
+
+    protected override void OnParametersSet()
+    {
+        var next = ProviderLogoResolver.Resolve(ProviderName);
+        if (next == _currentUrl) return;
+        _currentUrl = next;
+        _loadedUrl = null;
+        _failedUrl = null;
+        _generation++;
+    }
+
+    private void MarkLoaded(string? url, long generation)
+    {
+        if (generation == _generation && url == _currentUrl && url != _failedUrl) _loadedUrl = url;
+    }
+
+    private void MarkUnavailable(string? url, long generation)
+    {
+        if (generation != _generation || url != _currentUrl) return;
+        _failedUrl = url;
+        _loadedUrl = null;
+    }
+
     private static string GetInitial(string? providerName)
     {
-        if (string.IsNullOrWhiteSpace(providerName))
-        {
-            return "?";
-        }
-
+        if (string.IsNullOrWhiteSpace(providerName)) return "?";
         return char.ToUpperInvariant(providerName.Trim()[0]).ToString();
     }
 }

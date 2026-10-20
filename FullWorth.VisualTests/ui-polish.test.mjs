@@ -79,7 +79,11 @@ export async function verifyUiPolish(page, outputDir) {
     }
   };
   const logoPattern = /^https:\/\/www\.google\.com\/s2\/favicons/;
-  const blockLogo = route => route.abort("failed");
+  let holdLogo = true, releaseLogo;
+  const blockLogo = async route => {
+    if (holdLogo) await new Promise(resolve => { releaseLogo = resolve; });
+    await route.abort("failed");
+  };
   await page.route(logoPattern, blockLogo);
   page.on("request", record);
   for (const pattern of patterns) await page.route(pattern, read);
@@ -96,6 +100,18 @@ export async function verifyUiPolish(page, outputDir) {
         const normalFont = await page.locator(".mobile-bottom-nav").evaluate(element => parseFloat(getComputedStyle(element).fontSize));
         if (enlarged) await page.evaluate(() => document.documentElement.style.fontSize = "200%");
         await waitInset();
+        if (holdLogo && label === "overview") {
+          const deadline = Date.now() + 10000;
+          while (!releaseLogo && Date.now() < deadline) await new Promise(done => setTimeout(done, 20));
+          assert.ok(releaseLogo, "Expected a held decorative-logo request.");
+          const spotify = page.locator(".fw-bill-row").filter({ hasText: "Spotify" });
+          await spotify.locator(".fw-bill-logo").getByText("S", { exact: true }).waitFor();
+          assert.equal(await spotify.locator("img.provider-logo-image").isVisible(), false,
+            "The fallback must remain visible while an image is pending.");
+          holdLogo = false;
+          releaseLogo();
+        }
+        await page.locator("img.provider-logo-image").waitFor({ state: "detached" });
 
         if (width === 390 && theme === "dark" && !enlarged && language === "en-US") {
           const amounts = page.locator(".fw-pulse-amount, .fw-bill-value strong, .fw-bills-current strong, .fw-bills-total strong, .alert-title-line strong");
@@ -190,6 +206,7 @@ export async function verifyUiPolish(page, outputDir) {
           await page.locator(".activity-filters button").first().click();
           await page.waitForFunction(() => document.querySelectorAll(".alert-card").length === 2);
         }
+        await page.locator("img.provider-logo-image").waitFor({ state: "detached" });
         await page.evaluate(() => { document.activeElement?.blur(); window.scrollTo({ top: 0, behavior: 'instant' }); });
         await page.mouse.move(width - 2, 2);
         const suffix = width + "-" + theme + (enlarged ? "-200pct" : "") + "-" + language;
@@ -244,6 +261,8 @@ export async function verifyUiPolish(page, outputDir) {
     throw error;
   } finally {
     for (const pattern of patterns) await page.unroute(pattern, read);
+    holdLogo = false;
+    releaseLogo?.();
     await page.unroute(logoPattern, blockLogo);
     page.off("request", record);
     await setCulture("en-US");

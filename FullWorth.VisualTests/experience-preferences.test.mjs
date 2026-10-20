@@ -11,10 +11,10 @@ export async function verifyExperiencePreferenceModule() {
     preferredUiLanguage: "en-US", themePreference: "Dark", textSizePreference: "Large",
     highContrastEnabled: true, reduceMotionEnabled: true, experienceFocus: ["BillChanges", "Statements"] });
   const request = () => { const { experienceSetupComplete, timestampDisplayMode, ...draft } = valid(); return draft; };
-  let blocked = false, calls = [], storage = new Map(), cookies = 0;
+  let blocked = false, cookieBlocked = false, cookieText = "", calls = [], storage = new Map(), cookies = 0;
   let handler;
   const reset = () => {
-    calls = []; storage.clear(); blocked = false; cookies = 0;
+    calls = []; storage.clear(); blocked = false; cookieBlocked = false; cookieText = ""; cookies = 0;
     document.documentElement.dataset = {};
     handler = async url => url === "/bff/antiforgery" ? Response.json({ requestToken: "synthetic" }) : Response.json(valid());
   };
@@ -28,7 +28,8 @@ export async function verifyExperiencePreferenceModule() {
     };
     globalThis.document = { documentElement: { dataset: {} }, body: {}, querySelectorAll: () => [],
       querySelector: () => ({ setAttribute() {} }) };
-    Object.defineProperty(document, "cookie", { configurable: true, set() { cookies++; } });
+    Object.defineProperty(document, "cookie", { configurable: true, get() { return cookieText; },
+      set(value) { cookies++; if (!cookieBlocked) cookieText = value.split(";")[0]; } });
     globalThis.fetch = async (url, options) => { calls.push({ url, options }); return handler(url, options); };
     reset();
 
@@ -70,6 +71,12 @@ export async function verifyExperiencePreferenceModule() {
       assert.deepEqual(document.documentElement.dataset, {});
     }
 
+    reset();
+    assert.equal(module.applyExperiencePreferences(valid(), true), true);
+    reset(); cookieBlocked = true;
+    assert.equal(module.applyExperiencePreferences(valid(), true), false,
+      "Silently rejected culture cookies must report a saved-but-not-remembered browser result.");
+    assert.equal(document.documentElement.dataset.theme, "dark");
     reset(); blocked = true;
     assert.equal(module.applyExperiencePreferences(valid(), true), false);
     assert.equal(document.documentElement.dataset.theme, "dark");

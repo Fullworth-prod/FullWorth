@@ -84,7 +84,9 @@ function applyLanguagePreference(language) {
     try {
         const cookieValue = encodeURIComponent(`c=en-US|uic=${language}`);
         document.cookie = `.AspNetCore.Culture=${cookieValue}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`;
-        return true;
+        // Cookie writes may be silently rejected by browser privacy settings.
+        return document.cookie.split(";").some(part =>
+            part.trim() === `.AspNetCore.Culture=${cookieValue}`);
     } catch { return false; }
 }
 

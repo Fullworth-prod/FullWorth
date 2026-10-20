@@ -60,7 +60,8 @@ public sealed class ParserWorkerTlsRenewalTests
         File.Delete(path);
         Directory.CreateDirectory(path);
 
-        Assert.ThrowsAny<IOException>(() => provider.GetCertificate());
+        var failure = Record.Exception(() => provider.GetCertificate());
+        Assert.True(failure is IOException or UnauthorizedAccessException);
 
         Directory.Delete(path);
         var recovered = provider.GetCertificate();

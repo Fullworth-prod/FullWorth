@@ -136,7 +136,7 @@ public sealed class PlanningWorkspaceTests
         var pending = Run(page, "SaveScheduleAsync");
         Act(page, "ResetSchedule"); await Run(page, "SaveScheduleAsync");
         Assert.Equal("4", Get<string>(page, "_defaultPaychecksAhead"));
-        var call = Assert.Single(module.Calls.Where(c => c.Name == "putPlanningPaySchedule"));
+        var call = Assert.Single(module.Calls, c => c.Name == "putPlanningPaySchedule");
         var payload = JsonSerializer.Serialize(call.Args![0]);
         Assert.Contains("\"defaultPaychecksAhead\":4", payload);
         delayed.SetResult(null); await pending;
@@ -179,13 +179,13 @@ public sealed class PlanningWorkspaceTests
         await Run(page, "SaveBillPreferenceAsync", bill); Act(page, "ResetBill", bill);
         Assert.Equal(selected, Get<string>(bill, "SelectedOverride"));
         Assert.True(Get<bool>(bill, "SaveUncertain"));
-        var call = Assert.Single(module.Calls.Where(c => c.Name == write));
+        var call = Assert.Single(module.Calls, c => c.Name == write);
         Assert.Equal(BillId, call.Args![0]);
         module.Reply = (_, _) => Task.FromResult<string?>(selected.Length == 0 ? "[]" : Prefs.Replace(":3", ":2"));
         await Run(page, "CheckBillAsync", bill);
         Assert.False(Get<bool>(bill, "SaveUncertain"));
         Assert.False(Get<bool>(bill, "IsDirty"));
-        Assert.Single(module.Calls.Where(c => c.Name == write));
+        Assert.Single(module.Calls, c => c.Name == write);
     }
 
     [Fact]

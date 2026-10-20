@@ -58,6 +58,16 @@
             FullWorth.Web.Services.ProviderLogoResolver.Resolve(
                 _detail.ProviderName);
 
+        <div class="bill-detail-refresh">
+            <button type="button" class="secondary-action" disabled="@(_isRefreshing || _isKeeping)" @onclick="ReloadAsync">
+                @(_isRefreshing ? L["Refreshing…"] : L["Refresh bill"])
+            </button>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(_refreshError))
+        {
+            <p class="bill-detail-warning" role="status">@_refreshError</p>
+        }
+
         <section class="fw-detail-hero">
             <div class="fw-detail-provider-pane">
                 <div class="detail-provider-avatar">
@@ -99,7 +109,7 @@
                     <span>@L["Latest posted charge"]</span>
                     <strong>@(_detail.HasTransactionEvidence ? FormatMoney(_detail.CurrentAmount, _detail.CurrencyCode) : L["Amount unavailable"].Value)</strong>
 
-                    @if (_detail.PreviousAverage > 0m)
+                    @if (CanCompareTransactions)
                     {
                         <small class="@GetDifferenceClass(transactionDifference)">
                             @FormatDifference(transactionDifference, _detail.CurrencyCode)
@@ -108,7 +118,7 @@
                     }
                     else
                     {
-                        <small>@L["Building comparison history"]</small>
+                        <small>@(_detail.PreviousAverage <= 0m ? L["Building comparison history"] : L["Comparison unavailable"])</small>
                     }
                 </div>
             </div>
@@ -140,7 +150,7 @@
             @if (!_detail.IsActive || _detail.Source != "Manual")
             {
                 <p>@L["Choose to keep this bill monitored even when automatic discovery has insufficient evidence. This does not verify your bank connection, payment timing, or bill amount."]</p>
-                <button type="button" class="secondary-action" disabled="@_isKeeping" @onclick="KeepMonitoringAsync">
+                <button type="button" class="secondary-action" disabled="@(_isKeeping || _isRefreshing || _confirmationUncertain)" @onclick="KeepMonitoringAsync">
                     @(_isKeeping ? L["Saving…"] : L["Keep monitoring this bill"])
                 </button>
             }
@@ -361,6 +371,15 @@
     private string? _keepMessage;
     private Guid? _requestedBillId;
     private long _loadVersion;
+    private long _keepVersion;
+    private bool _disposed;
+    private bool _isRefreshing;
+    private bool _confirmationUncertain;
+    private string? _refreshError;
+
+    private bool CanCompareTransactions =>
+        _detail is { HasTransactionEvidence: true, CurrentAmount: > 0m, PreviousAverage: > 0m } &&
+        FinancialAmountFormatter.TryNormalizeCurrency(_detail.CurrencyCode, out _);
 
     private string PageTitleText =>
         _detail is null
@@ -368,13 +387,18 @@
             : $"{_detail.ProviderName} — FullWorth";
 
     private BillChangeViewModel? LatestChange =>
-        _detail?.Changes.FirstOrDefault();
+        _detail?.Changes.OrderByDescending(change => change.DetectedAtUtc).ThenBy(change => change.Id).FirstOrDefault();
 
     protected override void OnParametersSet()
     {
         if (_requestedBillId != BillStreamId)
         {
             _loadVersion++;
+            _keepVersion++;
+            _isKeeping = false;
+            _isRefreshing = false;
+            _confirmationUncertain = false;
+            _refreshError = null;
             _detail = null;
             _isLoading = true;
             _errorMessage = null;
@@ -384,10 +408,10 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_requestedBillId == BillStreamId) return;
+        if (_disposed || _requestedBillId == BillStreamId) return;
         _requestedBillId = BillStreamId;
         await LoadAsync();
-        StateHasChanged();
+        if (!_disposed) StateHasChanged();
     }
 
     private Task ReloadAsync() => LoadAsync();
@@ -396,42 +420,50 @@
 
     private async Task KeepMonitoringAsync()
     {
-        if (_detail is null || _isKeeping) return;
+        if (_disposed || _detail is null || _isKeeping || _isRefreshing || _confirmationUncertain) return;
         var id = BillStreamId;
+        var version = ++_keepVersion;
         _isKeeping = true;
         _keepMessage = null;
         try
         {
             _bffModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/bff.js");
             await _bffModule.InvokeAsync<object?>("confirmBillStream", id.ToString("D"));
-            if (id == BillStreamId)
-            {
-                await LoadAsync();
-                _keepMessage = L["Your monitoring choice was saved."];
-            }
-        }
-        catch (JSException)
-        {
-            if (id == BillStreamId)
-                _keepMessage = L["Your monitoring choice could not be saved. Try again."];
+            if (_disposed || version != _keepVersion || id != BillStreamId) return;
+            // The API's successful response confirms this choice independently of the following read.
+            _detail.IsActive = true;
+            _detail.Source = "Manual";
+            _keepMessage = L["Your monitoring choice was saved."];
+            await LoadAsync();
         }
         catch (Exception)
         {
-            if (id == BillStreamId)
-                _keepMessage = L["Your monitoring choice could not be saved. Try again."];
+            if (!_disposed && version == _keepVersion && id == BillStreamId)
+            {
+                // A failed response does not establish whether the server committed the choice.
+                _confirmationUncertain = true;
+                _keepMessage = L["We could not confirm whether your choice was saved. Refresh this bill before trying again."];
+            }
         }
-        finally { _isKeeping = false; }
+        finally
+        {
+            if (version == _keepVersion) _isKeeping = false;
+        }
     }
 
     private async Task LoadAsync()
     {
+        if (_disposed || _isRefreshing) return;
         var version = ++_loadVersion;
         var id = BillStreamId;
-        _isLoading = true;
+        var hadSnapshot = _detail?.Id == id;
+        _isRefreshing = true;
+        _isLoading = !hadSnapshot;
         _errorMessage = null;
-        _detail = null;
+        _refreshError = null;
         if (id == Guid.Empty)
         {
+            _isRefreshing = false;
             _isLoading = false;
             _errorMessage = L["FullWorth could not determine which bill to open."];
             return;
@@ -442,35 +474,47 @@
             _bffModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/bff.js");
             var detail = await _bffModule.InvokeAsync<BillStreamDetailViewModel>(
                 "getBillStreamDetail", id.ToString("D"));
-            if (version != _loadVersion || id != BillStreamId) return;
-            // Never display a delayed response for a different route/resource.
-            _detail = detail?.Id == id ? detail : null;
-            if (_detail is null) _errorMessage = L["This bill could not be found."];
-        }
-        catch (JSException)
-        {
-            if (version == _loadVersion)
-                _errorMessage = L["FullWorth could not load this bill from the secure API."];
+            if (_disposed || version != _loadVersion || id != BillStreamId) return;
+            if (!ValidDetail(detail, id)) throw new InvalidOperationException("Invalid bill detail response.");
+            _detail = detail;
+            if (_confirmationUncertain) _keepMessage = null;
+            _confirmationUncertain = false;
         }
         catch (Exception)
         {
-            if (version == _loadVersion)
-                _errorMessage = L["Something went wrong while opening this bill."];
+            if (!_disposed && version == _loadVersion && id == BillStreamId)
+            {
+                if (hadSnapshot)
+                    _refreshError = L["We could not refresh this bill. Showing the last loaded evidence; it may be out of date. Try Refresh bill again."];
+                else
+                    _errorMessage = L["FullWorth could not load this bill from the secure API."];
+            }
         }
         finally
         {
-            if (version == _loadVersion) _isLoading = false;
+            if (version == _loadVersion)
+            {
+                _isRefreshing = false;
+                _isLoading = false;
+            }
         }
     }
 
+    private static bool ValidDetail(BillStreamDetailViewModel? detail, Guid id) =>
+        detail?.Id == id && detail.Statements is not null && detail.Changes is not null &&
+        detail.Statements.All(item => item is not null && item.Id != Guid.Empty) &&
+        detail.Changes.All(item => item is not null && item.Id != Guid.Empty) &&
+        detail.Statements.Select(item => item.Id).Distinct().Count() == detail.Statements.Count &&
+        detail.Changes.Select(item => item.Id).Distinct().Count() == detail.Changes.Count;
+
     private decimal GetTransactionDifference()
     {
-        if (_detail is null || _detail.PreviousAverage <= 0m)
+        if (!CanCompareTransactions)
         {
             return 0m;
         }
 
-        return _detail.CurrentAmount - _detail.PreviousAverage;
+        return _detail!.CurrentAmount - _detail.PreviousAverage;
     }
 
     private string FormatMoney(decimal amount, string? currencyCode) =>
@@ -654,6 +698,11 @@
 
     public async ValueTask DisposeAsync()
     {
+        _disposed = true;
+        _loadVersion++;
+        _keepVersion++;
+        _detail = null;
+        _keepMessage = null;
         if (_bffModule is null)
         {
             return;

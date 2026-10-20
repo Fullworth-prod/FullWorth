@@ -60,4 +60,32 @@
   <data name="Download securely" xml:space="preserve"><value>Descargar de forma segura</value></data>
   <data name="Your current password is incorrect." xml:space="preserve"><value>Tu contraseña actual es incorrecta.</value></data>
   <data name="Enter a valid current authenticator code to export your data." xml:space="preserve"><value>Introduce un código actual válido del autenticador para exportar tus datos.</value></data>
+  <data name="Data ownership" xml:space="preserve"><value>Propiedad de los datos</value></data>
+  <data name="See what FullWorth keeps, take a portable copy of your data, or permanently remove your account." xml:space="preserve"><value>Consulta lo que conserva FullWorth, obtén una copia portátil de tus datos o elimina permanentemente tu cuenta.</value></data>
+  <data name="Your data stays under your control" xml:space="preserve"><value>Tus datos siguen bajo tu control</value></data>
+  <data name="Financial visibility without financial control." xml:space="preserve"><value>Visibilidad financiera sin control de tu dinero.</value></data>
+  <data name="FullWorth uses your connected financial data to discover recurring bills and explain supported changes. It does not move money or expose protected provider tokens to the client." xml:space="preserve"><value>FullWorth usa tus datos financieros conectados para detectar facturas recurrentes y explicar cambios respaldados por evidencia. No mueve dinero ni expone tokens protegidos del proveedor al cliente.</value></data>
+  <data name="Ownership" xml:space="preserve"><value>Propiedad</value></data>
+  <data name="User-scoped" xml:space="preserve"><value>Limitado a tu cuenta</value></data>
+  <data name="Financial records stay scoped to your account" xml:space="preserve"><value>Los registros financieros se limitan a tu cuenta</value></data>
+  <data name="Bank credentials" xml:space="preserve"><value>Credenciales bancarias</value></data>
+  <data name="Not stored" xml:space="preserve"><value>No se almacenan</value></data>
+  <data name="Plaid handles bank sign-in credentials" xml:space="preserve"><value>Plaid gestiona las credenciales de acceso al banco</value></data>
+  <data name="Money movement" xml:space="preserve"><value>Movimiento de dinero</value></data>
+  <data name="None" xml:space="preserve"><value>Ninguno</value></data>
+  <data name="FullWorth does not transfer or pay money" xml:space="preserve"><value>FullWorth no transfiere dinero ni realiza pagos</value></data>
+  <data name="Metadata only—not original statement files" xml:space="preserve"><value>Solo metadatos; no incluye los archivos originales de los estados de cuenta</value></data>
+  <data name="The JSON copy is not encrypted. Save it privately and delete any shared copies when you no longer need them." xml:space="preserve"><value>La copia JSON no está cifrada. Guárdala en privado y elimina las copias compartidas cuando ya no las necesites.</value></data>
+  <data name="Why FullWorth keeps data" xml:space="preserve"><value>Por qué FullWorth conserva datos</value></data>
+  <data name="Evidence is what makes explanations trustworthy." xml:space="preserve"><value>La evidencia hace que las explicaciones sean fiables.</value></data>
+  <data name="Subscription entitlements and program memberships" xml:space="preserve"><value>Derechos de suscripción y membresías de programas</value></data>
+  <data name="Re-enter your current credentials, then type DELETE to confirm permanent account deletion." xml:space="preserve"><value>Vuelve a introducir tus credenciales actuales y escribe DELETE para confirmar la eliminación permanente de la cuenta.</value></data>
+  <data name="Type DELETE to confirm" xml:space="preserve"><value>Escribe DELETE para confirmar</value></data>
+  <data name="Download requested. Check Files or Downloads to confirm the JSON copy was saved. Keep it private." xml:space="preserve"><value>Se solicitó la descarga. Comprueba Archivos o Descargas para confirmar que se guardó la copia JSON. Mantenla en privado.</value></data>
+  <data name="We could not confirm the deletion result. Your account may or may not have been deleted. Check sign-in before deciding to retry." xml:space="preserve"><value>No pudimos confirmar el resultado de la eliminación. Es posible que tu cuenta se haya eliminado o que no. Comprueba el inicio de sesión antes de decidir si quieres reintentarlo.</value></data>
+  <data name="Enter a valid current authenticator code to delete this account." xml:space="preserve"><value>Introduce un código actual válido del autenticador para eliminar esta cuenta.</value></data>
+  <data name="Staff roles must be removed through the authorized admin workflow before this account can be deleted." xml:space="preserve"><value>Los roles del personal deben eliminarse mediante el proceso administrativo autorizado antes de poder eliminar esta cuenta.</value></data>
+  <data name="Too many attempts. Wait before trying again; no request will be retried automatically." xml:space="preserve"><value>Demasiados intentos. Espera antes de volver a intentarlo; ninguna solicitud se reintentará automáticamente.</value></data>
+  <data name="Your session expired. Sign in again before making another privacy request." xml:space="preserve"><value>Tu sesión caducó. Vuelve a iniciar sesión antes de realizar otra solicitud de privacidad.</value></data>
+  <data name="Cancel closes this form. It cannot undo a deletion request already sent." xml:space="preserve"><value>Cancelar cierra este formulario. No puede deshacer una solicitud de eliminación ya enviada.</value></data>
 </root>

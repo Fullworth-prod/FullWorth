@@ -1,0 +1,26 @@
+
+.privacy-page .export-confirmation, .privacy-page .delete-confirmation {
+    min-width: 0; box-sizing: border-box; max-width: 100%; overflow-wrap: anywhere;
+}
+.privacy-page .fw-privacy-export-card .privacy-primary-button,
+.privacy-page .fw-privacy-danger .danger-button,
+.privacy-page .export-confirmation-actions button,
+.privacy-page .delete-confirmation-actions button {
+    min-height: 48px; height: auto; max-width: 100%;
+    white-space: normal; line-height: 1.5; padding-block: 10px; overflow-wrap: anywhere;
+}
+.privacy-page .export-confirmation ::deep input,
+.privacy-page .delete-confirmation ::deep input {
+    min-height: 48px; height: auto; padding-block: 12px;
+    width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; letter-spacing: normal;
+}
+.privacy-page .export-confirmation-actions,
+.privacy-page .delete-confirmation-actions { flex-wrap: wrap; }
+.privacy-page button:focus-visible,
+.privacy-page ::deep input:focus-visible {
+    outline: 3px solid var(--fw-accent, #6b8dff); outline-offset: 3px;
+}
+.privacy-page .privacy-message { overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+    .privacy-page .export-confirmation { grid-column: 1 / -1; width: 100%; }
+}

@@ -83,4 +83,11 @@
   <data name="Bills need review" xml:space="preserve"><value>Hay facturas que necesitan revisión</value></data>
   <data name="Review increases in their original currencies. Amounts in different currencies cannot be ranked together." xml:space="preserve"><value>Revisa los aumentos en sus monedas originales. Los importes de monedas diferentes no se pueden ordenar juntos.</value></data>
   <data name="Some bill amounts are unavailable and excluded from this total." xml:space="preserve"><value>Algunos importes no están disponibles y se excluyen de este total.</value></data>
+  <data name="These are saved bill records. No bank connection currently reports active monitoring; review your connections." xml:space="preserve"><value>Estos son registros guardados. Ninguna conexión bancaria informa actualmente monitoreo activo; revisa tus conexiones.</value></data>
+  <data name="The overview could not be refreshed. Previously loaded records are still shown and may be out of date. Check status to retry." xml:space="preserve"><value>No se pudo actualizar el resumen. Se siguen mostrando registros cargados anteriormente que pueden estar desactualizados. Pulsa Comprobar estado para volver a intentarlo.</value></data>
+  <data name="Comparison unavailable" xml:space="preserve"><value>Comparación no disponible</value></data>
+  <data name="Connect a bank to start reviewing your bills." xml:space="preserve"><value>Conecta un banco para empezar a revisar tus facturas.</value></data>
+  <data name="No recognized bills yet" xml:space="preserve"><value>Aún no hay facturas reconocidas</value></data>
+  <data name="No active recurring bills were returned. This does not prove that you have no bills or that every transaction has been imported. Review your bills, connections, and transaction history." xml:space="preserve"><value>No se recibieron facturas recurrentes activas. Esto no demuestra que no tengas facturas ni que se hayan importado todas las transacciones. Revisa tus facturas, conexiones e historial de transacciones.</value></data>
+  <data name="Review bills and history" xml:space="preserve"><value>Revisar facturas e historial</value></data>
 </root>

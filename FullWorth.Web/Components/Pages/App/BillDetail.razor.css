@@ -1,3 +1,11 @@
 .bill-monitoring-choice { padding: 24px; }
 .bill-monitoring-choice h2 { margin-block: 0 16px; }
 .bill-monitoring-choice p { max-width: 70ch; line-height: 1.6; }
+
+.bill-detail-refresh { display: flex; justify-content: flex-end; margin-block: 16px; }
+.bill-detail-refresh button { min-height: 44px; white-space: normal; }
+.bill-detail-refresh button:focus-visible {
+    outline: 3px solid var(--accent, #6b8dff); outline-offset: 3px;
+}
+.bill-detail-warning { padding: 16px; border: 1px solid #b88b35; border-radius: 16px; line-height: 1.6; overflow-wrap: anywhere; }
+@media (max-width: 580px) { .bill-detail-refresh button { width: 100%; } }

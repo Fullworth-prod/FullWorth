@@ -479,8 +479,9 @@
 
     private Task RetryBillsAsync() => LoadSectionAsync("bills", async () =>
     {
-        var billsTask = _bffModule!.InvokeAsync<PlanningBillViewModel[]>("getBillStreams").AsTask();
-        var prefsTask = _bffModule.InvokeAsync<PlanningBillPreferenceViewModel[]>("getPlanningBillFundingPreferences").AsTask();
+        var module = _bffModule ?? throw new InvalidOperationException();
+        var billsTask = module.InvokeAsync<PlanningBillViewModel[]>("getBillStreams").AsTask();
+        var prefsTask = module.InvokeAsync<PlanningBillPreferenceViewModel[]>("getPlanningBillFundingPreferences").AsTask();
         await Task.WhenAll(billsTask, prefsTask);
         var preferences = prefsTask.Result ?? throw new InvalidOperationException();
         var bills = billsTask.Result ?? throw new InvalidOperationException();

@@ -101,7 +101,7 @@ export async function verifyUiPolish(page, outputDir) {
           const amounts = page.locator(".fw-pulse-amount, .fw-bill-value strong, .fw-bills-current strong, .fw-bills-total strong, .alert-title-line strong");
           const financialBefore = await amounts.allTextContents();
           await page.locator('link[href="/app-polish.css"]').evaluate(element => element.sheet.disabled = true);
-          await page.evaluate(() => window.scrollTo(0, 0));
+          await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
           await page.screenshot({ path: path.join(outputDir, "polish-before-" + label + ".png"), fullPage: true });
           await page.locator('link[href="/app-polish.css"]').evaluate(element => element.sheet.disabled = false);
           await waitInset();
@@ -119,10 +119,12 @@ export async function verifyUiPolish(page, outputDir) {
             const r = await link.evaluate(element => {
               const rect = element.getBoundingClientRect(), text = element.lastElementChild.getBoundingClientRect();
               return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, height: rect.height,
-                textLeft: text.left, textRight: text.right, width: innerWidth };
+                textLeft: text.left, textRight: text.right, textHeight: text.height,
+                lineHeight: parseFloat(getComputedStyle(element.lastElementChild).lineHeight), width: innerWidth };
             });
             assert.ok(r.height >= 44 && r.left >= 0 && r.right <= r.width + 1);
             assert.ok(r.textLeft >= r.left - 1 && r.textRight <= r.right + 1, "Tab labels must fit their own targets.");
+            assert.ok(r.textHeight <= r.lineHeight + 1, "Short tab names must reflow as whole labels, not break into fragments.");
             for (const other of rects) assert.ok(r.right <= other.left + 1 || r.left >= other.right - 1 ||
               r.bottom <= other.top + 1 || r.top >= other.bottom - 1, "Tab targets must not overlap.");
             rects.push(r);
@@ -139,6 +141,16 @@ export async function verifyUiPolish(page, outputDir) {
           await spotify.locator(".fw-bill-logo").getByText("S", { exact: true }).waitFor();
           assert.equal(await spotify.locator("img.provider-logo-image").count(), 0, "Failed logos must use the initial, not a broken image.");
           await verifyControls(".fw-pulse-actions a");
+          const contained = await page.locator(".fw-pulse").evaluate(hero => {
+            const bounds = hero.getBoundingClientRect();
+            return { scrollTop: hero.scrollTop, overflow: getComputedStyle(hero).overflow,
+              children: [...hero.querySelectorAll(".fw-pulse-state, .fw-pulse-label, .fw-pulse-amount, .fw-pulse-stat, .fw-sync-line")]
+                .map(element => { const r = element.getBoundingClientRect();
+                  return { text: element.textContent.trim().slice(0, 45), inside: r.top >= bounds.top - 1 &&
+                    r.bottom <= bounds.bottom + 1 && r.left >= bounds.left - 1 && r.right <= bounds.right + 1 }; }) };
+          });
+          assert.equal(contained.scrollTop, 0, "Scrolling to an action must not scroll the hero internally.");
+          assert.ok(contained.children.every(child => child.inside), "Hero evidence must remain inside the visible card: " + JSON.stringify(contained));
         } else if (label === "bills") {
           const provider = page.locator(".fw-bills-provider strong").filter({ hasText: longProvider });
           assert.equal(await provider.innerText(), longProvider);
@@ -161,7 +173,8 @@ export async function verifyUiPolish(page, outputDir) {
           await page.locator(".activity-filters button").first().click();
           await page.waitForFunction(() => document.querySelectorAll(".alert-card").length === 2);
         }
-        await page.evaluate(() => { document.activeElement?.blur(); window.scrollTo(0, 0); });
+        await page.evaluate(() => { document.activeElement?.blur(); window.scrollTo({ top: 0, behavior: 'instant' }); });
+        await page.mouse.move(width - 2, 2);
         const suffix = width + "-" + theme + (enlarged ? "-200pct" : "") + "-" + language;
         await page.screenshot({ path: path.join(outputDir, "polish-" + label + "-" + suffix + ".png"), fullPage: true });
 
@@ -194,7 +207,7 @@ export async function verifyUiPolish(page, outputDir) {
       if (label === "bills") await verifyControls(".bills-empty-actions a");
       if (label === "activity") await verifyControls(".activity-refresh-button");
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false);
-      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
       await page.screenshot({ path: path.join(outputDir, "polish-empty-" + label + ".png"), fullPage: true });
     }
     empty = false;

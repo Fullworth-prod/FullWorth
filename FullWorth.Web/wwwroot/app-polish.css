@@ -88,9 +88,9 @@
 .app-shell.app-shell .fw-bills-stat :is(span, small) { font-size: .74rem; line-height: 1.5; }
 .app-shell.app-shell .fw-bills-stat strong { font-size: 1.65rem; line-height: 1.2; }
 .app-shell.app-shell .fw-bills-ledger-head { padding: 22px 22px 14px; }
-.app-shell.app-shell .fw-bills-filters { padding: 0 22px 18px; display: flex; flex-wrap: wrap; overflow: visible; gap: 8px; }
-.app-shell.app-shell :is(.fw-bills-filter, .activity-filter) { min-height: 44px; white-space: normal; padding: 10px 14px; font-size: .8rem; line-height: 1.4; border-radius: 12px; }
-.app-shell.app-shell :is(.fw-bills-filter.active, .activity-filter.active) { box-shadow: none; border-color: var(--fw-accent); }
+.app-shell.app-shell .bill-filters { padding: 0 22px 18px; display: flex; flex-wrap: wrap; overflow: visible; gap: 8px; }
+.app-shell.app-shell :is(.bill-filter, .activity-filter) { min-height: 44px; white-space: normal; padding: 10px 14px; font-size: .8rem; line-height: 1.4; border-radius: 12px; }
+.app-shell.app-shell :is(.bill-filter.active, .activity-filter.active) { box-shadow: none; border-color: var(--fw-accent); }
 .app-shell.app-shell .fw-bills-row { min-height: 100px; padding: 18px 22px; gap: 16px; }
 .app-shell.app-shell :is(.fw-bills-current, .fw-bills-change, .fw-bills-impact) strong { font-size: .91rem; line-height: 1.5; overflow-wrap: anywhere; }
 .app-shell.app-shell :is(.fw-bills-current, .fw-bills-change, .fw-bills-impact) span { font-size: .73rem; line-height: 1.5; }
@@ -129,7 +129,7 @@
     }
     .app-shell.app-shell .mobile-bottom-nav {
         position: static; height: auto; width: 100%; padding: 0; border: 0; box-shadow: none; background: none;
-        display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 5em), 1fr));
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 6em), 1fr));
         gap: 3px; font-size: .6875rem;
     }
     .app-shell.app-shell .mobile-bottom-link {
@@ -190,7 +190,7 @@
     .app-shell.app-shell .fw-bill-row > .fw-row-chevron { grid-column: 3; grid-row: 1 / span 2; }
     .app-shell.app-shell .fw-bills-row { padding: 16px; }
     .app-shell.app-shell :is(.fw-bills-ledger-head, .fw-activity-feed-head) { padding: 20px 16px 14px; }
-    .app-shell.app-shell .fw-bills-filters { padding-inline: 16px; }
+    .app-shell.app-shell .bill-filters { padding-inline: 16px; }
     .app-shell.app-shell .fw-activity-pulse-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .app-shell.app-shell .fw-activity-pulse-stats > div:last-child { grid-column: 1 / -1; min-height: 72px; }
     .app-shell.app-shell .alert-card { padding: 18px 16px; grid-template-columns: minmax(0, 1fr); }
@@ -219,7 +219,7 @@
 .app-shell.app-shell .fw-activity-pulse.has-attention .fw-activity-number { color: var(--fw-negative); }
 
 /* The real bill filter class is shared with the existing filter component. */
-.app-shell.app-shell .fw-bills-filters > button {
+.app-shell.app-shell .bill-filters > button {
     min-height: 44px; height: auto; box-sizing: border-box; padding: 10px 14px;
     font-size: .8rem; line-height: 1.4; white-space: normal; border-radius: 12px;
 }
@@ -239,3 +239,11 @@
 .app-shell.app-shell .empty-dashboard h2 { font-size: 1.5rem; line-height: 1.25; letter-spacing: -.03em; }
 .app-shell.app-shell .empty-dashboard p { font-size: .88rem; line-height: 1.7; }
 .app-shell.app-shell .empty-icon { width: 44px; height: 44px; border-radius: 14px; margin-bottom: 16px; }
+
+/* Decorative overflow is clipped without creating a programmatically scrollable
+   hero. scrollIntoView must never move the total underneath its own card edge. */
+.app-shell.app-shell .fw-pulse { overflow: clip; }
+.app-shell.app-shell .mobile-bottom-link > span:last-child { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+@media (max-width: 760px) {
+    .app-shell.app-shell :is(.fw-bills-current, .fw-bills-change, .fw-bills-impact) { flex-wrap: wrap; row-gap: 3px; }
+}

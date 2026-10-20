@@ -1,6 +1,8 @@
-﻿@inject Microsoft.Extensions.Localization.IStringLocalizer<FullWorth.Web.Components.Pages.App.Activity> L
+@using FullWorth.Web.Presentation
 
-<article class="@GetCardClass()">
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FullWorth.Web.Components.Pages.App.Activity> L
+
+<article class="@GetCardClass()" aria-busy="@(IsBusy ? "true" : "false")" aria-labelledby="@($"alert-title-{Alert.Id:D}")">
     <div class="@GetIconClass()"
          aria-hidden="true">
         <svg class="bw-sprite alert-sprite">
@@ -18,7 +20,7 @@
                               title="@L["Unread"]"></span>
                     }
 
-                    <strong>
+                    <strong id="@($"alert-title-{Alert.Id:D}")">
                         @Alert.Title
                     </strong>
                 </div>
@@ -70,17 +72,17 @@
                     @L["Dismiss"]
                 </button>
 
-                @if (CanReview)
+                @if (CanReview && SafeReviewHref is not null)
                 {
-                    <button type="button"
-                            class="alert-primary-action"
-                            disabled="@IsBusy"
-                            @onclick="HandleReviewAsync">
+                    <a class="alert-primary-action" href="@SafeReviewHref">
                         @L["Review"]
-
-                        <span aria-hidden="true">
-                            →
-                        </span>
+                        <span aria-hidden="true">→</span>
+                    </a>
+                }
+                else if (CanReview && OnReview.HasDelegate)
+                {
+                    <button type="button" class="alert-primary-action" disabled="@IsBusy" @onclick="HandleReviewAsync">
+                        @L["Review"]
                     </button>
                 }
             </div>
@@ -102,6 +104,18 @@
     {
         get;
         set;
+    }
+
+    [Parameter]
+    public string? ReviewHref { get; set; }
+
+    private string? SafeReviewHref
+    {
+        get
+        {
+            var expected = ActivityFeedPresentation.GetReviewDestination(Alert.BillStreamId, Alert.AlertType);
+            return expected is not null && string.Equals(ReviewHref, expected, StringComparison.Ordinal) ? expected : null;
+        }
     }
 
     [Parameter]
@@ -184,7 +198,7 @@
         }
 
         className +=
-            $" severity-{Alert.Severity.ToLowerInvariant()}";
+            $" severity-{ActivityFeedPresentation.SeverityClass(Alert.Severity)}";
 
         return className;
     }
@@ -235,7 +249,7 @@
     private string GetSeverityClass()
     {
         return
-            $"alert-severity {Alert.Severity.ToLowerInvariant()}";
+            $"alert-severity {ActivityFeedPresentation.SeverityClass(Alert.Severity)}";
     }
 
     private static string GetTypeClass(

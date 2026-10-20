@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Set up FullWorth" xml:space="preserve"><value>Configurar FullWorth</value></data>
+  <data name="Personal setup" xml:space="preserve"><value>Configuración personal</value></data>
+  <data name="Personalize FullWorth" xml:space="preserve"><value>Personaliza FullWorth</value></data>
+  <data name="Set up FullWorth for you" xml:space="preserve"><value>Configura FullWorth para ti</value></data>
+  <data name="Update how FullWorth looks, reads, and prioritizes your financial information." xml:space="preserve"><value>Actualiza la apariencia, la lectura y las prioridades de tu información financiera en FullWorth.</value></data>
+  <data name="Choose how FullWorth should look, read, and prioritize your financial information. You can change these preferences later." xml:space="preserve"><value>Elige la apariencia, la lectura y las prioridades de tu información financiera en FullWorth. Puedes cambiar estas preferencias más adelante.</value></data>
+  <data name="Getting things ready" xml:space="preserve"><value>Preparando todo</value></data>
+  <data name="Loading your preferences…" xml:space="preserve"><value>Cargando tus preferencias…</value></data>
+  <data name="FullWorth is preparing your one-time setup." xml:space="preserve"><value>FullWorth está preparando tu configuración inicial.</value></data>
+  <data name="Your saved setup is unavailable" xml:space="preserve"><value>Tu configuración guardada no está disponible</value></data>
+  <data name="We could not load a valid saved setup. Retry before editing so defaults do not overwrite your preferences." xml:space="preserve"><value>No pudimos cargar una configuración guardada válida. Reintenta antes de editar para que los valores predeterminados no sobrescriban tus preferencias.</value></data>
+  <data name="Retry loading setup" xml:space="preserve"><value>Volver a cargar la configuración</value></data>
+  <data name="Back to settings" xml:space="preserve"><value>Volver a ajustes</value></data>
+  <data name="Something needs your attention" xml:space="preserve"><value>Algo requiere tu atención</value></data>
+  <data name="Your edits are kept. This check only reads saved preferences; it does not repeat the save." xml:space="preserve"><value>Se conservan tus cambios. Esta comprobación solo lee las preferencias guardadas; no repite el guardado.</value></data>
+  <data name="Checking saved setup…" xml:space="preserve"><value>Comprobando la configuración guardada…</value></data>
+  <data name="Check saved setup" xml:space="preserve"><value>Comprobar configuración guardada</value></data>
+  <data name="Your personal setup was saved." xml:space="preserve"><value>Se guardó tu configuración personal.</value></data>
+  <data name="Continue to FullWorth" xml:space="preserve"><value>Continuar a FullWorth</value></data>
+  <data name="Language" xml:space="preserve"><value>Idioma</value></data>
+  <data name="Choose the language FullWorth should use for interface text." xml:space="preserve"><value>Elige el idioma de la interfaz de FullWorth.</value></data>
+  <data name="Interface language" xml:space="preserve"><value>Idioma de la interfaz</value></data>
+  <data name="Appearance" xml:space="preserve"><value>Apariencia</value></data>
+  <data name="Choose the starting theme for this device." xml:space="preserve"><value>Elige el tema inicial para este dispositivo.</value></data>
+  <data name="Theme" xml:space="preserve"><value>Tema</value></data>
+  <data name="System" xml:space="preserve"><value>Sistema</value></data>
+  <data name="Light" xml:space="preserve"><value>Claro</value></data>
+  <data name="Dark" xml:space="preserve"><value>Oscuro</value></data>
+  <data name="Readability" xml:space="preserve"><value>Legibilidad</value></data>
+  <data name="Pick the text size that is most comfortable for you. FullWorth will scale the interface without changing your financial data." xml:space="preserve"><value>Elige el tamaño de texto que te resulte más cómodo. FullWorth ajustará la interfaz sin cambiar tus datos financieros.</value></data>
+  <data name="Text size" xml:space="preserve"><value>Tamaño del texto</value></data>
+  <data name="Standard" xml:space="preserve"><value>Estándar</value></data>
+  <data name="Large" xml:space="preserve"><value>Grande</value></data>
+  <data name="Extra large" xml:space="preserve"><value>Muy grande</value></data>
+  <data name="Use stronger text and border contrast" xml:space="preserve"><value>Usar mayor contraste en el texto y los bordes</value></data>
+  <data name="Reduce animations and motion" xml:space="preserve"><value>Reducir animaciones y movimiento</value></data>
+  <data name="What should FullWorth emphasize?" xml:space="preserve"><value>¿Qué debe destacar FullWorth?</value></data>
+  <data name="Choose everything that matters to you. These choices guide emphasis and ordering; they do not remove features." xml:space="preserve"><value>Elige todo lo que te importe. Estas opciones orientan el énfasis y el orden; no eliminan funciones.</value></data>
+  <data name="Review your setup" xml:space="preserve"><value>Revisa tu configuración</value></data>
+  <data name="Stronger contrast" xml:space="preserve"><value>Mayor contraste</value></data>
+  <data name="Reduced motion" xml:space="preserve"><value>Movimiento reducido</value></data>
+  <data name="Your priorities" xml:space="preserve"><value>Tus prioridades</value></data>
+  <data name="Choose at least one priority before saving." xml:space="preserve"><value>Elige al menos una prioridad antes de guardar.</value></data>
+  <data name="These choices change presentation only. They do not connect a bank, start monitoring, or change your financial records." xml:space="preserve"><value>Estas opciones solo cambian la presentación. No conectan un banco, no inician la supervisión ni modifican tus registros financieros.</value></data>
+  <data name="Back" xml:space="preserve"><value>Atrás</value></data>
+  <data name="Continue" xml:space="preserve"><value>Continuar</value></data>
+  <data name="Saving your setup…" xml:space="preserve"><value>Guardando tu configuración…</value></data>
+  <data name="Save setup" xml:space="preserve"><value>Guardar configuración</value></data>
+  <data name="Setup progress" xml:space="preserve"><value>Progreso de configuración</value></data>
+  <data name="Choose at least one area for FullWorth to emphasize." xml:space="preserve"><value>Elige al menos un área que FullWorth deba destacar.</value></data>
+  <data name="We could not confirm whether setup was saved. Check saved setup before deciding to retry." xml:space="preserve"><value>No pudimos confirmar si se guardó la configuración. Comprueba la configuración guardada antes de decidir si quieres reintentarlo.</value></data>
+  <data name="Saved preferences currently differ from your edits. Your edits are kept; review them before saving again. No save was retried." xml:space="preserve"><value>Las preferencias guardadas actualmente son distintas de tus cambios. Tus cambios se conservan; revísalos antes de volver a guardar. No se repitió el guardado.</value></data>
+  <data name="Saved setup could not be checked. Your edits are kept. Retry the read when the connection is available." xml:space="preserve"><value>No se pudo comprobar la configuración guardada. Tus cambios se conservan. Reintenta la lectura cuando la conexión esté disponible.</value></data>
+  <data name="Your setup was saved. Some browser preferences could not be applied or remembered. Continue to reload FullWorth." xml:space="preserve"><value>Se guardó tu configuración. Algunas preferencias del navegador no se pudieron aplicar o recordar. Continúa para volver a cargar FullWorth.</value></data>
+  <data name="Step {0} of 4" xml:space="preserve"><value>Paso {0} de 4</value></data>
+  <data name="Start with the way you prefer to use FullWorth." xml:space="preserve"><value>Empieza con tu forma preferida de usar FullWorth.</value></data>
+  <data name="Make FullWorth comfortable to read." xml:space="preserve"><value>Haz que FullWorth sea cómodo de leer.</value></data>
+  <data name="Tell FullWorth what matters most." xml:space="preserve"><value>Dile a FullWorth qué es lo más importante.</value></data>
+  <data name="Review before you save." xml:space="preserve"><value>Revisa antes de guardar.</value></data>
+  <data name="Choose your language and appearance. These are starting preferences, not permanent restrictions." xml:space="preserve"><value>Elige el idioma y la apariencia. Son preferencias iniciales, no restricciones permanentes.</value></data>
+  <data name="Accessibility choices should make the app easier to use without hiding information or changing calculations." xml:space="preserve"><value>Las opciones de accesibilidad deben facilitar el uso de la aplicación sin ocultar información ni cambiar los cálculos.</value></data>
+  <data name="FullWorth will use these choices to emphasize the right information while keeping every feature available." xml:space="preserve"><value>FullWorth usará estas opciones para destacar la información adecuada y mantener todas las funciones disponibles.</value></data>
+  <data name="Check your choices. Nothing is saved until you choose Save setup." xml:space="preserve"><value>Comprueba tus opciones. Nada se guarda hasta que elijas Guardar configuración.</value></data>
+  <data name="On" xml:space="preserve"><value>Activado</value></data>
+  <data name="Off" xml:space="preserve"><value>Desactivado</value></data>
+  <data name="Language &amp; theme" xml:space="preserve"><value>Idioma y tema</value></data>
+  <data name="Review &amp; save" xml:space="preserve"><value>Revisar y guardar</value></data>
+  <data name="Bill changes" xml:space="preserve"><value>Cambios en facturas</value></data>
+  <data name="Surface meaningful increases and annualized impact." xml:space="preserve"><value>Destacar aumentos significativos y su impacto anualizado.</value></data>
+  <data name="Spending" xml:space="preserve"><value>Gastos</value></data>
+  <data name="Make recent transaction activity easier to scan." xml:space="preserve"><value>Facilitar la revisión de las transacciones recientes.</value></data>
+  <data name="Recurring costs" xml:space="preserve"><value>Costes recurrentes</value></data>
+  <data name="Emphasize subscriptions and repeating charges." xml:space="preserve"><value>Destacar suscripciones y cargos recurrentes.</value></data>
+  <data name="Whole financial picture" xml:space="preserve"><value>Panorama financiero completo</value></data>
+  <data name="Keep connected accounts and overall position prominent." xml:space="preserve"><value>Dar prioridad a las cuentas conectadas y a la situación general.</value></data>
+  <data name="Statement explanations" xml:space="preserve"><value>Explicaciones de estados de cuenta</value></data>
+  <data name="Prioritize evidence explaining why a bill changed." xml:space="preserve"><value>Priorizar la evidencia que explica por qué cambió una factura.</value></data>
+  <data name="Leave without saving" xml:space="preserve"><value>Salir sin guardar</value></data>
+</root>

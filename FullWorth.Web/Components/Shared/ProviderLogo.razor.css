@@ -1,0 +1,2 @@
+/* Author image display rules must not expose a pending/broken decorative image. */
+.provider-logo-image[hidden] { display: none; }

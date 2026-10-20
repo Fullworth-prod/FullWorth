@@ -5,6 +5,7 @@ const localMode = "Local12Hour";
 const utcMode = "Utc";
 
 let observer = null;
+let preferenceRevision = 0;
 
 function normalizeThemePreference(value) {
     switch (String(value ?? "").toLowerCase()) {
@@ -45,75 +46,60 @@ function resolveTheme(preference) {
         : "dark";
 }
 
+function readStorage(key) {
+    try { return window.localStorage.getItem(key); } catch { return null; }
+}
+
+function writeStorage(key, value) {
+    try { window.localStorage.setItem(key, value); return true; } catch { return false; }
+}
+
+const focusOrder = ["BillChanges", "Spending", "RecurringCosts", "AccountOverview", "Statements"];
+
+function validExperienceResponse(value) {
+    return value !== null && typeof value === "object" &&
+        typeof value.experienceSetupComplete === "boolean" &&
+        ["en-US", "es"].includes(value.preferredUiLanguage) &&
+        ["System", "Light", "Dark"].includes(value.themePreference) &&
+        ["Standard", "Large", "ExtraLarge"].includes(value.textSizePreference) &&
+        typeof value.highContrastEnabled === "boolean" && typeof value.reduceMotionEnabled === "boolean" &&
+        Array.isArray(value.experienceFocus) && value.experienceFocus.length <= focusOrder.length &&
+        value.experienceFocus.every(item => focusOrder.includes(item)) &&
+        new Set(value.experienceFocus).size === value.experienceFocus.length &&
+        (!value.experienceSetupComplete || value.experienceFocus.length > 0);
+}
+
 function applyThemePreference(preference, force = false) {
-    if (!force &&
-        window.localStorage.getItem(experienceThemeInitializedKey) === "1") {
-        return;
-    }
-
+    if (!force && readStorage(experienceThemeInitializedKey) === "1") return true;
     const theme = resolveTheme(preference);
-
-    window.localStorage.setItem(themeStorageKey, theme);
-    window.localStorage.setItem(experienceThemeInitializedKey, "1");
-
     document.documentElement.dataset.theme = theme;
-
-    const themeColor =
-        document.querySelector('meta[name="theme-color"]');
-
-    if (themeColor) {
-        themeColor.setAttribute(
-            "content",
-            theme === "light"
-                ? "#F4F6FB"
-                : "#060910");
-    }
+    document.querySelector('meta[name="theme-color"]')?.setAttribute(
+        "content", theme === "light" ? "#F4F6FB" : "#060910");
+    const remembered = writeStorage(themeStorageKey, theme);
+    const initialized = writeStorage(experienceThemeInitializedKey, "1");
+    return remembered && initialized;
 }
 
 function applyLanguagePreference(language) {
-    const uiCulture =
-        String(language ?? "").toLowerCase().startsWith("es")
-            ? "es"
-            : "en-US";
-
-    const cookieValue =
-        encodeURIComponent(
-            `c=en-US|uic=${uiCulture}`);
-
-    document.cookie =
-        `.AspNetCore.Culture=${cookieValue}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`;
+    try {
+        const cookieValue = encodeURIComponent(`c=en-US|uic=${language}`);
+        document.cookie = `.AspNetCore.Culture=${cookieValue}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`;
+        // Cookie writes may be silently rejected by browser privacy settings.
+        return document.cookie.split(";").some(part =>
+            part.trim() === `.AspNetCore.Culture=${cookieValue}`);
+    } catch { return false; }
 }
 
 export function applyExperiencePreferences(preference, forceTheme = false) {
-    if (!preference?.experienceSetupComplete) {
-        return;
-    }
-
-    const textSize =
-        normalizeTextSizePreference(
-            preference.textSizePreference);
-
-    document.documentElement.dataset.fullworthTextSize =
-        textSize === "ExtraLarge"
-            ? "extra-large"
-            : textSize.toLowerCase();
-
-    document.documentElement.dataset.fullworthHighContrast =
-        preference.highContrastEnabled
-            ? "true"
-            : "false";
-
-    document.documentElement.dataset.fullworthReduceMotion =
-        preference.reduceMotionEnabled
-            ? "true"
-            : "false";
-
-    applyThemePreference(
-        preference.themePreference,
-        forceTheme);
-
-    applyLanguagePreference(
-        preference.preferredUiLanguage);
+    if (forceTheme) preferenceRevision++;
+    if (!validExperienceResponse(preference) || preference.experienceSetupComplete !== true) return false;
+    document.documentElement.dataset.fullworthTextSize = preference.textSizePreference === "ExtraLarge" ?
+        "extra-large" : preference.textSizePreference.toLowerCase();
+    document.documentElement.dataset.fullworthHighContrast = preference.highContrastEnabled ? "true" : "false";
+    document.documentElement.dataset.fullworthReduceMotion = preference.reduceMotionEnabled ? "true" : "false";
+    const themeApplied = applyThemePreference(preference.themePreference, forceTheme);
+    const languageApplied = applyLanguagePreference(preference.preferredUiLanguage);
+    return themeApplied && languageApplied;
 }
 
 function normalizeMode(value) {
@@ -124,13 +110,11 @@ function normalizeMode(value) {
 
 function getStoredMode() {
     return normalizeMode(
-        window.localStorage.getItem(storageKey));
+        readStorage(storageKey));
 }
 
 function setStoredMode(mode) {
-    window.localStorage.setItem(
-        storageKey,
-        normalizeMode(mode));
+    writeStorage(storageKey, normalizeMode(mode));
 }
 
 function parseDate(value) {
@@ -230,48 +214,43 @@ export function getExperiencePreferences() {
     return getTimestampPreference();
 }
 
-export async function saveExperiencePreferences(preference) {
-    const antiforgeryResponse = await fetch(
-        "/bff/antiforgery",
-        {
-            credentials: "same-origin",
-            cache: "no-store",
-            headers: {
-                Accept: "application/json"
-            }
-        });
-
-    if (!antiforgeryResponse.ok) {
+export async function persistExperiencePreferences(preference) {
+    const request = {
+        preferredUiLanguage: preference?.preferredUiLanguage, themePreference: preference?.themePreference,
+        textSizePreference: preference?.textSizePreference, highContrastEnabled: preference?.highContrastEnabled,
+        reduceMotionEnabled: preference?.reduceMotionEnabled,
+        experienceFocus: Array.isArray(preference?.experienceFocus) ? [...preference.experienceFocus] : null
+    };
+    if (!validExperienceResponse({ ...request, experienceSetupComplete: true }))
+        throw new Error("Invalid FullWorth experience setup.");
+    const antiforgeryResponse = await fetch("/bff/antiforgery", {
+        credentials: "same-origin", cache: "no-store", headers: { Accept: "application/json" }
+    });
+    if (!antiforgeryResponse.ok) throw new Error("Could not initialize secure experience setup.");
+    const antiforgery = await antiforgeryResponse.json();
+    if (typeof antiforgery?.requestToken !== "string" || !antiforgery.requestToken.trim())
         throw new Error("Could not initialize secure experience setup.");
-    }
-
-    const antiforgery =
-        await antiforgeryResponse.json();
-
-    const response = await fetch(
-        "/bff/account/preferences/experience",
-        {
-            method: "PUT",
-            credentials: "same-origin",
-            cache: "no-store",
-            headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-                "X-CSRF-TOKEN": antiforgery.requestToken
-            },
-            body: JSON.stringify(preference)
-        });
-
-    if (!response.ok) {
-        throw new Error("Could not save your FullWorth setup.");
-    }
-
+    const response = await fetch("/bff/account/preferences/experience", {
+        method: "PUT", credentials: "same-origin", cache: "no-store",
+        headers: { Accept: "application/json", "Content-Type": "application/json", "X-CSRF-TOKEN": antiforgery.requestToken },
+        body: JSON.stringify(request)
+    });
+    if (response.status !== 200 || response.redirected) throw new Error("Could not confirm your FullWorth setup.");
     const saved = await response.json();
+    if (!validExperienceResponse(saved) || !saved.experienceSetupComplete ||
+        ["preferredUiLanguage", "themePreference", "textSizePreference", "highContrastEnabled", "reduceMotionEnabled"]
+            .some(key => saved[key] !== request[key]) ||
+        saved.experienceFocus.length !== request.experienceFocus.length ||
+        !saved.experienceFocus.every(value => request.experienceFocus.includes(value)))
+        throw new Error("Could not confirm your FullWorth setup.");
+    return saved; // Server confirmation is deliberately separate from browser application.
+}
 
-    applyExperiencePreferences(
-        saved,
-        true);
-
+// Compatibility for older consumers. Browser storage cannot turn a saved server
+// choice into a failed write or trigger a repeated PUT.
+export async function saveExperiencePreferences(preference) {
+    const saved = await persistExperiencePreferences(preference);
+    applyExperiencePreferences(saved, true);
     return saved;
 }
 
@@ -315,6 +294,7 @@ export async function saveTimestampPreference(mode) {
     }
 
     const saved = await response.json();
+    preferenceRevision++;
     setStoredMode(saved.timestampDisplayMode);
     renderTimestamps(document);
 
@@ -322,13 +302,16 @@ export async function saveTimestampPreference(mode) {
 }
 
 export async function initializeTimestampPreferences() {
+    const revision = preferenceRevision;
     try {
         const preference = await getTimestampPreference();
-        setStoredMode(preference.timestampDisplayMode);
-        applyExperiencePreferences(preference);
+        if (revision === preferenceRevision) {
+            setStoredMode(preference.timestampDisplayMode);
+            applyExperiencePreferences(preference);
+        }
     }
     catch {
-        if (window.localStorage.getItem(storageKey) === null) {
+        if (readStorage(storageKey) === null) {
             setStoredMode(localMode);
         }
     }

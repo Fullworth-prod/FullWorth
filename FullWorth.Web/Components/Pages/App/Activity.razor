@@ -2,12 +2,13 @@
 
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
+@using FullWorth.Web.Presentation
+
 @layout AppLayout
 
 @implements IAsyncDisposable
 
 @inject IJSRuntime JS
-@inject NavigationManager Navigation
 @inject Microsoft.Extensions.Localization.IStringLocalizer<Activity> L
 
 <PageTitle>@L["Activity — FullWorth"]</PageTitle>
@@ -35,14 +36,15 @@
         {
             <button type="button"
                     class="activity-refresh-button"
-                    disabled="@_isMutating"
+                    disabled="@(_isMutating || _isRefreshing)"
+                    aria-busy="@(_isRefreshing ? "true" : "false")"
                     @onclick="ReloadAsync">
 
                 <svg class="bw-sprite" aria-hidden="true">
                     <use href="/assets/billwatch-sprites.svg#refresh"></use>
                 </svg>
 
-                @L["Refresh"]
+                @(_isRefreshing ? L["Refreshing…"] : L["Refresh"])
             </button>
         }
     </header>
@@ -108,13 +110,19 @@
         var filteredAlerts =
             FilteredAlerts;
 
+        @if (!string.IsNullOrWhiteSpace(_refreshError))
+        {
+            <div class="activity-action-error" role="alert">@_refreshError</div>
+        }
+        <p class="activity-scope-note">@L["Showing up to 100 recent active alerts, not your entire history. Counts describe loaded alerts only; no alerts does not prove that monitoring is complete."]</p>
+
         <section class="@GetActivityPulseClass(needsAttentionCount)"
                  aria-label="@L["Activity summary"]">
             <div class="fw-activity-pulse-copy">
                 <span class="fw-activity-eyebrow">
                     @(needsAttentionCount > 0
                         ? L["Needs your attention"]
-                        : L["All quiet"])
+                        : L["No attention alerts loaded"])
                 </span>
 
                 <strong class="fw-activity-number">
@@ -134,7 +142,7 @@
                     }
                     else
                     {
-                        @L["There are no warning or critical alerts waiting for you right now."]
+                        @L["No warning or critical alerts appear in the loaded feed. Check bank connections if expected activity is missing."]
                     }
                 </p>
             </div>
@@ -151,9 +159,9 @@
                 </div>
 
                 <div>
-                    <span>@L["Retention"]</span>
+                    <span>@L["View limit"]</span>
                     <strong>100</strong>
-                    <small>@L["latest active alerts"]</small>
+                    <small>@L["recent active alerts"]</small>
                 </div>
             </div>
         </section>
@@ -165,7 +173,7 @@
                     <h2>@L["Your financial feed"]</h2>
                 </div>
 
-                <div class="activity-filters">
+                <div class="activity-filters" role="group" aria-label="@L["Filter activity"]">
                     <button type="button"
                             class="@GetFilterClass(ActivityFilter.All)"
                             aria-pressed="@(_filter == ActivityFilter.All)"
@@ -192,10 +200,26 @@
                 </div>
             </div>
 
+            <p class="activity-scope-note">@L["Opening evidence does not mark an alert as read. Use Mark read when you have reviewed it; dismissing an alert does not fix a bank connection or bill."]</p>
+
+            <div class="activity-search-tools">
+                <label for="activity-search">@L["Search activity"]</label>
+                <input id="activity-search" type="search" maxlength="200"
+                       placeholder="@L["Search titles and messages"]" autocomplete="off"
+                       @bind="_searchText" @bind:event="oninput" />
+                @if (!string.IsNullOrWhiteSpace(_searchText) || _filter != ActivityFilter.All)
+                {
+                    <button type="button" class="secondary-action" @onclick="ResetFilters">@L["Clear filters"]</button>
+                }
+                <span role="status" aria-live="polite" aria-atomic="true">
+                    @L["Showing {0} of {1} loaded alerts", filteredAlerts.Count, _alerts.Count]
+                </span>
+            </div>
+
             @if (!string.IsNullOrWhiteSpace(
                 _actionError))
             {
-                <div class="activity-action-error">
+                <div class="activity-action-error" role="alert">
                     @_actionError
                 </div>
             }
@@ -210,15 +234,16 @@
                     </div>
 
                     <span class="page-kicker">
-                        @L["All quiet"]
+                        @L["No alerts loaded"]
                     </span>
 
                     <h2>
-                        @L["No FullWorth alerts yet."]
+                        @L["No recent active alerts loaded."]
                     </h2>
 
                     <p>
-                        @L["FullWorth will surface meaningful bill changes, payday guidance, and account issues here when evidence supports them."]
+                        @L["FullWorth shows alerts when evidence supports them. This is not a guarantee that every bill or bank connection is being monitored."]
+                        <a href="/app/account">@L["Check bank connections"]</a>
                     </p>
                 </section>
             }
@@ -230,7 +255,7 @@
                     </strong>
 
                     <span>
-                        @L["Try another activity filter."]
+                        @L["Change the search or filter, or clear filters to return to the loaded feed."]
                     </span>
                 </section>
             }
@@ -242,11 +267,11 @@
                     {
                         <AlertCard @key="alert.Id"
                                    Alert="@ToCardViewModel(alert)"
-                                   IsBusy="@IsAlertBusy(alert.Id)"
+                                   IsBusy="@(_isMutating || _isRefreshing)"
                                    CanReview="@CanReview(alert)"
                                    OnMarkRead="@HandleMarkReadAsync"
                                    OnDismiss="@HandleDismissAsync"
-                                   OnReview="@HandleReviewAsync" />
+                                   ReviewHref="@GetReviewDestination(alert)" />
                     }
                 </section>
             }
@@ -265,8 +290,11 @@
         true;
 
     private bool _isMutating;
+    private bool _hasLoaded;
+    private bool _isRefreshing;
+    private string? _refreshError;
+    private string _searchText = string.Empty;
 
-    private Guid? _busyAlertId;
 
     private string? _errorMessage;
 
@@ -275,25 +303,14 @@
     private ActivityFilter _filter =
         ActivityFilter.All;
 
-    private IReadOnlyList<
-        BillAlertViewModel>
-        FilteredAlerts =>
-            _alerts
-                .Where(
-                    alert =>
-                        _filter switch
-                        {
-                            ActivityFilter.Unread =>
-                                !alert.IsRead,
+    private IReadOnlyList<BillAlertViewModel> FilteredAlerts =>
+        ActivityFeedPresentation.Filter(_alerts, _filter, _searchText);
 
-                            ActivityFilter.Attention =>
-                                IsAttentionSeverity(
-                                    alert.Severity),
-
-                            _ =>
-                                true
-                        })
-                .ToList();
+    private void ResetFilters()
+    {
+        _filter = ActivityFilter.All;
+        _searchText = string.Empty;
+    }
 
     protected override async Task
         OnAfterRenderAsync(
@@ -324,7 +341,7 @@
 
     private async Task ReloadAsync()
     {
-        if (_isMutating)
+        if (_isMutating || _isRefreshing || _isLoading)
         {
             return;
         }
@@ -334,14 +351,11 @@
 
     private async Task LoadAsync()
     {
-        _isLoading =
-            true;
-
-        _errorMessage =
-            null;
-
-        _actionError =
-            null;
+        _isLoading = !_hasLoaded;
+        _isRefreshing = _hasLoaded;
+        _errorMessage = null;
+        _refreshError = null;
+        _actionError = null;
 
         try
         {
@@ -357,31 +371,28 @@
                         false,
                         100);
 
-            _alerts =
-                result?
-                    .Where(
-                        alert =>
-                            !alert.IsDismissed)
-                    .OrderByDescending(
-                        alert =>
-                            alert.CreatedAtUtc)
-                    .ToList()
-                ?? [];
-        }
-        catch (JSException)
-        {
-            _errorMessage =
-                L["FullWorth could not reach the secure API."].Value;
+            // Reject invalid responses without turning an existing feed into a false empty state.
+            if (result is null || result.Length > 100 || result.Any(alert => alert is null))
+                throw new InvalidOperationException("Invalid activity response.");
+
+            _alerts = result
+                .Where(alert => !alert.IsDismissed)
+                .OrderByDescending(alert => alert.CreatedAtUtc)
+                .ThenBy(alert => alert.Id)
+                .ToList();
+            _hasLoaded = true;
         }
         catch (Exception)
         {
-            _errorMessage =
-                L["Something went wrong while loading FullWorth activity."].Value;
+            if (_hasLoaded)
+                _refreshError = L["Refresh failed. Previously loaded alerts are still shown; they may be out of date. Try refreshing again."].Value;
+            else
+                _errorMessage = L["FullWorth could not load your activity. Try again."].Value;
         }
         finally
         {
-            _isLoading =
-                false;
+            _isLoading = false;
+            _isRefreshing = false;
         }
     }
 
@@ -409,42 +420,11 @@
             : "fw-activity-pulse is-calm";
     }
 
-    private bool IsAlertBusy(
-        Guid alertId)
-    {
-        return _isMutating &&
-            _busyAlertId ==
-                alertId;
-    }
+    private static bool IsAttentionSeverity(string? severity) =>
+        ActivityFeedPresentation.IsAttentionSeverity(severity);
 
-    private static bool
-        IsAttentionSeverity(
-            string? severity)
-    {
-        return string.Equals(
-                severity,
-                "Warning",
-                StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(
-                severity,
-                "Critical",
-                StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool CanReview(
-        BillAlertViewModel alert)
-    {
-        if (alert.BillStreamId
-            .HasValue)
-        {
-            return true;
-        }
-
-        return string.Equals(
-            alert.AlertType,
-            "ConnectionIssue",
-            StringComparison.OrdinalIgnoreCase);
-    }
+    private static bool CanReview(BillAlertViewModel alert) =>
+        GetReviewDestination(alert) is not null;
 
     private async Task HandleMarkReadAsync(
         Guid alertId)
@@ -501,70 +481,19 @@
             });
     }
 
-    private async Task HandleReviewAsync(
-        Guid alertId)
-    {
-        var alert =
-            FindAlert(
-                alertId);
-
-        if (alert is null)
-        {
-            return;
-        }
-
-        var destination =
-            GetReviewDestination(
-                alert);
-
-        if (destination is null)
-        {
-            return;
-        }
-
-        if (!alert.IsRead)
-        {
-            var succeeded =
-                await RunAlertMutationAsync(
-                    alertId,
-                    async module =>
-                    {
-                        await module
-                            .InvokeAsync<object?>(
-                                "markAlertRead",
-                                alertId.ToString(
-                                    "D"));
-
-                        alert.IsRead =
-                            true;
-                    });
-
-            if (!succeeded)
-            {
-                return;
-            }
-        }
-
-        Navigation.NavigateTo(
-            destination);
-    }
-
     private async Task<bool>
         RunAlertMutationAsync(
             Guid alertId,
             Func<IJSObjectReference, Task>
                 mutation)
     {
-        if (_isMutating)
+        if (_isMutating || _isRefreshing || _isLoading)
         {
             return false;
         }
 
         _isMutating =
             true;
-
-        _busyAlertId =
-            alertId;
 
         _actionError =
             null;
@@ -594,9 +523,6 @@
             _isMutating =
                 false;
 
-            _busyAlertId =
-                null;
-
             StateHasChanged();
         }
 
@@ -614,28 +540,8 @@
                         alertId);
     }
 
-    private static string?
-        GetReviewDestination(
-            BillAlertViewModel alert)
-    {
-        if (alert.BillStreamId
-            .HasValue)
-        {
-            return
-                $"/app/bills/{alert.BillStreamId.Value:D}";
-        }
-
-        if (string.Equals(
-                alert.AlertType,
-                "ConnectionIssue",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return
-                "/app/account";
-        }
-
-        return null;
-    }
+    private static string? GetReviewDestination(BillAlertViewModel alert) =>
+        ActivityFeedPresentation.GetReviewDestination(alert.BillStreamId, alert.AlertType);
 
     private static
         AlertCard.AlertCardViewModel
@@ -697,7 +603,7 @@
         }
     }
 
-    private enum ActivityFilter
+    public enum ActivityFilter
     {
         All,
         Unread,

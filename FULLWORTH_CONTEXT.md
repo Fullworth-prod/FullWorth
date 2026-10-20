@@ -1,11 +1,13 @@
-## Verified release checkpoint — 2026-10-17 UTC
+## Release evidence reconciled — 2026-10-18 UTC
 
 - current release candidate on `master`: `422718fad7d05a3729b08d461929d0d60c6761a6`.
 - Verified live production release: `422718fad7d05a3729b08d461929d0d60c6761a6`.
 
-[Guarded deployment #25](https://github.com/Fullworth/FullWorth/actions/runs/39053793950) and [same-release authenticated smoke](https://github.com/Fullworth/FullWorth/actions/runs/39054021470) passed; deployed checkout and release marker agreed. Exact-master build/test, CodeQL, governance and attested images passed. Previously development-only Bills review/diagnostics and financial evidence safeguards are now deployed. Real physical-device, Plaid/provider, controlled statement/two-user, clean-host restore of actual statements and both key rings, immutability and legal acceptance remain open. This What's New improvement is only an unmerged development PR until independently promoted and deployed; do not claim it is live.
+[Guarded deployment #25](https://github.com/Fullworth/FullWorth/actions/runs/39053793950) and [same-release authentication smoke](https://github.com/Fullworth/FullWorth/actions/runs/39054021470) both completed successfully for this exact SHA. This is the last verified deployment record, not a new host inspection. Issue #291 still has three open security evidence gates: provider-enforced immutable/off-host recovery protection, separate clean/compromised-host real-data restore including statements and both key rings, and complete exact-release controlled security acceptance. A one-user smoke or CI fixture restore does not close them.
 
-## Previous checkpoints (historical; superseded for release identity)
+Current development base is `db4248d78b6ec0ccec290e7ebd6b0b49bfac466d`. PR #773 (password-once verification) and PR #774 (transaction evidence/resilience) are unmerged development work, not live changes. Passkeys remain disabled pending Apple association and physical-device acceptance; no payment/AI/security controls are enabled by this checkpoint.
+
+## Earlier checkpoints (historical; current release identities below are superseded)
 
 ## Verified release checkpoint — 2026-10-16 UTC
 

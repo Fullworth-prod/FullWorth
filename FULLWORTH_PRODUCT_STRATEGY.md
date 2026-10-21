@@ -1,6 +1,6 @@
 # FullWorth Product Strategy
 
-Last updated: 2026-09-30
+Last updated: 2026-10-18
 
 Status: Active strategic planning document
 
@@ -12,11 +12,20 @@ This document defines how FullWorth should become a differentiated, trusted cons
 
 # 1. Executive thesis
 
+## Active focus — market research review, 2026-10-18
+
+The committed near-term focus is trustworthy, evidence-backed recurring-bill monitoring, not all-in-one finance parity. Initially validate US household internet/mobile bill payers who want a useful explanation and next step without maintaining a full budget. This is a customer hypothesis, not proven demand or exclusive differentiation: [Capital One Eno](https://www.capitalone.com/digital/tools/eno/spending-insights/) already offers some increase alerts, and [BillInsight](https://billinsight.ca/pricing) already sells bill explanations. Public offers are not accuracy or adoption benchmarks.
+
+Follow [roadmap queue MV-01–MV-07](FULLWORTH_ROADMAP.md#22-market-validated-execution-queue): financial truth/first value → same-release acceptance → consented problem validation and actual costs → controlled paid pilot → mature retained contribution → one repeatable channel. Interviews and cost discovery can run alongside safe engineering; private-document handling and commercial rollout remain gated.
+
+The wider financial-life vision below is an aspiration, not current coverage or a reason to add modules before the narrow job earns repeat use. No merge, deployment, billing activation, customer outreach, spending or supplier contract is authorized merely by this strategy update.
+
+
 FullWorth should build the category of **financial change intelligence**.
 
 The product should continuously watch the parts of a user's financial life that matter, detect meaningful changes, explain why they happened, quantify their impact, prioritize what deserves attention, and preserve the evidence supporting each conclusion.
 
-The initial wedge remains recurring bills because that is where FullWorth already has the strongest technical and product differentiation:
+The initial wedge remains recurring bills because the architecture can combine the following capabilities. Their commercial differentiation must be demonstrated with customers rather than assumed:
 
 - transactions establish what actually happened;
 - statements and trusted provider evidence explain why;
@@ -69,18 +78,21 @@ This is specific, easy to understand, measurable, and connected to direct financ
 
 A strong first-use experience should move a new user through:
 
-bank connection
-→ recurring-stream discovery
-→ monitored recurring commitments
-→ first meaningful change or useful baseline
-→ evidence-backed explanation
-→ alert/review loop
+a truthful sample/demo and scope explanation
+→ informed consent
+→ usable data (bank connection, or a separately validated secure statement-first experiment)
+→ recurring-stream discovery or source comparison
+→ useful baseline/change with visible coverage and unknowns
+→ supported explanation and next step
+→ repeat monitoring/review loop
+
+Do not claim a statement-first alternative already exists merely because it is an experiment. A connected account or a reassuring empty screen is not, by itself, verified customer value.
 
 The product should minimize manual setup between connection and useful monitoring.
 
 ## 3.2 Expansion sequence
 
-Broader features should be added only when they strengthen the monitoring relationship.
+Broader features should be added only after reliable first value, same-release trust gates, retained paid value and measured economics justify them. Preserve existing supported functions; do not remove modules or retire MAUI under a planning-only change.
 
 Preferred expansion order:
 
@@ -332,7 +344,7 @@ FullWorth should charge for continuing monitoring value, not for artificial feat
 
 ## 7.1 Free experience
 
-The free product should be useful enough to prove the core value.
+A free sample/demo should help people understand value before sensitive account access. A permanently free live-bank-connected tier is not committed; actual supplier, dormant/trial and support costs must justify its limits.
 
 Possible free scope to validate:
 
@@ -343,7 +355,7 @@ Possible free scope to validate:
 - basic alerts;
 - secure account controls.
 
-Exact limits should be tested rather than fixed prematurely.
+These are discovery candidates, not a promise of unlimited free account access. [Plaid's billing lifecycle](https://plaid.com/docs/account/billing/) can continue through connection errors or no API activity; [Item removal](https://plaid.com/docs/api/items/) is separate from UI archiving. Verify the actual contract, billing products and safe offboarding behavior before defining free/trial limits.
 
 ## 7.2 Paid experience
 
@@ -374,7 +386,9 @@ Test:
 - retention by plan;
 - infrastructure/support cost per active user.
 
-Prefer simple pricing until evidence justifies segmentation.
+Prefer simple pricing until evidence justifies segmentation. Proposed sequential pilot tests are USD 5.99/month versus USD 7.99/month; optional USD 59/year versus USD 79/year offers are later hypotheses, not enabled prices or willingness-to-pay evidence. Trial length must allow the promised job to occur and account for supplier costs. No unlimited lifetime bank-connected offer is approved.
+
+Charge only after [REVENUE_READINESS.md](REVENUE_READINESS.md) gates: exact-release trust acceptance, reviewed legal/support, actual offer, authoritative payment/entitlement lifecycle, safe cancellation/failure handling and controlled rollout. Separate annual cash from earned service revenue, contribution from profit, and scenario costs from actual invoices.
 
 ## 7.4 Multi-million revenue math
 
@@ -453,18 +467,13 @@ Do not manage the product primarily by downloads, registrations, page views, or 
 
 ## 9.1 Primary outcome metrics
 
-Track:
+The current paid-pilot scorecard has three outcomes, defined with denominators, maturity, exclusions and cost treatment in [roadmap section 27](FULLWORTH_ROADMAP.md#27-product-metrics-roadmap):
 
-1. **Activation to monitored state**  
-   Percentage of new eligible users who successfully connect data and reach at least one trustworthy monitored recurring stream.
+1. **Verified first value within seven days of first live processing consent**, retaining link/sync failures in the eligible cohort and requiring useful, understood coverage—not merely a click.
+2. **Realized paid-cohort contribution at 30/60/90 days**, including refunds, fees, attributable service/trial/support costs and canceled initial payers; cash and service-period revenue are separate.
+3. **Second paid-cycle retention for matured monthly cohorts**, including users who canceled before renewal. Annual service activity is not annual renewal.
 
-2. **Trusted change coverage**  
-   Ability to detect and correctly explain meaningful financial changes, measured through controlled ground truth, supported user-confirmed outcomes, and benchmark evidence.
-
-3. **Monitored-user retention**  
-   Percentage of activated users who remain connected and meaningfully monitored over 30/90/180-day periods.
-
-Paid cohorts should additionally track retained subscription revenue.
+Earlier monitored-state, coverage and engagement measures remain diagnostic. Primary metrics are proposed instrumentation, not claims of current performance. Separate internal/test/free accounts; actual invoices and payment records are authoritative. Use the two guardrail families of truth/safety and customer burden/cost; no critical financial or ownership error can be traded for conversion.
 
 ## 9.2 Driver metrics
 
@@ -654,6 +663,10 @@ Money movement should remain out of scope until the read/understand/monitor prod
 # 13. Strategic experiments
 
 After the release-critical gates are satisfied, prefer small measurable experiments over major speculative builds.
+
+The first founder-led discovery targets are 20 opt-in problem interviews and 10 securely consented known-truth bill cases. Seek at least 5 recent matching problems and 3 concrete pilot commitments as directional signals, not statistically representative validation. Once trust/revenue gates pass, aim for 5–10 independent paying pilot customers and observe a second monthly cycle before scaling. Do not count compliments, waitlists, staff entitlements or test charges as paid demand. If demand is episodic or costs exceed the accepted price, change the offer/segment before adding features.
+
+Public content and recruitment must respect community rules, consent and privacy. No scraped outreach, invented testimonials or paid-positive reviews. Creator spend requires a separate approved budget. A research plan does not authorize contacting people or collecting their documents.
 
 High-value experiment classes:
 

@@ -164,9 +164,9 @@ public sealed class BankMonitoringFailureIsolationTests
         var stored = await db.BankConnections.AsNoTracking().SingleAsync(c => c.Id == laterConnection.Id);
         Assert.Equal("cursor-b-final", stored.TransactionsCursor);
         Assert.Equal(1, probes.DiscoveryCalls);
-        Assert.Single(handler.Calls.Where(call => call == ("/transactions/sync", "bank-a")));
+        Assert.Single(handler.Calls, call => call == ("/transactions/sync", "bank-a"));
         Assert.Equal(0, await Pass()); // Finish the sweep, allowing the normal poll delay before retry.
-        Assert.Single(handler.Calls.Where(call => call == ("/transactions/sync", "bank-a")));
+        Assert.Single(handler.Calls, call => call == ("/transactions/sync", "bank-a"));
     }
 
     private static readonly Guid FailedId = Guid.Parse("00000000-0000-0000-0000-000000000001");

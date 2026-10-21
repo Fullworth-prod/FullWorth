@@ -73,6 +73,9 @@ public sealed class EndpointSecurityInventoryTests
         "API|POST|/api/auth/manage/info|authenticated|named:authentication",
         "API|POST|/api/auth/passkeys/login|anonymous-explicit|named:authentication",
         "API|POST|/api/auth/passkeys/options|anonymous-explicit|named:authentication",
+        "API|POST|/api/auth/password/complete|anonymous-explicit|named:authentication",
+        "API|POST|/api/auth/password/passkey-options|anonymous-explicit|named:authentication",
+        "API|POST|/api/auth/password/start|anonymous-explicit|named:authentication",
         "API|POST|/api/auth/refresh|anonymous-implicit|named:authentication",
         "API|POST|/api/auth/register|anonymous-implicit|named:authentication",
         "API|POST|/api/auth/resendConfirmationEmail|anonymous-implicit|named:authentication",
@@ -176,6 +179,8 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|POST|/auth/external/register/complete|anonymous-explicit|named:web-authentication",
         "WEB|POST|/auth/external/two-factor|anonymous-explicit|named:web-authentication",
         "WEB|POST|/auth/forgot-password|anonymous-implicit|named:web-authentication",
+        "WEB|POST|/auth/login/passkey-complete|anonymous-implicit|named:web-authentication",
+        "WEB|POST|/auth/login/passkey-options|anonymous-implicit|named:web-authentication",
         "WEB|POST|/auth/login|anonymous-implicit|named:web-authentication",
         "WEB|POST|/auth/logout|anonymous-implicit|none",
         "WEB|POST|/auth/passkeys/login|anonymous-implicit|named:web-authentication",
@@ -270,11 +275,11 @@ public sealed class EndpointSecurityInventoryTests
     public void Snapshot_CoversEveryReviewedAccessAndRateLimitClass()
     {
         Assert.Equal(
-            220,
+            225,
             ExpectedInventory.Length);
 
         Assert.Equal(
-            93,
+            96,
             ExpectedInventory.Count(
                 row =>
                     row.StartsWith(
@@ -282,7 +287,7 @@ public sealed class EndpointSecurityInventoryTests
                         StringComparison.Ordinal)));
 
         Assert.Equal(
-            127,
+            129,
             ExpectedInventory.Count(
                 row =>
                     row.StartsWith(
@@ -318,7 +323,7 @@ public sealed class EndpointSecurityInventoryTests
                     StringComparison.Ordinal));
 
         Assert.Equal(
-            56,
+            61,
             ExpectedInventory.Count(
                 row =>
                     row.Contains(

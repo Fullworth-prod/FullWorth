@@ -1,6 +1,7 @@
 (() => {
     "use strict";
     let busy = false;
+    const listVersions = new WeakMap();
     const message = (root, text) => { root.querySelector("[data-passkey-status]").textContent = text; };
     const value = (root, name) => root.querySelector('[name="' + name + '"]')?.value || "";
     const bytes = text => Uint8Array.from(atob(text.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0));
@@ -47,10 +48,15 @@
     }
 
     async function list(root) {
+        const version = (listVersions.get(root) || 0) + 1;
+        listVersions.set(root, version);
         const response = await fetch("/bff/account/security/passkeys",
             { credentials: "same-origin", cache: "no-store" });
         if (!response.ok) throw new Error("Could not load your keys. Sign in again or try later.");
         const keys = await response.json();
+        // Hydration/navigation can replace this region while a read is pending.
+        // An older response must not erase a newer post-enrollment refresh.
+        if (!root.isConnected || listVersions.get(root) !== version) return;
         const target = root.querySelector("[data-passkey-list]");
         target.replaceChildren();
         for (const key of keys) {
@@ -77,6 +83,8 @@
         message(root, "Follow your device or security key instructions…");
         try {
             const action = button.dataset.passkeyAction;
+            // Capture user input before the asynchronous OS credential prompt.
+            const keyName = value(root, "keyName");
             const credentials = { currentPassword: value(root, "currentPassword"),
                 twoFactorCode: value(root, "twoFactorCode") || null };
             if (action === "remove") {
@@ -92,14 +100,22 @@
                 if (!credential) throw new Error("No key was selected. Your account has not changed.");
                 const body = { ceremonyId: begin.ceremonyId,
                     credentialJson: JSON.stringify(credentialJSON(credential)),
-                    name: value(root, "keyName"),
+                    name: keyName,
                     twoFactorCode: creating ? null : value(root, "passkeyTwoFactorCode") || null,
                     rememberMe: !!document.querySelector('[name="rememberMe"]')?.checked };
                 await post(creating ? "/bff/account/security/passkeys/register" : "/auth/passkeys/login", body);
                 if (!creating) { location.assign("/app"); return; }
             }
-            await list(root);
-            message(root, "Saved. Your password and recovery options still work.");
+            if (root.isConnected) {
+                await list(root);
+                message(root, "Saved. Your password and recovery options still work.");
+            } else {
+                // Refresh only through the current authenticated BFF session.
+                // Do not move credentials or old-operation success messages
+                // into a replacement region (possibly a different account).
+                document.querySelectorAll('[data-passkeys="manage"]').forEach(current =>
+                    list(current).catch(error => message(current, error.message)));
+            }
         } catch (error) {
             message(root, error?.name === "NotAllowedError"
                 ? "Cancelled or timed out. You can try again or use your password."

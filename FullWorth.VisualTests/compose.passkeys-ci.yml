@@ -1,0 +1,9 @@
+# Disposable GitHub CI only. Never include this override in a deployment.
+services:
+  api:
+    environment:
+      Passkeys__Enabled: "true"
+      Passkeys__Origin: https://web.localhost
+  web:
+    environment:
+      Passkeys__Enabled: "true"

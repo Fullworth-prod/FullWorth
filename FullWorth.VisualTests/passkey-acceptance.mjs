@@ -81,6 +81,7 @@ try {
   await passwordStep();
   await page.waitForURL(url => url.pathname === "/app" || url.pathname === "/app/setup");
   await page.locator(".app-shell").waitFor();
+  const enrollmentSessionEstablishedAt = Date.now();
   await page.goto("/app/setup");
   await page.locator(".whats-new-dialog").waitFor({ state: "visible" });
   await page.locator(".whats-new-primary").click();
@@ -168,6 +169,11 @@ try {
     { currentPassword: password }, bootstrap.accessToken)).json();
   await apiPost("/api/account/security/two-factor/enable",
     { currentPassword: password, authenticatorCode: code(setup.sharedKey) }, bootstrap.accessToken);
+  // Enrollment, hydration reads and first-factor login share the real API's
+  // 20-request/minute authentication budget. Begin the separate MFA scenarios
+  // in a fresh window. Keep production rate limits and signature checks intact.
+  checkpoint("fresh authentication rate-limit window");
+  await page.waitForTimeout(Math.max(0, 61000 - (Date.now() - enrollmentSessionEstablishedAt)));
   await context.clearCookies();
   await passwordStep();
   await page.waitForURL(url => url.searchParams.get("twoFactor") === "true");
@@ -215,17 +221,6 @@ try {
   assert.deepEqual(Object.keys(completion).sort(), ["ceremonyId", "credentialJson"]);
   checkpoint("MFA completion response");
   const completed = await completionResponse;
-  if (completed.status() !== 204) {
-    const pendingRetained = (await context.cookies()).some(cookie =>
-      cookie.name === "__Host-FullWorth.PendingPassword");
-    const keyMetadata = (await cdp.send("WebAuthn.getCredentials", { authenticatorId })).credentials;
-    console.log("Passkey continuation diagnostic: " + JSON.stringify({
-      bffStatus: completed.status(), pendingRetained, signCount: keyMetadata[0]?.signCount,
-      failureStage: completed.headers()["x-fullworth-signin-diagnostic"] ?? "before-verification",
-      contentType: completed.headers()["content-type"] ?? "none",
-      challengeScheme: completed.headers()["www-authenticate"]?.split(" ")[0] ?? "none"
-    }));
-  }
   assert.equal(completed.status(), 204,
     "Password-verified passkey continuation must retain its existing second-factor behavior.");
   await page.waitForURL(url => url.pathname === "/app" || url.pathname === "/app/setup");
@@ -238,5 +233,5 @@ try {
   assert.equal(account.status(), 200, "Browser must have an authenticated session.");
   await cdp.send("WebAuthn.removeVirtualAuthenticator", { authenticatorId });
   await context.close();
-  console.log("PASS: virtual passkey enrollment, password-once sign-in, cancellation/code fallback.");
+  console.log("PASS: virtual passkey enrollment, first-factor and password-once sign-in, cancellation/code fallback.");
 } finally { await browser.close(); clearTimeout(deadline); }

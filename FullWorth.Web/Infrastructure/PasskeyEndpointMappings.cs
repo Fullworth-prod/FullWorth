@@ -34,7 +34,9 @@ public static class PasskeyEndpointMappings
                 request.TwoFactorCode?.Length > 12) return Results.BadRequest();
             var result = await authentication.LoginPasskeyAsync(context, request,
                 request.RememberMe, context.RequestAborted);
-            return result.Succeeded ? Results.NoContent() : Results.Unauthorized();
+            return result.Succeeded ? Results.NoContent() :
+                result.IsRateLimited ? Results.StatusCode(StatusCodes.Status429TooManyRequests) :
+                Results.Unauthorized();
         }).RequireRateLimiting(AuthEndpointMappings.AuthenticationRateLimitPolicy);
         return endpoints;
     }

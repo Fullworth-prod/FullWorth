@@ -47,11 +47,15 @@ public sealed partial class WebAuthenticationService
             catch (JsonException) { }
         }
         if (!response.IsSuccessStatusCode)
-            return new(new(false, GetSafeLoginError(response.StatusCode)), null);
+            return new(response.StatusCode == HttpStatusCode.TooManyRequests ? AuthOperationResult.Throttled :
+                new(false, GetSafeLoginError(response.StatusCode)), null);
         var tokens = await ReadAccessTokenResponseAsync(response, cancellationToken);
-        context.Items["FullWorth.SignInDiagnostic"] = tokens is null ? "tokens" : "refresh";
-        if (tokens is not null) tokens = await EnrollRefreshFamilyAsync(tokens, cancellationToken,
-            status => context.Items["FullWorth.SignInDiagnostic"] = "refresh-" + status);
+        if (tokens is not null)
+        {
+            var enrollment = await EnrollRefreshFamilyAsync(tokens, cancellationToken);
+            if (enrollment.IsRateLimited) return new(AuthOperationResult.Throttled, null);
+            tokens = enrollment.Tokens;
+        }
         if (tokens is null) return new(new(false, "FullWorth could not establish a secure sign-in session."), null);
         await SignInWebSessionAsync(context, email, email, email, tokens, rememberMe);
         return new(AuthOperationResult.Success, null);

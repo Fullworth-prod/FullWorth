@@ -216,37 +216,14 @@ try {
   checkpoint("MFA completion response");
   const completed = await completionResponse;
   if (completed.status() !== 204) {
-    // Metadata only: never print proof IDs, assertions, cookies or tokens.
     const pendingRetained = (await context.cookies()).some(cookie =>
       cookie.name === "__Host-FullWorth.PendingPassword");
     const keyMetadata = (await cdp.send("WebAuthn.getCredentials", { authenticatorId })).credentials;
-  checkpoint("MFA response body");
-    const failure = await completed.json().catch(() => ({}));
     console.log("Passkey continuation diagnostic: " + JSON.stringify({
       bffStatus: completed.status(), pendingRetained, signCount: keyMetadata[0]?.signCount,
-      sessionFailed: failure.error === "FullWorth could not establish a secure sign-in session.",
-      verificationFailed: failure.error === "Email or password is incorrect."
-    }));
-
-    // Test the same registered key through a fresh real API proof/challenge to
-    // distinguish assertion verification from BFF/session handling.
-    const directStart = await apiPost("/api/auth/password/start", { email, password });
-    const directProof = await directStart.json();
-    const directOptions = await apiPost("/api/auth/password/passkey-options", { loginId: directProof.loginId });
-    const directBegin = await directOptions.json();
-    const credentialJson = await page.evaluate(async options => {
-      const credential = await navigator.credentials.get({
-        publicKey: PublicKeyCredential.parseRequestOptionsFromJSON(options)
-      });
-      return JSON.stringify(credential.toJSON());
-    }, directBegin.options);
-    const directComplete = await context.request.post("https://localhost/api/auth/password/complete", {
-      data: { loginId: directProof.loginId, ceremonyId: directBegin.ceremonyId, credentialJson }
-    });
-    const directResult = await directComplete.json();
-    console.log("Direct API passkey diagnostic: " + JSON.stringify({
-      status: directComplete.status(), retryIssued: Object.hasOwn(directResult, "loginId"),
-      tokenIssued: Object.hasOwn(directResult, "accessToken")
+      failureStage: completed.headers()["x-fullworth-signin-diagnostic"] ?? "before-verification",
+      contentType: completed.headers()["content-type"] ?? "none",
+      challengeScheme: completed.headers()["www-authenticate"]?.split(" ")[0] ?? "none"
     }));
   }
   assert.equal(completed.status(), 204,

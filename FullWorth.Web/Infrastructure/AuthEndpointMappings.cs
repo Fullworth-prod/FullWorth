@@ -97,9 +97,11 @@ public static class AuthEndpointMappings
                 var step = await authenticationService.CompletePasswordSignInAsync(context, pending,
                     null, null, request.CeremonyId, request.CredentialJson, context.RequestAborted);
                 if (step.Pending is not null) pendingCookie.Write(context, step.Pending);
-                return step.Result.Succeeded ? Results.NoContent() :
-                    Results.Json(new { error = step.Result.ErrorMessage ?? "Sign-in verification failed. Start again." },
-                        statusCode: StatusCodes.Status401Unauthorized);
+                if (!step.Result.Succeeded)
+                    context.Response.Headers["X-FullWorth-SignIn-Diagnostic"] =
+                        step.Result.ErrorMessage == "FullWorth could not establish a secure sign-in session."
+                            ? "session" : step.Pending is not null ? "retry" : "denied";
+                return step.Result.Succeeded ? Results.NoContent() : Results.Unauthorized();
             }).RequireRateLimiting(AuthenticationRateLimitPolicy);
 
         endpoints.MapPost(

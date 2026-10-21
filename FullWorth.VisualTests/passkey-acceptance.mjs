@@ -194,9 +194,13 @@ try {
   await page.waitForURL(url => url.searchParams.get("twoFactor") === "true");
   const completionRequest = page.waitForRequest(request =>
     request.url().endsWith("/auth/login/passkey-complete") && request.method() === "POST");
+  const completionResponse = page.waitForResponse(response =>
+    response.url().endsWith("/auth/login/passkey-complete") && response.request().method() === "POST");
   await page.locator("[data-password-passkey-button]").click();
   const completion = (await completionRequest).postDataJSON();
   assert.deepEqual(Object.keys(completion).sort(), ["ceremonyId", "credentialJson"]);
+  assert.equal((await completionResponse).status(), 204,
+    "Password-verified passkey continuation must retain its existing second-factor behavior.");
   await page.waitForURL(url => url.pathname === "/app" || url.pathname === "/app/setup");
   await page.locator(".app-shell").waitFor();
   const credentials = (await cdp.send("WebAuthn.getCredentials", { authenticatorId })).credentials;

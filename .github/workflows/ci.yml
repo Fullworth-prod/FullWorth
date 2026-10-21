@@ -1400,6 +1400,31 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+      - name: Verify passkey browser continuation in isolated CI
+        if: steps.visual_changes.outputs.required == 'true'
+        shell: bash
+        env:
+          FULLWORTH_VISUAL_BASE_URL: https://web.localhost
+        run: |
+          set -euo pipefail
+          restore_default_flags() {
+            docker compose --file compose.production.yml up --detach --no-build --no-deps --wait api web
+          }
+          trap restore_default_flags EXIT
+          docker compose --file compose.production.yml \
+            --file FullWorth.VisualTests/compose.passkeys-ci.yml \
+            up --detach --no-build --no-deps --wait api web
+          node FullWorth.VisualTests/passkey-acceptance.mjs
+
+      - name: Upload passkey choice screenshot
+        if: always() && steps.visual_changes.outputs.required == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: fullworth-passkey-choice
+          path: FullWorth.VisualTests/artifacts/password-once-passkey-choice-mobile.png
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Verify production HTTP security boundaries
         if: steps.container_changes.outputs.required == 'true'
         env:

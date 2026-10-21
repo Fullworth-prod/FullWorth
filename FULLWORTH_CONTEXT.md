@@ -1,3 +1,24 @@
+## Verified development integration — 2026-10-20 MDT
+
+- [PR #793](https://github.com/Fullworth/FullWorth/pull/793) is merged into `development` as `2629ec2408fbf565adc5fab08c87e1eac85cbbfa`. This remains **development only**; last independently verified production release remains `422718fad7d05a3729b08d461929d0d60c6761a6` from October 17 until new guarded deployment evidence exists.
+- Recurring-bill discovery now preserves existing automatically discovered streams **and their transaction associations** when the authenticated owner's imported eligible posted-debit history spans less than **60 days**. This prevents a handful of unrelated charges from deactivating older bills. The threshold is a minimum partial-history safeguard, **not** proof of complete coverage, cancellation or a reliable recurring amount. Existing deactivation when the import spans 60+ days remains unchanged.
+- Exact PR head `45e9218e02e2033b7a7bc8b77802e3e8da837ed2`: [FullWorth CI](https://github.com/Fullworth/FullWorth/actions/runs/39520043155) and [Dependency Security](https://github.com/Fullworth/FullWorth/actions/runs/39520043009) passed. Backend: **1,734 tests**, zero failed/skipped; required Android and Linux production-container checks passed, including OCR/browser validation and disposable encrypted backup/isolated recovery. Four pre-existing BL0005 analyzer warnings remain in `FullWorth.Tests/Web/ProviderLogoLifecycleTests.cs`; do not claim a zero-warning backend build.
+- [#762](https://github.com/Fullworth/FullWorth/issues/762) remains open for private identification of specific missed payments, supported nonmonthly/transfer evidence, bank-account ambiguity, full-history completeness and honest bill amount freshness. [#669](https://github.com/Fullworth/FullWorth/issues/669)/[#291](https://github.com/Fullworth/FullWorth/issues/291) remain open for real provider, two-user, physical-device, immutable/off-host and real clean-host restore, legal and exact-release acceptance. No payment/AI runtime features were enabled and no deployment occurred in this change.
+- Continue from **fresh GitHub source and CI**, not historical handoff SHAs; independently inspect overlapping open UI/auth/transaction PRs before new changes. Do not remove security/financial tests simply to shrink test count: the verified 1,734-case suite completed in roughly 41 seconds; substantial CI work is the production-container/browser/recovery pipeline.
+
+---
+
+## Release evidence reconciled — 2026-10-18 UTC
+
+- current release candidate on `master`: `422718fad7d05a3729b08d461929d0d60c6761a6`.
+- Verified live production release: `422718fad7d05a3729b08d461929d0d60c6761a6`.
+
+[Guarded deployment #25](https://github.com/Fullworth/FullWorth/actions/runs/39053793950) and [same-release authentication smoke](https://github.com/Fullworth/FullWorth/actions/runs/39054021470) both completed successfully for this exact SHA. This is the last verified deployment record, not a new host inspection. Issue #291 still has three open security evidence gates: provider-enforced immutable/off-host recovery protection, separate clean/compromised-host real-data restore including statements and both key rings, and complete exact-release controlled security acceptance. A one-user smoke or CI fixture restore does not close them.
+
+Current development base is `db4248d78b6ec0ccec290e7ebd6b0b49bfac466d`. PR #773 (password-once verification) and PR #774 (transaction evidence/resilience) are unmerged development work, not live changes. Passkeys remain disabled pending Apple association and physical-device acceptance; no payment/AI/security controls are enabled by this checkpoint.
+
+## Earlier checkpoints (historical; current release identities below are superseded)
+
 ## Verified release checkpoint — 2026-10-16 UTC
 
 - current release candidate on `master`: `8c64cc8f7cdf519a6214be47c2016f601331150e`.

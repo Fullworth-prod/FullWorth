@@ -1,7 +1,7 @@
-@inject IConfiguration Configuration
+@implements IAsyncDisposable
 @inject IJSRuntime JS
 
-@if (_isOpen)
+@if (_isOpen && _notes is not null)
 {
     <div class="whats-new-backdrop"
          role="presentation"
@@ -15,30 +15,19 @@
                  @onkeydown="HandleKeyDownAsync"
                  tabindex="-1">
 
-            <div class="whats-new-glow"
-                 aria-hidden="true"></div>
+            <div class="whats-new-glow" aria-hidden="true"></div>
 
             <div class="whats-new-header">
-                <div class="whats-new-icon"
-                     aria-hidden="true">
+                <div class="whats-new-icon" aria-hidden="true">
                     <svg class="bw-sprite">
                         <use href="/assets/billwatch-sprites.svg#scan"></use>
                     </svg>
                 </div>
 
                 <div class="whats-new-heading-copy">
-                    <span class="whats-new-kicker">
-                        New release
-                    </span>
-
-                    <h2 id="whats-new-title">
-                        What’s new in FullWorth
-                    </h2>
-
-                    <p id="whats-new-summary">
-                        A cleaner, safer release focused on helping you understand
-                        what changed in your financial life and why it matters.
-                    </p>
+                    <span class="whats-new-kicker">What’s new</span>
+                    <h2 id="whats-new-title">@_notes.Title</h2>
+                    <p id="whats-new-summary">@_notes.Summary</p>
                 </div>
 
                 <button type="button"
@@ -50,16 +39,14 @@
             </div>
 
             <div class="whats-new-grid">
-                @foreach (var highlight in Highlights)
+                @foreach (var highlight in _notes.Highlights)
                 {
                     <article class="whats-new-item">
-                        <span class="whats-new-item-icon"
-                              aria-hidden="true">
+                        <span class="whats-new-item-icon" aria-hidden="true">
                             <svg class="bw-sprite">
-                                <use href="@GetSpriteHref(highlight.IconId)"></use>
+                                <use href="@GetSpriteHref(highlight.Icon)"></use>
                             </svg>
                         </span>
-
                         <div class="whats-new-item-copy">
                             <h3>@highlight.Title</h3>
                             <p>@highlight.Description</p>
@@ -69,17 +56,12 @@
             </div>
 
             <div class="whats-new-footer">
-                <span class="whats-new-release">
-                    Release @_shortReleaseId
-                </span>
-
+                <span class="whats-new-release">@_notes.Version</span>
                 <button type="button"
                         class="whats-new-primary"
                         @onclick="DismissAsync">
                     Explore FullWorth
-
-                    <svg class="bw-sprite"
-                         aria-hidden="true">
+                    <svg class="bw-sprite" aria-hidden="true">
                         <use href="/assets/billwatch-sprites.svg#chevron-left"></use>
                     </svg>
                 </button>
@@ -89,137 +71,117 @@
 }
 
 @code {
-    private const string SeenReleaseStorageKey =
-        "fullworth.whats-new.seen-release";
-
-    private static readonly ReleaseHighlight[] Highlights =
-    [
-        new(
-            "trend-up",
-            "Sharper bill intelligence",
-            "Recurring bills stay grounded in posted transactions so pending charges cannot distort your history."),
-
-        new(
-            "shield",
-            "Stronger account security",
-            "Sensitive account and admin changes now use tighter reauthentication and session protections."),
-
-        new(
-            "scan",
-            "A more polished experience",
-            "FullWorth’s public and authenticated experiences have been refined for a cleaner, premium financial workspace."),
-
-        new(
-            "check",
-            "Safer releases",
-            "Expanded automated security, recovery, container, and deployment checks help every release ship with stronger guardrails.")
-    ];
-
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<WhatsNewDialog>? _callback;
+    private ReleaseNotes? _notes;
     private bool _isOpen;
-    private string? _releaseId;
-    private string _shortReleaseId = string.Empty;
 
-    protected override async Task OnAfterRenderAsync(
-        bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
-        {
-            return;
-        }
-
-        var releaseId =
-            Configuration["BILLWATCH_RELEASE_ID"];
-
-        if (releaseId is null ||
-            !IsValidReleaseId(releaseId))
-        {
-            return;
-        }
-
-        _releaseId =
-            releaseId;
-
-        _shortReleaseId =
-            releaseId[..8];
+        if (!firstRender) return;
 
         try
         {
-            var seenRelease =
-                await JS.InvokeAsync<string?>(
-                    "localStorage.getItem",
-                    SeenReleaseStorageKey);
-
-            if (!string.Equals(
-                    seenRelease,
-                    releaseId,
-                    StringComparison.Ordinal))
-            {
-                _isOpen = true;
-                StateHasChanged();
-            }
+            _module = await JS.InvokeAsync<IJSObjectReference>(
+                "import", "./js/whats-new.js");
+            _callback = DotNetObjectReference.Create(this);
+            await _module.InvokeVoidAsync("start", _callback);
+        }
+        catch (JSDisconnectedException)
+        {
+            // Navigation/reconnection during initialization is harmless.
         }
         catch (JSException)
         {
-            // Release notes are progressive enhancement. Browser storage
-            // failures must never block the authenticated application.
+            // Release notes never block the authenticated application.
         }
     }
+
+    [JSInvokable]
+    public Task OnNotesAvailable(ReleaseNotes notes) => InvokeAsync(() =>
+    {
+        if (!IsValid(notes)) return;
+        _notes = notes;
+        _isOpen = true;
+        StateHasChanged();
+    });
 
     private async Task DismissAsync()
     {
-        _isOpen = false;
+        if (_notes is null) return;
 
-        if (IsValidReleaseId(_releaseId))
+        _isOpen = false;
+        if (_module is not null)
         {
             try
             {
-                await JS.InvokeVoidAsync(
-                    "localStorage.setItem",
-                    SeenReleaseStorageKey,
-                    _releaseId);
+                await _module.InvokeVoidAsync("acknowledge", _notes.Id);
+            }
+            catch (JSDisconnectedException)
+            {
             }
             catch (JSException)
             {
-                // If storage is unavailable, dismiss for the current session.
+                // The dialog still dismisses when storage is blocked.
             }
         }
     }
 
-    private async Task HandleKeyDownAsync(
-        KeyboardEventArgs args)
+    private async Task HandleKeyDownAsync(KeyboardEventArgs args)
     {
-        if (string.Equals(
-                args.Key,
-                "Escape",
-                StringComparison.Ordinal))
-        {
+        if (string.Equals(args.Key, "Escape", StringComparison.Ordinal))
             await DismissAsync();
-        }
     }
 
-    private static string GetSpriteHref(
-        string iconId)
-    {
-        return $"/assets/billwatch-sprites.svg#{iconId}";
-    }
+    private static bool IsValid(ReleaseNotes? notes) =>
+        notes is not null &&
+        notes.Id.Length is >= 4 and <= 80 &&
+        notes.Id.All(character => char.IsAsciiLetterOrDigit(character) || character is '.' or '_' or '-') &&
+        notes.Title.Length is > 0 and <= 110 &&
+        notes.Summary.Length is > 0 and <= 400 &&
+        notes.Version.Length is > 0 and <= 90 &&
+        notes.Highlights is { Count: >= 1 and <= 6 } &&
+        notes.Highlights.All(highlight =>
+            highlight.Title.Length is > 0 and <= 110 &&
+            highlight.Description.Length is > 0 and <= 450 &&
+            highlight.Icon is "scan" or "trend-up" or "shield" or "check");
 
-    private static bool IsValidReleaseId(
-        string? releaseId)
+    private static string GetSpriteHref(string icon) =>
+        $"/assets/billwatch-sprites.svg#{icon}";
+
+    public async ValueTask DisposeAsync()
     {
-        if (releaseId is null ||
-            releaseId.Length != 40)
+        if (_module is not null)
         {
-            return false;
+            try
+            {
+                await _module.InvokeVoidAsync("stop");
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (JSException)
+            {
+                // Browser circuit may already be gone.
+            }
         }
-
-        return releaseId.All(
-            character =>
-                character is >= '0' and <= '9' or
-                >= 'a' and <= 'f');
+        _callback?.Dispose();
     }
 
-    private sealed record ReleaseHighlight(
-        string IconId,
-        string Title,
-        string Description);
+    public sealed class ReleaseNotes
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Summary { get; set; } = string.Empty;
+        public string Version { get; set; } = string.Empty;
+        public List<ReleaseHighlight> Highlights { get; set; } = [];
+    }
+
+    public sealed class ReleaseHighlight
+    {
+        public string Icon { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+    }
 }

@@ -1,0 +1,11 @@
+.activity-scope-note { color: var(--bw-text-muted); line-height: 1.6; max-width: 80ch; }
+.activity-search-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 18px; }
+.activity-search-tools label { font-weight: 700; }
+.activity-search-tools input {
+    flex: 1 1 240px; min-width: 0; max-width: 100%; min-height: 44px;
+    padding: 10px 12px; border: 1px solid var(--bw-border); border-radius: 12px;
+    background: var(--bw-surface-soft); color: var(--bw-text); font: inherit;
+}
+.activity-search-tools input:focus-visible { outline: 2px solid var(--bw-accent); outline-offset: 3px; }
+.activity-search-tools [role="status"] { flex-basis: 100%; color: var(--bw-text-muted); }
+.activity-filters button, .activity-refresh-button { min-height: 44px; }

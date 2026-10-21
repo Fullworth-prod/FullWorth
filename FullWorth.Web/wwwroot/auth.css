@@ -10,7 +10,8 @@
 }
 
 .auth-glow {
-    position: fixed;
+    /* Keep decoration inside the auth page's clipping/containing block. */
+    position: absolute;
     border-radius: 50%;
     pointer-events: none;
     filter: blur(12px);

@@ -73,10 +73,15 @@ public sealed class EndpointSecurityInventoryTests
         "API|POST|/api/auth/manage/info|authenticated|named:authentication",
         "API|POST|/api/auth/passkeys/login|anonymous-explicit|named:authentication",
         "API|POST|/api/auth/passkeys/options|anonymous-explicit|named:authentication",
+        "API|POST|/api/auth/password/complete|anonymous-explicit|named:authentication",
+        "API|POST|/api/auth/password/passkey-options|anonymous-explicit|named:authentication",
+        "API|POST|/api/auth/password/start|anonymous-explicit|named:authentication",
         "API|POST|/api/auth/refresh|anonymous-implicit|named:authentication",
         "API|POST|/api/auth/register|anonymous-implicit|named:authentication",
         "API|POST|/api/auth/resendConfirmationEmail|anonymous-implicit|named:authentication",
         "API|POST|/api/auth/resetPassword|anonymous-implicit|named:authentication",
+        "API|POST|/api/bank-connections/{connectionId:guid}/archive|authenticated|global:300-per-minute",
+        "API|POST|/api/bank-connections/{connectionId:guid}/restore|authenticated|global:300-per-minute",
         "API|POST|/api/bill-discovery/run|authenticated|named:financial-refresh",
         "API|POST|/api/bill-monitoring/refresh|authenticated|named:financial-refresh",
         "API|POST|/api/bill-streams/{billStreamId:guid}/confirm|authenticated|named:financial-refresh",
@@ -174,6 +179,8 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|POST|/auth/external/register/complete|anonymous-explicit|named:web-authentication",
         "WEB|POST|/auth/external/two-factor|anonymous-explicit|named:web-authentication",
         "WEB|POST|/auth/forgot-password|anonymous-implicit|named:web-authentication",
+        "WEB|POST|/auth/login/passkey-complete|anonymous-implicit|named:web-authentication",
+        "WEB|POST|/auth/login/passkey-options|anonymous-implicit|named:web-authentication",
         "WEB|POST|/auth/login|anonymous-implicit|named:web-authentication",
         "WEB|POST|/auth/logout|anonymous-implicit|none",
         "WEB|POST|/auth/passkeys/login|anonymous-implicit|named:web-authentication",
@@ -203,6 +210,8 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|POST|/bff/admin/users/{targetUserId:guid}/roles/{roleName}|authenticated|none",
         "WEB|POST|/bff/alerts/{alertId:guid}/dismiss|authenticated|none",
         "WEB|POST|/bff/alerts/{alertId:guid}/read|authenticated|none",
+        "WEB|POST|/bff/bank-connections/{connectionId:guid}/archive|authenticated|none",
+        "WEB|POST|/bff/bank-connections/{connectionId:guid}/restore|authenticated|none",
         "WEB|POST|/bff/bill-monitoring/refresh|authenticated|named:financial-refresh",
         "WEB|POST|/bff/bill-streams/{billStreamId:guid}/confirm|authenticated|named:financial-refresh",
         "WEB|POST|/bff/bill-streams/{billStreamId:guid}/statement-uploads|authenticated|named:statement-upload",
@@ -266,11 +275,11 @@ public sealed class EndpointSecurityInventoryTests
     public void Snapshot_CoversEveryReviewedAccessAndRateLimitClass()
     {
         Assert.Equal(
-            216,
+            225,
             ExpectedInventory.Length);
 
         Assert.Equal(
-            91,
+            96,
             ExpectedInventory.Count(
                 row =>
                     row.StartsWith(
@@ -278,7 +287,7 @@ public sealed class EndpointSecurityInventoryTests
                         StringComparison.Ordinal)));
 
         Assert.Equal(
-            125,
+            129,
             ExpectedInventory.Count(
                 row =>
                     row.StartsWith(
@@ -314,7 +323,7 @@ public sealed class EndpointSecurityInventoryTests
                     StringComparison.Ordinal));
 
         Assert.Equal(
-            56,
+            61,
             ExpectedInventory.Count(
                 row =>
                     row.Contains(

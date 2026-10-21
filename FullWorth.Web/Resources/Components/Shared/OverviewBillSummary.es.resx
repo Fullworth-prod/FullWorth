@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Comparison status" xml:space="preserve"><value>Estado de comparación</value></data>
+  <data name="Bills need review" xml:space="preserve"><value>Hay facturas que necesitan revisión</value></data>
+  <data name="{0} of {1} active bills have usable amount and prior-average evidence." xml:space="preserve"><value>{0} de {1} facturas activas tienen un importe y un promedio anterior utilizables.</value></data>
+  <data name="Above its prior transaction average; this does not establish a provider rate increase or its cause." xml:space="preserve"><value>Por encima de su promedio de transacciones anterior; esto no demuestra un aumento de tarifa del proveedor ni su causa.</value></data>
+  <data name="Review evidence" xml:space="preserve"><value>Revisar evidencia</value></data>
+  <data name="Review increases in their original currencies. Different currencies are not ranked together." xml:space="preserve"><value>Revisa los aumentos en sus monedas originales. No se comparan importes de monedas distintas.</value></data>
+  <data name="Review bills and history" xml:space="preserve"><value>Revisar facturas e historial</value></data>
+  <data name="This comparison does not confirm complete bank history or explain why a charge changed." xml:space="preserve"><value>Esta comparación no confirma que el historial bancario esté completo ni explica por qué cambió un cargo.</value></data>
+  <data name="Recognized bill coverage" xml:space="preserve"><value>Cobertura de facturas reconocidas</value></data>
+  <data name="Latest recognized bill charges" xml:space="preserve"><value>Últimos cargos de facturas reconocidas</value></data>
+  <data name="Amount unavailable" xml:space="preserve"><value>Importe no disponible</value></data>
+  <data name="Only active recognized bills are included. This is not total spending or a monthly budget; billing periods may differ." xml:space="preserve"><value>Solo se incluyen facturas activas reconocidas. No es el gasto total ni un presupuesto mensual; los períodos de facturación pueden ser distintos.</value></data>
+  <data name="{0} of {1} active bills have a usable amount and currency." xml:space="preserve"><value>{0} de {1} facturas activas tienen un importe y una moneda utilizables.</value></data>
+  <data name="{0} bills are excluded because a supported amount or currency is unavailable." xml:space="preserve"><value>Se excluyen {0} facturas porque no hay un importe o una moneda compatibles.</value></data>
+  <data name="Totals stay in each stated currency. No currency conversion is performed." xml:space="preserve"><value>Los totales conservan su moneda original. No se realiza conversión de monedas.</value></data>
+  <data name="Review bills" xml:space="preserve"><value>Revisar facturas</value></data>
+  <data name="Compare with transactions" xml:space="preserve"><value>Comparar con transacciones</value></data>
+  <data name="Recognized active bills" xml:space="preserve"><value>Facturas activas reconocidas</value></data>
+  <data name="This count is not all household bills." xml:space="preserve"><value>Este número no incluye todas las facturas del hogar.</value></data>
+  <data name="Increases in compared bills" xml:space="preserve"><value>Aumentos en las facturas comparadas</value></data>
+  <data name="Comparison history needed" xml:space="preserve"><value>Se necesita historial para comparar</value></data>
+  <data name="Uncompared bills are not confirmed unchanged." xml:space="preserve"><value>Las facturas no comparadas no se consideran sin cambios.</value></data>
+  <data name="Annualized increase estimate" xml:space="preserve"><value>Estimación anualizada del aumento</value></data>
+  <data name="Only projected when every detected increase has monthly timing evidence; not a savings claim." xml:space="preserve"><value>Solo se proyecta si todos los aumentos detectados tienen evidencia de periodicidad mensual; no es una promesa de ahorro.</value></data>
+  <data name="Based only on compared bills, not a forecast for unrecognized or uncomparable bills." xml:space="preserve"><value>Se basa solo en facturas comparadas; no es una previsión de facturas no reconocidas o no comparables.</value></data>
+  <data name="Most recent reported bank sync" xml:space="preserve"><value>Sincronización bancaria informada más reciente</value></data>
+  <data name="Not yet available" xml:space="preserve"><value>Aún no disponible</value></data>
+  <data name="A sync timestamp does not confirm every connection is current or every transaction was imported." xml:space="preserve"><value>Una fecha de sincronización no confirma que todas las conexiones estén actualizadas ni que se hayan importado todas las transacciones.</value></data>
+  <data name="Only some bills can be compared" xml:space="preserve"><value>Solo se pueden comparar algunas facturas</value></data>
+  <data name="No increases in compared bills" xml:space="preserve"><value>Sin aumentos en las facturas comparadas</value></data>
+  <data name="No increase to project" xml:space="preserve"><value>No hay aumento que proyectar</value></data>
+  <data name="Monthly timing not established" xml:space="preserve"><value>Periodicidad mensual no confirmada</value></data>
+  <data name="Bill amounts need review" xml:space="preserve"><value>Hay importes de facturas que necesitan revisión</value></data>
+  <data name="Amount or currency unavailable" xml:space="preserve"><value>Importe o moneda no disponible</value></data>
+</root>

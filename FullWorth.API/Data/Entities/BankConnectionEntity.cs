@@ -23,6 +23,9 @@ public sealed class BankConnectionEntity
 
     public string? TransactionsCursor { get; set; }
 
+    // Presentation preference only; never removes financial evidence or revokes access.
+    public bool IsArchived { get; set; }
+
     public BankConnectionStatus Status { get; set; } =
         BankConnectionStatus.Active;
 

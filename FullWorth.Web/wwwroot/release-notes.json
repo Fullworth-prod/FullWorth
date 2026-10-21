@@ -1,0 +1,38 @@
+{
+  "id": "2026-10-20-evidence-first-experience",
+  "title": "More clarity across FullWorth",
+  "summary": "A focused update to make bills, transactions, connections and account actions easier to understand and safer to use.",
+  "version": "October 2026 · experience and reliability",
+  "highlights": [
+    {
+      "icon": "trend-up",
+      "title": "Clearer bill and transaction totals",
+      "description": "Bills and Overview now distinguish comparable bill changes from missing history. Transactions show posted outflows separately by currency, without mixing refunds or pending charges."
+    },
+    {
+      "icon": "scan",
+      "title": "Find and review your bills faster",
+      "description": "Search, sort, and filter Bills without changing loaded totals. The Missing a bill? panel explains discovery evidence; failed refreshes preserve prior bill data with a warning."
+    },
+    {
+      "icon": "check",
+      "title": "Activity that stays useful during errors",
+      "description": "Search activity and review linked evidence independently of marking an alert read or dismissing it. Failed refreshes no longer imply there are no alerts."
+    },
+    {
+      "icon": "shield",
+      "title": "Safer account and privacy actions",
+      "description": "Disconnect and archive states are clearer. Ended connections can be archived or restored to the list without reconnecting; uncertain privacy requests never claim success prematurely."
+    },
+    {
+      "icon": "scan",
+      "title": "Save drafts without guessing",
+      "description": "Planning and personal setup preserve edits when save responses are uncertain, with read-only verification before another attempt. Your bank balances and payment history are not rewritten."
+    },
+    {
+      "icon": "check",
+      "title": "Better phone usability and reliability",
+      "description": "Mobile navigation adapts to larger text, provider logos fall back gracefully, and background parser HTTPS certificates renew before expiry."
+    }
+  ]
+}

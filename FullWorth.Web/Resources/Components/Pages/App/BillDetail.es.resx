@@ -78,4 +78,14 @@
   <data name="Latest posted charge" xml:space="preserve"><value>Último cargo contabilizado</value></data>
   <data name="Currency unavailable" xml:space="preserve"><value>Moneda no disponible</value></data>
   <data name="No verified statement comparison has produced a detected change for this bill yet." xml:space="preserve"><value>Ninguna comparación verificada de estados de cuenta ha detectado un cambio en esta factura todavía.</value></data>
+  <data name="Refreshing…" xml:space="preserve"><value>Actualizando…</value></data>
+  <data name="Refresh bill" xml:space="preserve"><value>Actualizar factura</value></data>
+  <data name="Building comparison history" xml:space="preserve"><value>Creando historial de comparación</value></data>
+  <data name="Comparison unavailable" xml:space="preserve"><value>Comparación no disponible</value></data>
+  <data name="Prior transaction average" xml:space="preserve"><value>Promedio de transacciones anteriores</value></data>
+  <data name="Not available" xml:space="preserve"><value>No disponible</value></data>
+  <data name="Processed statements" xml:space="preserve"><value>Extractos procesados</value></data>
+  <data name="Verified changes" xml:space="preserve"><value>Cambios verificados</value></data>
+  <data name="We could not confirm whether your choice was saved. Refresh this bill before trying again." xml:space="preserve"><value>No pudimos confirmar si se guardó tu elección. Actualiza esta factura antes de volver a intentarlo.</value></data>
+  <data name="We could not refresh this bill. Showing the last loaded evidence; it may be out of date. Try Refresh bill again." xml:space="preserve"><value>No pudimos actualizar esta factura. Se muestra la última evidencia cargada; puede estar desactualizada. Vuelve a pulsar Actualizar factura.</value></data>
 </root>

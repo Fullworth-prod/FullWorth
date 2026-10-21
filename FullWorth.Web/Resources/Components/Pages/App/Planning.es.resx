@@ -76,4 +76,23 @@
   <data name="See bill recommendations" xml:space="preserve"><value>Ver recomendaciones para las facturas</value></data>
   <data name="No bill recommendations were recorded for this paycheck." xml:space="preserve"><value>No se registraron recomendaciones de facturas para este sueldo.</value></data>
   <data name="Recommended from this paycheck" xml:space="preserve"><value>Recomendado de este sueldo</value></data>
+  <data name="Planning sections" xml:space="preserve"><value>Secciones de planificación</value></data>
+  <data name="Guidance, not a bank balance" xml:space="preserve"><value>Orientación, no un saldo bancario</value></data>
+  <data name="This section could not be loaded." xml:space="preserve"><value>No se pudo cargar esta sección.</value></data>
+  <data name="Other planning sections are still available." xml:space="preserve"><value>Las demás secciones de planificación siguen disponibles.</value></data>
+  <data name="Unsaved changes" xml:space="preserve"><value>Cambios sin guardar</value></data>
+  <data name="Saved schedule" xml:space="preserve"><value>Calendario guardado</value></data>
+  <data name="Not configured" xml:space="preserve"><value>Sin configurar</value></data>
+  <data name="Discard edits" xml:space="preserve"><value>Descartar cambios</value></data>
+  <data name="Check saved schedule" xml:space="preserve"><value>Comprobar calendario guardado</value></data>
+  <data name="Find a bill" xml:space="preserve"><value>Buscar una factura</value></data>
+  <data name="Search provider names" xml:space="preserve"><value>Buscar por proveedor</value></data>
+  <data name="No matching bills" xml:space="preserve"><value>No hay facturas coincidentes</value></data>
+  <data name="Clear search" xml:space="preserve"><value>Borrar búsqueda</value></data>
+  <data name="Saved preference" xml:space="preserve"><value>Preferencia guardada</value></data>
+  <data name="Check saved preference" xml:space="preserve"><value>Comprobar preferencia guardada</value></data>
+  <data name="Choose a supported pay frequency." xml:space="preserve"><value>Elige una frecuencia de pago compatible.</value></data>
+  <data name="The save could not be confirmed. Your edits are kept here. Check the saved value before trying again." xml:space="preserve"><value>No se pudo confirmar que se guardaran los cambios. Tus cambios se conservan aquí. Comprueba el valor guardado antes de volver a intentarlo.</value></data>
+  <data name="Saved values differ from your edits. Review your draft, then save or discard it." xml:space="preserve"><value>Los valores guardados son distintos de tus cambios. Revisa el borrador y guárdalo o descártalo.</value></data>
+  <data name="Saved values could not be checked. Your edits are still here." xml:space="preserve"><value>No se pudieron comprobar los valores guardados. Tus cambios siguen aquí.</value></data>
 </root>

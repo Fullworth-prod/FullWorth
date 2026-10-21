@@ -1,0 +1,3 @@
+.fw-account-stats > div { min-width: 0; }
+.fw-account-stats > div > strong { font-size: clamp(1rem, 2vw, 1.4rem); overflow-wrap: anywhere; line-height: 1.35; }
+.fw-account-stats > div > small { line-height: 1.5; }

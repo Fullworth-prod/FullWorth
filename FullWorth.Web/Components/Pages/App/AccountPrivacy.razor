@@ -14,7 +14,7 @@
 
 <link rel="stylesheet" href="/account-privacy.css" />
 
-<div class="app-page">
+<div class="app-page privacy-page" aria-busy="@IsBusy">
     <a class="privacy-back-link fw-back-link" href="/app/account">
         <svg class="bw-sprite" aria-hidden="true">
             <use href="/assets/billwatch-sprites.svg#chevron-left"></use>
@@ -30,9 +30,9 @@
         </div>
     </header>
 
-    @if (!string.IsNullOrWhiteSpace(_message))
+    @if (!string.IsNullOrWhiteSpace(_message) && !_showExportConfirmation && !_showDeleteConfirmation)
     {
-        <div class="@GetMessageClass()">
+        <div class="@GetMessageClass()" role="@(_messageSucceeded ? "status" : "alert")" aria-live="polite">
             @_message
         </div>
     }
@@ -92,6 +92,7 @@
                     <span>✓ @L["Statement metadata and extracted bill history"]</span>
                     <span>✓ @L["No protected Plaid access tokens"]</span>
                     <span>✓ @L["No internal statement storage paths"]</span>
+                    <span>✓ @L["Metadata only—not original statement files"]</span>
                 </div>
             </div>
 
@@ -99,39 +100,40 @@
             {
                 <button type="button"
                         class="privacy-primary-button"
-                        disabled="@(_isExporting || _isDeleting)"
+                        disabled="@IsBusy"
                         @onclick="ShowExportConfirmation">
                     @L["Download data"]
                 </button>
             }
             else
             {
-                <div class="export-confirmation">
-                    <strong>@L["Confirm this sensitive export"]</strong>
+                <div class="export-confirmation" role="group" aria-labelledby="export-confirmation-heading">
+                    <strong id="export-confirmation-heading">@L["Confirm this sensitive export"]</strong>
                     <p>@L["Re-enter your current credentials before FullWorth prepares a copy of your financial data."]</p>
+                    <p>@L["The JSON copy is not encrypted. Save it privately and delete any shared copies when you no longer need them."]</p>
 
                     <label>
                         <span>@L["Current password"]</span>
-                        <InputText class="export-confirmation-input"
+                        <input class="export-confirmation-input"
                                    type="password"
                                    autocomplete="current-password"
-                                   disabled="@_isExporting"
-                                   @bind-Value="_exportCurrentPassword" />
+                                   disabled="@IsBusy"
+                                   @bind="_exportCurrentPassword" @bind:event="oninput" />
                     </label>
 
                     <label>
                         <span>@L["Authenticator code (if two-factor authentication is enabled)"]</span>
-                        <InputText class="export-confirmation-input"
+                        <input class="export-confirmation-input"
                                    inputmode="numeric"
                                    autocomplete="one-time-code"
-                                   disabled="@_isExporting"
-                                   @bind-Value="_exportTwoFactorCode" />
+                                   disabled="@IsBusy"
+                                   @bind="_exportTwoFactorCode" @bind:event="oninput" />
                     </label>
 
                     <div class="export-confirmation-actions">
                         <button type="button"
                                 class="privacy-secondary-button"
-                                disabled="@_isExporting"
+                                disabled="@IsBusy"
                                 @onclick="CancelExport">
                             @L["Cancel"]
                         </button>
@@ -143,6 +145,10 @@
                             @(_isExporting ? L["Preparing export…"] : L["Download securely"])
                         </button>
                     </div>
+                    @if (!string.IsNullOrWhiteSpace(_message))
+                    {
+                        <div class="@GetMessageClass()" role="alert">@_message</div>
+                    }
                 </div>
             }
         </article>
@@ -183,45 +189,50 @@
         {
             <button type="button"
                     class="danger-button"
+                    disabled="@IsBusy"
                     @onclick="ShowDeleteConfirmation">
                 @L["Delete account permanently"]
             </button>
         }
         else
         {
-            <div class="delete-confirmation">
-                <strong>@L["This cannot be undone."]</strong>
+            <div class="delete-confirmation" role="group" aria-labelledby="delete-confirmation-heading">
+                <strong id="delete-confirmation-heading">@L["This cannot be undone."]</strong>
                 <p>@L["Re-enter your current credentials, then type DELETE to confirm permanent account deletion."]</p>
+                <p>@L["Cancel closes this form. It cannot undo a deletion request already sent."]</p>
 
                 <label>
                     <span>@L["Current password"]</span>
-                    <InputText class="delete-confirmation-input"
+                    <input class="delete-confirmation-input"
                                type="password"
                                autocomplete="current-password"
-                               @bind-Value="_currentPassword" />
+                               disabled="@IsBusy"
+                               @bind="_currentPassword" @bind:event="oninput" />
                 </label>
 
                 <label>
                     <span>@L["Authenticator code (if two-factor authentication is enabled)"]</span>
-                    <InputText class="delete-confirmation-input"
+                    <input class="delete-confirmation-input"
                                inputmode="numeric"
                                autocomplete="one-time-code"
-                               @bind-Value="_twoFactorCode" />
+                               disabled="@IsBusy"
+                               @bind="_twoFactorCode" @bind:event="oninput" />
                 </label>
 
                 <label>
                     <span>@L["Type DELETE to confirm"]</span>
-                    <InputText class="delete-confirmation-input"
+                    <input class="delete-confirmation-input"
                                autocomplete="off"
-                               @bind-Value="_deleteConfirmation" />
+                               disabled="@IsBusy"
+                               @bind="_deleteConfirmation" @bind:event="oninput" />
                 </label>
 
                 <div class="delete-confirmation-actions">
                     <button type="button"
                             class="cancel-delete-button"
-                            disabled="@_isDeleting"
+                            disabled="@IsBusy"
                             @onclick="CancelDelete">
-                        @L["Keep my account"]
+                        @L["Cancel"]
                     </button>
 
                     <button type="button"
@@ -231,6 +242,10 @@
                         @(_isDeleting ? L["Deleting securely…"] : L["Delete permanently"])
                     </button>
                 </div>
+                @if (!string.IsNullOrWhiteSpace(_message))
+                {
+                    <div class="@GetMessageClass()" role="alert">@_message</div>
+                }
             </div>
         }
     </section>
@@ -251,14 +266,16 @@
     private string _twoFactorCode = string.Empty;
     private string? _message;
 
+    private bool _disposed;
+    private long _operationVersion;
+    private bool IsBusy => _isExporting || _isDeleting;
     private bool CanExport =>
-        !_isExporting &&
-        !_isDeleting &&
+        !_disposed && _showExportConfirmation && !IsBusy &&
         !string.IsNullOrWhiteSpace(
             _exportCurrentPassword);
 
     private bool CanDelete =>
-        !_isDeleting &&
+        !_disposed && _showDeleteConfirmation && !IsBusy &&
         !string.IsNullOrWhiteSpace(_currentPassword) &&
         string.Equals(
             _deleteConfirmation,
@@ -267,29 +284,38 @@
 
     private async Task<IJSObjectReference> GetBffModuleAsync()
     {
-        _bffModule ??= await JS.InvokeAsync<IJSObjectReference>(
-            "import",
-            "./js/bff.js");
+        _bffModule ??= await ImportPrivacyModuleAsync("./js/account-export.js");
 
         return _bffModule;
     }
 
     private async Task<IJSObjectReference> GetDeleteModuleAsync()
     {
-        _deleteModule ??= await JS.InvokeAsync<IJSObjectReference>(
-            "import",
-            "./js/account-delete.js");
+        _deleteModule ??= await ImportPrivacyModuleAsync("./js/account-delete.js");
 
         return _deleteModule;
     }
 
+    private async Task<IJSObjectReference> ImportPrivacyModuleAsync(string path)
+    {
+        var module = await JS.InvokeAsync<IJSObjectReference>("import", path);
+        if (_disposed)
+        {
+            await module.DisposeAsync();
+            throw new ObjectDisposedException(nameof(AccountPrivacy));
+        }
+        return module;
+    }
+
     private void ShowExportConfirmation()
     {
-        if (_isExporting || _isDeleting)
+        if (_disposed || IsBusy)
         {
             return;
         }
 
+        _showDeleteConfirmation = false;
+        ClearDeletionCredentials();
         _showExportConfirmation = true;
         ClearExportCredentials();
         _message = null;
@@ -297,7 +323,7 @@
 
     private void CancelExport()
     {
-        if (_isExporting)
+        if (_disposed || IsBusy)
         {
             return;
         }
@@ -309,53 +335,54 @@
 
     private async Task ExportDataAsync()
     {
-        if (!CanExport)
-        {
-            return;
-        }
-
+        if (!CanExport) return;
+        var version = ++_operationVersion;
         _isExporting = true;
         _message = null;
-
         try
         {
             var module = await GetBffModuleAsync();
-            await module.InvokeAsync<bool>(
-                "downloadAccountExport",
-                _exportCurrentPassword,
-                _exportTwoFactorCode);
-
+            if (_disposed || version != _operationVersion) return;
+            var requested = await module.InvokeAsync<bool>("downloadAccountExport",
+                _exportCurrentPassword, _exportTwoFactorCode);
+            if (_disposed || version != _operationVersion) return;
+            if (!requested) throw new InvalidOperationException("Download was not requested.");
             _showExportConfirmation = false;
             _messageSucceeded = true;
-            _message = L["Your FullWorth data export was prepared securely."];
+            _message = L["Download requested. Check Files or Downloads to confirm the JSON copy was saved. Keep it private."];
         }
         catch (JSException exception)
         {
-            _messageSucceeded = false;
-            _message =
-                GetSafeExportErrorMessage(
-                    exception);
+            if (!_disposed && version == _operationVersion)
+            {
+                _messageSucceeded = false;
+                _message = GetSafeExportErrorMessage(exception);
+            }
         }
         catch (Exception)
         {
-            _messageSucceeded = false;
-            _message = L["FullWorth could not prepare your data export."];
+            if (!_disposed && version == _operationVersion)
+            {
+                _messageSucceeded = false;
+                _message = L["FullWorth could not prepare your data export."];
+            }
         }
         finally
         {
             ClearExportCredentials();
-            _isExporting = false;
-            StateHasChanged();
+            if (version == _operationVersion) _isExporting = false;
         }
     }
 
     private void ShowDeleteConfirmation()
     {
-        if (_isDeleting)
+        if (_disposed || IsBusy)
         {
             return;
         }
 
+        _showExportConfirmation = false;
+        ClearExportCredentials();
         _showDeleteConfirmation = true;
         ClearDeletionCredentials();
         _message = null;
@@ -363,7 +390,7 @@
 
     private void CancelDelete()
     {
-        if (_isDeleting)
+        if (_disposed || IsBusy)
         {
             return;
         }
@@ -375,43 +402,42 @@
 
     private async Task DeleteAccountAsync()
     {
-        if (!CanDelete)
-        {
-            return;
-        }
-
+        if (!CanDelete) return;
+        var version = ++_operationVersion;
         _isDeleting = true;
         _message = null;
-
         try
         {
             var module = await GetDeleteModuleAsync();
-            await module.InvokeAsync<bool>(
-                "deleteFullWorthAccount",
-                _deleteConfirmation,
-                _currentPassword,
-                _twoFactorCode);
-
+            if (_disposed || version != _operationVersion) return;
+            var confirmed = await module.InvokeAsync<bool>("deleteFullWorthAccount",
+                _deleteConfirmation, _currentPassword, _twoFactorCode);
+            if (_disposed || version != _operationVersion) return;
+            if (!confirmed) throw new InvalidOperationException("Deletion was not confirmed.");
             ClearDeletionCredentials();
-
-            Navigation.NavigateTo(
-                "/?accountDeleted=1",
-                forceLoad: true);
+            Navigation.NavigateTo("/?accountDeleted=1", forceLoad: true);
         }
-        catch (JSException ex)
+        catch (JSException exception)
         {
-            _messageSucceeded = false;
-            _message = GetSafeErrorMessage(ex);
+            if (!_disposed && version == _operationVersion)
+            {
+                _messageSucceeded = false;
+                _message = GetSafeErrorMessage(exception);
+            }
         }
         catch (Exception)
         {
-            _messageSucceeded = false;
-            _message = L["FullWorth could not safely complete account deletion. Your account was not deleted."];
+            if (!_disposed && version == _operationVersion)
+            {
+                _messageSucceeded = false;
+                _message = L["We could not confirm the deletion result. Your account may or may not have been deleted. Check sign-in before deciding to retry."];
+            }
         }
         finally
         {
-            _isDeleting = false;
-            StateHasChanged();
+            // Never retain reauthentication material after either a rejected or uncertain result.
+            ClearDeletionCredentials();
+            if (version == _operationVersion) _isDeleting = false;
         }
     }
 
@@ -438,6 +464,8 @@
     private string GetSafeExportErrorMessage(
         JSException exception)
     {
+        var common = GetCommonPrivacyError(exception.Message);
+        if (common is not null) return common;
         var message = exception.Message?
             .Split(
                 '\n',
@@ -469,6 +497,8 @@
 
     private string GetSafeErrorMessage(JSException exception)
     {
+        var common = GetCommonPrivacyError(exception.Message);
+        if (common is not null) return common;
         var message = exception.Message?
             .Split(
                 '\n',
@@ -478,7 +508,7 @@
 
         if (string.IsNullOrWhiteSpace(message))
         {
-            return L["FullWorth could not safely complete this request."];
+            return L["We could not confirm the deletion result. Your account may or may not have been deleted. Check sign-in before deciding to retry."];
         }
 
         if (message.Contains(
@@ -516,20 +546,33 @@
             return L["FullWorth could not securely remove all stored statement files, so your account was not deleted."];
         }
 
-        return L["FullWorth could not safely complete account deletion. Your account was not deleted."];
+        return L["We could not confirm the deletion result. Your account may or may not have been deleted. Check sign-in before deciding to retry."];
+    }
+
+    private string? GetCommonPrivacyError(string? message)
+    {
+        if (message?.Contains("Too many attempts", StringComparison.OrdinalIgnoreCase) == true)
+            return L["Too many attempts. Wait before trying again; no request will be retried automatically."];
+        if (message?.Contains("session expired", StringComparison.OrdinalIgnoreCase) == true)
+            return L["Your session expired. Sign in again before making another privacy request."];
+        return null;
     }
 
     public async ValueTask DisposeAsync()
     {
+        _disposed = true;
+        _operationVersion++;
+        ClearExportCredentials();
+        ClearDeletionCredentials();
+        _message = null;
+        _showExportConfirmation = false;
+        _showDeleteConfirmation = false;
         if (_bffModule is not null)
         {
-            try
-            {
-                await _bffModule.DisposeAsync();
-            }
-            catch (JSDisconnectedException)
-            {
-            }
+            try { await _bffModule.InvokeVoidAsync("cancelAccountExport"); }
+            catch (JSException) { }
+            try { await _bffModule.DisposeAsync(); }
+            catch (JSDisconnectedException) { }
         }
 
         if (_deleteModule is not null)

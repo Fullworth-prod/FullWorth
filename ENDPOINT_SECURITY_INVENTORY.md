@@ -10,9 +10,9 @@ class that the application actually exposes.
 
 | Host | Method-route exposures | Authenticated | Explicit anonymous | Implicit anonymous | Named rate limit |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| API | 89 | 73 | 8 | 8 | 39 |
-| Web | 123 | 92 | 5 | 26 | 13 |
-| **Total** | **212** | **165** | **13** | **34** | **52** |
+| API | 96 | 77 | 11 | 8 | 44 |
+| Web | 129 | 96 | 5 | 28 | 17 |
+| **Total** | **225** | **173** | **16** | **36** | **61** |
 
 The complete, reviewable list is embedded in
 `FullWorth.Tests/Security/EndpointSecurityInventoryTests.cs`. A route addition,
@@ -79,3 +79,26 @@ When adding or changing an endpoint:
 Static assets and framework infrastructure endpoints are excluded. The inventory
 contains route templates only; it never records customer identifiers, request
 values, credentials, or secrets.
+
+## Connection archiving
+
+Authenticated POST archive/restore routes under API and BFF bank-connections
+are owner-scoped. BFF mutations require antiforgery. Only disconnected connections
+with no retained provider credential can be archived or restored. Archiving is a
+reversible list preference, not provider revocation or deletion of financial history.
+An archived record that becomes active is always shown by both API projection and UI.
+
+## Password-first verification continuation
+
+Three anonymous API password-continuation POST routes use the authentication
+rate limiter. Their 32-byte random password proof lives only in a bounded,
+three-minute, single-process server store and does not grant account access.
+Verification can accept an authenticator token, a single recovery code or an
+enrolled user-verified passkey bound to the same account and password proof.
+API replicas require a shared atomic proof store before horizontal scaling;
+process restart and expired proofs fail closed.
+
+Two Web passkey-continuation routes require CSRF antiforgery verification,
+same-origin controls, web-authentication rate limiting and a protected,
+Secure/HttpOnly/SameSite=Strict pending cookie. Neither accepts a browser-
+supplied account or password-proof ID. Passkeys remain disabled by default.

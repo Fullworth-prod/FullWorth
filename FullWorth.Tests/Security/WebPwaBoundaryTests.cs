@@ -347,70 +347,37 @@ public sealed class WebPwaBoundaryTests
     [Fact]
     public void AccountExportClient_UsesReauthenticatedPostWithoutMisclassifyingCredentialFailures()
     {
-        var repositoryRoot =
-            FindRepositoryRoot();
+        var root = FindRepositoryRoot();
+        var bff = File.ReadAllText(Path.Combine(root, "FullWorth.Web", "wwwroot", "js", "bff.js"));
+        var exportClient = File.ReadAllText(Path.Combine(root, "FullWorth.Web", "wwwroot", "js", "account-export.js"));
+        var privacyRequests = File.ReadAllText(Path.Combine(root, "FullWorth.Web", "wwwroot", "js", "account-privacy-requests.js"));
 
-        var bff =
-            File.ReadAllText(
-                Path.Combine(
-                    repositoryRoot,
-                    "FullWorth.Web",
-                    "wwwroot",
-                    "js",
-                    "bff.js"));
+        // Existing callers keep the same signature, without eagerly loading privacy
+        // download dependencies for every unrelated BFF import.
+        var exportStart = bff.IndexOf("export async function downloadAccountExport(", StringComparison.Ordinal);
+        Assert.True(exportStart >= 0);
+        var exportEnd = bff.IndexOf("export async function deleteFullWorthAccount(", exportStart, StringComparison.Ordinal);
+        Assert.True(exportEnd > exportStart);
+        var wrapper = bff[exportStart..exportEnd];
+        Assert.Contains("import(\"./account-export.js\")", wrapper, StringComparison.Ordinal);
+        Assert.Contains("module.downloadAccountExport(currentPassword, twoFactorCode)", wrapper, StringComparison.Ordinal);
 
-        var exportStart =
-            bff.IndexOf(
-                "export async function downloadAccountExport(",
-                StringComparison.Ordinal);
+        Assert.Contains("privacyAntiforgeryToken(operation.signal)", exportClient, StringComparison.Ordinal);
+        Assert.Contains("\"POST\"", exportClient, StringComparison.Ordinal);
+        Assert.Contains("currentPassword", exportClient, StringComparison.Ordinal);
+        Assert.Contains("twoFactorCode", exportClient, StringComparison.Ordinal);
+        Assert.Contains("\"X-CSRF-TOKEN\"", exportClient, StringComparison.Ordinal);
+        Assert.Contains("\"same-origin\"", exportClient, StringComparison.Ordinal);
+        Assert.Contains("\"no-store\"", exportClient, StringComparison.Ordinal);
+        Assert.Contains("application/problem+json", privacyRequests, StringComparison.Ordinal);
 
-        var exportEnd =
-            bff.IndexOf(
-                "export async function deleteFullWorthAccount(",
-                exportStart,
-                StringComparison.Ordinal);
-
-        Assert.True(
-            exportStart >= 0 &&
-            exportEnd > exportStart);
-
-        var exportClient =
-            bff[exportStart..exportEnd];
-
-        Assert.Contains(
-            "getAntiforgeryToken()",
-            exportClient,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            "\"POST\"",
-            exportClient,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            "currentPassword",
-            exportClient,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            "\"X-CSRF-TOKEN\"",
-            exportClient,
-            StringComparison.Ordinal);
-
-        var credentialFailureIndex =
-            exportClient.IndexOf(
-                "current password is incorrect",
-                StringComparison.Ordinal);
-
-        var redirectIndex =
-            exportClient.IndexOf(
-                "window.location.assign(",
-                StringComparison.Ordinal);
-
-        Assert.True(
-            credentialFailureIndex >= 0 &&
-            redirectIndex > credentialFailureIndex,
-            "Expected export credential failures to be handled before the expired-session redirect.");
+        var credentialFailureIndex = privacyRequests.IndexOf("current password is incorrect", StringComparison.Ordinal);
+        var sessionFailureIndex = privacyRequests.IndexOf("response.status === 401", StringComparison.Ordinal);
+        Assert.True(credentialFailureIndex >= 0 && sessionFailureIndex > credentialFailureIndex,
+            "Credential rejection must be classified before a generic expired-session result.");
+        Assert.DoesNotContain("window.location.assign(", exportClient, StringComparison.Ordinal);
+        Assert.Contains("blob.size === 0", exportClient, StringComparison.Ordinal);
+        Assert.Contains("cancelAccountExport", exportClient, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -605,89 +572,47 @@ public sealed class WebPwaBoundaryTests
             StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
-    public void WhatsNewDialog_IsBoundToTheExactDeployedRelease()
+    public void WhatsNewDialog_UsesPublishedNotesWhileDeploymentIdentityRemainsVerified()
     {
-        var repositoryRoot =
-            FindRepositoryRoot();
+        var repositoryRoot = FindRepositoryRoot();
+        var dialog = File.ReadAllText(Path.Combine(
+            repositoryRoot, "FullWorth.Web", "Components", "Layout", "WhatsNewDialog.razor"));
+        var layout = File.ReadAllText(Path.Combine(
+            repositoryRoot, "FullWorth.Web", "Components", "Layout", "AppLayout.razor"));
+        var client = File.ReadAllText(Path.Combine(
+            repositoryRoot, "FullWorth.Web", "wwwroot", "js", "whats-new.js"));
+        var productionCompose = File.ReadAllText(Path.Combine(
+            repositoryRoot, "compose.production.yml"));
 
-        var dialog =
-            File.ReadAllText(
-                Path.Combine(
-                    repositoryRoot,
-                    "FullWorth.Web",
-                    "Components",
-                    "Layout",
-                    "WhatsNewDialog.razor"));
+        Assert.Contains("<WhatsNewDialog />", layout, StringComparison.Ordinal);
 
-        var layout =
-            File.ReadAllText(
-                Path.Combine(
-                    repositoryRoot,
-                    "FullWorth.Web",
-                    "Components",
-                    "Layout",
-                    "AppLayout.razor"));
+        // The dialog must never announce generic changes just because the
+        // immutable deployment SHA advanced. Only authored release notes
+        // with a new ID are announcements.
+        Assert.Contains("OnNotesAvailable", dialog, StringComparison.Ordinal);
+        Assert.Contains("_notes.Highlights", dialog, StringComparison.Ordinal);
+        Assert.DoesNotContain("Configuration[\"BILLWATCH_RELEASE_ID\"]",
+            dialog, StringComparison.Ordinal);
+        Assert.DoesNotContain("Sharper bill intelligence",
+            dialog, StringComparison.Ordinal);
 
-        var productionCompose =
-            File.ReadAllText(
-                Path.Combine(
-                    repositoryRoot,
-                    "compose.production.yml"));
+        Assert.Contains("\"/release-notes.json\"", client, StringComparison.Ordinal);
+        Assert.Contains("cache: \"no-store\"", client, StringComparison.Ordinal);
+        Assert.Contains("\"fullworth.whats-new.seen-notes\"",
+            client, StringComparison.Ordinal);
+        Assert.Contains("localStorage.getItem", client, StringComparison.Ordinal);
+        Assert.Contains("localStorage.setItem", client, StringComparison.Ordinal);
+        Assert.Contains("visibilitychange", client, StringComparison.Ordinal);
+        Assert.Contains("pageshow", client, StringComparison.Ordinal);
+        Assert.Contains("focus", client, StringComparison.Ordinal);
+        Assert.Contains("setInterval", client, StringComparison.Ordinal);
 
-        Assert.Contains(
-            "<WhatsNewDialog />",
-            layout,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            "Configuration[\"BILLWATCH_RELEASE_ID\"]",
-            dialog,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            "\"fullworth.whats-new.seen-release\"",
-            dialog,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            "\"localStorage.getItem\"",
-            dialog,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            "\"localStorage.setItem\"",
-            dialog,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            "releaseId.Length != 40",
-            dialog,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            "character is >= '0' and <= '9' or",
-            dialog,
-            StringComparison.Ordinal);
-
-        Assert.Contains(
-            ">= 'a' and <= 'f'",
-            dialog,
-            StringComparison.Ordinal);
-
+        // The production runtime still pins its deployment release SHA.
         Assert.Contains(
             "BILLWATCH_RELEASE_ID: ${BILLWATCH_RELEASE_ID:?Set BILLWATCH_RELEASE_ID}",
-            productionCompose,
-            StringComparison.Ordinal);
-
-        Assert.DoesNotContain(
-            "/bff/",
-            dialog,
-            StringComparison.OrdinalIgnoreCase);
-
-        Assert.DoesNotContain(
-            "/api/",
-            dialog,
-            StringComparison.OrdinalIgnoreCase);
+            productionCompose, StringComparison.Ordinal);
+        Assert.DoesNotContain("/bff/", dialog, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("/api/", dialog, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

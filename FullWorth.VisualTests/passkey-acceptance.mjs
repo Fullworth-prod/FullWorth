@@ -27,6 +27,15 @@ function code(secret) {
   const offset = hash[hash.length - 1] & 15;
   return String((hash.readUInt32BE(offset) & 0x7fffffff) % 1000000).padStart(6, "0");
 }
+let stage = "browser launch";
+const deadline = setTimeout(() => {
+  console.error("Passkey acceptance exceeded 120 seconds at: " + stage);
+  process.exit(1);
+}, 120000);
+function checkpoint(next) {
+  stage = next;
+  console.log("Passkey acceptance stage: " + next);
+}
 const browser = await chromium.launch({ args: ["--ignore-certificate-errors"] });
 try {
   const context = await browser.newContext({
@@ -68,6 +77,7 @@ try {
       page.locator('.auth-form button[type="submit"]').click()
     ]);
   }
+  checkpoint("password enrollment session");
   await passwordStep();
   await page.waitForURL(url => url.pathname === "/app" || url.pathname === "/app/setup");
   await page.locator(".app-shell").waitFor();
@@ -111,6 +121,7 @@ try {
   }
   assert.equal((await cdp.send("WebAuthn.getCredentials", { authenticatorId })).credentials.length, 1);
 
+  checkpoint("first-factor passkey");
   // The normal sign-in screen must support a registered passkey as the first
   // factor. No password, saved credential or signed assertion reaches the app
   // except through the existing OS WebAuthn prompt and protected Web BFF.
@@ -151,6 +162,7 @@ try {
   await page.waitForURL(url => url.pathname === "/app" || url.pathname === "/app/setup");
   await page.locator(".app-shell").waitFor();
 
+  checkpoint("enable authenticator MFA");
   const bootstrap = await (await apiPost("/api/auth/login", { email, password })).json();
   const setup = await (await apiPost("/api/account/security/two-factor/setup",
     { currentPassword: password }, bootstrap.accessToken)).json();
@@ -174,6 +186,7 @@ try {
   }
   await page.screenshot({ path: path.join(outputDir, "password-once-passkey-choice-mobile.png"), fullPage: true });
 
+  checkpoint("MFA cancellation and code fallback");
   // Simulated user cancellation, without replacing signature validation.
   await page.evaluate(() => {
     const original = navigator.credentials.get.bind(navigator.credentials);
@@ -192,6 +205,7 @@ try {
   await context.clearCookies();
   await passwordStep();
   await page.waitForURL(url => url.searchParams.get("twoFactor") === "true");
+  checkpoint("MFA passkey continuation");
   const completionRequest = page.waitForRequest(request =>
     request.url().endsWith("/auth/login/passkey-complete") && request.method() === "POST");
   const completionResponse = page.waitForResponse(response =>
@@ -199,12 +213,14 @@ try {
   await page.locator("[data-password-passkey-button]").click();
   const completion = (await completionRequest).postDataJSON();
   assert.deepEqual(Object.keys(completion).sort(), ["ceremonyId", "credentialJson"]);
+  checkpoint("MFA completion response");
   const completed = await completionResponse;
   if (completed.status() !== 204) {
     // Metadata only: never print proof IDs, assertions, cookies or tokens.
     const pendingRetained = (await context.cookies()).some(cookie =>
       cookie.name === "__Host-FullWorth.PendingPassword");
     const keyMetadata = (await cdp.send("WebAuthn.getCredentials", { authenticatorId })).credentials;
+  checkpoint("MFA response body");
     const failure = await completed.json().catch(() => ({}));
     console.log("Passkey continuation diagnostic: " + JSON.stringify({
       bffStatus: completed.status(), pendingRetained, signCount: keyMetadata[0]?.signCount,
@@ -246,4 +262,4 @@ try {
   await cdp.send("WebAuthn.removeVirtualAuthenticator", { authenticatorId });
   await context.close();
   console.log("PASS: virtual passkey enrollment, password-once sign-in, cancellation/code fallback.");
-} finally { await browser.close(); }
+} finally { await browser.close(); clearTimeout(deadline); }

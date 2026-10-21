@@ -74,7 +74,7 @@ public sealed class PasskeySessionEnrollmentFailureTests
         Assert.Equal(firstFactor ? "/api/auth/passkeys/login" : "/api/auth/password/complete",
             handler.Requests[0].Uri.AbsolutePath);
         Assert.Equal("/api/auth/refresh", handler.Requests[^1].Uri.AbsolutePath);
-        Assert.Single(handler.Requests.Where(request => request.Uri.AbsolutePath == "/api/auth/refresh"));
+        Assert.Single(handler.Requests, request => request.Uri.AbsolutePath == "/api/auth/refresh");
         if (result.IsRateLimited)
             Assert.Equal("Too many sign-in attempts. Wait a minute and try again.", result.ErrorMessage);
     }
@@ -165,7 +165,7 @@ public sealed class PasskeySessionEnrollmentFailureTests
         IEnumerable<string> cookies = response.Headers.TryGetValues("Set-Cookie", out var values) ? values : [];
         Assert.DoesNotContain(cookies, value => value.StartsWith(cookieName + "=", StringComparison.Ordinal));
         Assert.Equal(3, handler.Requests.Count);
-        Assert.Single(handler.Requests.Where(item => item.Uri.AbsolutePath == "/api/auth/refresh"));
+        Assert.Single(handler.Requests, item => item.Uri.AbsolutePath == "/api/auth/refresh");
     }
 
     private static string AntiforgeryToken(string html)

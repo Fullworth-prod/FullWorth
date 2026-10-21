@@ -205,8 +205,11 @@ try {
     const pendingRetained = (await context.cookies()).some(cookie =>
       cookie.name === "__Host-FullWorth.PendingPassword");
     const keyMetadata = (await cdp.send("WebAuthn.getCredentials", { authenticatorId })).credentials;
+    const failure = await completed.json().catch(() => ({}));
     console.log("Passkey continuation diagnostic: " + JSON.stringify({
-      bffStatus: completed.status(), pendingRetained, signCount: keyMetadata[0]?.signCount
+      bffStatus: completed.status(), pendingRetained, signCount: keyMetadata[0]?.signCount,
+      sessionFailed: failure.error === "FullWorth could not establish a secure sign-in session.",
+      verificationFailed: failure.error === "Email or password is incorrect."
     }));
 
     // Test the same registered key through a fresh real API proof/challenge to

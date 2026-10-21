@@ -81,6 +81,30 @@ public sealed class PasskeySessionEnrollmentFailureTests
 
 
     [Theory]
+    [InlineData(HttpStatusCode.TooManyRequests)]
+    [InlineData(HttpStatusCode.Unauthorized)]
+    public async Task PrimaryAccountConfirmationFailureNeverStartsRefreshOrIssuesSession(HttpStatusCode failure)
+    {
+        using var handler = new ScriptedHttpMessageHandler(
+            new(HttpStatusCode.OK)
+            {
+                Content = JsonContent.Create(new { tokenType = "Bearer", accessToken = "fixture-access-token",
+                    expiresIn = 900, refreshToken = "fixture-refresh-token" })
+            },
+            new(failure));
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.fullworth.test") };
+        var service = new WebAuthenticationService(new ClientFactory(client));
+        var context = new DefaultHttpContext();
+        var result = await service.LoginPasskeyAsync(context,
+            new { ceremonyId = new string('c', 43), credentialJson = "{}" }, false, CancellationToken.None);
+        Assert.False(result.Succeeded);
+        Assert.Equal(failure == HttpStatusCode.TooManyRequests, result.IsRateLimited);
+        Assert.False(context.Response.Headers.ContainsKey("Set-Cookie"));
+        Assert.Equal(2, handler.Requests.Count);
+        Assert.DoesNotContain(handler.Requests, request => request.Uri.AbsolutePath == "/api/auth/refresh");
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task WebPasskeyRoutesReportRefreshThrottlingWithoutCreatingASession(bool firstFactor)

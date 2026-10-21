@@ -36,7 +36,9 @@ public sealed partial class WebAuthenticationService
         using var infoRequest = new HttpRequestMessage(HttpMethod.Get, "/api/auth/manage/info");
         infoRequest.Headers.Authorization = new("Bearer", tokens.AccessToken);
         using var infoResponse = await client.SendAsync(infoRequest, cancellationToken);
-        if (!infoResponse.IsSuccessStatusCode) return new(false, "Unable to confirm account.");
+        if (!infoResponse.IsSuccessStatusCode)
+            return infoResponse.StatusCode == HttpStatusCode.TooManyRequests ? AuthOperationResult.Throttled :
+                new(false, "Unable to confirm account.");
         using var info = JsonDocument.Parse(await infoResponse.Content.ReadAsStringAsync(cancellationToken));
         var email = info.RootElement.GetProperty("email").GetString();
         if (string.IsNullOrWhiteSpace(email)) return new(false, "Unable to confirm account.");

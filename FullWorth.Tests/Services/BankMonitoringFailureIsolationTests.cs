@@ -123,6 +123,52 @@ public sealed class BankMonitoringFailureIsolationTests
         Assert.Equal(new[] { "accounts", "transactions" }, legacy.Calls);
     }
 
+    [Fact]
+    public async Task FullFailingBatch_DoesNotStarveLaterUsersOrRetryWithoutFinishingSweep()
+    {
+        using var handler = new BankHandler { Mode = "transaction-transient" };
+        using var http = new HttpClient(handler);
+        var probes = new Probes();
+        await using var services = Services(http, new SaveFailure(), probes);
+        await using var scope = services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<FullWorthDbContext>();
+        var failingUser = Guid.Parse("00000000-0000-0000-0000-000000000010");
+        var laterUser = Guid.Parse("00000000-0000-0000-0000-000000000020");
+        await Seed(db, services.GetRequiredService<PlaidTokenProtector>(), failingUser);
+        foreach (var foreign in await db.BankConnections.Where(c => c.UserId != failingUser).ToListAsync())
+        {
+            foreign.LastSuccessfulSyncAtUtc = DateTimeOffset.UtcNow;
+        }
+        var laterConnection = new BankConnectionEntity
+        {
+            UserId = laterUser, InstitutionName = "Synthetic later bank",
+            ProtectedPlaidAccessToken = services.GetRequiredService<PlaidTokenProtector>().Protect("bank-b"),
+            TransactionsCursor = "cursor-later-original",
+            LastSuccessfulSyncAtUtc = DateTimeOffset.UtcNow.AddDays(-2)
+        };
+        db.BankConnections.Add(laterConnection);
+        await db.SaveChangesAsync();
+        db.ChangeTracker.Clear();
+
+        using var background = new BillMonitoringBackgroundService(
+            services.GetRequiredService<IServiceScopeFactory>(),
+            Options.Create(new BillMonitoringBackgroundOptions()),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<BillMonitoringBackgroundService>.Instance);
+        var runPass = typeof(BillMonitoringBackgroundService).GetMethod("RunPassAsync",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        Task<int> Pass() => (Task<int>)runPass.Invoke(background,
+            [TimeSpan.FromHours(6), 1, CancellationToken.None])!;
+
+        Assert.Equal(1, await Pass()); // The first user fails after its healthy bank updates.
+        Assert.Equal(1, await Pass()); // The next user must still get a turn.
+        var stored = await db.BankConnections.AsNoTracking().SingleAsync(c => c.Id == laterConnection.Id);
+        Assert.Equal("cursor-b-final", stored.TransactionsCursor);
+        Assert.Equal(1, probes.DiscoveryCalls);
+        Assert.Single(handler.Calls.Where(call => call == ("/transactions/sync", "bank-a")));
+        Assert.Equal(0, await Pass()); // Finish the sweep, allowing the normal poll delay before retry.
+        Assert.Single(handler.Calls.Where(call => call == ("/transactions/sync", "bank-a")));
+    }
+
     private static readonly Guid FailedId = Guid.Parse("00000000-0000-0000-0000-000000000001");
     private static readonly Guid HealthyId = Guid.Parse("00000000-0000-0000-0000-000000000002");
 
@@ -147,6 +193,7 @@ public sealed class BankMonitoringFailureIsolationTests
         collection.AddScoped<IBankDataSyncGateway, PlaidBankDataSyncGateway>();
         collection.AddScoped<IBankConnectionReadGateway, PlaidBankConnectionReadGateway>();
         collection.AddScoped<BankConnectionHealthAlertService>();
+        collection.AddScoped<BillMonitoringRefreshScheduler>();
         collection.AddScoped<RecurringBillDiscoveryPersistenceService>();
         collection.AddScoped<BillMonitoringRefreshService>();
         collection.AddSingleton<IBankTransactionDiscoveryGateway>(probes);
@@ -155,9 +202,9 @@ public sealed class BankMonitoringFailureIsolationTests
         return collection.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
     }
 
-    private static async Task<(Guid UserId, DateTimeOffset OldSync)> Seed(FullWorthDbContext db, PlaidTokenProtector protector)
+    private static async Task<(Guid UserId, DateTimeOffset OldSync)> Seed(FullWorthDbContext db, PlaidTokenProtector protector, Guid? owner = null)
     {
-        var userId = Guid.NewGuid();
+        var userId = owner ?? Guid.NewGuid();
         var old = DateTimeOffset.UtcNow.AddDays(-2);
         BankConnectionEntity Connection(Guid owner, Guid id, string token, BankConnectionStatus status = BankConnectionStatus.Active) =>
             new() { Id = id, UserId = owner, InstitutionName = "Synthetic bank", PlaidItemId = "item-" + token,

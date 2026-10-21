@@ -109,6 +109,49 @@ try {
     fullPage: true
   });
 
+  // Regression: the decorative glow previously made the What's New dialog
+  // scroll horizontally on narrow iPhones, hiding content off-screen.
+  // Keep the actual dialog open while changing viewport sizes.
+  for (const viewport of [
+    { width: 320, height: 640 },
+    { width: 390, height: 844 },
+    { width: 430, height: 932 }
+  ]) {
+    await page.setViewportSize(viewport);
+    const layout = await whatsNewDialog.evaluate(dialog => {
+      const rect = dialog.getBoundingClientRect();
+      return {
+        left: rect.left,
+        right: rect.right,
+        viewportWidth: window.innerWidth,
+        scrollWidth: dialog.scrollWidth,
+        clientWidth: dialog.clientWidth,
+        canScrollVertically: dialog.scrollHeight > dialog.clientHeight,
+        overflowX: getComputedStyle(dialog).overflowX,
+        overflowY: getComputedStyle(dialog).overflowY
+      };
+    });
+
+    assert.ok(layout.left >= -1 && layout.right <= layout.viewportWidth + 1,
+      `What's New must fit inside the ${viewport.width}px viewport: ${JSON.stringify(layout)}`);
+    assert.ok(layout.scrollWidth <= layout.clientWidth + 1,
+      `What's New must have no horizontal overflow at ${viewport.width}px: ${JSON.stringify(layout)}`);
+    assert.equal(layout.overflowX, "hidden",
+      "What's New must disable sideways scrolling.");
+    assert.equal(layout.overflowY, "auto",
+      "What's New must preserve vertical scrolling.");
+    assert.equal(layout.canScrollVertically, true,
+      `What's New must remain vertically scrollable at ${viewport.width}px.`);
+
+    if (viewport.width === 390) {
+      await page.screenshot({
+        path: path.join(outputDir, "whats-new-mobile.png"),
+        fullPage: true
+      });
+    }
+  }
+  await page.setViewportSize({ width: 1440, height: 1100 });
+
   await page.locator(".whats-new-primary").click();
 
   await whatsNewDialog.waitFor({

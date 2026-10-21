@@ -41,13 +41,25 @@ public sealed class PlaidBankConnectionReadGateway(
                 cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Guid>>
-        GetDueUserIdsAsync(
-            DateTimeOffset now,
-            TimeSpan refreshCadence,
-            int maxUsers,
-            CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<Guid>> GetDueUserIdsAsync(
+        DateTimeOffset now,
+        TimeSpan refreshCadence,
+        int maxUsers,
+        CancellationToken cancellationToken = default) =>
+        GetDueUserIdsPageAsync(now, refreshCadence, maxUsers, 0, cancellationToken);
+
+    public async Task<IReadOnlyList<Guid>> GetDueUserIdsPageAsync(
+        DateTimeOffset now,
+        TimeSpan refreshCadence,
+        int maxUsers,
+        int offset,
+        CancellationToken cancellationToken = default)
     {
+        if (offset < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(offset));
+        }
+
         if (refreshCadence <= TimeSpan.Zero)
         {
             throw new ArgumentOutOfRangeException(
@@ -72,6 +84,8 @@ public sealed class PlaidBankConnectionReadGateway(
                 connection =>
                     connection.Status ==
                         BankConnectionStatus.Active &&
+                    connection.ProtectedPlaidAccessToken != null &&
+                    connection.ProtectedPlaidAccessToken != string.Empty &&
                     (
                         !connection.LastSuccessfulSyncAtUtc.HasValue ||
                         connection.LastSuccessfulSyncAtUtc.Value <= cutoff
@@ -83,6 +97,7 @@ public sealed class PlaidBankConnectionReadGateway(
             .OrderBy(
                 userId =>
                     userId)
+            .Skip(offset)
             .Take(
                 maxUsers)
             .ToListAsync(

@@ -186,6 +186,7 @@ public sealed class PasswordSignInTests
                 credentialJson = key.Assert(firstOptions.GetProperty("options"))
             });
             Assert.Equal(HttpStatusCode.OK, firstLogin.StatusCode);
+            await AssertRefreshEnrollment(client, firstLogin);
         }
         await EnableMfa(enabled, owner.Email);
         var pending = await Start(client, owner.Email);
@@ -207,8 +208,18 @@ public sealed class PasswordSignInTests
                 origin: scenario == "wrong-origin" ? "https://evil.example" : "https://fullworth.org") };
         var response = await client.PostAsJsonAsync("/api/auth/password/complete", body);
         Assert.Equal(scenario is "valid" or "valid-after-first-factor" ? HttpStatusCode.OK : HttpStatusCode.Unauthorized, response.StatusCode);
+        if (scenario is "valid" or "valid-after-first-factor") await AssertRefreshEnrollment(client, response);
         Assert.Equal(HttpStatusCode.Unauthorized,
             (await client.PostAsJsonAsync("/api/auth/password/complete", body)).StatusCode);
+    }
+
+    private static async Task AssertRefreshEnrollment(HttpClient client, HttpResponseMessage response)
+    {
+        var tokens = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var refresh = tokens.GetProperty("refreshToken").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(refresh));
+        Assert.Equal(HttpStatusCode.OK,
+            (await client.PostAsJsonAsync("/api/auth/refresh", new { refreshToken = refresh })).StatusCode);
     }
 
     private static WebApplicationFactory<ApiAssemblyMarker> EnablePasskeys(FullWorthApiFactory factory) =>

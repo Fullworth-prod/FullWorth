@@ -49,7 +49,9 @@ public sealed partial class WebAuthenticationService
         if (!response.IsSuccessStatusCode)
             return new(new(false, GetSafeLoginError(response.StatusCode)), null);
         var tokens = await ReadAccessTokenResponseAsync(response, cancellationToken);
-        if (tokens is not null) tokens = await EnrollRefreshFamilyAsync(tokens, cancellationToken);
+        context.Items["FullWorth.SignInDiagnostic"] = tokens is null ? "tokens" : "refresh";
+        if (tokens is not null) tokens = await EnrollRefreshFamilyAsync(tokens, cancellationToken,
+            status => context.Items["FullWorth.SignInDiagnostic"] = "refresh-" + status);
         if (tokens is null) return new(new(false, "FullWorth could not establish a secure sign-in session."), null);
         await SignInWebSessionAsync(context, email, email, email, tokens, rememberMe);
         return new(AuthOperationResult.Success, null);

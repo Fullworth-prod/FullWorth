@@ -535,7 +535,8 @@ public sealed partial class WebAuthenticationService
     private async Task<AccessTokenResponse?>
         EnrollRefreshFamilyAsync(
             AccessTokenResponse tokenResponse,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            Action<int>? reportStatus = null)
     {
         var client =
             _httpClientFactory.CreateClient(
@@ -550,6 +551,8 @@ public sealed partial class WebAuthenticationService
                         tokenResponse.RefreshToken
                 },
                 cancellationToken);
+
+        reportStatus?.Invoke((int)response.StatusCode);
 
         if (!response.IsSuccessStatusCode)
         {

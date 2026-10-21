@@ -100,7 +100,7 @@ public static class AuthEndpointMappings
                 if (!step.Result.Succeeded)
                     context.Response.Headers["X-FullWorth-SignIn-Diagnostic"] =
                         step.Result.ErrorMessage == "FullWorth could not establish a secure sign-in session."
-                            ? "session" : step.Pending is not null ? "retry" : "denied";
+                            ? context.Items["FullWorth.SignInDiagnostic"]?.ToString() ?? "session" : step.Pending is not null ? "retry" : "denied";
                 return step.Result.Succeeded ? Results.NoContent() : Results.Unauthorized();
             }).RequireRateLimiting(AuthenticationRateLimitPolicy);
 

@@ -15,7 +15,15 @@ headers. Changing the origin/RP ID invalidates access to existing keys on the ol
 domain. No other hosts or embedded cross-origin frames are accepted.
 
 Settings → Passkeys & security keys enrolls/removes keys after current password
-and, when enabled, an authenticator code. Standalone API passkey sign-in still preserves the existing authenticator MFA
+and, when enabled, an authenticator code. When the feature is enabled, the normal
+Web sign-in page also offers **Sign in with Face ID or a passkey** for a previously
+enrolled key, with password fallback and an optional authenticator-code field.
+That field is **required** if the account has authenticator MFA enabled; a passkey
+does not silently bypass an enrolled second factor. The sign-in page's explicit
+"Keep me signed in" choice applies to both methods (30-day persistent cookie
+when selected versus a 12-hour nonpersistent Web session). Neither option
+automatically renews an expired session or shares Safari cookies with the MAUI
+WebView. Standalone API passkey sign-in still preserves the existing authenticator MFA
 requirement. The website now verifies the password once, then offers authenticator,
 recovery code, or (only when enabled and already enrolled) a user-verified passkey
 for that same account. The passkey must match a fresh challenge bound to the
@@ -42,6 +50,15 @@ The challenge cache intentionally supports one API process. Restart, routing to 
 different replica, or process loss fails closed and requires restarting the ceremony.
 Do not deploy multiple API replicas without an atomic shared consume store.
 A process-local cache is not an isolation or sandbox guarantee.
+
+For the installed iPhone app's WKWebView, Apple requires a signed associated-domains
+entitlement with `webcredentials:fullworth.org`, a live matching
+`/.well-known/apple-app-site-association` file listing the actual signed Apple
+Team ID and final app bundle ID, and physical-device Face ID acceptance. The
+existing unsigned personal IPA and temporary bundle ID do not provide that
+trust relationship. Do not invent an Apple team identifier, publish a fabricated
+association, or turn on production passkeys before these are verified. Apple:
+https://developer.apple.com/documentation/authenticationservices/supporting-passkeys
 
 Tests generate real ES256 registration and assertion responses, and exercise replay,
 origin, verification, authentication, password proof, challenge expiration, ownership
@@ -78,7 +95,9 @@ and production passkey defaults are unchanged.
 
 Chromium's virtual user-verified resident authenticator exercises real browser
 enrollment and signed assertion through WebAuthn, the Web BFF and PostgreSQL API.
-The test verifies password-once continuation, simulated OS-prompt cancellation
-with authenticator fallback, and clearing pending sign-in state after success.
+The test verifies passwordless first-step sign-in with a registered passkey
+(including cancellation/password fallback and persistent-session opt-in),
+password-once continuation, simulated OS-prompt cancellation with
+authenticator fallback, and clearing pending sign-in state after success.
 It captures the mobile verification-choice screen before entering any code.
 This is not physical Face ID, iPhone WebView/Safari or USB/NFC key acceptance.

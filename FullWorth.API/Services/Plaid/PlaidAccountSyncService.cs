@@ -3,6 +3,7 @@ using System.Text.Json;
 using FullWorth.API.Data;
 using FullWorth.API.Data.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace FullWorth.API.Services.Plaid;
 
@@ -276,105 +277,167 @@ public sealed class PlaidAccountSyncService
                         account.PlaidAccountId,
                     StringComparer.Ordinal);
 
-        var now =
-            DateTimeOffset.UtcNow;
+        var snapshots = existingConnectionAccounts
+            .Select(account => new AccountSyncEntrySnapshot(_dbContext.Entry(account)))
+            .Append(new AccountSyncEntrySnapshot(_dbContext.Entry(connection)))
+            .ToArray();
+        var existingAccountSet = existingConnectionAccounts.ToHashSet();
 
-        var activeIdSet =
-            new HashSet<string>(
-                activePlaidAccountIds,
-                StringComparer.Ordinal);
-
-        foreach (var plaidAccount in
-                 plaidAccounts)
+        try
         {
-            if (!existingByPlaidId.TryGetValue(
-                    plaidAccount.PlaidAccountId,
-                    out var account))
+            var now =
+                DateTimeOffset.UtcNow;
+
+            var activeIdSet =
+                new HashSet<string>(
+                    activePlaidAccountIds,
+                    StringComparer.Ordinal);
+
+            foreach (var plaidAccount in
+                     plaidAccounts)
             {
-                account =
-                    new BankAccountEntity
-                    {
-                        UserId =
-                            userId,
+                if (!existingByPlaidId.TryGetValue(
+                        plaidAccount.PlaidAccountId,
+                        out var account))
+                {
+                    account =
+                        new BankAccountEntity
+                        {
+                            UserId =
+                                userId,
 
-                        BankConnectionId =
-                            bankConnectionId,
+                            BankConnectionId =
+                                bankConnectionId,
 
-                        PlaidAccountId =
-                            plaidAccount.PlaidAccountId,
+                            PlaidAccountId =
+                                plaidAccount.PlaidAccountId,
 
-                        CreatedAtUtc =
-                            now
-                    };
+                            CreatedAtUtc =
+                                now
+                        };
 
-                _dbContext.BankAccounts.Add(
-                    account);
+                    _dbContext.BankAccounts.Add(
+                        account);
 
-                existingByPlaidId.Add(
-                    plaidAccount.PlaidAccountId,
-                    account);
-            }
+                    existingByPlaidId.Add(
+                        plaidAccount.PlaidAccountId,
+                        account);
+                }
 
-            account.Name =
-                plaidAccount.Name;
+                account.Name =
+                    plaidAccount.Name;
 
-            account.OfficialName =
-                plaidAccount.OfficialName;
+                account.OfficialName =
+                    plaidAccount.OfficialName;
 
-            account.Mask =
-                plaidAccount.Mask;
+                account.Mask =
+                    plaidAccount.Mask;
 
-            account.AccountType =
-                MapAccountType(
-                    plaidAccount.PlaidType,
-                    plaidAccount.PlaidSubtype);
+                account.AccountType =
+                    MapAccountType(
+                        plaidAccount.PlaidType,
+                        plaidAccount.PlaidSubtype);
 
-            account.AccountSubtype =
-                plaidAccount.PlaidSubtype;
+                account.AccountSubtype =
+                    plaidAccount.PlaidSubtype;
 
-            account.IsActive =
-                true;
-
-            account.UpdatedAtUtc =
-                now;
-        }
-
-        /*
-         * Accounts absent from the provider's current account collection
-         * become inactive. They are not deleted because historical
-         * transactions may still reference them.
-         */
-        foreach (var account in
-                 existingConnectionAccounts)
-        {
-            if (!activeIdSet.Contains(
-                    account.PlaidAccountId))
-            {
                 account.IsActive =
-                    false;
+                    true;
 
                 account.UpdatedAtUtc =
                     now;
             }
+
+            /*
+             * Accounts absent from the provider's current account collection
+             * become inactive. They are not deleted because historical
+             * transactions may still reference them.
+             */
+            foreach (var account in
+                     existingConnectionAccounts)
+            {
+                if (!activeIdSet.Contains(
+                        account.PlaidAccountId))
+                {
+                    account.IsActive =
+                        false;
+
+                    account.UpdatedAtUtc =
+                        now;
+                }
+            }
+
+            connection.Status =
+                BankConnectionStatus.Active;
+
+            connection.UpdatedAtUtc =
+                now;
+
+            /*
+             * Commit account metadata together. Only transaction synchronization
+             * advances LastSuccessfulSyncAtUtc; account success cannot establish
+             * freshness of the transaction history used by monitoring.
+             */
+            await _dbContext.SaveChangesAsync(
+                cancellationToken);
+        }
+        catch
+        {
+            // EF retains staged values after a failed/canceled save. Restore
+            // this batch while retaining unrelated caller changes.
+            foreach (var account in existingByPlaidId.Values)
+            {
+                if (!existingAccountSet.Contains(account))
+                {
+                    _dbContext.Entry(account).State = EntityState.Detached;
+                }
+            }
+
+            foreach (var snapshot in snapshots)
+            {
+                snapshot.Restore();
+            }
+
+            throw;
         }
 
-        connection.Status =
-            BankConnectionStatus.Active;
-
-        connection.LastSuccessfulSyncAtUtc =
-            now;
-
-        connection.UpdatedAtUtc =
-            now;
-
-        /*
-         * All local account mutations and the successful-sync timestamp are
-         * committed together.
-         */
-        await _dbContext.SaveChangesAsync(
-            cancellationToken);
-
         return plaidAccounts.Count;
+    }
+
+    private sealed class AccountSyncEntrySnapshot
+    {
+        private readonly EntityEntry _entry;
+        private readonly PropertyValues _current;
+        private readonly PropertyValues _original;
+        private readonly EntityState _state;
+        private readonly HashSet<string> _modified;
+
+        public AccountSyncEntrySnapshot(EntityEntry entry)
+        {
+            _entry = entry;
+            _current = entry.CurrentValues.Clone();
+            _original = entry.OriginalValues.Clone();
+            _state = entry.State;
+            _modified = entry.Properties
+                .Where(property => property.IsModified)
+                .Select(property => property.Metadata.Name)
+                .ToHashSet(StringComparer.Ordinal);
+        }
+
+        public void Restore()
+        {
+            _entry.CurrentValues.SetValues(_current);
+            _entry.OriginalValues.SetValues(_original);
+            _entry.State = _state;
+
+            if (_state == EntityState.Modified)
+            {
+                foreach (var property in _entry.Properties)
+                {
+                    property.IsModified = _modified.Contains(property.Metadata.Name);
+                }
+            }
+        }
     }
 
     private static IReadOnlyList<PlaidAccountData>

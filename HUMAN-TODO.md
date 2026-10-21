@@ -1,3 +1,19 @@
+## Verified guarded production release — 2026-10-21 UTC
+
+Current release candidate on `master`:
+
+`ba9ba588c6b0a4a1abb195e0a4c1f10406521604`
+
+Current verified live production release marker:
+
+`ba9ba588c6b0a4a1abb195e0a4c1f10406521604`
+
+[Guarded deploy #39566294070](https://github.com/Fullworth/FullWorth/actions/runs/39566294070) completed on the exact `master` release and [same-release authenticated smoke #39566759876](https://github.com/Fullworth/FullWorth/actions/runs/39566759876) passed. The deploy verified image provenance/SPDX, pinned SSH, a pre-replacement encrypted snapshot and API/Web readiness. This is **not** a separate clean-host recovery of real statements and both key rings, provider immutability, physical-device acceptance or permission to enable passkeys/payments/AI. See #669/#291. The Face ID first-step login work in PR #801 is `development` only and remains gated.
+
+Earlier handoffs below are historical, not the current release identity.
+
+---
+
 ## Release evidence reconciled — 2026-10-18 UTC
 
 Current release candidate on `master`:

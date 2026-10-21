@@ -29,18 +29,23 @@ public sealed partial class WebAuthenticationService
         using var response = await client.PostAsJsonAsync("/api/auth/passkeys/login",
             request, cancellationToken);
         if (!response.IsSuccessStatusCode)
-            return new(false, "Passkey sign-in failed. Try again and include your authenticator code if enabled.");
+            return response.StatusCode == HttpStatusCode.TooManyRequests ? AuthOperationResult.Throttled :
+                new(false, "Passkey sign-in failed. Try again and include your authenticator code if enabled.");
         var tokens = await ReadAccessTokenResponseAsync(response, cancellationToken);
         if (tokens is null) return new(false, "Invalid sign-in response.");
         using var infoRequest = new HttpRequestMessage(HttpMethod.Get, "/api/auth/manage/info");
         infoRequest.Headers.Authorization = new("Bearer", tokens.AccessToken);
         using var infoResponse = await client.SendAsync(infoRequest, cancellationToken);
-        if (!infoResponse.IsSuccessStatusCode) return new(false, "Unable to confirm account.");
+        if (!infoResponse.IsSuccessStatusCode)
+            return infoResponse.StatusCode == HttpStatusCode.TooManyRequests ? AuthOperationResult.Throttled :
+                new(false, "Unable to confirm account.");
         using var info = JsonDocument.Parse(await infoResponse.Content.ReadAsStringAsync(cancellationToken));
         var email = info.RootElement.GetProperty("email").GetString();
         if (string.IsNullOrWhiteSpace(email)) return new(false, "Unable to confirm account.");
-        tokens = await EnrollRefreshFamilyAsync(tokens, cancellationToken);
-        if (tokens is null) return new(false, "Unable to establish a secure session.");
+        var enrollment = await EnrollRefreshFamilyAsync(tokens, cancellationToken);
+        tokens = enrollment.Tokens;
+        if (tokens is null) return enrollment.IsRateLimited ? AuthOperationResult.Throttled :
+            new(false, "Unable to establish a secure session.");
         await SignInWebSessionAsync(context, email, email, email, tokens, rememberMe);
         return AuthOperationResult.Success;
     }
@@ -153,14 +158,15 @@ public sealed partial class WebAuthenticationService
                 "FullWorth received an invalid sign-in response.");
         }
 
-        tokenResponse =
+        var enrollment =
             await EnrollRefreshFamilyAsync(
                 tokenResponse,
                 cancellationToken);
+        tokenResponse = enrollment.Tokens;
 
         if (tokenResponse is null)
         {
-            return new AuthOperationResult(
+            return enrollment.IsRateLimited ? AuthOperationResult.Throttled : new AuthOperationResult(
                 false,
                 "FullWorth could not establish a secure sign-in session.");
         }
@@ -255,14 +261,15 @@ public sealed partial class WebAuthenticationService
                 "FullWorth received an invalid external sign-in response.");
         }
 
-        tokenResponse =
+        var enrollment =
             await EnrollRefreshFamilyAsync(
                 tokenResponse,
                 cancellationToken);
+        tokenResponse = enrollment.Tokens;
 
         if (tokenResponse is null)
         {
-            return new AuthOperationResult(
+            return enrollment.IsRateLimited ? AuthOperationResult.Throttled : new AuthOperationResult(
                 false,
                 "FullWorth could not establish a secure external sign-in session.");
         }
@@ -532,7 +539,7 @@ public sealed partial class WebAuthenticationService
         }
     }
 
-    private async Task<AccessTokenResponse?>
+    private async Task<RefreshFamilyEnrollment>
         EnrollRefreshFamilyAsync(
             AccessTokenResponse tokenResponse,
             CancellationToken cancellationToken)
@@ -553,13 +560,13 @@ public sealed partial class WebAuthenticationService
 
         if (!response.IsSuccessStatusCode)
         {
-            return null;
+            return new(null, response.StatusCode == HttpStatusCode.TooManyRequests);
         }
 
-        return await ReadAccessTokenResponseAsync(
-            response,
-            cancellationToken);
+        return new(await ReadAccessTokenResponseAsync(response, cancellationToken), false);
     }
+
+    private sealed record RefreshFamilyEnrollment(AccessTokenResponse? Tokens, bool IsRateLimited);
 
     private static async Task<AccessTokenResponse?>
         ReadAccessTokenResponseAsync(
@@ -980,8 +987,12 @@ public sealed partial class WebAuthenticationService
 public sealed record AuthOperationResult(
     bool Succeeded,
     string? ErrorMessage,
-    bool RequiresTwoFactor = false)
+    bool RequiresTwoFactor = false,
+    bool IsRateLimited = false)
 {
+    public static AuthOperationResult Throttled { get; } =
+        new(false, "Too many sign-in attempts. Wait a minute and try again.", IsRateLimited: true);
+
     public static AuthOperationResult Success { get; } =
         new(
             true,

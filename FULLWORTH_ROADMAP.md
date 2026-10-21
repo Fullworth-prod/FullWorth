@@ -1,9 +1,9 @@
 ## Verified production release — 2026-10-21 UTC
 
-- The `master` release branch at candidate `ba9ba588c6b0a4a1abb195e0a4c1f10406521604` is independently verified deployed by [guarded deployment #39566294070](https://github.com/Fullworth/FullWorth/actions/runs/39566294070).
-Currently verified live production release: `ba9ba588c6b0a4a1abb195e0a4c1f10406521604`.
+- The `master` release branch at candidate `dd31836703bd110a30f303ed3ce9fd13c0f61d82` is independently verified deployed by [guarded deployment #39665707749](https://github.com/Fullworth/FullWorth/actions/runs/39665707749).
+Currently verified live production release: `dd31836703bd110a30f303ed3ce9fd13c0f61d82`.
 
-[Same-release authenticated smoke #39566759876](https://github.com/Fullworth/FullWorth/actions/runs/39566759876) passed. Remaining launch blockers: real protected off-host/clean-host statement and both key-ring recovery, controlled two-user/provider/document acceptance, physical device testing and qualified legal review. Development PR #801 prepares opt-in Face ID/passkey first-step login but does **not** enable passkeys in production or change account MFA.
+[Same-release authenticated smoke #39666163983](https://github.com/Fullworth/FullWorth/actions/runs/39666163983) passed. Remaining launch blockers: real protected off-host/clean-host statement and both key-ring recovery, controlled two-user/provider/document acceptance, physical device testing and qualified legal review. Deployed PR #801 (via release PR #804) provides opt-in Face ID/passkey first-step login but does **not** enable passkeys in production or change account MFA.
 
 ---
 

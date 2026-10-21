@@ -86,31 +86,23 @@ public sealed class BillStreamConfirmationRetentionTests
             Assert.Equal(0, result.BillsDiscovered);
             Assert.Equal(0, result.BillStreamsCreated);
             Assert.Equal(0, result.NewBillAlertsCreated);
-            Assert.Equal(confirm || remainingPayments == 0 ? 0 : 1, result.BillStreamsDeactivated);
-            Assert.Equal(confirm || remainingPayments == 0 ? 0 : remainingPayments, result.TransactionsUnlinked);
+            // A one-payment remainder is also too little dated evidence to
+            // retire an existing recurring bill, even without confirmation.
+            Assert.Equal(0, result.BillStreamsDeactivated);
+            Assert.Equal(0, result.TransactionsUnlinked);
             var stream = await db.BillStreams.SingleAsync(s => s.Id == streamId);
-            Assert.Equal(confirm || remainingPayments == 0, stream.IsActive);
+            Assert.True(stream.IsActive);
             Assert.Equal(confirm ? BillStreamSource.Manual : BillStreamSource.AutomaticDiscovery,
                 stream.Source);
-            if (confirm || remainingPayments == 0)
-            {
-                Assert.Equal(3, await db.BillTransactionAssociations.CountAsync(a =>
-                    a.UserId == userId && a.BillStreamId == streamId));
-            }
+            Assert.Equal(3, await db.BillTransactionAssociations.CountAsync(a =>
+                a.UserId == userId && a.BillStreamId == streamId));
         }
 
         using var listResponse = await client.GetAsync("/api/bill-streams");
         listResponse.EnsureSuccessStatusCode();
         var active = await listResponse.Content.ReadFromJsonAsync<List<StreamPayload>>();
         Assert.NotNull(active);
-        if (confirm || remainingPayments == 0)
-        {
-            Assert.Equal(streamId, Assert.Single(active).Id);
-        }
-        else
-        {
-            Assert.Empty(active);
-        }
+        Assert.Equal(streamId, Assert.Single(active).Id);
 
         using var historyResponse = await client.GetAsync("/api/bill-streams?includeInactive=true");
         historyResponse.EnsureSuccessStatusCode();

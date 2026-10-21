@@ -248,15 +248,24 @@ public sealed class RecurringBillDiscoveryPersistenceService
         var now =
             DateTimeOffset.UtcNow;
 
+        // Incomplete bank imports can include some unrelated posted charges.
+        // A partial window does not establish that an older recurring bill
+        // ended. Require at least two approximate monthly cycles of eligible,
+        // user-owned posted-debit history before considering deactivation.
+        // This is a minimum coverage guard, not proof of provider cancellation.
+        var firstEligibleDate = analysis.Diagnostics.FirstEligiblePostedDate;
+        var lastEligibleDate = analysis.Diagnostics.LastEligiblePostedDate;
+        var hasDeactivationCoverage =
+            firstEligibleDate.HasValue &&
+            lastEligibleDate.HasValue &&
+            lastEligibleDate.Value.DayNumber - firstEligibleDate.Value.DayNumber >= 60;
+
         foreach (var existingStream in
                  existingStreams)
         {
-            // A sync with no eligible posted charges cannot establish that
-            // any previously discovered obligation ended. Bank connections
-            // can temporarily return empty, removed, pending, or credit-only
-            // history. Preserve existing streams and links until there is
-            // enough actual posted-charge evidence to re-evaluate them.
-            if (analysis.TransactionsAnalyzed == 0)
+            // Empty, pending-only, credit-only, and short-history syncs are
+            // insufficient to deactivate streams or unlink prior evidence.
+            if (!hasDeactivationCoverage)
             {
                 continue;
             }

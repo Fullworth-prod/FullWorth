@@ -110,6 +110,47 @@ try {
       "; virtual credential count: " + count + "; HTTP statuses: " + enrollmentResponses.join(","));
   }
   assert.equal((await cdp.send("WebAuthn.getCredentials", { authenticatorId })).credentials.length, 1);
+
+  // The normal sign-in screen must support a registered passkey as the first
+  // factor. No password, saved credential or signed assertion reaches the app
+  // except through the existing OS WebAuthn prompt and protected Web BFF.
+  await context.clearCookies();
+  await page.goto("/login");
+  await page.waitForTimeout(900);
+  const firstStep = page.locator('[data-passkeys="login"]');
+  await firstStep.locator('[data-passkey-action="login"]').waitFor();
+  assert.equal(await page.locator('form[action="/auth/login"] input[name="password"]').count(), 1,
+    "Password fallback must remain available.");
+
+  // Cancellation cannot submit a password or trap the user on the passkey path.
+  await page.evaluate(() => {
+    const original = navigator.credentials.get.bind(navigator.credentials);
+    navigator.credentials.get = async (...args) => {
+      navigator.credentials.get = original;
+      throw new DOMException("CI simulated cancellation", "NotAllowedError");
+    };
+  });
+  await firstStep.locator('[data-passkey-action="login"]').click();
+  await firstStep.getByText(
+    "Cancelled or timed out. You can try again or use your password.", { exact: true }).waitFor();
+  assert.equal(await page.locator('form[action="/auth/login"] input[name="password"]').count(), 1);
+
+  // A user who opts into a persistent session should get the same remembered
+  // cookie behavior as password sign-in, without keeping tokens in the WebView.
+  await page.locator('input[name="rememberMe"]').check();
+  const primaryLogin = page.waitForRequest(request =>
+    request.url().endsWith("/auth/passkeys/login") && request.method() === "POST");
+  const primaryResponse = page.waitForResponse(response =>
+    response.url().endsWith("/auth/passkeys/login") && response.status() === 204);
+  await firstStep.locator('[data-passkey-action="login"]').click();
+  const request = (await primaryLogin).postDataJSON();
+  assert.equal(request.rememberMe, true);
+  assert.equal(request.twoFactorCode, null);
+  assert.equal(Object.hasOwn(request, "currentPassword"), false);
+  await primaryResponse;
+  await page.waitForURL(url => url.pathname === "/app" || url.pathname === "/app/setup");
+  await page.locator(".app-shell").waitFor();
+
   const bootstrap = await (await apiPost("/api/auth/login", { email, password })).json();
   const setup = await (await apiPost("/api/account/security/two-factor/setup",
     { currentPassword: password }, bootstrap.accessToken)).json();

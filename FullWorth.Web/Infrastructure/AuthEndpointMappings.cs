@@ -97,7 +97,9 @@ public static class AuthEndpointMappings
                 var step = await authenticationService.CompletePasswordSignInAsync(context, pending,
                     null, null, request.CeremonyId, request.CredentialJson, context.RequestAborted);
                 if (step.Pending is not null) pendingCookie.Write(context, step.Pending);
-                return step.Result.Succeeded ? Results.NoContent() : Results.Unauthorized();
+                return step.Result.Succeeded ? Results.NoContent() :
+                    Results.Json(new { error = step.Result.ErrorMessage ?? "Sign-in verification failed. Start again." },
+                        statusCode: StatusCodes.Status401Unauthorized);
             }).RequireRateLimiting(AuthenticationRateLimitPolicy);
 
         endpoints.MapPost(

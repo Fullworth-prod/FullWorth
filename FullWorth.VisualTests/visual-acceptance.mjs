@@ -1027,10 +1027,17 @@ try {
   });
   await toolsPage.goto("/app/account", { waitUntil: "domcontentloaded" });
   await toolsPage.locator(".app-shell").waitFor();
-  await toolsPage.waitForTimeout(900);
-  if (await toolsPage.locator(".whats-new-dialog").isVisible()) {
-    await toolsPage.locator(".whats-new-primary").click();
-  }
+  // A fresh isolated browser context has no acknowledged release notes.
+  // Wait for the asynchronous What's New fetch/hydration, then acknowledge
+  // the actual modal before interacting with underlying account controls.
+  // An early isVisible() check races hydration and allows the modal to open
+  // during the later retry click, incorrectly intercepting it.
+  const freshReleaseDialog = toolsPage.locator(".whats-new-dialog");
+  await freshReleaseDialog.waitFor({ state: "visible", timeout: 15000 });
+  assert.ok(await freshReleaseDialog.locator(".whats-new-item").count() > 0,
+    "A fresh browser context must show substantive release notes.");
+  await freshReleaseDialog.getByRole("button", { name: "Explore FullWorth" }).click();
+  await freshReleaseDialog.waitFor({ state: "detached", timeout: 10000 });
   try {
     await toolsPage.getByRole("alert").filter({ hasText: "Connection tools are unavailable" }).waitFor();
   } catch (error) {

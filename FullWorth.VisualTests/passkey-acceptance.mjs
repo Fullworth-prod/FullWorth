@@ -27,6 +27,15 @@ function code(secret) {
   const offset = hash[hash.length - 1] & 15;
   return String((hash.readUInt32BE(offset) & 0x7fffffff) % 1000000).padStart(6, "0");
 }
+let stage = "browser launch";
+const deadline = setTimeout(() => {
+  console.error("Passkey acceptance exceeded 120 seconds at: " + stage);
+  process.exit(1);
+}, 120000);
+function checkpoint(next) {
+  stage = next;
+  console.log("Passkey acceptance stage: " + next);
+}
 const browser = await chromium.launch({ args: ["--ignore-certificate-errors"] });
 try {
   const context = await browser.newContext({
@@ -68,9 +77,11 @@ try {
       page.locator('.auth-form button[type="submit"]').click()
     ]);
   }
+  checkpoint("password enrollment session");
   await passwordStep();
   await page.waitForURL(url => url.pathname === "/app" || url.pathname === "/app/setup");
   await page.locator(".app-shell").waitFor();
+  const enrollmentSessionEstablishedAt = Date.now();
   await page.goto("/app/setup");
   await page.locator(".whats-new-dialog").waitFor({ state: "visible" });
   await page.locator(".whats-new-primary").click();
@@ -110,11 +121,59 @@ try {
       "; virtual credential count: " + count + "; HTTP statuses: " + enrollmentResponses.join(","));
   }
   assert.equal((await cdp.send("WebAuthn.getCredentials", { authenticatorId })).credentials.length, 1);
+
+  checkpoint("first-factor passkey");
+  // The normal sign-in screen must support a registered passkey as the first
+  // factor. No password, saved credential or signed assertion reaches the app
+  // except through the existing OS WebAuthn prompt and protected Web BFF.
+  await context.clearCookies();
+  await page.goto("/login");
+  await page.waitForTimeout(900);
+  const firstStep = page.locator('[data-passkeys="login"]');
+  await firstStep.locator('[data-passkey-action="login"]').waitFor();
+  assert.equal(await page.locator('form[action="/auth/login"] input[name="password"]').count(), 1,
+    "Password fallback must remain available.");
+
+  // Cancellation cannot submit a password or trap the user on the passkey path.
+  await page.evaluate(() => {
+    const original = navigator.credentials.get.bind(navigator.credentials);
+    navigator.credentials.get = async (...args) => {
+      navigator.credentials.get = original;
+      throw new DOMException("CI simulated cancellation", "NotAllowedError");
+    };
+  });
+  await firstStep.locator('[data-passkey-action="login"]').click();
+  await firstStep.getByText(
+    "Cancelled or timed out. You can try again or use your password.", { exact: true }).waitFor();
+  assert.equal(await page.locator('form[action="/auth/login"] input[name="password"]').count(), 1);
+
+  // A user who opts into a persistent session should get the same remembered
+  // cookie behavior as password sign-in, without keeping tokens in the WebView.
+  await page.locator('input[name="rememberMe"]').check();
+  const primaryLogin = page.waitForRequest(request =>
+    request.url().endsWith("/auth/passkeys/login") && request.method() === "POST");
+  const primaryResponse = page.waitForResponse(response =>
+    response.url().endsWith("/auth/passkeys/login") && response.status() === 204);
+  await firstStep.locator('[data-passkey-action="login"]').click();
+  const request = (await primaryLogin).postDataJSON();
+  assert.equal(request.rememberMe, true);
+  assert.equal(request.twoFactorCode, null);
+  assert.equal(Object.hasOwn(request, "currentPassword"), false);
+  await primaryResponse;
+  await page.waitForURL(url => url.pathname === "/app" || url.pathname === "/app/setup");
+  await page.locator(".app-shell").waitFor();
+
+  checkpoint("enable authenticator MFA");
   const bootstrap = await (await apiPost("/api/auth/login", { email, password })).json();
   const setup = await (await apiPost("/api/account/security/two-factor/setup",
     { currentPassword: password }, bootstrap.accessToken)).json();
   await apiPost("/api/account/security/two-factor/enable",
     { currentPassword: password, authenticatorCode: code(setup.sharedKey) }, bootstrap.accessToken);
+  // Enrollment, hydration reads and first-factor login share the real API's
+  // 20-request/minute authentication budget. Begin the separate MFA scenarios
+  // in a fresh window. Keep production rate limits and signature checks intact.
+  checkpoint("fresh authentication rate-limit window");
+  await page.waitForTimeout(Math.max(0, 61000 - (Date.now() - enrollmentSessionEstablishedAt)));
   await context.clearCookies();
   await passwordStep();
   await page.waitForURL(url => url.searchParams.get("twoFactor") === "true");
@@ -133,6 +192,7 @@ try {
   }
   await page.screenshot({ path: path.join(outputDir, "password-once-passkey-choice-mobile.png"), fullPage: true });
 
+  checkpoint("MFA cancellation and code fallback");
   // Simulated user cancellation, without replacing signature validation.
   await page.evaluate(() => {
     const original = navigator.credentials.get.bind(navigator.credentials);
@@ -151,11 +211,18 @@ try {
   await context.clearCookies();
   await passwordStep();
   await page.waitForURL(url => url.searchParams.get("twoFactor") === "true");
+  checkpoint("MFA passkey continuation");
   const completionRequest = page.waitForRequest(request =>
     request.url().endsWith("/auth/login/passkey-complete") && request.method() === "POST");
+  const completionResponse = page.waitForResponse(response =>
+    response.url().endsWith("/auth/login/passkey-complete") && response.request().method() === "POST");
   await page.locator("[data-password-passkey-button]").click();
   const completion = (await completionRequest).postDataJSON();
   assert.deepEqual(Object.keys(completion).sort(), ["ceremonyId", "credentialJson"]);
+  checkpoint("MFA completion response");
+  const completed = await completionResponse;
+  assert.equal(completed.status(), 204,
+    "Password-verified passkey continuation must retain its existing second-factor behavior.");
   await page.waitForURL(url => url.pathname === "/app" || url.pathname === "/app/setup");
   await page.locator(".app-shell").waitFor();
   const credentials = (await cdp.send("WebAuthn.getCredentials", { authenticatorId })).credentials;
@@ -166,5 +233,5 @@ try {
   assert.equal(account.status(), 200, "Browser must have an authenticated session.");
   await cdp.send("WebAuthn.removeVirtualAuthenticator", { authenticatorId });
   await context.close();
-  console.log("PASS: virtual passkey enrollment, password-once sign-in, cancellation/code fallback.");
-} finally { await browser.close(); }
+  console.log("PASS: virtual passkey enrollment, first-factor and password-once sign-in, cancellation/code fallback.");
+} finally { await browser.close(); clearTimeout(deadline); }

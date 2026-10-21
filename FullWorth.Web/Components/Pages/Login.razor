@@ -83,6 +83,27 @@
                 </div>
             }
 
+            @if (!IsTwoFactorStep && Configuration.GetValue<bool>("Passkeys:Enabled"))
+            {
+                <section class="auth-verification-option" data-passkeys="login"
+                         aria-label="@L["Sign in with a passkey"]">
+                    <button type="button" class="auth-submit" data-passkey-action="login">
+                        @L["Sign in with Face ID or a passkey"]
+                    </button>
+                    <p>@L["Already added a passkey to your account? Use Face ID, Touch ID, or your device PIN. No password is sent."]</p>
+                    <label class="field">
+                        <span>@L["Authenticator code (only if your account uses two-factor authentication)"]</span>
+                        <input type="text" name="passkeyTwoFactorCode" autocomplete="one-time-code"
+                               inputmode="numeric" pattern="[0-9 ]*" maxlength="12"
+                               placeholder="123456" />
+                    </label>
+                    <p data-passkey-status role="status" aria-live="polite"></p>
+                </section>
+                <div class="auth-choice-separator">
+                    <span>@L["or sign in with your password"]</span>
+                </div>
+            }
+
             @if (!IsTwoFactorStep && HasExternalSignIn)
             {
                 <div class="external-signin-list"

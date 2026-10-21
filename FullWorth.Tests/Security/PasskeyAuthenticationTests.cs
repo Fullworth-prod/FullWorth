@@ -74,6 +74,16 @@ public sealed class PasskeyAuthenticationTests
             {
                 ceremonyId = next.GetProperty("ceremonyId").GetString(), credentialJson = assertion
             })).StatusCode);
+
+        // A fresh challenge and incremented signature counter must permit
+        // reuse of the same owned credential; the old assertion stays rejected.
+        var fresh = await Begin(client, "/api/auth/passkeys/options", new { });
+        var second = authenticator.Assert(fresh.GetProperty("options"));
+        var repeated = await client.PostAsJsonAsync("/api/auth/passkeys/login", new
+        {
+            ceremonyId = fresh.GetProperty("ceremonyId").GetString(), credentialJson = second
+        });
+        Assert.Equal(HttpStatusCode.OK, repeated.StatusCode);
     }
 
     [Fact]
@@ -196,6 +206,7 @@ public sealed class PasskeyAuthenticationTests
         private readonly ECDsa _key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
         private readonly byte[] _id = RandomNumberGenerator.GetBytes(32);
         private string _userHandle = "";
+        private byte _signCount;
 
         public string Register(JsonElement options, string origin = "https://fullworth.org", bool verified = true)
         {
@@ -223,7 +234,7 @@ public sealed class PasskeyAuthenticationTests
         public string Assert(JsonElement options)
         {
             var client = ClientData("webauthn.get", options, "https://fullworth.org");
-            var auth = AuthData(5, 1);
+            var auth = AuthData(5, checked(++_signCount));
             var signature = _key.SignData(auth.Concat(SHA256.HashData(client)).ToArray(),
                 HashAlgorithmName.SHA256, DSASignatureFormat.Rfc3279DerSequence);
             return JsonSerializer.Serialize(new

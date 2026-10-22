@@ -115,7 +115,7 @@
                     twoFactorCode: creating ? null : value(root, "passkeyTwoFactorCode") || null,
                     rememberMe: !!document.querySelector('[name="rememberMe"]')?.checked };
                 await post(creating ? "/bff/account/security/passkeys/register" : "/auth/passkeys/login", body);
-                if (!creating) { location.assign("/app"); return; }
+                if (!creating) { location.assign(document.querySelector('input[name="returnUrl"]')?.value || "/app"); return; }
             }
             if (root.isConnected) {
                 await list(root);

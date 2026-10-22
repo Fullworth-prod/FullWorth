@@ -166,10 +166,12 @@ export async function verifyAccountPageRecovery(page, outputDir) {
     const name = page.getByLabel("Display name", { exact: true });
     await name.fill("Synthetic saved despite lost response"); await name.blur();
     profileMode = "lost";
-    await button("Save profile").click(); await button("Check saved profile").waitFor();
+    await name.press("Enter"); await button("Check saved profile").waitFor();
     assert.equal(await name.inputValue(), "Synthetic saved despite lost response");
     assert.equal(await button("Save profile").isEnabled(), false);
     assert.equal(profilePosts(), 1);
+    await page.locator(".fw-profile-card form").evaluate(form => form.requestSubmit());
+    assert.equal(profilePosts(), 1, "Form submission must not replay an uncertain profile save.");
     await checkNoCanary(); await photo("profile-uncertain-save-390");
     await button("Check saved profile").click();
     await page.getByText("Your saved profile has been confirmed.", { exact: true }).waitFor();
@@ -246,11 +248,12 @@ export async function verifyAccountPageRecovery(page, outputDir) {
     await checkNoCanary();
 
     redeemMode = "lost"; await page.locator("#access-key").fill("SYNTHETIC-ONE-USE");
-    await page.locator("#access-key").blur(); await button("Redeem key").click();
+    await page.locator("#access-key").press("Enter");
     await button("Check current access").waitFor();
     assert.equal(redemptions(), 1);
     assert.equal(await page.locator("#access-key").inputValue(), "");
     assert.equal(await button("Redeem key").isEnabled(), false);
+    assert.equal(await page.locator("#access-key").isEnabled(), false);
     assert.equal(await page.locator(".subscription-toast.is-success").count(), 0);
     await checkNoCanary(); await photo("subscription-uncertain-redemption-390");
     await button("Check current access").click();

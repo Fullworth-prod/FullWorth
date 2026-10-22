@@ -239,25 +239,25 @@
                     </div>
                 </div>
 
-                <div class="subscription-key-panel">
+                <form class="subscription-key-panel" @onsubmit="RedeemAsync" @onsubmit:preventDefault="true">
                     <label for="access-key">@L["Access key"]</label>
 
                     <div class="subscription-key-entry">
                         <input id="access-key"
-                               @bind="_accessKey"
+                               @bind="_accessKey" @bind:event="oninput"
+                               disabled="@(_working || _reading || _redemptionUncertain)"
                                autocomplete="off"
                                spellcheck="false"
                                placeholder="BW-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" />
 
-                        <button class="subscription-action secondary"
-                                disabled="@(_working || _reading || _redemptionUncertain)"
-                                @onclick="RedeemAsync">
+                        <button type="submit" class="subscription-action secondary"
+                                disabled="@(_working || _reading || _redemptionUncertain)">
                             @(_working ? L["Activating…"] : L["Redeem key"])
                         </button>
                     </div>
 
                     <small>@L["Access keys are redeemed once and attached securely to your FullWorth account."]</small>
-                </div>
+                </form>
             </section>
         }
 

@@ -74,6 +74,7 @@
         }
         else if (_security is not null)
         {
+            <form @onsubmit="SaveProfileAsync" @onsubmit:preventDefault="true">
             <div class="settings-grid two-column fw-profile-grid">
                 <label class="settings-field">
                     <span id="profile-display-name-label">@L["Display name"]</span>
@@ -84,7 +85,7 @@
                            maxlength="80"
                            disabled="@(_isBusy || _loading || _writeUncertain)"
                            placeholder="@L["How should FullWorth address you?"]"
-                           @bind="_displayName" />
+                           @bind="_displayName" @bind:event="oninput" />
                     <small id="profile-saved-name">@L["Saved display name"]: @(string.IsNullOrWhiteSpace(_security.DisplayName) ? L["Not set"].Value : _security.DisplayName)</small>
                 </label>
 
@@ -96,7 +97,7 @@
             </div>
 
             <div class="settings-actions fw-profile-actions">
-                <button type="button"
+                <button type="submit"
                         class="primary-action"
                         disabled="@(_isBusy || _loading || _writeUncertain || _loadFailed)"
                         @onclick="SaveProfileAsync">
@@ -112,6 +113,7 @@
             <p class="security-note fw-profile-note">
                 @L["FullWorth deliberately keeps this profile small. Your bank data remains separate and is not used as profile information."]
             </p>
+            </form>
         }
     </section>
 </div>

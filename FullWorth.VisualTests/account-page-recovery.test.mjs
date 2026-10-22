@@ -176,7 +176,8 @@ export async function verifyAccountPageRecovery(page, outputDir) {
     assert.equal(profilePosts(), 1, "Form submission must not replay an uncertain profile save.");
     await checkNoCanary(); await photo("profile-uncertain-save-390");
     await button("Check saved profile").click();
-    await page.getByText("Your saved profile has been confirmed.", { exact: true }).waitFor();
+    await page.locator(".settings-success-banner").waitFor();
+    assert.ok((await page.locator(".settings-success-banner").textContent()).includes("Your saved profile has been confirmed."));
     assert.equal(profilePosts(), 1, "Profile recovery must be a GET, not a repeated save.");
     assert.equal(await button("Save profile").isEnabled(), true);
 
@@ -192,7 +193,8 @@ export async function verifyAccountPageRecovery(page, outputDir) {
     profileMode = "malformed";
     await button("Save profile").click(); await button("Check saved profile").waitFor();
     await button("Check saved profile").click();
-    await page.getByText("Your saved profile has been confirmed.", { exact: true }).waitFor();
+    await page.locator(".settings-success-banner").waitFor();
+    assert.ok((await page.locator(".settings-success-banner").textContent()).includes("Your saved profile has been confirmed."));
     assert.equal(profilePosts(), 3);
 
     malformed.add("/bff/account/security");

@@ -175,6 +175,13 @@ export async function verifyAccountPageRecovery(page, outputDir) {
     await page.locator(".fw-profile-card form").evaluate(form => form.requestSubmit());
     assert.equal(profilePosts(), 1, "Form submission must not replay an uncertain profile save.");
     await checkNoCanary(); await photo("profile-uncertain-save-390");
+    failures.add("/bff/account/security");
+    await button("Check saved profile").click();
+    await page.getByText("FullWorth could not load your profile.", { exact: true }).waitFor();
+    assert.equal(await name.inputValue(), "Synthetic saved despite lost response");
+    assert.equal(await button("Save profile").isEnabled(), false);
+    assert.equal(profilePosts(), 1);
+    failures.clear();
     await button("Check saved profile").click();
     await page.locator(".settings-success-banner").waitFor();
     assert.ok((await page.locator(".settings-success-banner").textContent()).includes("Your saved profile has been confirmed."));
@@ -196,6 +203,13 @@ export async function verifyAccountPageRecovery(page, outputDir) {
     await page.locator(".settings-success-banner").waitFor();
     assert.ok((await page.locator(".settings-success-banner").textContent()).includes("Your saved profile has been confirmed."));
     assert.equal(profilePosts(), 3);
+    profileMode = "ok";
+    await name.fill(""); await name.press("Enter");
+    await page.locator(".settings-success-banner").filter({ hasText: "Display name cleared." }).waitFor();
+    assert.ok((await page.locator(".settings-success-banner").textContent()).includes("Display name cleared."));
+    assert.equal(await name.inputValue(), "");
+    assert.ok((await page.locator("#profile-saved-name").textContent()).includes("Not set"));
+    assert.equal(profilePosts(), 4);
 
     malformed.add("/bff/account/security");
     await goto("/app/profile"); await button("Retry profile").waitFor(); malformed.clear();
@@ -205,7 +219,7 @@ export async function verifyAccountPageRecovery(page, outputDir) {
     await button("Save profile").click(); await waitHeld(() => releaseProfile);
     assert.equal(await name.isEnabled(), false);
     await button("Save profile").evaluate(element => element.click());
-    assert.equal(profilePosts(), 4, "Busy profile form must not dispatch a second write.");
+    assert.equal(profilePosts(), 5, "Busy profile form must not dispatch a second write.");
     await page.getByRole("link", { name: "Account", exact: true }).first().click();
     await page.waitForURL(url => url.pathname === "/app/account");
     releaseProfile(); releaseProfile = null;

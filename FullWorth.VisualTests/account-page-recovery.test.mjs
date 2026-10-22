@@ -226,6 +226,14 @@ export async function verifyAccountPageRecovery(page, outputDir) {
     await page.waitForTimeout(100);
     assert.equal(await page.locator(".fw-profile-page").count(), 0);
     profileMode = "ok";
+    displayName = "W".repeat(80);
+    await page.setViewportSize({ width: 320, height: 1000 });
+    await goto("/app/profile"); await button("Save profile").waitFor();
+    assert.equal(await name.inputValue(), displayName);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false,
+      "A maximum-length saved name must wrap rather than widen the page.");
+    await photo("profile-long-saved-name-320");
+    await page.setViewportSize({ width: 390, height: 1000 });
 
     // Access failure never means unconfigured billing or an inactive entitlement.
     statusMode = "failed";

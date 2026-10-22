@@ -1,3 +1,4 @@
+import { verifyAccountSecurityReadRecovery } from "./account-security-reads.test.mjs";
 import assert from "node:assert/strict";
 import path from "node:path";
 
@@ -5,6 +6,7 @@ import path from "node:path";
 // and every profile/billing mutation are synthetic intercepted responses.
 export async function verifyAccountPageRecovery(page, outputDir) {
   assert.ok(new URL(page.url()).hostname.endsWith(".localhost"), "Account recovery requires isolated CI.");
+  await verifyAccountSecurityReadRecovery();
   const counts = new Map(), writes = [], failures = new Set(), malformed = new Set();
   let displayName = "Synthetic profile", profileMode = "ok", statusMode = "ok", plansMode = "ok";
   let active = false, paid = false, billing = true, redeemMode = "lost", holdProfile, releaseProfile, holdCheckout, releaseCheckout;

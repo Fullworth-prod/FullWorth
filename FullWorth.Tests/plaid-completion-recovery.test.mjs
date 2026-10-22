@@ -66,3 +66,17 @@ test("abort cancels the real pending timer", async () => {
     flow.abort();
     await assert.rejects(waiting, error => error.name === "AbortError");
 });
+
+test("closing a popup permits a final authoritative completion check", async () => {
+    let time = 0, reads = 0;
+    const result = await pollPlaidCompletion({ now: () => time, sleep: async ms => { time += ms; },
+        isCurrent: () => true, isPopupClosed: () => true,
+        readStatus: async () => ({ status: ++reads === 2 ? "Completed" : "Pending" }) });
+    assert.equal(result.status, "Completed");
+    reads = 0;
+    const closed = await pollPlaidCompletion({ now: () => time, sleep: async ms => { time += ms; },
+        isCurrent: () => true, isPopupClosed: () => true,
+        readStatus: async () => { reads++; return { status: "Pending" }; } });
+    assert.equal(closed.status, "PopupClosed");
+    assert.equal(reads, 2);
+});

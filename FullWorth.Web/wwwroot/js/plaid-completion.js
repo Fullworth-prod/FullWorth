@@ -13,11 +13,12 @@ function pause(ms, signal) {
 // Session creation plus at most 18 reads fit the existing 20/10-minute budget.
 // Other operations can still consume that budget: honor server throttling too.
 export async function pollPlaidCompletion({
-    readStatus, isCurrent, signal, now = Date.now, sleep = pause,
+    readStatus, isCurrent, signal, isPopupClosed = () => false, now = Date.now, sleep = pause,
     timeoutMs = 10 * 60 * 1000
 }) {
     const deadline = now() + timeoutMs;
     let waitMs = 2000;
+    let popupClosedPendingChecks = 0;
     while (isCurrent() && !signal?.aborted && now() < deadline) {
         await sleep(Math.min(waitMs, deadline - now()), signal);
         if (!isCurrent() || signal?.aborted) return null;
@@ -27,6 +28,8 @@ export async function pollPlaidCompletion({
             if (!isCurrent() || signal?.aborted) return null;
             const state = String(result?.status ?? "").toLowerCase();
             if (state !== "pending") return result;
+            popupClosedPendingChecks = isPopupClosed() ? popupClosedPendingChecks + 1 : 0;
+            if (popupClosedPendingChecks >= 2) return { status: "PopupClosed" };
             waitMs = completionPollIntervalMs;
         } catch (error) {
             if (!isCurrent() || signal?.aborted) return null;

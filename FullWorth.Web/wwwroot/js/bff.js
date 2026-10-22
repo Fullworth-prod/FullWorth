@@ -449,6 +449,7 @@ async function waitForPlaidCompletion(
     const isCurrent = () => !flow.signal.aborted && button.isConnected && statusElement?.isConnected;
     const result = await pollPlaidCompletion({
         signal: flow.signal, isCurrent,
+        isPopupClosed: () => { try { return plaidWindow.closed; } catch { return false; } },
         readStatus: signal => completePlaidLinkSession(sessionId, signal)
     });
     if (!result || !isCurrent()) return;
@@ -462,6 +463,8 @@ async function waitForPlaidCompletion(
         window.location.assign(completedDestination);
     } else if (state === "pending" || state === "timedout") {
         setConnectStatus(statusElement, text.waitTimedOut, "neutral");
+    } else if (state === "popupclosed") {
+        setConnectStatus(statusElement, text.popupClosed, "neutral");
     } else if (state === "exited") {
         setConnectStatus(statusElement, text.canceled, "neutral");
     } else if (state === "expired") {

@@ -188,7 +188,8 @@ public sealed class AdminUsersController(
             tier,
             request.DurationDays,
             request.GrantsLifetimeAccess,
-            cancellationToken);
+            cancellationToken,
+            operationId: request.OperationId);
 
         if (!result.Succeeded)
         {
@@ -363,7 +364,8 @@ public sealed record GrantEntitlementRequest(
     int? DurationDays,
     bool GrantsLifetimeAccess,
     string CurrentPassword,
-    string? TwoFactorCode);
+    string? TwoFactorCode,
+    Guid? OperationId = null);
 
 public sealed record SetProgramMembershipRequest(
     bool IsActive,

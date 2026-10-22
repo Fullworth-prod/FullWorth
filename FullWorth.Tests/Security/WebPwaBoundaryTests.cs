@@ -313,14 +313,15 @@ public sealed class WebPwaBoundaryTests
             bff,
             StringComparison.Ordinal);
 
+        var polling = File.ReadAllText(Path.Combine(repositoryRoot, "FullWorth.Web", "wwwroot", "js", "plaid-completion.js"));
         Assert.Contains(
             "popupClosedPendingChecks",
-            bff,
+            polling,
             StringComparison.Ordinal);
 
         Assert.Contains(
             "popupClosedPendingChecks >=",
-            bff,
+            polling,
             StringComparison.Ordinal);
 
         Assert.Contains(

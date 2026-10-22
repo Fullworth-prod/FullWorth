@@ -13,7 +13,9 @@ public sealed class AuditedAccountRecoveryTests
     [InlineData("QueueInternalProgram", "InternalTester")]
     public async Task ProgramRemovalCollectsAndForwardsRequiredProof(string queue, string program)
     {
-        var page = new AdminUserControls { UserId = Guid.NewGuid(), Programs = new[] { program } };
+        var page = new AdminUserControls();
+        typeof(AdminUserControls).GetProperty("UserId")!.SetValue(page, Guid.NewGuid());
+        typeof(AdminUserControls).GetProperty("Programs")!.SetValue(page, new[] { program });
         InjectLocalizer(page);
         Set(page, "_reauthCurrentPassword", "Synthetic!Proof123");
         Set(page, "_reauthTwoFactorCode", "123456");

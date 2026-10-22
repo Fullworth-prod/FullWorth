@@ -786,6 +786,8 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     PlaidConnectionSyncCoordinator>();
 
+builder.Services.AddScoped<PlaidBankDataSyncGateway>();
+
 builder.Services.AddScoped<
     IBankDataSyncGateway,
     PlaidBankDataSyncGateway>();

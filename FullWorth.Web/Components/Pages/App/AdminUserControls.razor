@@ -131,7 +131,7 @@
     private bool IsOwner => HasRole(OwnerRole);
 
     private bool RequiresPrivilegeGrantReauthentication =>
-        _pending?.MakeActive == true;
+        _pending?.MakeActive == true || _pending?.Kind == AdminMutationKind.Program;
 
     private void QueueAdminRole() =>
         QueueRole(AdminRole, !HasRole(AdminRole));
@@ -307,12 +307,8 @@
             {
                 IsActive = mutation.MakeActive,
                 EndsAtUtc = null,
-                CurrentPassword =
-                    mutation.MakeActive
-                        ? _reauthCurrentPassword
-                        : null,
+                CurrentPassword = _reauthCurrentPassword,
                 TwoFactorCode =
-                    mutation.MakeActive &&
                     !string.IsNullOrWhiteSpace(
                         _reauthTwoFactorCode)
                         ? _reauthTwoFactorCode.Trim()

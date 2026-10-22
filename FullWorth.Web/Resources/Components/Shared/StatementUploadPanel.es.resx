@@ -45,4 +45,13 @@
   <data name="Processing" xml:space="preserve"><value>Procesando</value></data>
   <data name="FullWorth is processing the statement." xml:space="preserve"><value>FullWorth está procesando el estado de cuenta.</value></data>
   <data name="{0} bytes" xml:space="preserve"><value>{0} bytes</value></data>
+  <data name="Check statement status" xml:space="preserve"><value>Comprobar estado del documento</value></data>
+  <data name="Do not upload the file again until you have reviewed this bill's evidence. Refresh the bill or return later to check it." xml:space="preserve"><value>No vuelvas a subir el archivo hasta revisar las pruebas de esta factura. Actualiza la factura o vuelve más tarde para comprobarla.</value></data>
+  <data name="FullWorth stopped waiting. Processing may still be continuing. Check statement status to read the current result without uploading again." xml:space="preserve"><value>FullWorth dejó de esperar. Es posible que el procesamiento continúe. Comprueba el estado del documento para consultar el resultado actual sin volver a subirlo.</value></data>
+  <data name="Status unavailable" xml:space="preserve"><value>Estado no disponible</value></data>
+  <data name="The upload was received, but its processing status could not be checked. Check statement status; do not upload the file again." xml:space="preserve"><value>Se recibió el archivo, pero no se pudo comprobar el estado de procesamiento. Comprueba el estado del documento; no vuelvas a subir el archivo.</value></data>
+  <data name="Upload result unconfirmed" xml:space="preserve"><value>Resultado de carga sin confirmar</value></data>
+  <data name="FullWorth could not confirm whether the upload was received. Review this bill before deciding to upload again." xml:space="preserve"><value>FullWorth no pudo confirmar si se recibió el archivo. Revisa esta factura antes de decidir volver a subirlo.</value></data>
+  <data name="Processing may still be continuing. Check statement status again later; this does not upload another file." xml:space="preserve"><value>Es posible que el procesamiento continúe. Vuelve a comprobar el estado del documento más tarde; esto no sube otro archivo.</value></data>
+  <data name="The statement was processed, but the bill view could not be refreshed. Refresh the bill to read its evidence." xml:space="preserve"><value>Se procesó el documento, pero no se pudo actualizar la vista de la factura. Actualiza la factura para consultar sus pruebas.</value></data>
 </root>

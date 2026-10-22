@@ -1,3 +1,12 @@
+## Verified production release and active development — 2026-10-21 UTC
+
+- current release candidate on `master`: `dd31836703bd110a30f303ed3ce9fd13c0f61d82`.
+- Verified live production release: `dd31836703bd110a30f303ed3ce9fd13c0f61d82`.
+- [Guarded deploy #39665707749](https://github.com/Fullworth/FullWorth/actions/runs/39665707749) completed successfully for this SHA after attested images, pinned SSH and protected pre-replacement encrypted snapshot. Public API/Web readiness passed. [Same-release authenticated smoke #39666163983](https://github.com/Fullworth/FullWorth/actions/runs/39666163983) passed protected API/Web sessions and logout. This is deployment verification, **not** physical iPhone, controlled two-user/provider/statement acceptance or real clean-host/immutable backup proof. #291 and #669 remain open.
+- Deployed release includes PR #801's passkey-based first-step login and isolated browser regression via release PR #804, still **disabled by default**. iOS WKWebView needs a signed `webcredentials:fullworth.org` associated-domain entitlement, a matching AASA tied to the actual Apple Team ID and final bundle ID, and physical iPhone Face ID acceptance. Preserve password/MFA/session and production security boundaries. Do not treat this source change as production enablement.
+
+---
+
 ## Verified development integration — 2026-10-20 MDT
 
 - [PR #793](https://github.com/Fullworth/FullWorth/pull/793) is merged into `development` as `2629ec2408fbf565adc5fab08c87e1eac85cbbfa`. This remains **development only**; last independently verified production release remains `422718fad7d05a3729b08d461929d0d60c6761a6` from October 17 until new guarded deployment evidence exists.

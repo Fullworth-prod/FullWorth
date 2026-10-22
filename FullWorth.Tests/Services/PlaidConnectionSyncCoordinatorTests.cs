@@ -426,10 +426,10 @@ public sealed class PlaidConnectionSyncCoordinatorTests
                 account.BankConnectionId ==
                     secondConnection.Id);
 
-        Assert.NotNull(
+        Assert.Null(
             firstConnection.LastSuccessfulSyncAtUtc);
 
-        Assert.NotNull(
+        Assert.Null(
             secondConnection.LastSuccessfulSyncAtUtc);
     }
 

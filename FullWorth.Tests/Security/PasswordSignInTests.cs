@@ -162,6 +162,7 @@ public sealed class PasswordSignInTests
 
     [Theory]
     [InlineData("valid")]
+    [InlineData("valid-after-first-factor")]
     [InlineData("no-uv")]
     [InlineData("wrong-origin")]
     [InlineData("wrong-proof")]
@@ -176,6 +177,17 @@ public sealed class PasswordSignInTests
         using var key = new VirtualKey();
         await Enroll(client, key);
         client.DefaultRequestHeaders.Authorization = null;
+        if (scenario == "valid-after-first-factor")
+        {
+            var firstOptions = await Begin(client, "/api/auth/passkeys/options", new { });
+            var firstLogin = await client.PostAsJsonAsync("/api/auth/passkeys/login", new
+            {
+                ceremonyId = firstOptions.GetProperty("ceremonyId").GetString(),
+                credentialJson = key.Assert(firstOptions.GetProperty("options"))
+            });
+            Assert.Equal(HttpStatusCode.OK, firstLogin.StatusCode);
+            await AssertRefreshEnrollment(client, firstLogin);
+        }
         await EnableMfa(enabled, owner.Email);
         var pending = await Start(client, owner.Email);
         Assert.True(pending.GetProperty("canUsePasskey").GetBoolean());
@@ -195,9 +207,19 @@ public sealed class PasswordSignInTests
                 verified: scenario != "no-uv",
                 origin: scenario == "wrong-origin" ? "https://evil.example" : "https://fullworth.org") };
         var response = await client.PostAsJsonAsync("/api/auth/password/complete", body);
-        Assert.Equal(scenario == "valid" ? HttpStatusCode.OK : HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(scenario is "valid" or "valid-after-first-factor" ? HttpStatusCode.OK : HttpStatusCode.Unauthorized, response.StatusCode);
+        if (scenario is "valid" or "valid-after-first-factor") await AssertRefreshEnrollment(client, response);
         Assert.Equal(HttpStatusCode.Unauthorized,
             (await client.PostAsJsonAsync("/api/auth/password/complete", body)).StatusCode);
+    }
+
+    private static async Task AssertRefreshEnrollment(HttpClient client, HttpResponseMessage response)
+    {
+        var tokens = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var refresh = tokens.GetProperty("refreshToken").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(refresh));
+        Assert.Equal(HttpStatusCode.OK,
+            (await client.PostAsJsonAsync("/api/auth/refresh", new { refreshToken = refresh })).StatusCode);
     }
 
     private static WebApplicationFactory<ApiAssemblyMarker> EnablePasskeys(FullWorthApiFactory factory) =>
@@ -259,6 +281,7 @@ public sealed class PasswordSignInTests
         private readonly ECDsa _key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
         private readonly byte[] _id = RandomNumberGenerator.GetBytes(32);
         private string _userHandle = "";
+        private byte _signCount;
 
         public string Register(JsonElement options, string origin = "https://fullworth.org", bool verified = true)
         {
@@ -286,7 +309,7 @@ public sealed class PasswordSignInTests
         public string Assert(JsonElement options, bool verified = true, string origin = "https://fullworth.org")
         {
             var client = ClientData("webauthn.get", options, origin);
-            var auth = AuthData((byte)(verified ? 5 : 1), 1);
+            var auth = AuthData((byte)(verified ? 5 : 1), ++_signCount);
             var signature = _key.SignData(auth.Concat(SHA256.HashData(client)).ToArray(),
                 HashAlgorithmName.SHA256, DSASignatureFormat.Rfc3279DerSequence);
             return JsonSerializer.Serialize(new

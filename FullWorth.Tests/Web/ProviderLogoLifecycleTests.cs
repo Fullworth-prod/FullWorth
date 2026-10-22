@@ -1,4 +1,5 @@
 using System.Reflection;
+using Microsoft.AspNetCore.Components;
 using FullWorth.Web.Components.Shared;
 
 namespace FullWorth.Tests.Web;
@@ -12,9 +13,18 @@ public sealed class ProviderLogoLifecycleTests
         (T)typeof(ProviderLogo).GetField(name, Flags)!.GetValue(logo)!;
     private static ProviderLogo Logo(string name)
     {
-        var logo = new ProviderLogo { ProviderName = name };
-        Call(logo, "OnParametersSet");
+        var logo = new ProviderLogo();
+        SetProvider(logo, name);
         return logo;
+    }
+
+    private static void SetProvider(ProviderLogo logo, string name)
+    {
+        ParameterView.FromDictionary(new Dictionary<string, object?>
+        {
+            [nameof(ProviderLogo.ProviderName)] = name
+        }).SetParameterProperties(logo);
+        Call(logo, "OnParametersSet");
     }
 
     [Fact]
@@ -48,8 +58,8 @@ public sealed class ProviderLogoLifecycleTests
         var logo = Logo("Spotify");
         var oldUrl = Field<string>(logo, "_currentUrl");
         var oldGeneration = Field<long>(logo, "_generation");
-        logo.ProviderName = "Netflix"; Call(logo, "OnParametersSet");
-        logo.ProviderName = "Spotify"; Call(logo, "OnParametersSet");
+        SetProvider(logo, "Netflix");
+        SetProvider(logo, "Spotify");
         Call(logo, "MarkUnavailable", oldUrl, oldGeneration);
         Call(logo, "MarkLoaded", oldUrl, oldGeneration);
         Assert.Null(Field<string?>(logo, "_failedUrl"));
@@ -64,8 +74,7 @@ public sealed class ProviderLogoLifecycleTests
     {
         var logo = Logo("Spotify");
         Call(logo, "MarkLoaded", Field<string>(logo, "_currentUrl"), Field<long>(logo, "_generation"));
-        logo.ProviderName = "Unmapped test utility";
-        Call(logo, "OnParametersSet");
+        SetProvider(logo, "Unmapped test utility");
         Assert.Null(Field<string?>(logo, "_currentUrl"));
         Assert.Null(Field<string?>(logo, "_loadedUrl"));
         Assert.Null(Field<string?>(logo, "_failedUrl"));

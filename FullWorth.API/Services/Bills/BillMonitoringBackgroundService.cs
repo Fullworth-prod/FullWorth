@@ -58,6 +58,15 @@ public sealed class BillMonitoringRefreshScheduler(
             maxUsers,
             cancellationToken);
     }
+    public Task<IReadOnlyList<Guid>> GetDueUserIdsPageAsync(
+        DateTimeOffset now,
+        TimeSpan refreshCadence,
+        int maxUsers,
+        int offset,
+        CancellationToken cancellationToken = default) =>
+        bankConnectionReadGateway.GetDueUserIdsPageAsync(
+            now, refreshCadence, maxUsers, offset, cancellationToken);
+
 }
 
 public sealed class BillMonitoringBackgroundService
@@ -74,6 +83,10 @@ public sealed class BillMonitoringBackgroundService
     private static readonly TimeSpan BacklogDelay =
         TimeSpan.FromSeconds(
             10);
+
+    // Process-local sweep position, not a durable/global retry lock. Healthy
+    // users leave the due set; skip failures until the sweep reaches its end.
+    private int _nextUserOffset;
 
     private readonly IServiceScopeFactory
         _scopeFactory;
@@ -208,6 +221,10 @@ public sealed class BillMonitoringBackgroundService
         CancellationToken cancellationToken)
     {
         IReadOnlyList<Guid> userIds;
+        if (_nextUserOffset > int.MaxValue - batchSize)
+        {
+            _nextUserOffset = 0;
+        }
 
         /*
          * Candidate discovery uses a short-lived DbContext.
@@ -222,12 +239,15 @@ public sealed class BillMonitoringBackgroundService
 
             userIds =
                 await scheduler
-                    .GetDueUserIdsAsync(
+                    .GetDueUserIdsPageAsync(
                         DateTimeOffset.UtcNow,
                         refreshCadence,
                         batchSize,
+                        _nextUserOffset,
                         cancellationToken);
         }
+
+        var failedCount = 0;
 
         foreach (var userId in
                  userIds)
@@ -265,11 +285,19 @@ public sealed class BillMonitoringBackgroundService
                  * One connection/user failure must not stop monitoring
                  * for everyone else.
                  */
+                failedCount++;
                 _logger.LogWarning(
                     "A scheduled FullWorth bank refresh failed with {ExceptionType}.",
                     ex.GetType().Name);
             }
         }
+
+        // Advance past users that stayed due after failure. A short/empty
+        // final page ends the sweep, selecting the normal poll delay before
+        // retrying rather than spinning on a full failed batch every 10s.
+        _nextUserOffset = userIds.Count >= batchSize
+            ? _nextUserOffset + failedCount
+            : 0;
 
         return userIds.Count;
     }

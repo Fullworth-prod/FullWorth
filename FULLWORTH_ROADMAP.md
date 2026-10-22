@@ -1,3 +1,12 @@
+## Verified production release — 2026-10-21 UTC
+
+- The `master` release branch at candidate `dd31836703bd110a30f303ed3ce9fd13c0f61d82` is independently verified deployed by [guarded deployment #39665707749](https://github.com/Fullworth/FullWorth/actions/runs/39665707749).
+Currently verified live production release: `dd31836703bd110a30f303ed3ce9fd13c0f61d82`.
+
+[Same-release authenticated smoke #39666163983](https://github.com/Fullworth/FullWorth/actions/runs/39666163983) passed. Remaining launch blockers: real protected off-host/clean-host statement and both key-ring recovery, controlled two-user/provider/document acceptance, physical device testing and qualified legal review. Deployed PR #801 (via release PR #804) provides opt-in Face ID/passkey first-step login but does **not** enable passkeys in production or change account MFA.
+
+---
+
 ## Active execution priorities — market research update, 2026-10-18
 
 This update changes planning, not production configuration or launch approval. The near-term job is **trustworthy, evidence-backed recurring-bill change monitoring**, initially validating internet/mobile bills for US household bill payers. This customer/category focus is a hypothesis to test, not proven demand or exclusive differentiation.

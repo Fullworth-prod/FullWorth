@@ -61,27 +61,9 @@ public sealed class BillMonitoringRefreshService
 
         try
         {
-            /*
-             * Always synchronize accounts first.
-             *
-             * A brand-new provider connection may exist before FullWorth has
-             * persisted its checking/credit/etc. accounts. Transaction sync
-             * depends on those local BankAccount rows.
-             *
-             * Bills intentionally depends on the provider-neutral contract,
-             * not on Plaid implementation types.
-             */
-            await _bankDataSyncGateway.SyncAccountsAsync(
-                userId,
-                cancellationToken);
-
-            /*
-             * Pull new/modified/removed transactions through the same
-             * provider-neutral bank synchronization boundary.
-             */
-            await _bankDataSyncGateway.SyncTransactionsAsync(
-                userId,
-                cancellationToken);
+            // The provider owns per-connection account-before-transaction
+            // ordering and failure isolation. Partial passes still throw.
+            await _bankDataSyncGateway.SyncAsync(userId, cancellationToken);
 
             /*
              * Re-run deterministic recurring-bill discovery against the

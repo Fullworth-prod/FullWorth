@@ -259,6 +259,9 @@ public sealed class BillMonitoringRefreshSchedulerTests
             InstitutionName =
                 "Test Bank",
 
+            ProtectedPlaidAccessToken =
+                "scheduler-query-fixture",
+
             Status =
                 status,
 

@@ -76,13 +76,16 @@
         {
             <div class="settings-grid two-column fw-profile-grid">
                 <label class="settings-field">
-                    <span>@L["Display name"]</span>
+                    <span id="profile-display-name-label">@L["Display name"]</span>
                     <input type="text"
+                           aria-labelledby="profile-display-name-label"
+                           aria-describedby="profile-saved-name"
                            autocomplete="name"
                            maxlength="80"
                            disabled="@(_isBusy || _loading || _writeUncertain)"
                            placeholder="@L["How should FullWorth address you?"]"
                            @bind="_displayName" />
+                    <small id="profile-saved-name">@L["Saved display name"]: @(string.IsNullOrWhiteSpace(_security.DisplayName) ? L["Not set"].Value : _security.DisplayName)</small>
                 </label>
 
                 <div class="settings-field">
@@ -130,7 +133,7 @@
     }
 
     private static bool ValidProfile([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] AccountSecurityViewModel? profile) =>
-        profile is not null && !string.IsNullOrWhiteSpace(profile.Email);
+        profile is not null && profile.DisplayName is not null && !string.IsNullOrWhiteSpace(profile.Email);
 
     private async Task LoadProfileAsync()
     {

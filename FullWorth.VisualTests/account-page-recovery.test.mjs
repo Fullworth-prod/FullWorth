@@ -183,6 +183,7 @@ export async function verifyAccountPageRecovery(page, outputDir) {
     await page.getByText("The saved profile was checked. Your draft is kept; review it before saving again.", { exact: true }).waitFor();
     assert.equal(await name.inputValue(), "Synthetic unsaved draft");
     assert.equal(profilePosts(), 2);
+    assert.ok((await page.locator("#profile-saved-name").textContent()).includes("Synthetic saved despite lost response"));
     assert.equal(await button("Save profile").isEnabled(), true);
     profileMode = "malformed";
     await button("Save profile").click(); await button("Check saved profile").waitFor();

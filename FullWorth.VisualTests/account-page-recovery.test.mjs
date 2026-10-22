@@ -267,6 +267,8 @@ export async function verifyAccountPageRecovery(page, outputDir) {
     holdCheckout = true; releaseCheckout = null;
     await button("Choose monthly").click(); await waitHeld(() => releaseCheckout);
     assert.equal(await page.locator(".subscription-key-panel button[type=submit]").isEnabled(), false);
+    assert.equal((await page.locator(".subscription-key-panel button[type=submit]").textContent()).trim(), "Redeem key",
+      "Checkout must not claim that an access key is being activated.");
     assert.equal(await page.locator("#access-key").isEnabled(), false);
     assert.equal(writes.filter(w => w.endpoint.endsWith("/checkout")).length, 1);
     assert.equal(writes.find(w => w.endpoint.endsWith("/checkout")).body.billingInterval, "monthly");

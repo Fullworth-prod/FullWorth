@@ -126,7 +126,7 @@
                         <button class="subscription-action"
                                 disabled="@(_working || _reading || _redemptionUncertain)"
                                 @onclick="OpenBillingPortalAsync">
-                            @(_working ? L["Opening…"] : L["Manage billing"])
+                            @(_operation == SubscriptionOperation.BillingPortal ? L["Opening…"] : L["Manage billing"])
                         </button>
                     }
                 </div>
@@ -191,7 +191,7 @@
                             <button class="subscription-action subscription-plan-action"
                                     disabled="@(_working || _reading || _redemptionUncertain)"
                                     @onclick="() => StartCheckoutAsync(plan.BillingInterval)">
-                                @(_working ? L["Opening secure checkout…"] : L["Choose {0}", isYearly ? L["yearly"] : L["monthly"]])
+                                @(_operation == SubscriptionOperation.Checkout ? L["Opening secure checkout…"] : L["Choose {0}", isYearly ? L["yearly"] : L["monthly"]])
                             </button>
                         </article>
                     }
@@ -252,7 +252,7 @@
 
                         <button type="submit" class="subscription-action secondary"
                                 disabled="@(_working || _reading || _redemptionUncertain)">
-                            @(_working ? L["Activating…"] : L["Redeem key"])
+                            @(_operation == SubscriptionOperation.Redemption ? L["Activating…"] : L["Redeem key"])
                         </button>
                     </div>
 
@@ -284,7 +284,8 @@
     private string? _message;
     private bool _messageSucceeded;
     private bool _loading = true;
-    private bool _working;
+    private SubscriptionOperation _operation;
+    private bool _working => _operation != SubscriptionOperation.None;
     private bool _reading, _plansLoading, _statusLoadFailed, _plansLoadFailed, _redemptionUncertain, _disposed;
 
     private bool YearlyOffersSavings
@@ -390,13 +391,13 @@
         if (_disposed || _working || _reading || _redemptionUncertain || _statusLoadFailed || _module is null ||
             _status is not { BillingAvailable: true, IsActive: false } ||
             !_plans.Any(plan => string.Equals(plan.BillingInterval, billingInterval, StringComparison.Ordinal))) return;
-        _working = true;
+        _operation = SubscriptionOperation.Checkout;
         _message = null;
         try { await _module.InvokeVoidAsync("startCheckout", billingInterval); }
         catch (JSException)
         {
             if (!_disposed) SetMessage(L["FullWorth could not start secure checkout."], succeeded: false);
-            _working = false;
+            _operation = SubscriptionOperation.None;
             if (!_disposed) StateHasChanged();
         }
     }
@@ -405,13 +406,13 @@
     {
         if (_disposed || _working || _reading || _redemptionUncertain || _statusLoadFailed || _module is null ||
             _status is not { IsActive: true, IsPaid: true, BillingAvailable: true }) return;
-        _working = true;
+        _operation = SubscriptionOperation.BillingPortal;
         _message = null;
         try { await _module.InvokeVoidAsync("openBillingPortal"); }
         catch (JSException)
         {
             if (!_disposed) SetMessage(L["FullWorth could not open subscription management."], succeeded: false);
-            _working = false;
+            _operation = SubscriptionOperation.None;
             if (!_disposed) StateHasChanged();
         }
     }
@@ -420,7 +421,7 @@
     {
         if (_working || _reading || _redemptionUncertain || _statusLoadFailed || _disposed ||
             string.IsNullOrWhiteSpace(_accessKey) || _module is null || _status is not { IsActive: false }) return;
-        _working = true;
+        _operation = SubscriptionOperation.Redemption;
         _message = null;
         var key = _accessKey.Trim();
         _accessKey = string.Empty;
@@ -437,7 +438,7 @@
         {
             if (!_disposed) _redemptionUncertain = true;
         }
-        finally { _working = false; if (!_disposed) StateHasChanged(); }
+        finally { _operation = SubscriptionOperation.None; if (!_disposed) StateHasChanged(); }
     }
 
     private void SetMessage(string message, bool succeeded)
@@ -491,6 +492,8 @@
         {
         }
     }
+
+    private enum SubscriptionOperation { None, Checkout, BillingPortal, Redemption }
 
     private sealed class SubscriptionStatus
     {

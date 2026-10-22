@@ -41,7 +41,7 @@ public sealed class LegalSectionNavigationTests
             Assert.Empty(destination.Query);
             Assert.False(string.IsNullOrEmpty(destination.Fragment));
             var id = Uri.UnescapeDataString(destination.Fragment[1..]);
-            Assert.Equal(1, Matches(html, @"\bid=""" + Regex.Escape(id) + @"""").Count);
+            Assert.Single(Matches(html, @"\bid=""" + Regex.Escape(id) + @"""").Cast<Match>());
         }
     }
 

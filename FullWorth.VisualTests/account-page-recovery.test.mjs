@@ -258,7 +258,8 @@ export async function verifyAccountPageRecovery(page, outputDir) {
     plansMode = "ok"; await button("Retry paid plans").click(); await button("Choose monthly").waitFor();
     holdCheckout = true; releaseCheckout = null;
     await button("Choose monthly").click(); await waitHeld(() => releaseCheckout);
-    assert.equal(await button("Redeem key").isEnabled(), false);
+    assert.equal(await page.locator(".subscription-key-panel button[type=submit]").isEnabled(), false);
+    assert.equal(await page.locator("#access-key").isEnabled(), false);
     assert.equal(writes.filter(w => w.endpoint.endsWith("/checkout")).length, 1);
     assert.equal(writes.find(w => w.endpoint.endsWith("/checkout")).body.billingInterval, "monthly");
     releaseCheckout(); releaseCheckout = null; holdCheckout = false;

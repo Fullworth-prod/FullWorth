@@ -4,17 +4,19 @@ using FullWorth.Tests.Infrastructure;
 
 namespace FullWorth.Tests.Web;
 
-public sealed class LegalSectionNavigationTests
+public sealed class InPageSectionNavigationTests
 {
     [Theory]
-    [InlineData("/terms", 15)]
-    [InlineData("/privacy", 11)]
+    [InlineData("/terms", "aside", "legal-toc", 15)]
+    [InlineData("/privacy", "aside", "legal-toc", 11)]
+    [InlineData("/app/planning", "nav", "planning-jump-links", 4)]
     public async Task EveryContentsLink_ResolvesWithinItsDocument_WithAnExistingTarget(
-        string route, int expectedSections)
+        string route, string tag, string navigationClass, int expectedSections)
     {
         using var factory = new FullWorthWebFactory();
         using var client = factory.CreateHttpsClient();
-        client.DefaultRequestHeaders.Add("X-FullWorth-Test-Anonymous", "true");
+        if (route != "/app/planning")
+            client.DefaultRequestHeaders.Add("X-FullWorth-Test-Anonymous", "true");
         using var response = await client.GetAsync(route);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var html = await response.Content.ReadAsStringAsync();
@@ -26,8 +28,8 @@ public sealed class LegalSectionNavigationTests
         Assert.True(baseElement.Success, "The rendered document must expose its base URL.");
         var documentUri = new Uri(client.BaseAddress!, route);
         var baseUri = new Uri(documentUri, WebUtility.HtmlDecode(baseElement.Groups[1].Value));
-        var contents = Match(html, @"<aside\b[^>]*class=""legal-toc""[^>]*>(.*?)</aside>");
-        Assert.True(contents.Success, "The legal document must retain its contents navigation.");
+        var contents = Match(html, "<" + tag + @"\b[^>]*class=""" + Regex.Escape(navigationClass) + @"""[^>]*>(.*?)</" + tag + ">");
+        Assert.True(contents.Success, "The page must retain its section navigation.");
         var links = Matches(contents.Groups[1].Value, @"<a\b[^>]*href=""([^""]+)""");
         Assert.Equal(expectedSections, links.Count);
 

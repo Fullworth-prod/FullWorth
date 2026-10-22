@@ -1,3 +1,4 @@
+import "./passkey-list-recovery.test.mjs";
 import "./plaid-completion-recovery.test.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";

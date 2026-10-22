@@ -54,6 +54,9 @@
             { credentials: "same-origin", cache: "no-store" });
         if (!response.ok) throw new Error("Could not load your keys. Sign in again or try later.");
         const keys = await response.json();
+        if (!Array.isArray(keys) || keys.some(key => !key || typeof key.id !== "string" ||
+            !key.id || typeof key.name !== "string" || !Number.isFinite(Date.parse(key.createdAt))))
+            throw new Error("Could not load your keys. Try reading the list again.");
         // Hydration/navigation can replace this region while a read is pending.
         // An older response must not erase a newer post-enrollment refresh.
         if (!root.isConnected || listVersions.get(root) !== version) return;
@@ -76,6 +79,14 @@
         const button = event.target.closest("[data-passkey-action]");
         const root = button?.closest("[data-passkeys]");
         if (!root || busy) return;
+        if (button.dataset.passkeyAction === "retry") {
+            busy = true; button.disabled = true;
+            message(root, "Checking your keys…");
+            try { await list(root); if (root.isConnected) message(root, "Key list updated."); }
+            catch { if (root.isConnected) message(root, "Could not load your keys. Try reading the list again."); }
+            finally { busy = false; if (button.isConnected) button.disabled = false; }
+            return;
+        }
         if (!window.isSecureContext || !window.PublicKeyCredential || !navigator.credentials) {
             message(root, "This browser does not support passkeys. Use your password instead."); return;
         }

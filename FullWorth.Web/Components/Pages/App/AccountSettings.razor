@@ -75,7 +75,7 @@
             <button type="button" class="secondary-action" disabled="@(_securityLoading || _isBusy)" @onclick="LoadSecurityAsync">@L["Retry security settings"]</button>
         </section>
     }
-    else
+    else if (_security is not null)
     {
         <section class="security-overview">
             <div class="security-overview-mark" aria-hidden="true">

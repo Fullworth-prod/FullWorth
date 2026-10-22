@@ -48,23 +48,25 @@ export async function verifyNavigationRecovery(page, outputDir) {
   // Wait for actual interactive menu events above before probing Router recovery.
   // Keep the synthetic link outside the component render tree so hydration or
   // data refresh cannot detach it before navigation.
+  const missingResponse = page.waitForResponse(response =>
+    new URL(response.url()).pathname === "/app/missing-ui-fixture" && response.request().isNavigationRequest());
   await page.evaluate(() => {
     const link = document.createElement("a");
     link.href = "/app/missing-ui-fixture";
     link.dataset.ciMissingPage = "true";
     link.textContent = "CI missing page";
     document.body.append(link);
-    window.__fullworthNavigationProbe = true;
     link.click();
     link.remove();
   });
   await page.waitForURL(url => url.pathname === "/app/missing-ui-fixture");
   await page.locator("#not-found-title").waitFor({ state: "visible" });
-  assert.equal(await page.evaluate(() => window.__fullworthNavigationProbe), true,
-    "Missing-route recovery must stay in the interactive document.");
+  // Blazor deliberately falls back to server navigation for an unmatched link,
+  // since it could target non-component content. The server must recover too.
+  assert.equal((await missingResponse).status(), 404);
   await page.getByRole("link", { name: "Go to FullWorth", exact: true }).click();
   await page.waitForURL(url => url.pathname === "/app");
   await page.locator(".app-shell").waitFor({ state: "visible" });
   await page.goto("/app", { waitUntil: "domcontentloaded" });
-  console.log("Navigation recovery passed: HTTP/interactive 404, recovery links, 320px reflow, Planning current state and Escape focus.");
+  console.log("Navigation recovery passed: HTTP/intercepted-link 404, recovery links, 320px reflow, Planning current state and Escape focus.");
 }

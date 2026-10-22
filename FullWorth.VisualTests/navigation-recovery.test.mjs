@@ -21,21 +21,8 @@ export async function verifyNavigationRecovery(page, outputDir) {
 
   await page.goto("/app", { waitUntil: "domcontentloaded" });
   await page.locator(".app-shell").waitFor({ state: "visible" });
-  await page.evaluate(() => {
-    const link = document.createElement("a");
-    link.href = "/app/missing-ui-fixture";
-    link.dataset.ciMissingPage = "true";
-    link.textContent = "CI missing page";
-    document.querySelector("main").prepend(link);
-  });
-  await page.locator("a[data-ci-missing-page]").click();
-  await page.waitForURL(url => url.pathname === "/app/missing-ui-fixture");
-  await page.locator("#not-found-title").waitFor({ state: "visible" });
-  await page.getByRole("link", { name: "Go to FullWorth", exact: true }).click();
-  await page.waitForURL(url => url.pathname === "/app");
-  await page.locator(".app-shell").waitFor({ state: "visible" });
-
   await page.setViewportSize({ width: 390, height: 1000 });
+  await page.waitForFunction(() => !!document.querySelector(".app-shell")?.style.getPropertyValue("--fw-navigation-inset"));
   const trigger = page.locator(".mobile-menu-trigger");
   await trigger.click();
   const sheet = page.locator("#billwatch-mobile-menu");
@@ -58,6 +45,26 @@ export async function verifyNavigationRecovery(page, outputDir) {
   await sheet.getByRole("link", { name: "Subscription", exact: true }).press("Escape");
   await sheet.waitFor({ state: "hidden" });
   await page.waitForFunction(() => document.activeElement?.matches(".mobile-menu-trigger"));
+  // Wait for actual interactive menu events above before probing Router recovery.
+  // Keep the synthetic link outside the component render tree so hydration or
+  // data refresh cannot detach it before navigation.
+  await page.evaluate(() => {
+    const link = document.createElement("a");
+    link.href = "/app/missing-ui-fixture";
+    link.dataset.ciMissingPage = "true";
+    link.textContent = "CI missing page";
+    document.body.append(link);
+    window.__fullworthNavigationProbe = true;
+    link.click();
+    link.remove();
+  });
+  await page.waitForURL(url => url.pathname === "/app/missing-ui-fixture");
+  await page.locator("#not-found-title").waitFor({ state: "visible" });
+  assert.equal(await page.evaluate(() => window.__fullworthNavigationProbe), true,
+    "Missing-route recovery must stay in the interactive document.");
+  await page.getByRole("link", { name: "Go to FullWorth", exact: true }).click();
+  await page.waitForURL(url => url.pathname === "/app");
+  await page.locator(".app-shell").waitFor({ state: "visible" });
   await page.goto("/app", { waitUntil: "domcontentloaded" });
   console.log("Navigation recovery passed: HTTP/interactive 404, recovery links, 320px reflow, Planning current state and Escape focus.");
 }

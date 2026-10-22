@@ -232,6 +232,14 @@ export async function verifyAccountPageRecovery(page, outputDir) {
     assert.equal(await name.inputValue(), displayName);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false,
       "A maximum-length saved name must wrap rather than widen the page.");
+    const nameLayout = await page.evaluate(() => {
+      const saved = document.querySelector("#profile-saved-name");
+      const fields = document.querySelector(".fw-profile-grid").getBoundingClientRect();
+      const actions = document.querySelector(".fw-profile-actions").getBoundingClientRect();
+      return { fontSize: parseFloat(getComputedStyle(saved).fontSize), actionGap: actions.top - fields.bottom };
+    });
+    assert.ok(nameLayout.fontSize >= 14 && nameLayout.actionGap >= 12,
+      "Saved-name recovery must stay readable and separated from submit actions.");
     await photo("profile-long-saved-name-320");
     await page.setViewportSize({ width: 390, height: 1000 });
 

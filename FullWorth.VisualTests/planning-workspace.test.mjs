@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 import { verifyInPageNavigation } from "./in-page-navigation.test.mjs";
+import { verifyNavigationRecovery } from "./navigation-recovery.test.mjs";
 
 // Real authenticated components; all planning/bill reads and writes below are intercepted synthetic fixtures.
 export async function verifyPlanningWorkspace(page, outputDir) {
@@ -81,6 +82,7 @@ export async function verifyPlanningWorkspace(page, outputDir) {
     }
   };
   try {
+    await verifyNavigationRecovery(page, outputDir);
     await page.setViewportSize({ width: 1440, height: 1100 });
     await verifyInPageNavigation(page, "/terms", ".legal-toc", 15, outputDir, "terms-section-navigation");
     await verifyInPageNavigation(page, "/privacy", ".legal-toc", 11, outputDir, "privacy-section-navigation");

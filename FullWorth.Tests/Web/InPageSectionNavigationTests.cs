@@ -9,14 +9,12 @@ public sealed class InPageSectionNavigationTests
     [Theory]
     [InlineData("/terms", "aside", "legal-toc", 15)]
     [InlineData("/privacy", "aside", "legal-toc", 11)]
-    [InlineData("/app/planning", "nav", "planning-jump-links", 4)]
     public async Task EveryContentsLink_ResolvesWithinItsDocument_WithAnExistingTarget(
         string route, string tag, string navigationClass, int expectedSections)
     {
         using var factory = new FullWorthWebFactory();
         using var client = factory.CreateHttpsClient();
-        if (route != "/app/planning")
-            client.DefaultRequestHeaders.Add("X-FullWorth-Test-Anonymous", "true");
+        client.DefaultRequestHeaders.Add("X-FullWorth-Test-Anonymous", "true");
         using var response = await client.GetAsync(route);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var html = await response.Content.ReadAsStringAsync();
@@ -45,6 +43,18 @@ public sealed class InPageSectionNavigationTests
             var id = Uri.UnescapeDataString(destination.Fragment[1..]);
             Assert.Single(Matches(html, @"\bid=""" + Regex.Escape(id) + @"""").Cast<Match>());
         }
+    }
+
+    [Fact]
+    public async Task PlanningInitialization_DoesNotExposeShortcutsBeforeTheirTargetsExist()
+    {
+        using var factory = new FullWorthWebFactory();
+        using var client = factory.CreateHttpsClient();
+        using var response = await client.GetAsync("/app/planning");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.Contains("planning-loading", html);
+        Assert.DoesNotContain("planning-jump-links", html);
     }
 
     private static Match Match(string html, string pattern) =>

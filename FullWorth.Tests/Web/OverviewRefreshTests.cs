@@ -136,6 +136,30 @@ public sealed class OverviewRefreshTests
         Assert.NotNull(harness.Get<string?>("_refreshError"));
     }
 
+    [Fact]
+    public async Task Watchlist_PrioritizesComparableIncreasesWithoutCrossCurrencyAmountRanking()
+    {
+        using var harness = new Harness();
+        var names = new[] { "Zeta", "Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Eta", "Theta" };
+        var bills = names.Select((name, index) => new Overview.BillStreamViewModel
+        {
+            Id = Guid.NewGuid(), ProviderName = name, IsActive = true,
+            CurrencyCode = index % 2 == 0 ? "JPY" : "USD",
+            HasTransactionEvidence = index != 0,
+            HasMonthlyCadenceEvidence = true,
+            CurrentAmount = index % 2 == 0 ? 20000m : 40m,
+            PreviousAverage = index == 1 ? 20m : (index % 2 == 0 ? 20000m : 40m)
+        }).ToArray();
+        harness.Module.Values["getBillStreams"] = bills;
+        await harness.Call("LoadAsync");
+        var selected = harness.Get<IReadOnlyList<Overview.BillStreamViewModel>>("WatchlistBills");
+        Assert.Equal(6, selected.Count);
+        Assert.Equal("Alpha", selected[0].ProviderName);
+        Assert.Equal(new[] { "Alpha", "Beta", "Delta", "Epsilon", "Eta", "Gamma" },
+            selected.Select(item => item.ProviderName).ToArray());
+        Assert.DoesNotContain(selected, item => item.ProviderName == "Zeta");
+    }
+
     private sealed class Harness : IDisposable
     {
         private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;

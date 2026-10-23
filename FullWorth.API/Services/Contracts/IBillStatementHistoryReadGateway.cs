@@ -7,7 +7,11 @@ public sealed record BillStatementHistoryReadRecord(
     DateOnly? StatementDate,
     DateOnly? DueDate,
     decimal TotalAmount,
-    string CurrencyCode);
+    string CurrencyCode)
+{
+    // Opaque upload ID only; physical statement-storage locations are private.
+    public Guid? UploadId { get; init; }
+}
 
 public sealed record BillChangeHistoryReadRecord(
     Guid Id,

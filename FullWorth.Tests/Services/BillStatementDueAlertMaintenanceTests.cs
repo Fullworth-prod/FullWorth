@@ -16,6 +16,7 @@ public sealed class BillStatementDueAlertMaintenanceTests
     {
         var streams = new BillStreamReadGateway(db);
         return new BillStatementDueAlertMaintenance(db,
+            new BillDueReminderMaintenanceReadGateway(db),
             new BillStatementPaymentDueAlertService(
                 streams, new BillAlertReconciliationGateway(db)));
     }

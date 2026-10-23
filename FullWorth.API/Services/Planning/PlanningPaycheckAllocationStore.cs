@@ -36,7 +36,12 @@ public sealed record PlanningPaycheckPlanRunDraft(
     string CurrencyCode,
     decimal RecommendedSetAside,
     decimal PaycheckRemainingAfterPlan,
-    decimal Shortfall);
+    decimal Shortfall)
+{
+    public int? EligibleBillCount { get; init; }
+    public int? SkippedBillCount { get; init; }
+    public string? SkippedReasonSummary { get; init; }
+}
 
 public sealed record PlanningPaycheckPlanRunSnapshot(
     Guid Id,
@@ -47,7 +52,12 @@ public sealed record PlanningPaycheckPlanRunSnapshot(
     decimal RecommendedSetAside,
     decimal PaycheckRemainingAfterPlan,
     decimal Shortfall,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc)
+{
+    public int? EligibleBillCount { get; init; }
+    public int? SkippedBillCount { get; init; }
+    public string? SkippedReasonSummary { get; init; }
+}
 
 public sealed record PlanningSavedPaycheckPlan(
     PlanningPaycheckPlanRunSnapshot Run,
@@ -108,7 +118,12 @@ public sealed class PlanningPaycheckAllocationStore(
                         run.RecommendedSetAside,
                         run.PaycheckRemainingAfterPlan,
                         run.Shortfall,
-                        run.CreatedAtUtc))
+                        run.CreatedAtUtc)
+                    {
+                        EligibleBillCount = run.EligibleBillCount,
+                        SkippedBillCount = run.SkippedBillCount,
+                        SkippedReasonSummary = run.SkippedReasonSummary
+                    })
             .ToListAsync(
                 cancellationToken);
     }
@@ -347,6 +362,9 @@ public sealed class PlanningPaycheckAllocationStore(
                     normalizedRun.PaycheckRemainingAfterPlan,
                 Shortfall =
                     normalizedRun.Shortfall,
+                EligibleBillCount = normalizedRun.EligibleBillCount,
+                SkippedBillCount = normalizedRun.SkippedBillCount,
+                SkippedReasonSummary = normalizedRun.SkippedReasonSummary,
                 CreatedAtUtc =
                     createdAtUtc
             });
@@ -817,7 +835,12 @@ public sealed class PlanningPaycheckAllocationStore(
                             candidate.RecommendedSetAside,
                             candidate.PaycheckRemainingAfterPlan,
                             candidate.Shortfall,
-                            candidate.CreatedAtUtc))
+                            candidate.CreatedAtUtc)
+                        {
+                            EligibleBillCount = candidate.EligibleBillCount,
+                            SkippedBillCount = candidate.SkippedBillCount,
+                            SkippedReasonSummary = candidate.SkippedReasonSummary
+                        })
                 .SingleOrDefaultAsync(
                     cancellationToken);
 
@@ -907,6 +930,17 @@ public sealed class PlanningPaycheckAllocationStore(
         {
             throw new InvalidOperationException(
                 "Paycheck-plan totals are internally inconsistent.");
+        }
+
+        if (run.EligibleBillCount.HasValue != run.SkippedBillCount.HasValue ||
+            run.EligibleBillCount is < 0 or > MaximumBillsPerPaycheck ||
+            run.SkippedBillCount is < 0 or > MaximumBillsPerPaycheck ||
+            run.EligibleBillCount.GetValueOrDefault() +
+                run.SkippedBillCount.GetValueOrDefault() > MaximumBillsPerPaycheck ||
+            (run.SkippedReasonSummary?.Length ?? 0) > 256)
+        {
+            throw new InvalidOperationException(
+                "Paycheck plan evidence coverage is invalid.");
         }
 
         return run with
@@ -1008,6 +1042,10 @@ public sealed class PlanningPaycheckAllocationStore(
                 requestedRun.PaycheckRemainingAfterPlan &&
             run.Shortfall ==
                 requestedRun.Shortfall &&
+            run.EligibleBillCount == requestedRun.EligibleBillCount &&
+            run.SkippedBillCount == requestedRun.SkippedBillCount &&
+            string.Equals(run.SkippedReasonSummary,
+                requestedRun.SkippedReasonSummary, StringComparison.Ordinal) &&
             Matches(
                 existing.Allocations,
                 requestedRun.PaycheckPostedDate,

@@ -243,6 +243,8 @@ public sealed class BillStatementProcessingBackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly BillStatementProcessingSignal _signal;
     private readonly ILogger<BillStatementProcessingBackgroundService> _logger;
+    private DateOnly? _lastSuccessfulDueReminderDate;
+    private DateTimeOffset _nextDueReminderRetryUtc = DateTimeOffset.MinValue;
 
     public BillStatementProcessingBackgroundService(
         IServiceScopeFactory scopeFactory,
@@ -266,6 +268,8 @@ public sealed class BillStatementProcessingBackgroundService
 
                 var processedCount = await ProcessBatchAsync(
                     stoppingToken);
+
+                await RefreshDueRemindersWhenDueAsync(stoppingToken);
 
                 if (processedCount > 0)
                 {
@@ -298,6 +302,39 @@ public sealed class BillStatementProcessingBackgroundService
                     break;
                 }
             }
+        }
+    }
+
+    private async Task RefreshDueRemindersWhenDueAsync(
+        CancellationToken cancellationToken)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var today = DateOnly.FromDateTime(now.UtcDateTime);
+        if (_lastSuccessfulDueReminderDate == today ||
+            now < _nextDueReminderRetryUtc)
+            return;
+
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var refresher = scope.ServiceProvider
+                .GetRequiredService<BillStatementDueReminderRefreshService>();
+            await refresher.RefreshAsync(today, now, cancellationToken);
+            _lastSuccessfulDueReminderDate = today;
+            _nextDueReminderRetryUtc = DateTimeOffset.MinValue;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // One reminder refresh failure should not stop queued uploads.
+            // Avoid a hot retry loop while keeping the failure observable.
+            _nextDueReminderRetryUtc = now.AddMinutes(10);
+            _logger.LogWarning(
+                "Daily statement reminder reconciliation failed with {ExceptionType}.",
+                ex.GetType().Name);
         }
     }
 

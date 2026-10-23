@@ -34,6 +34,12 @@ public sealed class PlanningPaycheckPlanRunEntity
 
     public decimal Shortfall { get; set; }
 
+    // Legacy runs have unknown coverage (null). New runs freeze evidence
+    // coverage at creation time; no provider or account details are stored.
+    public int? EligibleBillCount { get; set; }
+    public int? SkippedBillCount { get; set; }
+    public string? SkippedReasonSummary { get; set; }
+
     public DateTimeOffset CreatedAtUtc { get; set; } =
         DateTimeOffset.UtcNow;
 

@@ -1,5 +1,5 @@
 using FullWorth.API.Data;
-using FullWorth.API.Data.Entities;
+using FullWorth.API.Services.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 namespace FullWorth.API.Services.Statements;
@@ -10,6 +10,7 @@ namespace FullWorth.API.Services.Statements;
 /// </summary>
 public sealed class BillStatementDueAlertMaintenance(
     FullWorthDbContext db,
+    IBillDueReminderMaintenanceReadGateway billReads,
     BillStatementPaymentDueAlertService dueAlerts)
 {
     public async Task ReconcileOneAsync(
@@ -19,13 +20,11 @@ public sealed class BillStatementDueAlertMaintenance(
         if (userId == Guid.Empty || billStreamId == Guid.Empty)
             throw new ArgumentException("A valid owner and bill identity are required.");
 
-        var stream = await db.BillStreams.AsNoTracking()
-            .Where(item => item.Id == billStreamId && item.UserId == userId)
-            .Select(item => new { item.IsActive })
-            .SingleOrDefaultAsync(cancellationToken);
+        var isActive = await billReads.IsOwnedActiveAsync(
+            userId, billStreamId, cancellationToken);
 
         // A missing/foreign stream must not cause an alert write or leak data.
-        if (stream is null)
+        if (isActive is null)
             return;
 
         var latest = await db.BillStatements.AsNoTracking()
@@ -42,7 +41,7 @@ public sealed class BillStatementDueAlertMaintenance(
 
         // Inactive streams and missing/invalid historical evidence must not
         // continue to claim an upcoming payable obligation.
-        DateOnly? dueDate = stream.IsActive ? latest?.DueDate : null;
+        DateOnly? dueDate = isActive.Value ? latest?.DueDate : null;
         decimal total = latest?.TotalAmount ?? 0m;
         string currency = latest?.CurrencyCode ?? "USD";
 
@@ -97,18 +96,12 @@ public sealed class BillStatementDueAlertMaintenanceWorker(
 
     private async Task SweepAsync(CancellationToken cancellationToken)
     {
-        IReadOnlyList<(Guid UserId, Guid StreamId)> candidates;
+        IReadOnlyList<BillDueReminderMaintenanceCandidate> candidates;
         using (var scope = scopeFactory.CreateScope())
         {
-            var db = scope.ServiceProvider.GetRequiredService<FullWorthDbContext>();
-            var pairs = await db.BillAlerts.AsNoTracking()
-                .Where(item => item.AlertType == BillAlertType.PaymentDue &&
-                    item.BillStreamId.HasValue)
-                .Select(item => new { item.UserId, item.BillStreamId })
-                .ToListAsync(cancellationToken);
-
-            candidates = pairs.Select(pair => (pair.UserId, pair.BillStreamId!.Value))
-                .Distinct().ToList();
+            var billReads = scope.ServiceProvider
+                .GetRequiredService<IBillDueReminderMaintenanceReadGateway>();
+            candidates = await billReads.GetCandidatesAsync(cancellationToken);
         }
 
         var now = DateTimeOffset.UtcNow;
@@ -126,7 +119,7 @@ public sealed class BillStatementDueAlertMaintenanceWorker(
                 var maintenance = scope.ServiceProvider
                     .GetRequiredService<BillStatementDueAlertMaintenance>();
                 await maintenance.ReconcileOneAsync(
-                    candidate.UserId, candidate.StreamId,
+                    candidate.UserId, candidate.BillStreamId,
                     today, now, cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

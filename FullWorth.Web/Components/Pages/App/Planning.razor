@@ -178,7 +178,7 @@
                         <fieldset class="planning-bill-row" @key="bill.Id" data-bill-id="@bill.Id" disabled="@(bill.IsBusy || bill.SaveUncertain)" aria-label="@(string.IsNullOrWhiteSpace(bill.ProviderName) ? L["Recurring bill"].Value : bill.ProviderName)">
                             <div class="planning-bill-copy">
                                 <strong>@(string.IsNullOrWhiteSpace(bill.ProviderName) ? L["Recurring bill"].Value : bill.ProviderName)</strong>
-                                <span>@FormatAmount(bill.CurrentAmount, bill.CurrencyCode)</span>
+                                <span>@(bill.HasTransactionEvidence ? FormatAmount(bill.CurrentAmount, bill.CurrencyCode) : L["Amount unavailable"].Value)</span>
                                 <small class="planning-save-state">@(bill.IsDirty ? L["Unsaved changes"] : L["Saved preference"])</small>
                             </div>
                             <label>
@@ -497,7 +497,7 @@
             .Select(item => new PlanningBillViewModel
             {
                 Id = item.Id, ProviderName = item.ProviderName ?? string.Empty, CurrentAmount = item.CurrentAmount,
-                CurrencyCode = item.CurrencyCode,
+                CurrencyCode = item.CurrencyCode, HasTransactionEvidence = item.HasTransactionEvidence,
                 SelectedOverride = overrides.TryGetValue(item.Id, out var count) ? count.ToString(System.Globalization.CultureInfo.InvariantCulture) : string.Empty,
                 SavedOverride = overrides.TryGetValue(item.Id, out var saved) ? saved.ToString(System.Globalization.CultureInfo.InvariantCulture) : string.Empty
             }).ToList();
@@ -723,6 +723,7 @@
         public bool IsActive { get; set; }
         public decimal CurrentAmount { get; set; }
         public string? CurrencyCode { get; set; }
+        public bool HasTransactionEvidence { get; set; }
         public string SelectedOverride { get; set; } = string.Empty;
         public string SavedOverride { get; set; } = string.Empty;
         public bool IsDirty => SelectedOverride != SavedOverride;

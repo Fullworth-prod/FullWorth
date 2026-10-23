@@ -1,6 +1,5 @@
 using FullWorth.API.Data;
-using FullWorth.API.Data.Entities;
-using FullWorth.API.Services.Contracts;
+ using FullWorth.API.Services.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 namespace FullWorth.API.Services.Statements;
@@ -13,24 +12,17 @@ namespace FullWorth.API.Services.Statements;
 public sealed class BillStatementDueReminderRefreshService(
     FullWorthDbContext dbContext,
     BillStatementPaymentDueAlertService paymentDueAlerts,
-    IBillAlertReconciliationGateway alerts)
+    IBillAlertReconciliationGateway alerts,
+    IBillPaymentDueRefreshCandidatesGateway candidates)
 {
     public async Task<int> RefreshAsync(
         DateOnly today,
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
     {
-        // Each alert's owner is retained in the key, with a secondary owned
-        // BillStream check. No statement storage paths or raw text are read.
-        var keys = await dbContext.BillAlerts
-            .AsNoTracking()
-            .Where(alert => alert.AlertType == BillAlertType.PaymentDue &&
-                dbContext.BillStreams.Any(stream =>
-                    stream.Id == alert.BillStreamId &&
-                    stream.UserId == alert.UserId))
-            .Select(alert => new { alert.UserId, alert.BillStreamId })
-            .Distinct()
-            .ToListAsync(cancellationToken);
+        // Only Bills can enumerate managed alerts and validate that their
+        // bill ownership still exists. Statements receives IDs, not Bills data.
+        var keys = await candidates.ListManagedAsync(cancellationToken);
 
         foreach (var key in keys)
         {

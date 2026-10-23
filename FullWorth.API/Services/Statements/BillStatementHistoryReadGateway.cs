@@ -54,7 +54,19 @@ public sealed class BillStatementHistoryReadGateway(
                             statement.StatementDate,
                             statement.DueDate,
                             statement.TotalAmount,
-                            statement.CurrencyCode))
+                            statement.CurrencyCode)
+                        {
+                            UploadId = dbContext.BillStatementUploads
+                                .Where(upload =>
+                                    upload.UserId == userId &&
+                                    upload.BillStreamId == billStreamId &&
+                                    upload.BillStatementId == statement.Id &&
+                                    upload.Status == FullWorth.API.Data.Entities.BillStatementUploadStatus.Processed)
+                                .OrderByDescending(upload => upload.CreatedAtUtc)
+                                .ThenByDescending(upload => upload.Id)
+                                .Select(upload => (Guid?)upload.Id)
+                                .FirstOrDefault()
+                        })
                 .ToListAsync(
                     cancellationToken);
 

@@ -144,6 +144,7 @@ try {
   await settle(".app-shell");
 
   await (await import("./ui-polish.test.mjs")).verifyUiPolish(page, outputDir);
+  await (await import("./statement-upload-layout.test.mjs")).verifyStatementUploadLayout(page);
   await page.goto("/app", { waitUntil: "domcontentloaded" });
   await settle(".app-shell");
 

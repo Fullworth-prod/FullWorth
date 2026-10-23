@@ -174,7 +174,7 @@
                 <div class="@GetDetectedChangeClass(latestChange.AmountDifference)">
                 <div class="detected-change-main">
                     <div class="change-eyebrow">
-                        @L["Detected statement change"]
+                        @L["Most recent verified statement change"]
                     </div>
 
                     <div class="detected-change-values">
@@ -325,7 +325,7 @@
                 else
                 {
                     <div class="change-history-list">
-                        @foreach (var change in _detail.Changes)
+                        @foreach (var change in StatementChangesByPeriod)
                         {
                             <article class="change-history-row">
                                 <div class="@GetHistoryIndicatorClass(change.AmountDifference)"></div>
@@ -386,8 +386,33 @@
             ? L["Bill — FullWorth"]
             : $"{_detail.ProviderName} — FullWorth";
 
-    private BillChangeViewModel? LatestChange =>
-        _detail?.Changes.OrderByDescending(change => change.DetectedAtUtc).ThenBy(change => change.Id).FirstOrDefault();
+    // Detection time is an audit timestamp, not the chronology of the provider's billing periods.
+    // A historical statement uploaded today must not displace a newer verified billing change.
+    private IReadOnlyList<BillChangeViewModel> StatementChangesByPeriod
+    {
+        get
+        {
+            if (_detail is null)
+            {
+                return [];
+            }
+
+            var periods = _detail.Statements
+                .Where(statement => statement.Id != Guid.Empty && statement.PeriodStart <= statement.PeriodEnd)
+                .GroupBy(statement => statement.Id)
+                .ToDictionary(group => group.Key, group => group.First());
+
+            return _detail.Changes
+                .Where(change => periods.ContainsKey(change.CurrentStatementId))
+                .OrderByDescending(change => periods[change.CurrentStatementId].PeriodEnd)
+                .ThenByDescending(change => periods[change.CurrentStatementId].PeriodStart)
+                .ThenByDescending(change => change.DetectedAtUtc)
+                .ThenBy(change => change.Id)
+                .ToList();
+        }
+    }
+
+    private BillChangeViewModel? LatestChange => StatementChangesByPeriod.FirstOrDefault();
 
     protected override void OnParametersSet()
     {

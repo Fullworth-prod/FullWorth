@@ -851,6 +851,10 @@ builder.Services.AddScoped<
     BillAlertReconciliationGateway>();
 
 builder.Services.AddScoped<
+    IBillPaymentDueRefreshCandidatesGateway,
+    BillPaymentDueRefreshCandidatesGateway>();
+
+builder.Services.AddScoped<
     IPlanningPaydayAlertGateway,
     PlanningPaydayAlertGateway>();
 

@@ -101,6 +101,7 @@
     private SelectedStatementFileViewModel? _selectedFile;
     private bool _isBusy;
     private bool _isDisposed;
+    private bool _componentRendered;
     private Guid? _pendingUploadId;
     private bool _isCheckingPending;
     private string _state = string.Empty;
@@ -142,6 +143,19 @@
         return _bffModule;
     }
 
+    protected override void OnAfterRender(bool firstRender)
+    {
+        _componentRendered = true;
+    }
+
+    // RenderHandle does not exist for a component abandoned before first render.
+    // Preserve recovered upload state without scheduling a render after disposal.
+    private void RequestRenderIfAvailable()
+    {
+        if (_componentRendered && !_isDisposed)
+            StateHasChanged();
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender || _isDisposed || BillStreamId == Guid.Empty)
@@ -164,7 +178,7 @@
             _state = "working";
             _statusHeading = L["Statement still processing"];
             _message = L["Check the status of this saved upload. You do not need to send the document again."];
-            StateHasChanged();
+            RequestRenderIfAvailable();
         }
         catch (OperationCanceledException) when (_disposeCancellation.IsCancellationRequested)
         {
@@ -177,7 +191,7 @@
                 _state = "error";
                 _statusHeading = L["Previous upload status unavailable"];
                 _message = L["We could not check previous statement processing. Your saved bill records were not changed."];
-                StateHasChanged();
+                RequestRenderIfAvailable();
             }
         }
     }
@@ -220,7 +234,7 @@
         finally
         {
             _isCheckingPending = false;
-            if (!_isDisposed) StateHasChanged();
+            RequestRenderIfAvailable();
         }
     }
 

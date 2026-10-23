@@ -26,7 +26,7 @@
                class="statement-file-input"
                type="file"
                accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-               disabled="@_isBusy"
+               disabled="@(_isBusy || _pendingUploadId.HasValue)"
                @onchange="HandleFileChangedAsync" />
 
         <label class="@GetPickerClass()" for="@_inputId">
@@ -72,6 +72,11 @@
             <div>
                 <strong>@_statusHeading</strong>
                 <span>@_message</span>
+                @if (_pendingUploadId.HasValue && !_isBusy)
+                {
+                    <button type="button" class="secondary-action"
+                            @onclick="CheckPendingStatusAsync">@L["Check upload status"]</button>
+                }
             </div>
         </div>
     }
@@ -89,6 +94,7 @@
 
     private IJSObjectReference? _bffModule;
     private SelectedStatementFileViewModel? _selectedFile;
+    private Guid? _pendingUploadId;
     private bool _isBusy;
     private bool _isDisposed;
     private string _state = string.Empty;
@@ -108,6 +114,7 @@
     private bool CanUpload =>
         !_isBusy &&
         !_isDisposed &&
+        _pendingUploadId is null &&
         _selectedFile is not null &&
         _selectedFile.Size > 0 &&
         _selectedFile.Size <= MaximumFileSize &&
@@ -117,6 +124,38 @@
     protected override void OnInitialized()
     {
         _buttonText = L["Uploading…"];
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _isDisposed || BillStreamId == Guid.Empty)
+            return;
+
+        try
+        {
+            var module = await GetBffModuleAsync();
+            var pending = await module.InvokeAsync<string?>(
+                "getPendingStatementUploadId",
+                _disposeCancellation.Token,
+                BillStreamId.ToString("D"));
+
+            if (!_isDisposed && Guid.TryParse(pending, out var uploadId) &&
+                uploadId != Guid.Empty)
+            {
+                _pendingUploadId = uploadId;
+                _state = "working";
+                _statusHeading = L["Previous statement upload"];
+                _message = L["An earlier upload may still be processing. Check its status before uploading another statement."];
+                StateHasChanged();
+            }
+        }
+        catch (OperationCanceledException) when (_disposeCancellation.IsCancellationRequested)
+        {
+        }
+        catch (JSException)
+        {
+            // Private browsing may prohibit session storage; uploads still work.
+        }
     }
 
     private async Task<IJSObjectReference> GetBffModuleAsync()
@@ -131,7 +170,7 @@
 
     private async Task HandleFileChangedAsync()
     {
-        if (_isBusy || _isDisposed)
+        if (_isBusy || _isDisposed || _pendingUploadId.HasValue)
         {
             return;
         }
@@ -204,9 +243,25 @@
                 BillStreamId.ToString("D"),
                 _inputId);
 
-            if (upload is null || upload.Id == Guid.Empty)
+            if (upload is null || upload.Id == Guid.Empty ||
+                upload.BillStreamId != BillStreamId)
             {
-                throw new InvalidOperationException("The upload did not return a valid identifier.");
+                throw new InvalidOperationException("The upload did not return matching identifiers.");
+            }
+
+            // The server has accepted this specific upload. Never replay the
+            // POST when its processing outcome is still being determined.
+            _pendingUploadId = upload.Id;
+            try
+            {
+                await module.InvokeVoidAsync("rememberPendingStatementUpload",
+                    _disposeCancellation.Token,
+                    BillStreamId.ToString("D"),
+                    upload.Id.ToString("D"));
+            }
+            catch (JSException)
+            {
+                // Session storage is optional; this component can still check status.
             }
 
             _buttonText = L["Processing…"];
@@ -257,9 +312,11 @@
                 BillStreamId.ToString("D"),
                 uploadId.ToString("D"));
 
-            if (status is null)
+            if (status is null ||
+                status.Id != uploadId ||
+                status.BillStreamId != BillStreamId)
             {
-                continue;
+                throw new InvalidOperationException("Statement status identity mismatch.");
             }
 
             SetProcessingStatus(status.Status);
@@ -276,7 +333,52 @@
 
         _state = "working";
         _statusHeading = L["Still processing"];
-        _message = L["The upload is secure and processing is continuing in the background. The bill will update when processing finishes."];
+        _message = L["The upload was received but processing is not yet confirmed. Use Check upload status to check again; this page does not update automatically."];
+    }
+
+    private async Task CheckPendingStatusAsync()
+    {
+        if (_isBusy || _isDisposed || !_pendingUploadId.HasValue)
+            return;
+
+        var uploadId = _pendingUploadId.Value;
+        _isBusy = true;
+        try
+        {
+            var module = await GetBffModuleAsync();
+            var status = await module.InvokeAsync<BillStatementUploadStatusViewModel>(
+                "getBillStatementUploadStatus",
+                _disposeCancellation.Token,
+                BillStreamId.ToString("D"),
+                uploadId.ToString("D"));
+
+            if (status is null || status.Id != uploadId ||
+                status.BillStreamId != BillStreamId)
+                throw new InvalidOperationException("Statement status identity mismatch.");
+
+            if (!await CompleteTerminalStatusAsync(module, uploadId, status.Status))
+            {
+                SetProcessingStatus(status.Status);
+                _message = L["Processing is not finished. Use Check upload status to check again later."];
+            }
+        }
+        catch (OperationCanceledException) when (_disposeCancellation.IsCancellationRequested)
+        {
+        }
+        catch (Exception)
+        {
+            if (!_isDisposed)
+                SetError(L["Could not check upload status"],
+                    L["The previous upload may still be processing. Check its status again without uploading it a second time."]);
+        }
+        finally
+        {
+            if (!_isDisposed)
+            {
+                _isBusy = false;
+                StateHasChanged();
+            }
+        }
     }
 
     private async Task<bool> CompleteTerminalStatusAsync(
@@ -290,6 +392,19 @@
         }
 
         SetProcessingStatus(status);
+
+        _pendingUploadId = null;
+        try
+        {
+            await module.InvokeVoidAsync("forgetPendingStatementUpload",
+                _disposeCancellation.Token,
+                BillStreamId.ToString("D"));
+        }
+        catch (JSException)
+        {
+            // A blocked storage operation must not turn a processed upload
+            // into a failed upload in the UI.
+        }
 
         if (!FullWorth.Web.Services.StatementUploadStatusSemantics.IsProcessed(status))
         {

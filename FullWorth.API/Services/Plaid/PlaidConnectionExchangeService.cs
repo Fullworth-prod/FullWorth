@@ -3,6 +3,7 @@ using System.Text.Json;
 using FullWorth.API.Data;
 using FullWorth.API.Data.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace FullWorth.API.Services.Plaid;
 
@@ -236,18 +237,11 @@ public sealed class PlaidConnectionExchangeService
                 connection);
         }
 
-        ApplyConnectionState(
-            connection,
-            institutionName,
-            institutionId,
-            itemId,
-            protectedAccessToken,
-            now);
-
         try
         {
-            await _dbContext.SaveChangesAsync(
-                cancellationToken);
+            await ApplyAndSaveConnectionAsync(connection, institutionName,
+                institutionId, itemId, protectedAccessToken, now,
+                isNewConnection, cancellationToken);
         }
         catch (DbUpdateException)
             when (isNewConnection)
@@ -283,16 +277,9 @@ public sealed class PlaidConnectionExchangeService
                 throw;
             }
 
-            ApplyConnectionState(
-                concurrentConnection,
-                institutionName,
-                institutionId,
-                itemId,
-                protectedAccessToken,
-                now);
-
-            await _dbContext.SaveChangesAsync(
-                cancellationToken);
+            await ApplyAndSaveConnectionAsync(concurrentConnection, institutionName,
+                institutionId, itemId, protectedAccessToken, now,
+                isNewConnection: false, cancellationToken);
 
             connection =
                 concurrentConnection;
@@ -302,6 +289,64 @@ public sealed class PlaidConnectionExchangeService
             connection.Id,
             connection.InstitutionName,
             connection.Status.ToString());
+    }
+
+    private async Task ApplyAndSaveConnectionAsync(
+        BankConnectionEntity connection,
+        string institutionName,
+        string? institutionId,
+        string itemId,
+        string protectedAccessToken,
+        DateTimeOffset now,
+        bool isNewConnection,
+        CancellationToken cancellationToken)
+    {
+        var snapshot = new ExchangeEntrySnapshot(_dbContext.Entry(connection));
+        try
+        {
+            ApplyConnectionState(connection, institutionName, institutionId,
+                itemId, protectedAccessToken, now);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch
+        {
+            // A failed exchange save must not leak a new credential or active
+            // status through a later save of this shared context.
+            if (isNewConnection)
+                _dbContext.Entry(connection).State = EntityState.Detached;
+            else
+                snapshot.Restore();
+            throw;
+        }
+    }
+
+    private sealed class ExchangeEntrySnapshot
+    {
+        private readonly EntityEntry _entry;
+        private readonly PropertyValues _current;
+        private readonly PropertyValues _original;
+        private readonly EntityState _state;
+        private readonly HashSet<string> _modified;
+
+        public ExchangeEntrySnapshot(EntityEntry entry)
+        {
+            _entry = entry;
+            _current = entry.CurrentValues.Clone();
+            _original = entry.OriginalValues.Clone();
+            _state = entry.State;
+            _modified = entry.Properties.Where(p => p.IsModified)
+                .Select(p => p.Metadata.Name).ToHashSet(StringComparer.Ordinal);
+        }
+
+        public void Restore()
+        {
+            _entry.CurrentValues.SetValues(_current);
+            _entry.OriginalValues.SetValues(_original);
+            _entry.State = _state;
+            if (_state == EntityState.Modified)
+                foreach (var property in _entry.Properties)
+                    property.IsModified = _modified.Contains(property.Metadata.Name);
+        }
     }
 
     private static void ApplyConnectionState(

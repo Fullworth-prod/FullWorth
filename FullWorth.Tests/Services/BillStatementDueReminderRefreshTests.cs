@@ -30,7 +30,8 @@ public sealed class BillStatementDueReminderRefreshTests
         var original = Assert.Single(await db.BillAlerts.ToListAsync());
         Assert.Equal(BillAlertSeverity.Info, original.Severity);
 
-        var refresh = new BillStatementDueReminderRefreshService(db, service, alerts);
+        var refresh = new BillStatementDueReminderRefreshService(
+            db, service, alerts, new BillPaymentDueRefreshCandidatesGateway(db));
         Assert.Equal(1, await refresh.RefreshAsync(
             new DateOnly(2026, 8, 14), DateTimeOffset.UtcNow));
 
@@ -68,7 +69,8 @@ public sealed class BillStatementDueReminderRefreshTests
             "USD", firstDay, DateTimeOffset.UtcNow);
         await db.SaveChangesAsync();
 
-        var refresh = new BillStatementDueReminderRefreshService(db, dueService, alerts);
+        var refresh = new BillStatementDueReminderRefreshService(
+            db, dueService, alerts, new BillPaymentDueRefreshCandidatesGateway(db));
         Assert.Equal(2, await refresh.RefreshAsync(
             new DateOnly(2026, 9, 14), DateTimeOffset.UtcNow));
 

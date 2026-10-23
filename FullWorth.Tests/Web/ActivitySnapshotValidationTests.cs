@@ -65,7 +65,7 @@ public sealed class ActivitySnapshotValidationTests
         var module = new Module { Results = [valid] };
         var page = new Activity();
         typeof(Activity).GetField("_bffModule", Flags)!.SetValue(page, module);
-        typeof(Activity).GetProperty("L", BindingFlags.Instance | BindingFlags.Public)!
+        typeof(Activity).GetProperty("L", Flags)!
             .SetValue(page, new Localizer());
         var load = typeof(Activity).GetMethod("LoadAsync", Flags)!;
         await (Task)load.Invoke(page, null)!;

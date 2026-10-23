@@ -6,6 +6,9 @@ public static class LocalLoginDestination
     public static string Normalize(string? value)
     {
         if (string.IsNullOrWhiteSpace(value) || value.Length > 2048) return "/app";
+        // Keep the protected pending-MFA cookie below browser/header bounds,
+        // including JSON escaping, encryption and base64 expansion.
+        if (System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(value).Length > 512) return "/app";
         var decoded = value;
         try
         {

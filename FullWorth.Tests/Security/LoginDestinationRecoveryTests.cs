@@ -24,6 +24,16 @@ public sealed class LoginDestinationRecoveryTests
     [InlineData("/app%0d%0aLocation:evil")]
     public void InvalidDestinationsUseSafeFallback(string? value) => Assert.Equal("/app", LocalLoginDestination.Normalize(value));
 
+    [Theory]
+    [InlineData('&')]
+    [InlineData('é')]
+    [InlineData('x')]
+    public void OversizedSerializedDestinationCannotOverflowPendingMfaCookie(char character)
+    {
+        var destination = "/app?state=" + new string(character, 600);
+        Assert.Equal("/app", LocalLoginDestination.Normalize(destination));
+    }
+
     [Fact]
     public async Task LoginRendersOnlyNormalizedDestinationAndNeverTheHostileOriginal()
     {

@@ -120,6 +120,7 @@
     private bool CanUpload =>
         !_isBusy &&
         !_isDisposed &&
+        !_pendingUploadId.HasValue &&
         _selectedFile is not null &&
         _selectedFile.Size > 0 &&
         _selectedFile.Size <= MaximumFileSize &&
@@ -321,11 +322,11 @@
         }
         catch (JSException)
         {
-            SetError(L["Upload failed"], L["FullWorth could not upload this statement."]);
+            SetUploadOrStatusError();
         }
         catch (Exception)
         {
-            SetError(L["Upload failed"], L["FullWorth could not upload this statement."]);
+            SetUploadOrStatusError();
         }
         finally
         {
@@ -335,6 +336,22 @@
                 _buttonText = L["Uploading…"];
                 StateHasChanged();
             }
+        }
+    }
+
+    private void SetUploadOrStatusError()
+    {
+        if (_pendingUploadId.HasValue)
+        {
+            SetError(
+                L["Statement status unavailable"],
+                L["FullWorth received the file, but its current processing status could not be verified. Use Check statement status; do not send the document again."]);
+        }
+        else
+        {
+            SetError(
+                L["Upload not confirmed"],
+                L["FullWorth could not confirm whether the file was accepted. Check bill history or refresh this page before trying another upload."]);
         }
     }
 

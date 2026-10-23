@@ -119,7 +119,43 @@ public sealed class RecurringBillDiscoveryPersistenceService
             .Select(transaction => new DiscoveryTransaction(transaction, null))
             .ToList();
 
-        return AnalyzeDiscovery(transactions, transactionSnapshots.Count).Diagnostics;
+        var analysis = AnalyzeDiscovery(transactions, transactionSnapshots.Count);
+
+        // Cadence/category acceptance is not the same as permission to
+        // associate transactions to an existing bill. Read owner-scoped
+        // relationships solely to report the count of safety conflicts.
+        var ownedStreams = await _dbContext.BillStreams.AsNoTracking()
+            .Where(stream => stream.UserId == userId)
+            .Select(stream => new { stream.Id, stream.ProviderName })
+            .ToListAsync(cancellationToken);
+        var associations = await _associationGateway.GetAsync(
+            userId,
+            transactionSnapshots.Select(item => item.TransactionId).ToArray(),
+            cancellationToken);
+        var priorLinks = associations.ToDictionary(
+            item => item.BankTransactionId, item => item.BillStreamId);
+        var existingByNormalizedProvider = ownedStreams
+            .GroupBy(stream => _merchantNormalizer.Normalize(stream.ProviderName),
+                StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.Select(item => item.Id).ToArray(),
+                StringComparer.OrdinalIgnoreCase);
+
+        var blocked = analysis.AcceptedDiscoveries.Count(discovery =>
+        {
+            existingByNormalizedProvider.TryGetValue(
+                discovery.ProviderName, out var matchingIds);
+            var existingId = matchingIds is { Length: 1 }
+                ? (Guid?)matchingIds[0] : null;
+            return matchingIds is { Length: > 1 } ||
+                discovery.Transactions.Any(transaction =>
+                    priorLinks.TryGetValue(transaction.Id, out var linkedId) &&
+                    linkedId != existingId);
+        });
+
+        return analysis.Diagnostics with
+        {
+            BlockedByExistingBillAmbiguity = blocked
+        };
     }
 
     public async Task<RecurringBillDiscoveryPersistenceResult>
@@ -245,6 +281,9 @@ public sealed class RecurringBillDiscoveryPersistenceService
         var newBillAlertCount =
             0;
 
+        // Accepted by cadence/category does not guarantee safe persistence.
+        var blockedByExistingBillAmbiguity = 0;
+
         var now =
             DateTimeOffset.UtcNow;
 
@@ -336,6 +375,7 @@ public sealed class RecurringBillDiscoveryPersistenceService
                     transaction.OriginalBillStreamId.HasValue &&
                     transaction.OriginalBillStreamId != persistedStream?.Id))
             {
+                blockedByExistingBillAmbiguity++;
                 continue;
             }
 
@@ -534,7 +574,10 @@ public sealed class RecurringBillDiscoveryPersistenceService
             NewBillAlertsCreated:
                 newBillAlertCount)
         {
-            Diagnostics = analysis.Diagnostics
+            Diagnostics = analysis.Diagnostics with
+            {
+                BlockedByExistingBillAmbiguity = blockedByExistingBillAmbiguity
+            }
         };
     }
 
@@ -1072,4 +1115,9 @@ public sealed record RecurringBillDiscoveryDiagnostics(
     int AcceptedCandidates)
 {
     public int RejectedCurrencyAmbiguity { get; init; }
+
+    // Counts category/cadence-eligible candidates that cannot be attached
+    // safely because multiple owned streams share a provider identity or
+    // some transactions already belong to a different owned stream.
+    public int BlockedByExistingBillAmbiguity { get; init; }
 }

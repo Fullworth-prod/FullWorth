@@ -50,32 +50,76 @@
     async function list(root) {
         const version = (listVersions.get(root) || 0) + 1;
         listVersions.set(root, version);
-        const response = await fetch("/bff/account/security/passkeys",
-            { credentials: "same-origin", cache: "no-store" });
-        if (!response.ok) throw new Error("Could not load your keys. Sign in again or try later.");
-        const keys = await response.json();
-        // Hydration/navigation can replace this region while a read is pending.
-        // An older response must not erase a newer post-enrollment refresh.
-        if (!root.isConnected || listVersions.get(root) !== version) return;
-        const target = root.querySelector("[data-passkey-list]");
-        target.replaceChildren();
-        for (const key of keys) {
-            const item = document.createElement("li");
-            const label = document.createElement("span");
-            label.textContent = key.name + " — added " + new Date(key.createdAt).toLocaleDateString();
-            const button = document.createElement("button");
-            button.type = "button"; button.textContent = "Remove";
-            button.dataset.passkeyAction = "remove"; button.dataset.keyId = key.id;
-            item.append(label, " ", button); target.append(item);
+        const retry = root.querySelector('[data-passkey-action="retry"]');
+        if (retry) { retry.hidden = true; retry.disabled = true; }
+        if (root.isConnected) {
+            root.dataset.loaded = "pending";
+            message(root, "Checking saved keys…");
         }
-        if (!keys.length) target.textContent = "No keys registered yet.";
-        root.dataset.loaded = "true";
+
+        try {
+            const response = await fetch("/bff/account/security/passkeys",
+                { credentials: "same-origin", cache: "no-store" });
+            if (response.status === 401)
+                throw new Error("Your session expired. Sign in again to review saved keys.");
+            if (!response.ok)
+                throw new Error("Could not load your keys. Try again.");
+            const keys = await response.json();
+            if (!Array.isArray(keys) || keys.length > 200 ||
+                keys.some(key => !key || typeof key.id !== "string" || !key.id.trim() ||
+                    typeof key.name !== "string" || !key.name.trim() ||
+                    typeof key.createdAt !== "string" ||
+                    !Number.isFinite(Date.parse(key.createdAt))) ||
+                new Set(keys.map(key => key.id)).size !== keys.length)
+                throw new Error("FullWorth returned an invalid key list. Try again.");
+
+            // An older request or an abandoned hydration root cannot replace
+            // the current account's visible list.
+            if (!root.isConnected || listVersions.get(root) !== version) return false;
+            const target = root.querySelector("[data-passkey-list]");
+            const fragment = document.createDocumentFragment();
+            for (const key of keys) {
+                const item = document.createElement("li");
+                const label = document.createElement("span");
+                label.textContent = key.name + " — added " + new Date(key.createdAt).toLocaleDateString();
+                const button = document.createElement("button");
+                button.type = "button"; button.textContent = "Remove";
+                button.dataset.passkeyAction = "remove"; button.dataset.keyId = key.id;
+                item.append(label, " ", button); fragment.append(item);
+            }
+            target.replaceChildren(fragment);
+            if (!keys.length) target.textContent = "No keys registered yet.";
+            root.dataset.loaded = "true";
+            if (retry) retry.hidden = true;
+            message(root, keys.length ? "Saved keys loaded." : "No keys registered yet.");
+            return true;
+        } catch (error) {
+            // Never erase previously verified keys because a later read failed.
+            if (root.isConnected && listVersions.get(root) === version) {
+                root.dataset.loaded = "error";
+                if (retry) retry.hidden = false;
+                message(root, error instanceof Error
+                    ? error.message : "Could not load your keys. Try again.");
+            }
+            return false;
+        } finally {
+            if (root.isConnected && listVersions.get(root) === version && retry)
+                retry.disabled = false;
+        }
     }
 
     document.addEventListener("click", async event => {
         const button = event.target.closest("[data-passkey-action]");
         const root = button?.closest("[data-passkeys]");
         if (!root || busy) return;
+        // Listing keys is read-only; no WebAuthn availability or credentials
+        // are needed to recover a failed authenticated GET.
+        if (button.dataset.passkeyAction === "retry") {
+            busy = true; button.disabled = true;
+            try { await list(root); }
+            finally { busy = false; button.disabled = false; }
+            return;
+        }
         if (!window.isSecureContext || !window.PublicKeyCredential || !navigator.credentials) {
             message(root, "This browser does not support passkeys. Use your password instead."); return;
         }
@@ -107,14 +151,15 @@
                 if (!creating) { location.assign(document.querySelector('input[name="returnUrl"]')?.value || "/app"); return; }
             }
             if (root.isConnected) {
-                await list(root);
-                message(root, "Saved. Your password and recovery options still work.");
+                if (await list(root))
+                    message(root, "Saved. Your password and recovery options still work.");
             } else {
                 // Refresh only through the current authenticated BFF session.
                 // Do not move credentials or old-operation success messages
                 // into a replacement region (possibly a different account).
-                document.querySelectorAll('[data-passkeys="manage"]').forEach(current =>
-                    list(current).catch(error => message(current, error.message)));
+                document.querySelectorAll('[data-passkeys="manage"]').forEach(current => {
+                    void list(current);
+                });
             }
         } catch (error) {
             message(root, error?.name === "NotAllowedError"
@@ -129,7 +174,7 @@
     function initialize() {
         document.querySelectorAll('[data-passkeys="manage"]:not([data-loaded])').forEach(root => {
             root.dataset.loaded = "pending";
-            list(root).catch(error => message(root, error.message));
+            void list(root);
         });
     }
     document.addEventListener("DOMContentLoaded", initialize);

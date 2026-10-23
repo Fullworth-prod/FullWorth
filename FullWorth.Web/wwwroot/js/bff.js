@@ -895,6 +895,15 @@ export async function uploadBillStatement(
         response);
 }
 
+export async function getLatestBillStatementUpload(billStreamId) {
+    if (!billStreamId) {
+        throw new Error("Bill stream ID is required.");
+    }
+
+    return await getJson(
+        `/bff/bill-streams/${encodeURIComponent(billStreamId)}/statement-uploads/latest`);
+}
+
 export async function getBillStatementUploadStatus(
     billStreamId,
     uploadId) {

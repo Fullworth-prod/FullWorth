@@ -151,7 +151,7 @@ public sealed class DiscoveryUnitOfWorkRecoveryTests
         var retainedLinks = await db.BillTransactionAssociations.AsNoTracking()
             .Where(a => a.UserId == owner).ToListAsync();
         Assert.Equal(2, retainedLinks.Count);
-        Assert.Contains(retainedLinks, a => a.BankTransactionId == firstExisting.Id && a.BillStreamId == existing.Id);
+        Assert.Contains(retainedLinks, a => a.BankTransactionId == firstExisting!.Id && a.BillStreamId == existing.Id);
         Assert.Contains(retainedLinks, a => a.BankTransactionId == oldCharge.Id && a.BillStreamId == retired.Id);
 
         var result = await service.DiscoverAndSaveAsync(owner);

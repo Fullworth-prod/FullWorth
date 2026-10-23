@@ -97,6 +97,24 @@ public sealed class BillStatementProcessingService
         return candidates.Count;
     }
 
+    // Give the worker a single-item entrypoint for fresh per-upload EF scopes.
+    public async Task ProcessPendingUploadAsync(
+        Guid uploadId, CancellationToken cancellationToken = default)
+    {
+        if (uploadId == Guid.Empty)
+            throw new ArgumentException("Upload identity is required.", nameof(uploadId));
+
+        var upload = await _dbContext.BillStatementUploads
+            .SingleOrDefaultAsync(item =>
+                item.Id == uploadId &&
+                (item.Status == BillStatementUploadStatus.Uploaded ||
+                 item.Status == BillStatementUploadStatus.Processing),
+                cancellationToken);
+
+        if (upload is not null)
+            await ProcessUploadAsync(upload, cancellationToken);
+    }
+
     private async Task ProcessUploadAsync(
         BillStatementUploadEntity upload,
         CancellationToken cancellationToken)
@@ -229,6 +247,31 @@ public sealed class BillStatementProcessingService
 
 }
 
+/// <summary>
+/// Process-local exception backoff. An unexpected infrastructure failure does
+/// not mark an uploaded financial document as permanently invalid.
+/// </summary>
+public sealed class StatementProcessingFailureBackoff
+{
+    private static readonly TimeSpan Delay = TimeSpan.FromHours(1);
+    private readonly Dictionary<Guid, DateTimeOffset> _deferredUntil = [];
+
+    public Guid[] DeferredIds(DateTimeOffset now)
+    {
+        foreach (var id in _deferredUntil.Where(item => item.Value <= now)
+            .Select(item => item.Key).ToArray())
+            _deferredUntil.Remove(id);
+        return _deferredUntil.Keys.ToArray();
+    }
+
+    public void Defer(Guid id, DateTimeOffset now)
+    {
+        if (id == Guid.Empty)
+            throw new ArgumentException("Upload identity is required.", nameof(id));
+        _deferredUntil[id] = now.Add(Delay);
+    }
+}
+
 public sealed class BillStatementProcessingBackgroundService
     : BackgroundService
 {
@@ -239,6 +282,8 @@ public sealed class BillStatementProcessingBackgroundService
 
     private static readonly TimeSpan MaintenanceInterval =
         TimeSpan.FromMinutes(5);
+
+    private readonly StatementProcessingFailureBackoff _failureBackoff = new();
 
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly BillStatementProcessingSignal _signal;
@@ -304,14 +349,52 @@ public sealed class BillStatementProcessingBackgroundService
     private async Task<int> ProcessBatchAsync(
         CancellationToken cancellationToken)
     {
-        using var scope = _scopeFactory.CreateScope();
+        var deferred = _failureBackoff.DeferredIds(DateTimeOffset.UtcNow);
+        Guid[] ids;
 
-        var processingService =
-            scope.ServiceProvider.GetRequiredService<BillStatementProcessingService>();
+        // Select the next nondeferred records without tracking their payloads.
+        using (var lookupScope = _scopeFactory.CreateScope())
+        {
+            var db = lookupScope.ServiceProvider.GetRequiredService<FullWorthDbContext>();
+            ids = await db.BillStatementUploads.AsNoTracking()
+                .Where(upload =>
+                    (upload.Status == BillStatementUploadStatus.Uploaded ||
+                     upload.Status == BillStatementUploadStatus.Processing) &&
+                    !deferred.Contains(upload.Id))
+                .OrderBy(upload => upload.CreatedAtUtc)
+                .ThenBy(upload => upload.Id)
+                .Take(ProcessingBatchSize)
+                .Select(upload => upload.Id)
+                .ToArrayAsync(cancellationToken);
+        }
 
-        return await processingService.ProcessPendingBatchAsync(
-            ProcessingBatchSize,
-            cancellationToken);
+        // Isolate every attempt in its own context. Unexpected failures must
+        // neither poison EF tracking nor starve valid documents behind them.
+        foreach (var id in ids)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            using var scope = _scopeFactory.CreateScope();
+            try
+            {
+                var processor = scope.ServiceProvider
+                    .GetRequiredService<BillStatementProcessingService>();
+                await processor.ProcessPendingUploadAsync(id, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _failureBackoff.Defer(id, DateTimeOffset.UtcNow);
+                // Never log user IDs, file paths, provider data, or statement content.
+                _logger.LogWarning(
+                    "A statement processing item was deferred after {ExceptionType}.",
+                    ex.GetType().Name);
+            }
+        }
+
+        return ids.Length;
     }
 
     private async Task ReconcileAccountDeletionQuarantineAsync(

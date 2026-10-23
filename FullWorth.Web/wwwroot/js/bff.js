@@ -875,6 +875,51 @@ export function getSelectedStatementFileInfo(
     };
 }
 
+// Only opaque IDs are retained in this tab. No file bytes, paths or tokens
+// are ever stored. The server rechecks ownership on every status read.
+const statementUploadIdPattern =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function pendingStatementUploadKey(billStreamId) {
+    return statementUploadIdPattern.test(billStreamId || "")
+        ? "fullworth.statement-upload." + billStreamId.toLowerCase()
+        : null;
+}
+
+export function getPendingStatementUploadId(billStreamId) {
+    const key = pendingStatementUploadKey(billStreamId);
+    if (!key) return null;
+    try {
+        const stored = sessionStorage.getItem(key);
+        return statementUploadIdPattern.test(stored || "") ? stored : null;
+    } catch {
+        return null;
+    }
+}
+
+export function rememberPendingStatementUpload(billStreamId, uploadId) {
+    const key = pendingStatementUploadKey(billStreamId);
+    if (!key || !statementUploadIdPattern.test(uploadId || ""))
+        return false;
+    try {
+        sessionStorage.setItem(key, uploadId.toLowerCase());
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+export function forgetPendingStatementUpload(billStreamId) {
+    const key = pendingStatementUploadKey(billStreamId);
+    if (!key) return false;
+    try {
+        sessionStorage.removeItem(key);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 export function clearStatementFileInput(
     inputId) {
 

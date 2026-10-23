@@ -257,17 +257,47 @@
                                     <span>@L["Paycheck"]: @FormatAmount(plan.PaycheckAmount, plan.CurrencyCode)</span>
                                 </div>
 
-                                <span class="planning-change-status @(plan.Shortfall > 0m ? "needs-review" : "is-ready")">
+                                <span class="planning-change-status @(RequiresPlanReview(plan) ? "needs-review" : "is-ready")">
                                     @(plan.Shortfall > 0m
                                         ? $"{L["Shortfall"].Value} {FormatAmount(plan.Shortfall, plan.CurrencyCode)}"
-                                        : L["On track"].Value)
+                                        : plan.Coverage is null
+                                            ? L["Coverage unknown"].Value
+                                            : plan.Coverage.SkippedBillCount > 0
+                                                ? L["Incomplete plan"].Value
+                                                : L["No recorded shortfall"].Value)
                                 </span>
                             </div>
 
                             <div class="planning-change-values">
                                 <span>@L["Planned for bills"]: @FormatAmount(plan.RecommendedSetAside, plan.CurrencyCode)</span>
-                                <strong>@L["Unplanned"]: @FormatAmount(plan.PaycheckRemainingAfterPlan, plan.CurrencyCode)</strong>
+                                <strong>@L["Not allocated by this plan"]: @FormatAmount(plan.PaycheckRemainingAfterPlan, plan.CurrencyCode)</strong>
                             </div>
+
+                            @if (plan.Coverage is null)
+                            {
+                                <p class="planning-coverage-warning" role="note">
+                                    @L["The original bill coverage for this historical plan was not saved. A zero recorded shortfall does not prove every bill was included."]
+                                </p>
+                            }
+                            else
+                            {
+                                <div class="planning-coverage-summary @(plan.Coverage.SkippedBillCount > 0 ? "needs-review" : "")" role="note">
+                                    <strong>@L["Bill evidence at plan creation"]: @plan.Coverage.EligibleBillCount @L["eligible"], @plan.Coverage.SkippedBillCount @L["excluded"]</strong>
+                                    @if (plan.Coverage.SkippedBillCount > 0)
+                                    {
+                                        <span>@L["Excluded because of missing statement evidence"]: @plan.Coverage.MissingStatementFactCount</span>
+                                        <span>@L["Missing due date"]: @plan.Coverage.MissingDueDateCount</span>
+                                        <span>@L["Currency mismatch"]: @plan.Coverage.CurrencyMismatchCount</span>
+                                        <span>@L["Invalid statement amount"]: @plan.Coverage.InvalidStatementAmountCount</span>
+                                        <span>@L["Prior currency conflict"]: @plan.Coverage.PriorCurrencyConflictCount</span>
+                                        <span>@L["These bills were not included in the recorded amount or shortfall. Review missing evidence before relying on this plan."]</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@L["No bill was excluded from the active bills evaluated at generation. This does not prove that every real-world bill was imported."]</span>
+                                    }
+                                </div>
+                            }
 
                             @if (plan.Shortfall > 0m)
                             {
@@ -277,7 +307,7 @@
                                 </div>
                             }
 
-                            <details class="planning-plan-details" open="@(plan.Shortfall > 0m)">
+                            <details class="planning-plan-details" open="@(RequiresPlanReview(plan))">
                                 <summary>
                                     <span>@L["See bill recommendations"]</span>
                                     <span class="planning-plan-count">@plan.Items.Count</span>
@@ -285,7 +315,7 @@
 
                                 @if (plan.Items.Count == 0)
                                 {
-                                    <p class="planning-plan-empty">@L["No bill recommendations were recorded for this paycheck."]</p>
+                                    <p class="planning-plan-empty">@L["No allocations were recorded for this paycheck. This does not prove that no bills were due."]</p>
                                 }
                                 else
                                 {
@@ -508,6 +538,11 @@
     {
         var result = await _bffModule!.InvokeAsync<PlanningRecentPaydayPlanViewModel[]>("getRecentPaydayPlans", 3)
             ?? throw new InvalidOperationException();
+        if (result.Any(plan =>
+                plan is null || plan.Id == Guid.Empty ||
+                plan.Coverage is not null && !plan.Coverage.IsValid()))
+            throw new InvalidOperationException("Invalid payday history coverage.");
+
         if (!_disposed) _recentPlans = result.ToList();
     });
 
@@ -739,6 +774,32 @@
         public int PaychecksAheadOverride { get; set; }
     }
 
+    private static bool RequiresPlanReview(PlanningRecentPaydayPlanViewModel plan) =>
+        plan.Shortfall > 0m || plan.Coverage is null || plan.Coverage.SkippedBillCount > 0;
+
+    private sealed class PlanningCoverageViewModel
+    {
+        public int EligibleBillCount { get; set; }
+        public int MissingStatementFactCount { get; set; }
+        public int MissingDueDateCount { get; set; }
+        public int CurrencyMismatchCount { get; set; }
+        public int InvalidStatementAmountCount { get; set; }
+        public int PriorCurrencyConflictCount { get; set; }
+
+        public int SkippedBillCount => MissingStatementFactCount + MissingDueDateCount +
+            CurrencyMismatchCount + InvalidStatementAmountCount + PriorCurrencyConflictCount;
+
+        public bool IsValid()
+        {
+            var counts = new long[]
+            {
+                EligibleBillCount, MissingStatementFactCount, MissingDueDateCount,
+                CurrencyMismatchCount, InvalidStatementAmountCount, PriorCurrencyConflictCount
+            };
+            return counts.All(value => value is >= 0 and <= 500) && counts.Sum() <= 500;
+        }
+    }
+
     private sealed class PlanningRecentPaydayPlanViewModel
     {
         public Guid Id { get; set; }
@@ -748,6 +809,7 @@
         public decimal RecommendedSetAside { get; set; }
         public decimal PaycheckRemainingAfterPlan { get; set; }
         public decimal Shortfall { get; set; }
+        public PlanningCoverageViewModel? Coverage { get; set; }
         public List<PlanningRecentPaydayPlanItemViewModel> Items { get; set; } = [];
     }
 

@@ -56,6 +56,8 @@ export async function verifyAuditBacklogRecovery(page, outputDir) {
             return route.fulfill({ status: 201, json: { entitlementId: grantOperation } });
         }
         const url = new URL(route.request().url()), skip = Number(url.searchParams.get("skip"));
+        if (url.pathname.endsWith("/users") && url.searchParams.get("take") === "1")
+            return route.fulfill({ json: [] }); // AppLayout's independent staff-access probe.
         assert.equal(url.searchParams.get("take"), "50");
         adminReads.push([url.pathname, skip]);
         const users = url.pathname.endsWith("/users");

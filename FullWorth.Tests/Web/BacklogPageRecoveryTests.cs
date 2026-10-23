@@ -106,6 +106,8 @@ public sealed class BacklogPageRecoveryTests
             object value = identifier == "getBillStatementUploadStatus" ? Statement! :
                 identifier == "getAdminUsers" ? new[] { new { id = Guid.NewGuid(), email = "synthetic@example.test" } } :
                 new { skip = (int)args![0]!, take = 50, totalCount = 151, items = new[] { new { id = Guid.NewGuid() } } };
+            if (identifier.StartsWith("getAdmin", StringComparison.Ordinal))
+                value = new { accessDenied = false, value };
             return ValueTask.FromResult(JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value),
                 new JsonSerializerOptions(JsonSerializerDefaults.Web))!);
         }

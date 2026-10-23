@@ -39,7 +39,7 @@ public sealed class AdminGrantHttpRecoveryTests
         Assert.Equal(operation, a!.EntitlementId);
         Assert.Equal(a.EntitlementId, b!.EntitlementId);
         using var missingProof = await staff.PostAsJsonAsync(path,
-            new { tier = "Standard", durationDays = 30, grantsLifetimeAccess = false, operationId = operation });
+            new { tier = "Standard", durationDays = 30, grantsLifetimeAccess = false, currentPassword = "", operationId = operation });
         Assert.Equal(HttpStatusCode.Unauthorized, missingProof.StatusCode);
         using var changed = await staff.PostAsJsonAsync(path,
             new { tier = "Standard", durationDays = 31, grantsLifetimeAccess = false,

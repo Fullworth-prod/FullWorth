@@ -60,41 +60,58 @@ public sealed class BillStatementProcessingService
 
     public async Task<int> ProcessPendingBatchAsync(
         int maxItems,
+        CancellationToken cancellationToken = default) =>
+        (await ProcessPendingBatchDetailedAsync(
+            maxItems, [], cancellationToken)).ConsideredCount;
+
+    public async Task<BillStatementProcessingBatchResult> ProcessPendingBatchDetailedAsync(
+        int maxItems,
+        IReadOnlyCollection<Guid> deferredUploadIds,
         CancellationToken cancellationToken = default)
     {
         if (maxItems <= 0)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(maxItems),
-                "Batch size must be greater than zero.");
-        }
+            throw new ArgumentOutOfRangeException(nameof(maxItems));
+        ArgumentNullException.ThrowIfNull(deferredUploadIds);
 
-        /*
-         * Load the pending uploads as tracked entities once.
-         *
-         * The previous path projected IDs and immediately queried every
-         * upload again before processing it, adding one redundant database
-         * round trip per item in the batch.
-         */
-        var candidates = await _dbContext.BillStatementUploads
+        // Query IDs without tracking so one failed DbContext update cannot
+        // retain dirty entities when work continues to the next upload.
+        var query = _dbContext.BillStatementUploads
+            .AsNoTracking()
             .Where(upload =>
                 upload.Status == BillStatementUploadStatus.Uploaded ||
-                upload.Status == BillStatementUploadStatus.Processing)
+                upload.Status == BillStatementUploadStatus.Processing);
+
+        var excluded = deferredUploadIds.Distinct().ToArray();
+        if (excluded.Length > 0)
+            query = query.Where(upload => !excluded.Contains(upload.Id));
+
+        var candidateIds = await query
             .OrderBy(upload => upload.CreatedAtUtc)
             .ThenBy(upload => upload.Id)
             .Take(maxItems)
+            .Select(upload => upload.Id)
             .ToListAsync(cancellationToken);
 
-        foreach (var upload in candidates)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
+        var failures = await BillStatementProcessingBatchRunner.RunAsync(
+            candidateIds,
+            async (id, token) =>
+            {
+                var upload = await _dbContext.BillStatementUploads
+                    .SingleOrDefaultAsync(item => item.Id == id, token);
+                if (upload is not null)
+                    await ProcessUploadAsync(upload, token);
+            },
+            (id, ex) =>
+            {
+                _dbContext.ChangeTracker.Clear();
+                _logger.LogError(
+                    "Unexpected document processing failure for upload {UploadId}: {ExceptionType}.",
+                    id, ex.GetType().Name);
+            },
+            cancellationToken);
 
-            await ProcessUploadAsync(
-                upload,
-                cancellationToken);
-        }
-
-        return candidates.Count;
+        return new BillStatementProcessingBatchResult(
+            candidateIds.Count, failures);
     }
 
     private async Task ProcessUploadAsync(
@@ -243,6 +260,8 @@ public sealed class BillStatementProcessingBackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly BillStatementProcessingSignal _signal;
     private readonly ILogger<BillStatementProcessingBackgroundService> _logger;
+    private readonly Dictionary<Guid, DateTimeOffset> _deferredUploads = new();
+    private static readonly TimeSpan PerUploadRetryDelay = TimeSpan.FromMinutes(5);
     private DateOnly? _lastSuccessfulDueReminderDate;
     private DateTimeOffset _nextDueReminderRetryUtc = DateTimeOffset.MinValue;
 
@@ -346,9 +365,24 @@ public sealed class BillStatementProcessingBackgroundService
         var processingService =
             scope.ServiceProvider.GetRequiredService<BillStatementProcessingService>();
 
-        return await processingService.ProcessPendingBatchAsync(
+        // Cooldown is in-memory only. After a restart, the upload is retried
+        // once and then deferred again if it still fails unexpectedly.
+        var now = DateTimeOffset.UtcNow;
+        foreach (var id in _deferredUploads
+            .Where(entry => entry.Value <= now)
+            .Select(entry => entry.Key)
+            .ToArray())
+            _deferredUploads.Remove(id);
+
+        var result = await processingService.ProcessPendingBatchDetailedAsync(
             ProcessingBatchSize,
+            _deferredUploads.Keys.ToArray(),
             cancellationToken);
+
+        foreach (var id in result.UnexpectedFailureIds)
+            _deferredUploads[id] = now.Add(PerUploadRetryDelay);
+
+        return result.ConsideredCount;
     }
 
     private async Task ReconcileAccountDeletionQuarantineAsync(
@@ -407,5 +441,46 @@ public sealed class BillStatementProcessingBackgroundService
         {
             // The losing wait was canceled after the other one completed.
         }
+    }
+}
+
+/// <summary>One batch window; failures are deferred without changing financial evidence.</summary>
+public sealed record BillStatementProcessingBatchResult(
+    int ConsideredCount,
+    IReadOnlyList<Guid> UnexpectedFailureIds);
+
+/// <summary>Isolates each unexpected upload failure; cancellation is never swallowed.</summary>
+public static class BillStatementProcessingBatchRunner
+{
+    public static async Task<IReadOnlyList<Guid>> RunAsync(
+        IReadOnlyList<Guid> candidateIds,
+        Func<Guid, CancellationToken, Task> process,
+        Action<Guid, Exception> onUnexpectedFailure,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(candidateIds);
+        ArgumentNullException.ThrowIfNull(process);
+        ArgumentNullException.ThrowIfNull(onUnexpectedFailure);
+
+        var failedIds = new List<Guid>();
+        foreach (var id in candidateIds)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                await process(id, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                failedIds.Add(id);
+                onUnexpectedFailure(id, ex);
+            }
+        }
+
+        return failedIds;
     }
 }

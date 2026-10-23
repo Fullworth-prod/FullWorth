@@ -274,6 +274,14 @@ public sealed class PlanningPaycheckAllocationStore(
                         allocation.BillStreamId)
                 .ToArray();
 
+        if (normalizedRun.Coverage is { } coverage &&
+            normalizedAllocations.Select(allocation => allocation.BillStreamId).Distinct().Count() >
+                coverage.EligibleBillCount)
+        {
+            throw new InvalidOperationException(
+                "Allocated bill count cannot exceed the saved eligible bill count.");
+        }
+
         if (normalizedAllocations
             .GroupBy(
                 allocation =>

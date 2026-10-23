@@ -123,6 +123,22 @@ public sealed class PaydayCoverageSnapshotTests
         Assert.Single(await fixture.Db.PlanningPaycheckPlanRuns.ToListAsync());
     }
 
+    [Fact]
+    public async Task CoverageCannotExcludeEveryBill_WhenAnAllocationIsSaved()
+    {
+        await using var fixture = await Fixture.CreateAsync(false, false);
+        var draft = new PlanningPaycheckPlanRunDraft(Fixture.PostedDate, 1000m, "USD", 100m, 900m, 0m)
+        {
+            Coverage = new PlanningPaycheckPlanCoverage(0, 1, 0, 0, 0, 0)
+        };
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            fixture.Store.SaveCompletePaycheckPlanAsync(fixture.UserId, fixture.PayrollId, draft,
+                [new PlanningPaycheckAllocationDraft(Guid.NewGuid(), Guid.NewGuid(),
+                    new DateOnly(2026, 10, 15), new DateOnly(2026, 10, 23), 100m, "USD")]));
+        Assert.Empty(await fixture.Db.PlanningPaycheckPlanRuns.ToListAsync());
+        Assert.Empty(await fixture.Db.PlanningPaycheckAllocations.ToListAsync());
+    }
+
     private static PlanningPaycheckPlanRunDraft EmptyDraft() =>
         new(Fixture.PostedDate, 1000m, "USD", 0m, 1000m, 0m);
 

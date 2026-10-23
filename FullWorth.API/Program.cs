@@ -1035,6 +1035,16 @@ builder.Services.AddScoped<
     BillStatementPaymentDueAlertService>();
 
 builder.Services.AddScoped<
+    IBillDueReminderMaintenanceReadGateway,
+    BillDueReminderMaintenanceReadGateway>();
+
+builder.Services.AddScoped<
+    BillStatementDueAlertMaintenance>();
+
+builder.Services.AddHostedService<
+    BillStatementDueAlertMaintenanceWorker>();
+
+builder.Services.AddScoped<
     BillStatementPersistenceService>();
 
 builder.Services.AddScoped<

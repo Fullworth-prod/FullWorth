@@ -338,7 +338,10 @@ public sealed class PlanningController(
                                             allocation.BillDueDate,
                                             allocation.PlannedAmount,
                                             allocation.CurrencyCode))
-                                .ToList()))
+                                .ToList())
+                        {
+                            Coverage = plan.Run.Coverage
+                        })
                 .ToList());
     }
 
@@ -476,7 +479,10 @@ public sealed class PlanningController(
                             item.BillStreamId,
                             item.ProviderName,
                             item.Reason.ToString()))
-                .ToList());
+                .ToList())
+        {
+            Coverage = plan.Coverage
+        };
     }
 }
 
@@ -527,7 +533,10 @@ public sealed record PlanningPaydayPlanSummaryResponse(
     decimal PaycheckRemainingAfterPlan,
     decimal Shortfall,
     DateTimeOffset CreatedAtUtc,
-    IReadOnlyList<PlanningPaydayPlanHistoryItemResponse> Items);
+    IReadOnlyList<PlanningPaydayPlanHistoryItemResponse> Items)
+{
+    public PlanningPaycheckPlanCoverage? Coverage { get; init; }
+}
 
 public sealed record PlanningPaydayPlanHistoryItemResponse(
     string? ProviderName,
@@ -548,7 +557,10 @@ public sealed record PlanningPaydayPlanResponse(
     decimal PaycheckRemainingAfterPlan,
     decimal Shortfall,
     IReadOnlyList<PlanningPaydayPlanItemResponse> Items,
-    IReadOnlyList<PlanningPaydayPlanSkippedBillResponse> SkippedBills);
+    IReadOnlyList<PlanningPaydayPlanSkippedBillResponse> SkippedBills)
+{
+    public PlanningPaycheckPlanCoverage? Coverage { get; init; }
+}
 
 public sealed record PlanningPaydayPlanItemResponse(
     Guid BillStreamId,

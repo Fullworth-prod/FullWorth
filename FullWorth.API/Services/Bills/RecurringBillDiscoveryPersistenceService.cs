@@ -287,30 +287,37 @@ public sealed class RecurringBillDiscoveryPersistenceService
         var now =
             DateTimeOffset.UtcNow;
 
-        // Incomplete bank imports can include some unrelated posted charges.
-        // A partial window does not establish that an older recurring bill
-        // ended. Require at least two approximate monthly cycles of eligible,
-        // user-owned posted-debit history before considering deactivation.
-        // This is a minimum coverage guard, not proof of provider cancellation.
-        var firstEligibleDate = analysis.Diagnostics.FirstEligiblePostedDate;
-        var lastEligibleDate = analysis.Diagnostics.LastEligiblePostedDate;
-        var hasDeactivationCoverage =
-            firstEligibleDate.HasValue &&
-            lastEligibleDate.HasValue &&
-            lastEligibleDate.Value.DayNumber - firstEligibleDate.Value.DayNumber >= 60;
+        // A wide window on another account cannot establish coverage of a
+        // bill's source account. Retain links unless every known source account
+        // has at least two approximate monthly cycles of eligible owned debits.
+        // This minimum guard does not prove cancellation or a complete import.
+        var accountsWithDeactivationCoverage = persistedTransactions
+            .Where(transaction =>
+                transaction.BankAccountId.HasValue &&
+                transaction.BankAccountId.Value != Guid.Empty &&
+                !transaction.IsPending && transaction.Amount > 0m &&
+                !string.IsNullOrWhiteSpace(GetNormalizedMerchantName(transaction)))
+            .GroupBy(transaction => transaction.BankAccountId!.Value)
+            .Where(group => group.Max(transaction => transaction.PostedDate.DayNumber) -
+                group.Min(transaction => transaction.PostedDate.DayNumber) >= 60)
+            .Select(group => group.Key)
+            .ToHashSet();
 
         foreach (var existingStream in
                  existingStreams)
         {
-            // Empty, pending-only, credit-only, and short-history syncs are
-            // insufficient to deactivate streams or unlink prior evidence.
-            if (!hasDeactivationCoverage)
+            if (existingStream.Source !=
+                BillStreamSource.AutomaticDiscovery)
             {
                 continue;
             }
 
-            if (existingStream.Source !=
-                BillStreamSource.AutomaticDiscovery)
+            if (!linkedTransactionsByStreamId.TryGetValue(
+                    existingStream.Id, out var linkedTransactions) ||
+                linkedTransactions.Count == 0 ||
+                linkedTransactions.Any(transaction =>
+                    !transaction.BankAccountId.HasValue ||
+                    !accountsWithDeactivationCoverage.Contains(transaction.BankAccountId.Value)))
             {
                 continue;
             }
@@ -336,14 +343,6 @@ public sealed class RecurringBillDiscoveryPersistenceService
                     now;
 
                 deactivatedCount++;
-            }
-
-            if (!linkedTransactionsByStreamId
-                .TryGetValue(
-                    existingStream.Id,
-                    out var linkedTransactions))
-            {
-                continue;
             }
 
             // Even an already-inactive stream must validate its source before
@@ -1056,6 +1055,7 @@ public sealed class RecurringBillDiscoveryPersistenceService
             CategoryPrimary = source.CategoryPrimary;
             CategoryDetailed = source.CategoryDetailed;
             CurrencyCode = source.CurrencyCode;
+            BankAccountId = source.BankAccountId;
         }
 
         public Guid Id { get; }
@@ -1079,6 +1079,8 @@ public sealed class RecurringBillDiscoveryPersistenceService
         public string? CategoryDetailed { get; }
 
         public string? CurrencyCode { get; }
+
+        public Guid? BankAccountId { get; }
     }
 }
 

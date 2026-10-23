@@ -590,6 +590,9 @@ public sealed class RecurringBillDiscoveryPersistenceServiceTests
             null,
             null);
 
+        foreach (var transaction in dbContext.ChangeTracker.Entries<BankTransactionEntity>())
+            transaction.Entity.BankAccountId = staleTransaction.BankAccountId;
+
         await dbContext.SaveChangesAsync();
 
         var service =

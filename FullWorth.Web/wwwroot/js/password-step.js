@@ -47,7 +47,7 @@
             if (!credential) throw new Error("No passkey was selected. You can still use an authenticator code.");
             await post("/auth/login/passkey-complete", { ceremonyId: begin.ceremonyId,
                 credentialJson: JSON.stringify(credentialJSON(credential)) });
-            location.assign("/app");
+            location.assign(document.querySelector('input[name="returnUrl"]')?.value || "/app");
         } catch (error) {
             status.textContent = error?.name === "NotAllowedError"
                 ? "Cancelled or timed out. You can try again or use an authenticator code."

@@ -29,6 +29,7 @@ public static class AuthEndpointMappings
                 context.Response.Headers.CacheControl = "no-store";
                 var form = await context.Request.ReadFormAsync(context.RequestAborted);
                 var completing = string.Equals(form["twoFactor"], "true", StringComparison.OrdinalIgnoreCase);
+                var returnUrl = LocalLoginDestination.Normalize(form["returnUrl"].ToString());
                 PasswordStepResult step;
                 if (completing)
                 {
@@ -37,6 +38,7 @@ public static class AuthEndpointMappings
                     if (pending is null)
                         return Results.Redirect("/login?error=" + Uri.EscapeDataString(
                             localizer["Your sign-in expired. Enter your email and password again."]));
+                    returnUrl = LocalLoginDestination.Normalize(pending.ReturnUrl);
                     step = await authenticationService.CompletePasswordSignInAsync(context, pending,
                         form["twoFactorCode"].ToString(), form["recoveryCode"].ToString(),
                         null, null, context.RequestAborted);
@@ -54,15 +56,18 @@ public static class AuthEndpointMappings
                 }
                 if (step.Pending is not null)
                 {
+                    step = step with { Pending = step.Pending with { ReturnUrl = returnUrl } };
                     pendingCookie.Write(context, step.Pending);
                     var target = "/login?twoFactor=true" + (step.Pending.CanUsePasskey ? "&passkey=true" : "");
                     if (!string.IsNullOrWhiteSpace(step.Result.ErrorMessage))
                         target += "&error=" + Uri.EscapeDataString(localizer[step.Result.ErrorMessage]);
+                    if (returnUrl != "/app") target += "&ReturnUrl=" + Uri.EscapeDataString(returnUrl);
                     return Results.Redirect(target);
                 }
-                return step.Result.Succeeded ? Results.Redirect("/app")
+                return step.Result.Succeeded ? Results.LocalRedirect(returnUrl)
                     : Results.Redirect(BuildLoginRedirect(
-                        LocalizeResultMessage(localizer, step.Result.ErrorMessage, "Unable to sign in."), false));
+                        LocalizeResultMessage(localizer, step.Result.ErrorMessage, "Unable to sign in."), false) +
+                        (returnUrl == "/app" ? "" : "&ReturnUrl=" + Uri.EscapeDataString(returnUrl)));
             }).RequireRateLimiting(AuthenticationRateLimitPolicy);
 
         endpoints.MapPost("/auth/login/passkey-options",
@@ -96,7 +101,7 @@ public static class AuthEndpointMappings
                     request.CredentialJson.Length > 32768) return Results.BadRequest();
                 var step = await authenticationService.CompletePasswordSignInAsync(context, pending,
                     null, null, request.CeremonyId, request.CredentialJson, context.RequestAborted);
-                if (step.Pending is not null) pendingCookie.Write(context, step.Pending);
+                if (step.Pending is not null) pendingCookie.Write(context, step.Pending with { ReturnUrl = pending.ReturnUrl });
                 return step.Result.Succeeded ? Results.NoContent() :
                     step.Result.IsRateLimited ? Results.StatusCode(StatusCodes.Status429TooManyRequests) :
                     Results.Unauthorized();

@@ -127,7 +127,8 @@ public sealed class StatementUploadStatusResumeTests
         var canUpload = typeof(StatementUploadPanel)
             .GetProperty("CanUpload", Flags)!;
         Assert.False((bool)canUpload.GetValue(component)!);
-        await Run(component, "SetUploadOrStatusError");
+        typeof(StatementUploadPanel).GetMethod("SetUploadOrStatusError", Flags)!
+            .Invoke(component, null);
         var message = (string?)typeof(StatementUploadPanel)
             .GetField("_message", Flags)!.GetValue(component);
         Assert.NotNull(message);

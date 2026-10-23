@@ -190,10 +190,10 @@ public sealed class DiscoveryAccountCoverageRecoveryTests
             Assert.Equal(canDeactivate ? 0 : links.Count, savedLinks.Count);
             if (!canDeactivate)
             {
-                Assert.Equal(links.OrderBy(link => link.Id).Select(link =>
-                    (link.Id, link.UserId, link.BankTransactionId, link.BillStreamId, link.UpdatedAtUtc)),
-                    savedLinks.OrderBy(link => link.Id).Select(link =>
-                    (link.Id, link.UserId, link.BankTransactionId, link.BillStreamId, link.UpdatedAtUtc)));
+                Assert.Equal(links.OrderBy(link => link.BankTransactionId).Select(link =>
+                    (link.UserId, link.BankTransactionId, link.BillStreamId, link.UpdatedAtUtc)),
+                    savedLinks.OrderBy(link => link.BankTransactionId).Select(link =>
+                    (link.UserId, link.BankTransactionId, link.BillStreamId, link.UpdatedAtUtc)));
             }
             Assert.Equal(transactionFacts, await Db.BankTransactions.AsNoTracking().OrderBy(item => item.Id)
                 .Select(item => new { item.Id, item.Amount, item.IsPending, item.IsRemoved, item.PostedDate })

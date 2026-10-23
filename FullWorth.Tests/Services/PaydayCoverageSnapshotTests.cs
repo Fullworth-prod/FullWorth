@@ -66,9 +66,10 @@ public sealed class PaydayCoverageSnapshotTests
         var plan = await fixture.Service.GenerateAsync(fixture.UserId, fixture.PayrollId, Fixture.PostedDate);
         Assert.Empty(plan.Items);
         Assert.Equal(0m, plan.RecommendedSetAside);
-        Assert.Equal(1, plan.Coverage!.EligibleBillCount);
-        Assert.Equal(1, plan.Coverage.EvaluatedBillCount);
-        Assert.Equal(0, plan.Coverage.SkippedBillCount);
+        var coverage = Assert.IsType<PlanningPaycheckPlanCoverage>(plan.Coverage);
+        Assert.Equal(1, coverage.EligibleBillCount);
+        Assert.Equal(1, coverage.EvaluatedBillCount);
+        Assert.Equal(0, coverage.SkippedBillCount);
     }
 
     [Fact]

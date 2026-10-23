@@ -38,8 +38,9 @@ public sealed class PaydayCoverageAuthorizationTests
         var replay = await replayResponse.Content.ReadFromJsonAsync<PlanningPaydayPlanResponse>();
         Assert.NotNull(replay);
         Assert.True(replay.IsReplay);
-        Assert.Equal(coverage, replay.Coverage);
-        Assert.Equal(15, replay.Coverage.SkippedBillCount);
+        var savedCoverage = Assert.IsType<PlanningPaycheckPlanCoverage>(replay.Coverage);
+        Assert.Equal(coverage, savedCoverage);
+        Assert.Equal(15, savedCoverage.SkippedBillCount);
         Assert.Empty(replay.Items);
         Assert.Equal(0m, replay.RecommendedSetAside);
 

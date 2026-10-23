@@ -23,7 +23,7 @@
         {
             <button type="button"
                     class="admin-refresh-button"
-                    disabled="@_isMutating"
+                    disabled="@(_isMutating || _isPaging)"
                     @onclick="ReloadAsync">
                 <span aria-hidden="true">↻</span>
                 @L["Refresh"]
@@ -102,6 +102,10 @@
         {
             <div class="admin-mutation-message error" role="alert">@_mutationError</div>
         }
+        @if (!string.IsNullOrWhiteSpace(_paginationError))
+        {
+            <div class="admin-mutation-message error" role="alert">@_paginationError</div>
+        }
 
         <section class="admin-panel">
             <div class="admin-panel-heading">
@@ -110,7 +114,7 @@
                     <h2>@L["Users"]</h2>
                 </div>
 
-                <span class="admin-panel-note">@L["Showing up to 50 accounts"]</span>
+                <span class="admin-panel-note">@L["50 accounts maximum per page"]</span>
             </div>
 
             @if (_users.Count == 0)
@@ -175,6 +179,19 @@
                     }
                 </div>
             }
+            <nav class="admin-page-controls" aria-label="@L["User account pages"]">
+                <button type="button" class="admin-secondary-button"
+                        disabled="@(_isPaging || _isMutating || _usersSkip == 0)"
+                        @onclick="() => ChangePageAsync(AdminSection.Users, -1)">
+                    @L["Previous"]
+                </button>
+                <span>@L["Showing accounts {0}–{1}", _usersSkip + (_users.Count == 0 ? 0 : 1), _usersSkip + _users.Count]</span>
+                <button type="button" class="admin-secondary-button"
+                        disabled="@(_isPaging || _isMutating || GetTargetSkip(_usersSkip, _users.Count, null, 1) is null)"
+                        @onclick="() => ChangePageAsync(AdminSection.Users, 1)">
+                    @L["Next"]
+                </button>
+            </nav>
         </section>
 
         <section class="admin-panel">
@@ -419,6 +436,19 @@
                     </table>
                 </div>
             }
+            <nav class="admin-page-controls" aria-label="@L["Access key pages"]">
+                <button type="button" class="admin-secondary-button"
+                        disabled="@(_isPaging || _isMutating || _keysSkip == 0)"
+                        @onclick="() => ChangePageAsync(AdminSection.Keys, -1)">
+                    @L["Previous"]
+                </button>
+                <span>@L["Showing keys {0}–{1} of {2}", _keysSkip + ((_accessKeys?.Items.Count ?? 0) == 0 ? 0 : 1), _keysSkip + (_accessKeys?.Items.Count ?? 0), _accessKeys?.TotalCount ?? 0]</span>
+                <button type="button" class="admin-secondary-button"
+                        disabled="@(_isPaging || _isMutating || GetTargetSkip(_keysSkip, _accessKeys?.Items.Count ?? 0, _accessKeys?.TotalCount, 1) is null)"
+                        @onclick="() => ChangePageAsync(AdminSection.Keys, 1)">
+                    @L["Next"]
+                </button>
+            </nav>
         </section>
 
         <section class="admin-panel">
@@ -462,11 +492,32 @@
                     }
                 </div>
             }
+            <nav class="admin-page-controls" aria-label="@L["Audit event pages"]">
+                <button type="button" class="admin-secondary-button"
+                        disabled="@(_isPaging || _isMutating || _auditSkip == 0)"
+                        @onclick="() => ChangePageAsync(AdminSection.Audit, -1)">
+                    @L["Previous"]
+                </button>
+                <span>@L["Showing events {0}–{1} of {2}", _auditSkip + ((_auditLog?.Items.Count ?? 0) == 0 ? 0 : 1), _auditSkip + (_auditLog?.Items.Count ?? 0), _auditLog?.TotalCount ?? 0]</span>
+                <button type="button" class="admin-secondary-button"
+                        disabled="@(_isPaging || _isMutating || GetTargetSkip(_auditSkip, _auditLog?.Items.Count ?? 0, _auditLog?.TotalCount, 1) is null)"
+                        @onclick="() => ChangePageAsync(AdminSection.Audit, 1)">
+                    @L["Next"]
+                </button>
+            </nav>
         </section>
     }
 </div>
 
 @code {
+    private const int PageSize = 50;
+    private enum AdminSection { Users, Keys, Audit }
+    private int _usersSkip;
+    private int _keysSkip;
+    private int _auditSkip;
+    private bool _isPaging;
+    private string? _paginationError;
+
     private IJSObjectReference? _adminModule;
     private List<AdminUserViewModel> _users = [];
     private AdminPage<AdminAccessKeyViewModel>? _accessKeys;
@@ -519,6 +570,7 @@
 
     private async Task ReloadAsync()
     {
+        if (_isPaging) return;
         await LoadAsync(clearTransientKey: true);
         StateHasChanged();
     }
@@ -529,6 +581,7 @@
         _accessDenied = false;
         _errorMessage = null;
         _mutationError = null;
+        _paginationError = null;
         _pendingRevokeKeyId = null;
         _users = [];
         _accessKeys = null;
@@ -545,8 +598,8 @@
 
             var usersResult = await module.InvokeAsync<AdminFetchResult<AdminUserViewModel[]>>(
                 "getAdminUsers",
-                0,
-                50);
+                _usersSkip,
+                PageSize);
 
             if (usersResult.AccessDenied)
             {
@@ -556,8 +609,8 @@
 
             var keysResult = await module.InvokeAsync<AdminFetchResult<AdminPage<AdminAccessKeyViewModel>>>(
                 "getAdminAccessKeys",
-                0,
-                50);
+                _keysSkip,
+                PageSize);
 
             if (keysResult.AccessDenied)
             {
@@ -567,8 +620,8 @@
 
             var auditResult = await module.InvokeAsync<AdminFetchResult<AdminPage<AdminAuditLogViewModel>>>(
                 "getAdminAuditLog",
-                0,
-                50);
+                _auditSkip,
+                PageSize);
 
             if (auditResult.AccessDenied)
             {
@@ -591,6 +644,104 @@
         finally
         {
             _isLoading = false;
+        }
+    }
+
+    // Never request an unbounded server page. User totals are intentionally
+    // omitted from the current users endpoint; a full page permits one next read.
+    private static int? GetTargetSkip(int skip, int count, int? total, int direction)
+    {
+        if (direction == -1)
+            return skip > 0 ? Math.Max(0, skip - PageSize) : null;
+        if (direction != 1 || count != PageSize ||
+            (total.HasValue && skip + (long)count >= total.Value) ||
+            skip > int.MaxValue - PageSize)
+            return null;
+
+        return skip + PageSize;
+    }
+
+    private async Task ChangePageAsync(AdminSection section, int direction)
+    {
+        if (_isPaging || _isMutating || _isLoading || _accessDenied)
+            return;
+
+        var next = section switch
+        {
+            AdminSection.Users => GetTargetSkip(_usersSkip, _users.Count, null, direction),
+            AdminSection.Keys => GetTargetSkip(_keysSkip, _accessKeys?.Items.Count ?? 0, _accessKeys?.TotalCount, direction),
+            AdminSection.Audit => GetTargetSkip(_auditSkip, _auditLog?.Items.Count ?? 0, _auditLog?.TotalCount, direction),
+            _ => null
+        };
+
+        if (!next.HasValue)
+            return;
+
+        _isPaging = true;
+        _paginationError = null;
+        try
+        {
+            var module = await GetAdminModuleAsync();
+            switch (section)
+            {
+                case AdminSection.Users:
+                {
+                    var result = await module.InvokeAsync<AdminFetchResult<AdminUserViewModel[]>>(
+                        "getAdminUsers", next.Value, PageSize);
+                    if (result.AccessDenied) { _accessDenied = true; return; }
+                    var rows = result.Value ?? throw new InvalidOperationException();
+                    if (rows.Length > PageSize || rows.Any(row => row is null || row.Id == Guid.Empty))
+                        throw new InvalidOperationException();
+                    if (direction > 0 && rows.Length == 0)
+                    {
+                        _paginationError = L["There are no more accounts beyond the last page."];
+                        return;
+                    }
+                    _users = rows.ToList();
+                    _usersSkip = next.Value;
+                    break;
+                }
+                case AdminSection.Keys:
+                {
+                    var result = await module.InvokeAsync<AdminFetchResult<AdminPage<AdminAccessKeyViewModel>>>(
+                        "getAdminAccessKeys", next.Value, PageSize);
+                    if (result.AccessDenied) { _accessDenied = true; return; }
+                    var page = result.Value ?? throw new InvalidOperationException();
+                    if (page.Skip != next.Value || page.Items is null ||
+                        page.Items.Count > PageSize || page.TotalCount < 0 ||
+                        page.Items.Any(item => item is null || item.Id == Guid.Empty))
+                        throw new InvalidOperationException();
+                    _accessKeys = page;
+                    _keysSkip = next.Value;
+                    _pendingRevokeKeyId = null;
+                    break;
+                }
+                case AdminSection.Audit:
+                {
+                    var result = await module.InvokeAsync<AdminFetchResult<AdminPage<AdminAuditLogViewModel>>>(
+                        "getAdminAuditLog", next.Value, PageSize);
+                    if (result.AccessDenied) { _accessDenied = true; return; }
+                    var page = result.Value ?? throw new InvalidOperationException();
+                    if (page.Skip != next.Value || page.Items is null ||
+                        page.Items.Count > PageSize || page.TotalCount < 0 ||
+                        page.Items.Any(item => item is null || item.Id == Guid.Empty))
+                        throw new InvalidOperationException();
+                    _auditLog = page;
+                    _auditSkip = next.Value;
+                    break;
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // An independent read failure never clears other admin panels,
+            // stored drafts, or the one-time key held in memory.
+            _paginationError = L["Could not load that page. The previously loaded records remain available. Try again."];
+        }
+        finally
+        {
+            _isPaging = false;
+            StateHasChanged();
         }
     }
 
@@ -656,6 +807,8 @@
             _newKeyLabel = string.Empty;
             _newKeyCurrentPassword = string.Empty;
             _newKeyTwoFactorCode = string.Empty;
+            _keysSkip = 0;
+            _auditSkip = 0;
 
             await LoadAsync(clearTransientKey: false);
         }

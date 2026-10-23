@@ -307,7 +307,7 @@ public sealed class BillWorkspaceLifecycleTests
 
         var ordered = (IReadOnlyList<BillDetail.BillChangeViewModel>)typeof(BillDetail)
             .GetProperty("StatementChangesByPeriod", Flags)!.GetValue(page)!;
-        Assert.Equal([latestBillingChange, historicalBackfill], ordered);
+        Assert.Equal(new[] { latestBillingChange, historicalBackfill }, ordered);
     }
 
     [Fact]

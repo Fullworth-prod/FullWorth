@@ -28,8 +28,8 @@ public sealed class EndpointSecurityInventoryTests
         "API|GET|/api/bank-connections|authenticated|global:300-per-minute",
         "API|GET|/api/bank-transactions|authenticated|global:300-per-minute",
         "API|GET|/api/bill-discovery/diagnostics|authenticated|named:financial-refresh",
-        "API|GET|/api/bill-streams/{billStreamId:guid}/statement-uploads/{uploadId:guid}/file|authenticated|named:statement-download",
         "API|GET|/api/bill-streams/{billStreamId:guid}/statement-uploads/latest|authenticated|global:300-per-minute",
+        "API|GET|/api/bill-streams/{billStreamId:guid}/statement-uploads/{uploadId:guid}/file|authenticated|named:statement-download",
         "API|GET|/api/bill-streams/{billStreamId:guid}/statement-uploads/{uploadId:guid}|authenticated|global:300-per-minute",
         "API|GET|/api/bill-streams/{billStreamId:guid}|authenticated|global:300-per-minute",
         "API|GET|/api/bill-streams|authenticated|global:300-per-minute",
@@ -144,8 +144,8 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|GET|/bff/bank-connections|authenticated|none",
         "WEB|GET|/bff/bank-transactions|authenticated|none",
         "WEB|GET|/bff/bill-discovery/diagnostics|authenticated|named:financial-refresh",
-        "WEB|GET|/bff/bill-streams/{billStreamId:guid}/statement-uploads/{uploadId:guid}/file|authenticated|none",
         "WEB|GET|/bff/bill-streams/{billStreamId:guid}/statement-uploads/latest|authenticated|none",
+        "WEB|GET|/bff/bill-streams/{billStreamId:guid}/statement-uploads/{uploadId:guid}/file|authenticated|none",
         "WEB|GET|/bff/bill-streams/{billStreamId:guid}/statement-uploads/{uploadId:guid}|authenticated|none",
         "WEB|GET|/bff/bill-streams/{billStreamId:guid}|authenticated|none",
         "WEB|GET|/bff/bill-streams|authenticated|none",
@@ -277,11 +277,11 @@ public sealed class EndpointSecurityInventoryTests
     public void Snapshot_CoversEveryReviewedAccessAndRateLimitClass()
     {
         Assert.Equal(
-            225,
+            227,
             ExpectedInventory.Length);
 
         Assert.Equal(
-            96,
+            97,
             ExpectedInventory.Count(
                 row =>
                     row.StartsWith(
@@ -289,7 +289,7 @@ public sealed class EndpointSecurityInventoryTests
                         StringComparison.Ordinal)));
 
         Assert.Equal(
-            129,
+            130,
             ExpectedInventory.Count(
                 row =>
                     row.StartsWith(

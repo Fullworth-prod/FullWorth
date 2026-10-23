@@ -95,6 +95,10 @@
         {
             <div class="transaction-history-error" role="alert">@_syncError</div>
         }
+        @if (!string.IsNullOrWhiteSpace(_accountFilterResetNotice))
+        {
+            <p class="transaction-history-note" role="status">@_accountFilterResetNotice</p>
+        }
 
         <section class="transaction-evidence-note" aria-labelledby="transaction-evidence-heading">
             <h2 id="transaction-evidence-heading">@L["Spending is not the same as recurring bills"]</h2>
@@ -424,6 +428,8 @@
 
     private string _selectedAccountId =
         string.Empty;
+
+    private string? _accountFilterResetNotice;
 
     private TransactionLedgerPresentation.OutflowSummary _outflowSummary = new(null, 0);
 
@@ -788,6 +794,18 @@
                     account =>
                         account.AccountName)
                 .ToList();
+
+        // A previously selected account may disappear after a successful
+        // refresh; stale hidden filters must never hide current transactions.
+        _accountFilterResetNotice = null;
+        if (!string.IsNullOrWhiteSpace(_selectedAccountId) &&
+            (!Guid.TryParse(_selectedAccountId, out var selectedId) ||
+             !_availableAccounts.Any(account => account.Id == selectedId)))
+        {
+            _selectedAccountId = string.Empty;
+            _accountFilterResetNotice =
+                L["Previously selected account is not in the loaded history. Showing all loaded accounts."].Value;
+        }
     }
 
     private bool MatchesSelectedAccount(

@@ -36,7 +36,8 @@ public sealed class StatementUploadSelectionTests
     public void UploadAvailability_RejectsMissingBillId()
     {
         var panel = CreatePanel("statement.pdf", 128);
-        panel.BillStreamId = Guid.Empty;
+        typeof(StatementUploadPanel).GetProperty(nameof(StatementUploadPanel.BillStreamId))!
+            .SetValue(panel, Guid.Empty);
         Assert.False(CanUpload(panel));
     }
 
@@ -51,7 +52,9 @@ public sealed class StatementUploadSelectionTests
 
     private static StatementUploadPanel CreatePanel(string name, long size)
     {
-        var panel = new StatementUploadPanel { BillStreamId = Guid.NewGuid() };
+        var panel = new StatementUploadPanel();
+        typeof(StatementUploadPanel).GetProperty(nameof(StatementUploadPanel.BillStreamId))!
+            .SetValue(panel, Guid.NewGuid());
         typeof(StatementUploadPanel).GetField("_selectedFile", PrivateInstance)!
             .SetValue(panel, new StatementUploadPanel.SelectedStatementFileViewModel
             {

@@ -61,6 +61,18 @@ export async function verifyAuditBacklogRecovery(page, outputDir) {
             await groups.nth(i).getByText("Records 1–50", { exact: true }).waitFor();
         }
         assert.equal(adminReads.filter(([, skip]) => skip === 50).length, 3);
+        for (const width of [320, 1440]) {
+            await page.setViewportSize({ width, height: 1000 });
+            const geometry = await groups.first().evaluate(root => {
+                const bounds = root.getBoundingClientRect();
+                return { left: bounds.left, right: bounds.right, viewport: innerWidth,
+                    heights: [...root.querySelectorAll("button")].map(button => button.getBoundingClientRect().height) };
+            });
+            assert.ok(geometry.left >= 0 && geometry.right <= geometry.viewport + 1);
+            assert.ok(geometry.heights.every(height => height >= 44), "pager controls retain usable target height");
+            await groups.first().screenshot({ path: path.join(outputDir, "audit-admin-pager-" + width + ".png") });
+        }
+        await page.setViewportSize({ width: 1440, height: 1000 });
         console.log("Audit admin recovery passed: stable grant retries with cleared credentials and all three bounded admin pagers.");
     } catch (error) {
         await page.screenshot({ path: path.join(outputDir, "audit-backlog-recovery-failure.png"), fullPage: true });

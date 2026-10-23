@@ -649,25 +649,38 @@
             return;
         }
 
-        _transactionLoadLimit =
-            Math.Clamp(
-                await JS.InvokeAsync<int>(
-                    "FullWorthPerformance.getTransactionLoadLimit"),
-                50,
-                MaximumTransactionLoadLimit);
+        // Performance profiling is optional. An unavailable or broken device
+        // script must not block fetching the authenticated transaction ledger.
+        const int fallbackLimit = 100;
+        int requestedLimit = fallbackLimit;
+        string executionMode = "server";
 
-        var executionMode =
-            await JS.InvokeAsync<string>(
+        try
+        {
+            requestedLimit = await JS.InvokeAsync<int>(
+                "FullWorthPerformance.getTransactionLoadLimit");
+            if (requestedLimit <= 0)
+                requestedLimit = fallbackLimit;
+
+            executionMode = await JS.InvokeAsync<string>(
                 "FullWorthPerformance.getExecutionMode");
+        }
+        catch (JSException)
+        {
+            requestedLimit = fallbackLimit;
+            executionMode = "server";
+        }
+        catch (Exception)
+        {
+            requestedLimit = fallbackLimit;
+            executionMode = "server";
+        }
 
-        _useLocalTransactionFiltering =
-            string.Equals(
-                executionMode,
-                "local",
-                StringComparison.OrdinalIgnoreCase);
-
-        _hasResolvedInitialTransactionLoadLimit =
-            true;
+        _transactionLoadLimit = Math.Clamp(
+            requestedLimit, 50, MaximumTransactionLoadLimit);
+        _useLocalTransactionFiltering = string.Equals(
+            executionMode, "local", StringComparison.OrdinalIgnoreCase);
+        _hasResolvedInitialTransactionLoadLimit = true;
     }
 
     private int GetNextTransactionLoadLimit()

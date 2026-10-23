@@ -161,7 +161,10 @@ public sealed class BillStatementUploadStatusAuthorizationTests
     [Fact]
     public async Task Latest_CannotReadAnotherUsersUpload()
     {
-        using var client = _factory.CreateHttpsClient();
+        // Keep new registration traffic independent of the shared fixture's
+        // intentionally strict authentication rate limiter.
+        using var fixture = new FullWorthApiFactory();
+        using var client = fixture.CreateHttpsClient();
         var owner = await TestUserAuthentication.RegisterAndLoginAsync(client);
         var attacker = await TestUserAuthentication.RegisterAndLoginAsync(client);
         TestUserAuthentication.Authorize(client, owner);

@@ -132,6 +132,8 @@ public sealed class TransactionLedgerSnapshotIntegrityTests
         public ValueTask<T> InvokeAsync<T>(
             string identifier, CancellationToken cancellationToken, object?[]? args)
         {
+            if (identifier == "deactivateLocalTransactionFiltering")
+                return ValueTask.FromResult(default(T)!);
             if (identifier != "getBankTransactionsStream")
                 throw new InvalidOperationException("Unexpected call");
             Reads++;

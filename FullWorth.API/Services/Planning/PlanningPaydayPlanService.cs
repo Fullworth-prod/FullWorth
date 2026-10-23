@@ -94,9 +94,18 @@ public sealed class PlanningPaydayPlanService(
 
         if (persistedPlan is not null)
         {
-            var replayBills =
-                await billStreamGateway.ListOwnedActiveAsync(
+            var savedBillIds = persistedPlan.Allocations
+                .Select(allocation => allocation.BillStreamId)
+                .Distinct()
+                .ToArray();
+
+            // Replay is historical: inactive owned streams still supply names.
+            // Resolve only the saved identities, without reading live payroll/facts.
+            var replayBills = savedBillIds.Length == 0
+                ? Array.Empty<BillStreamReadRecord>()
+                : await billStreamGateway.ListOwnedByIdsAsync(
                     userId,
+                    savedBillIds,
                     cancellationToken);
 
             return ReadyFromSaved(

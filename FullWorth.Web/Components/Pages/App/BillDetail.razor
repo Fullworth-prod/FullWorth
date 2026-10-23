@@ -298,6 +298,19 @@
                                 <div class="statement-amount">
                                     <strong>@FormatMoney(statement.TotalAmount, statement.CurrencyCode)</strong>
                                     <span>@statement.CurrencyCode</span>
+                                    @if (statement.UploadId is Guid uploadId && uploadId != Guid.Empty)
+                                    {
+                                        <a class="fw-inline-action"
+                                           href="@($"/bff/bill-streams/{BillStreamId:D}/statement-uploads/{uploadId:D}/file")"
+                                           target="_blank"
+                                           rel="noopener noreferrer">
+                                            @L["Open original statement"]
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span>@L["Original document unavailable"]</span>
+                                    }
                                 </div>
                             </article>
                         }
@@ -742,6 +755,7 @@
         public DateOnly? DueDate { get; set; }
         public decimal TotalAmount { get; set; }
         public string? CurrencyCode { get; set; }
+        public Guid? UploadId { get; set; }
     }
 
     public sealed class BillChangeViewModel

@@ -131,7 +131,7 @@
     private bool IsOwner => HasRole(OwnerRole);
 
     private bool RequiresPrivilegeGrantReauthentication =>
-        _pending?.MakeActive == true || _pending?.Kind == AdminMutationKind.Program;
+        _pending?.MakeActive == true;
 
     private void QueueAdminRole() =>
         QueueRole(AdminRole, !HasRole(AdminRole));
@@ -219,7 +219,7 @@
                 _reauthCurrentPassword))
         {
             _errorMessage =
-                L["Enter your current password before changing access."];
+                L["Enter your current password before granting access."];
             return;
         }
 
@@ -307,8 +307,12 @@
             {
                 IsActive = mutation.MakeActive,
                 EndsAtUtc = null,
-                CurrentPassword = _reauthCurrentPassword,
+                CurrentPassword =
+                    mutation.MakeActive
+                        ? _reauthCurrentPassword
+                        : null,
                 TwoFactorCode =
+                    mutation.MakeActive &&
                     !string.IsNullOrWhiteSpace(
                         _reauthTwoFactorCode)
                         ? _reauthTwoFactorCode.Trim()
@@ -360,7 +364,7 @@
             }
         }
 
-        return L["FullWorth could not complete that administrative change."];
+        return UnconfirmedMutationMessage();
     }
 
     private string UnconfirmedMutationMessage() =>

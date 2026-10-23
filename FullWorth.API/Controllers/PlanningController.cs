@@ -295,8 +295,9 @@ public sealed class PlanningController(
         if (billIds.Count > 0)
         {
             var ownedBills =
-                await billStreamGateway.ListOwnedActiveAsync(
+                await billStreamGateway.ListOwnedByIdsAsync(
                     userId,
+                    billIds,
                     cancellationToken);
 
             billNameById =

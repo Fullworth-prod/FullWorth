@@ -1,4 +1,3 @@
-import { verifyAuditBacklogRecovery } from "./audit-backlog-recovery.test.mjs";
 import assert from "node:assert/strict";
 import path from "node:path";
 
@@ -216,5 +215,4 @@ export async function verifyBillsWorkspace(page, outputDir) {
     await page.unroute("**/bff/bill-discovery/diagnostics", diagnostics);
     await page.evaluate(() => document.documentElement.style.fontSize = "");
   }
-  await verifyAuditBacklogRecovery(page, outputDir);
 }

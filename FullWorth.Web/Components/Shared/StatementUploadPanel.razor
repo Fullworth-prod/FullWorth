@@ -26,7 +26,7 @@
                class="statement-file-input"
                type="file"
                accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-               disabled="@(_isBusy || _acceptedUploadId is not null || _uploadOutcomeUncertain)"
+               disabled="@_isBusy"
                @onchange="HandleFileChangedAsync" />
 
         <label class="@GetPickerClass()" for="@_inputId">
@@ -63,16 +63,6 @@
                 <span aria-hidden="true">→</span>
             }
         </button>
-        @if (_acceptedUploadId is not null)
-        {
-            <button type="button" class="statement-upload-button" disabled="@_isBusy" @onclick="CheckAcceptedUploadAsync">
-                @L["Check statement status"]
-            </button>
-        }
-        @if (_uploadOutcomeUncertain)
-        {
-            <p>@L["Do not upload the file again until you have reviewed this bill's evidence. Refresh the bill or return later to check it."]</p>
-        }
     </div>
 
     @if (!string.IsNullOrWhiteSpace(_message))
@@ -100,8 +90,6 @@
     private IJSObjectReference? _bffModule;
     private SelectedStatementFileViewModel? _selectedFile;
     private bool _isBusy;
-    private Guid? _acceptedUploadId;
-    private bool _uploadOutcomeUncertain;
     private bool _isDisposed;
     private string _state = string.Empty;
     private string _buttonText = string.Empty;
@@ -118,10 +106,12 @@
     public EventCallback OnProcessed { get; set; }
 
     private bool CanUpload =>
-        !_isBusy && !_uploadOutcomeUncertain && _acceptedUploadId is null &&
+        !_isBusy &&
+        !_isDisposed &&
         _selectedFile is not null &&
         _selectedFile.Size > 0 &&
-        _selectedFile.Size <= MaximumFileSize && IsSupportedFileName(_selectedFile.Name) &&
+        _selectedFile.Size <= MaximumFileSize &&
+        IsSupportedFileName(_selectedFile.Name) &&
         BillStreamId != Guid.Empty;
 
     protected override void OnInitialized()
@@ -146,10 +136,12 @@
             return;
         }
 
-        if (_acceptedUploadId is not null || _uploadOutcomeUncertain) return;
         _message = null;
         _state = string.Empty;
         _statusHeading = string.Empty;
+        // The previous selection must not remain actionable if inspecting the
+        // newly selected file fails or the picker was cleared.
+        _selectedFile = null;
 
         try
         {
@@ -217,7 +209,6 @@
                 throw new InvalidOperationException("The upload did not return a valid identifier.");
             }
 
-            _acceptedUploadId = upload.Id;
             _buttonText = L["Processing…"];
             SetProcessingStatus(upload.Status);
             StateHasChanged();
@@ -235,7 +226,7 @@
         }
         catch (JSException)
         {
-            SetUnconfirmedResult();
+            SetError(L["Upload failed"], L["FullWorth could not upload this statement."]);
         }
         catch (Exception)
         {
@@ -252,42 +243,6 @@
         }
     }
 
-    private void SetUnconfirmedResult()
-    {
-        if (_isDisposed) return;
-        if (_acceptedUploadId is not null)
-            SetError(L["Status unavailable"], L["The upload was received, but its processing status could not be checked. Check statement status; do not upload the file again."]);
-        else
-        {
-            _uploadOutcomeUncertain = true;
-            SetError(L["Upload result unconfirmed"], L["FullWorth could not confirm whether the upload was received. Review this bill before deciding to upload again."]);
-        }
-    }
-
-    private async Task CheckAcceptedUploadAsync()
-    {
-        if (_isBusy || _isDisposed || _acceptedUploadId is not Guid uploadId) return;
-        _isBusy = true;
-        try
-        {
-            var module = await GetBffModuleAsync();
-            var status = await module.InvokeAsync<BillStatementUploadStatusViewModel>(
-                "getBillStatementUploadStatus", _disposeCancellation.Token,
-                BillStreamId.ToString("D"), uploadId.ToString("D"));
-            if (_isDisposed) return;
-            if (status is null || status.Id != uploadId || status.BillStreamId != BillStreamId)
-                throw new InvalidOperationException("Invalid statement status.");
-            if (!await CompleteTerminalStatusAsync(module, uploadId, status.Status))
-            {
-                SetProcessingStatus(status.Status);
-                _message = L["Processing may still be continuing. Check statement status again later; this does not upload another file."];
-            }
-        }
-        catch (OperationCanceledException) when (_isDisposed) { }
-        catch (Exception) { SetUnconfirmedResult(); }
-        finally { if (!_isDisposed) _isBusy = false; }
-    }
-
     private async Task PollUntilCompleteAsync(IJSObjectReference module, Guid uploadId)
     {
         const int maximumAttempts = 90;
@@ -302,9 +257,10 @@
                 BillStreamId.ToString("D"),
                 uploadId.ToString("D"));
 
-            if (status is null || status.Id != uploadId || status.BillStreamId != BillStreamId)
-                throw new InvalidOperationException("Invalid statement status.");
-            if (_isDisposed) return;
+            if (status is null)
+            {
+                continue;
+            }
 
             SetProcessingStatus(status.Status);
             StateHasChanged();
@@ -320,7 +276,7 @@
 
         _state = "working";
         _statusHeading = L["Still processing"];
-        _message = L["FullWorth stopped waiting. Processing may still be continuing. Check statement status to read the current result without uploading again."];
+        _message = L["The upload is secure and processing is continuing in the background. The bill will update when processing finishes."];
     }
 
     private async Task<bool> CompleteTerminalStatusAsync(
@@ -334,7 +290,6 @@
         }
 
         SetProcessingStatus(status);
-        _acceptedUploadId = null;
 
         if (!FullWorth.Web.Services.StatementUploadStatusSemantics.IsProcessed(status))
         {
@@ -349,20 +304,14 @@
 
         _selectedFile = null;
 
-        try
-        {
-            await module.InvokeVoidAsync("clearStatementFileInput", _disposeCancellation.Token, _inputId);
-        }
-        catch (JSException) { /* Confirmed processing stays authoritative if optional picker cleanup fails. */ }
+        await module.InvokeVoidAsync(
+            "clearStatementFileInput",
+            _disposeCancellation.Token,
+            _inputId);
 
         if (OnProcessed.HasDelegate)
         {
-            try { await OnProcessed.InvokeAsync(); }
-            catch (Exception)
-            {
-                if (!_isDisposed)
-                    _message = L["The statement was processed, but the bill view could not be refreshed. Refresh the bill to read its evidence."];
-            }
+            await OnProcessed.InvokeAsync();
         }
 
         return true;
@@ -470,8 +419,6 @@
         }
 
         _isDisposed = true;
-        _acceptedUploadId = null;
-        _uploadOutcomeUncertain = false;
         await _disposeCancellation.CancelAsync();
         _disposeCancellation.Dispose();
 

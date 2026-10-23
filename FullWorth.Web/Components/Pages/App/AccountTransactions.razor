@@ -649,20 +649,22 @@
             return;
         }
 
-        // Performance preferences are optional. A failed enhancement must not
-        // prevent the owner-scoped ledger request or force maximum-size loads.
-        _transactionLoadLimit = 100;
-        _useLocalTransactionFiltering = false;
-        try
-        {
-            var limit = await JS.InvokeAsync<int>("FullWorthPerformance.getTransactionLoadLimit");
-            var executionMode = await JS.InvokeAsync<string>("FullWorthPerformance.getExecutionMode");
-            _transactionLoadLimit = Math.Clamp(limit, 50, MaximumTransactionLoadLimit);
-            _useLocalTransactionFiltering = string.Equals(executionMode, "local",
+        _transactionLoadLimit =
+            Math.Clamp(
+                await JS.InvokeAsync<int>(
+                    "FullWorthPerformance.getTransactionLoadLimit"),
+                50,
+                MaximumTransactionLoadLimit);
+
+        var executionMode =
+            await JS.InvokeAsync<string>(
+                "FullWorthPerformance.getExecutionMode");
+
+        _useLocalTransactionFiltering =
+            string.Equals(
+                executionMode,
+                "local",
                 StringComparison.OrdinalIgnoreCase);
-        }
-        catch (JSException) { }
-        catch (InvalidOperationException) { }
 
         _hasResolvedInitialTransactionLoadLimit =
             true;
@@ -752,13 +754,6 @@
                     account =>
                         account.AccountName)
                 .ToList();
-
-        if (!string.IsNullOrWhiteSpace(_selectedAccountId) &&
-            (!Guid.TryParse(_selectedAccountId, out var selected) ||
-             !_availableAccounts.Any(account => account.Id == selected)))
-        {
-            _selectedAccountId = string.Empty;
-        }
     }
 
     private bool MatchesSelectedAccount(

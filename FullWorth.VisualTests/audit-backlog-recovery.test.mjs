@@ -63,13 +63,19 @@ export async function verifyAuditBacklogRecovery(page, outputDir) {
         assert.equal(adminReads.filter(([, skip]) => skip === 50).length, 3);
         for (const width of [320, 1440]) {
             await page.setViewportSize({ width, height: 1000 });
+            await groups.first().evaluate(root => root.scrollIntoView({ block: "center" }));
             const geometry = await groups.first().evaluate(root => {
                 const bounds = root.getBoundingClientRect();
+                const next = root.querySelector("button:last-of-type");
+                const target = next.getBoundingClientRect();
+                const hit = document.elementFromPoint(target.x + target.width / 2, target.y + target.height / 2);
                 return { left: bounds.left, right: bounds.right, viewport: innerWidth,
+                    reachable: hit === next || next.contains(hit),
                     heights: [...root.querySelectorAll("button")].map(button => button.getBoundingClientRect().height) };
             });
             assert.ok(geometry.left >= 0 && geometry.right <= geometry.viewport + 1);
             assert.ok(geometry.heights.every(height => height >= 44), "pager controls retain usable target height");
+            assert.equal(geometry.reachable, true, "enabled pager must not be covered by fixed navigation");
             await groups.first().screenshot({ path: path.join(outputDir, "audit-admin-pager-" + width + ".png") });
         }
         await page.setViewportSize({ width: 1440, height: 1000 });

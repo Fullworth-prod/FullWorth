@@ -273,6 +273,58 @@ try {
       assert.ok(detailText.includes("+EUR 60.00"));
       assert.ok(!detailText.includes("$20.00") && !detailText.includes("$25.00"));
       await page.screenshot({ path: path.join(outputDir, "bill-detail-currencies-" + width + ".png"), fullPage: true });
+
+      if (width === 320) {
+        // Reproduce the real upload-status markup and its Blazor CSS scope without
+        // sending any financial document or issuing a POST.
+        await page.locator(".statement-upload-panel").evaluate(panel => {
+          const scope = [...panel.attributes].find(attribute => /^b-[a-z0-9]+$/.test(attribute.name))?.name;
+          assertScope(scope);
+          function assertScope(value) {
+            if (!value) throw new Error("Statement panel CSS isolation attribute not found.");
+          }
+          const make = (tag, className, text) => {
+            const element = document.createElement(tag);
+            element.setAttribute(scope, "");
+            if (className) element.className = className;
+            if (text) element.textContent = text;
+            return element;
+          };
+          const status = make("div", "statement-upload-status working");
+          const dot = make("span", "statement-status-dot");
+          const body = make("div");
+          body.append(
+            make("strong", "", "Uploading securely"),
+            make("span", "", "Sending the " + "A".repeat(240) + ".pdf statement to FullWorth.")
+          );
+          status.append(dot, body);
+          panel.append(status);
+        });
+
+        for (const [mobileWidth, largeText] of [[320, false], [390, false], [430, false], [390, true]]) {
+          await page.setViewportSize({ width: mobileWidth, height: 950 });
+          await page.evaluate(large => {
+            document.documentElement.style.fontSize = large ? "200%" : "";
+          }, largeText);
+          const layout = await page.locator(".statement-upload-status").evaluate(status => {
+            const rect = status.getBoundingClientRect();
+            const panel = document.querySelector(".statement-upload-panel").getBoundingClientRect();
+            return {
+              left: rect.left, right: rect.right, width: window.innerWidth,
+              panelLeft: panel.left, panelRight: panel.right,
+              fits: status.scrollWidth <= status.clientWidth + 1,
+              wraps: getComputedStyle(status.querySelector("span:last-child")).overflowWrap
+            };
+          });
+          assert.ok(layout.left >= layout.panelLeft - 1 && layout.right <= layout.panelRight + 1 &&
+            layout.right <= layout.width + 1 && layout.fits && layout.wraps === "anywhere",
+            "Long statement filename must fit within mobile upload status: " + JSON.stringify(layout));
+          assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
+            "Long filename must not cause sideways page scrolling.");
+        }
+        await page.evaluate(() => document.documentElement.style.fontSize = "");
+        await page.setViewportSize({ width: 320, height: 1100 });
+      }
     }
   } catch (error) {
     await page.screenshot({ path: path.join(outputDir, "currency-acceptance-failure.png"), fullPage: true });

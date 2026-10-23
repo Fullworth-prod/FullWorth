@@ -105,6 +105,38 @@ public sealed class StatementUploadStatusResumeTests
     }
 
     [Fact]
+    public async Task AcceptedUploadStatusFailureCannotTriggerAnotherPost()
+    {
+        var stream = Guid.NewGuid();
+        var upload = Guid.NewGuid();
+        var module = new Module
+        {
+            Latest = new()
+            {
+                Id = upload, BillStreamId = stream, Status = "Processing"
+            }
+        };
+        var component = Create(stream, module);
+        await Run(component, "OnAfterRenderAsync", true);
+        typeof(StatementUploadPanel).GetField("_selectedFile", Flags)!
+            .SetValue(component, new StatementUploadPanel.SelectedStatementFileViewModel
+            {
+                Name = "safe-test.pdf", Size = 100
+            });
+
+        var canUpload = typeof(StatementUploadPanel)
+            .GetProperty("CanUpload", Flags)!;
+        Assert.False((bool)canUpload.GetValue(component)!);
+        await Run(component, "SetUploadOrStatusError");
+        var message = (string?)typeof(StatementUploadPanel)
+            .GetField("_message", Flags)!.GetValue(component);
+        Assert.NotNull(message);
+        Assert.Contains("Check statement status", message);
+        Assert.DoesNotContain("uploadBillStatement", module.Calls);
+        await component.DisposeAsync();
+    }
+
+    [Fact]
     public async Task ForeignOrMismatchedLatestUploadIsNotRestored()
     {
         var streamId = Guid.NewGuid();

@@ -24,14 +24,24 @@ export async function verifyStatementUploadLayout(page) {
       const panel = page.locator(".statement-upload-panel");
       await panel.waitFor({ state: "visible" });
       await panel.evaluate(node => {
-        const status = document.createElement("div");
+        // Blazor CSS isolation scopes rules to b-* attributes. This synthetic
+        // status row must carry the same scope as native Razor-rendered children,
+        // or the test measures unstyled injected markup instead of the real UI.
+        const scope = [...node.attributes].map(attr => attr.name).find(name => name.startsWith("b-"));
+        if (!scope) throw new Error("Expected CSS-isolated statement component");
+        const scoped = tag => {
+          const element = document.createElement(tag);
+          element.setAttribute(scope, "");
+          return element;
+        };
+        const status = scoped("div");
         status.className = "statement-upload-status working";
-        const dot = document.createElement("span");
+        const dot = scoped("span");
         dot.className = "statement-status-dot";
-        const body = document.createElement("div");
-        const title = document.createElement("strong");
+        const body = scoped("div");
+        const title = scoped("strong");
         title.textContent = "Uploading securely";
-        const copy = document.createElement("span");
+        const copy = scoped("span");
         copy.textContent = "Sending the " + "VeryLongUnbrokenStatementFilename".repeat(12)
           + ".pdf statement to FullWorth.";
         body.append(title, copy);

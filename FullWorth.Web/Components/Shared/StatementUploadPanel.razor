@@ -107,9 +107,11 @@
 
     private bool CanUpload =>
         !_isBusy &&
+        !_isDisposed &&
         _selectedFile is not null &&
         _selectedFile.Size > 0 &&
         _selectedFile.Size <= MaximumFileSize &&
+        IsSupportedFileName(_selectedFile.Name) &&
         BillStreamId != Guid.Empty;
 
     protected override void OnInitialized()
@@ -137,6 +139,9 @@
         _message = null;
         _state = string.Empty;
         _statusHeading = string.Empty;
+        // The previous selection must not remain actionable if inspecting the
+        // newly selected file fails or the picker was cleared.
+        _selectedFile = null;
 
         try
         {

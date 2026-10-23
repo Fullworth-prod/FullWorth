@@ -63,6 +63,14 @@
         </div>
     }
 
+    @if (ShouldShowMixedConnectionWarning)
+    {
+        <div class="connection-warning" role="status">
+            <p>@L["One of your bank connections needs attention. Other connected banks can keep syncing, but the affected bank needs to be repaired."]</p>
+            <a href="/app/account">@L["Review connection"]</a>
+        </div>
+    }
+
     @if (_hasLoadedData && !HasActiveConnection && _billStreams.Count > 0)
     {
         <div class="connection-warning" role="status">
@@ -460,13 +468,10 @@
                     </a>
                 </div>
 
+                <p class="fw-watchlist-scope">@L["Bills with supported increases appear first; others are listed by provider name. Amounts in different currencies are never ranked against each other."]</p>
+
                 <div class="fw-bill-list">
-                    @foreach (var bill
-                        in _billStreams
-                            .OrderByDescending(
-                                item =>
-                                    item.CurrentAmount)
-                            .Take(6))
+                    @foreach (var bill in WatchlistBills)
                     {
                         var difference =
                             GetDifference(
@@ -583,6 +588,16 @@
     private List<BillStreamViewModel>
         _billStreams = [];
 
+    // Comparison status determines urgency; raw amount does not rank different currencies.
+    private IReadOnlyList<BillStreamViewModel> WatchlistBills =>
+        _billStreams
+            .OrderByDescending(bill => OverviewBillCoverage.Difference(ToFact(bill)) > 0m)
+            .ThenByDescending(bill => OverviewBillCoverage.CanCompare(ToFact(bill)))
+            .ThenBy(bill => bill.ProviderName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(bill => bill.Id)
+            .Take(6)
+            .ToArray();
+
     private List<BankConnectionViewModel>
         _connections = [];
 
@@ -596,6 +611,12 @@
     private bool _isCheckingStatus;
 
     private string? _errorMessage;
+
+    private bool ShouldShowMixedConnectionWarning =>
+        _hasLoadedData &&
+        HasActiveConnection &&
+        HasConnectionNeedingAttention &&
+        _billStreams.Count == 0;
 
     private bool HasActiveConnection { get; set; }
 

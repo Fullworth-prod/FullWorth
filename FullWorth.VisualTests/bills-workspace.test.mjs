@@ -46,6 +46,11 @@ export async function verifyBillsWorkspace(page, outputDir) {
       if (listMode === "fail") return route.fulfill({ status: 503, body: "{}" });
       return route.fulfill({ json: listMode === "empty" ? [] : bills });
     }
+    // The bill-detail upload panel can now read the most recent saved upload.
+    // These synthetic bills have none; do not treat the status GET as a bill GET.
+    if (bills.some(item =>
+      pathname === "/bff/bill-streams/" + item.id + "/statement-uploads/latest"))
+      return route.fulfill({ status: 204 });
     if (detailMode === "fail-once") {
       detailMode = "ok";
       return route.fulfill({ status: 503, body: "{}" });

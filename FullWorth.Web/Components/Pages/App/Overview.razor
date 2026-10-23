@@ -63,6 +63,14 @@
         </div>
     }
 
+    @if (ShouldShowMixedConnectionWarning)
+    {
+        <div class="connection-warning" role="status">
+            <p>@L["One of your bank connections needs attention. Other connected banks can keep syncing, but the affected bank needs to be repaired."]</p>
+            <a href="/app/account">@L["Review connection"]</a>
+        </div>
+    }
+
     @if (_hasLoadedData && !HasActiveConnection && _billStreams.Count > 0)
     {
         <div class="connection-warning" role="status">
@@ -603,6 +611,12 @@
     private bool _isCheckingStatus;
 
     private string? _errorMessage;
+
+    private bool ShouldShowMixedConnectionWarning =>
+        _hasLoadedData &&
+        HasActiveConnection &&
+        HasConnectionNeedingAttention &&
+        _billStreams.Count == 0;
 
     private bool HasActiveConnection { get; set; }
 

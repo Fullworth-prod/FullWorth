@@ -2,6 +2,7 @@
 using FullWorth.API.Data;
 using FullWorth.API.Data.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace FullWorth.API.Services.Plaid;
 
@@ -111,6 +112,25 @@ public sealed class PlaidHostedLinkCompletionService
                 session);
         }
 
+        var snapshot = new CompletionEntrySnapshot(_dbContext.Entry(session));
+        try
+        {
+            return await CompletePendingSessionAsync(session, cancellationToken);
+        }
+        catch
+        {
+            // Do not turn a failed save into an apparently terminal session on
+            // the next call or let another operation persist cleared credentials.
+            snapshot.Restore();
+            throw;
+        }
+    }
+
+    private async Task<PlaidHostedLinkCompletionResult> CompletePendingSessionAsync(
+        PlaidLinkSessionEntity session,
+        CancellationToken cancellationToken)
+    {
+        var userId = session.UserId;
         var now =
             DateTimeOffset.UtcNow;
 
@@ -283,29 +303,38 @@ public sealed class PlaidHostedLinkCompletionService
                 "Disconnected bank connection cannot complete Plaid update mode.");
         }
 
-        var completedAt =
-            DateTimeOffset.UtcNow;
+        var snapshot = new CompletionEntrySnapshot(_dbContext.Entry(connection));
+        try
+        {
+            var completedAt =
+                DateTimeOffset.UtcNow;
 
-        connection.Status =
-            BankConnectionStatus.Active;
+            connection.Status =
+                BankConnectionStatus.Active;
 
-        connection.UpdatedAtUtc =
-            completedAt;
+            connection.UpdatedAtUtc =
+                completedAt;
 
-        session.Status =
-            PlaidLinkSessionStatus.Completed;
+            session.Status =
+                PlaidLinkSessionStatus.Completed;
 
-        session.CompletedAtUtc =
-            completedAt;
+            session.CompletedAtUtc =
+                completedAt;
 
-        session.UpdatedAtUtc =
-            completedAt;
+            session.UpdatedAtUtc =
+                completedAt;
 
-        session.ProtectedLinkToken =
-            string.Empty;
+            session.ProtectedLinkToken =
+                string.Empty;
 
-        await _dbContext.SaveChangesAsync(
-            cancellationToken);
+            await _dbContext.SaveChangesAsync(
+                cancellationToken);
+        }
+        catch
+        {
+            snapshot.Restore();
+            throw;
+        }
 
         return new PlaidHostedLinkCompletionResult(
             session.Id,
@@ -687,6 +716,41 @@ public sealed class PlaidHostedLinkCompletionService
 
         return CreateResult(
             session);
+    }
+
+    private sealed class CompletionEntrySnapshot
+    {
+        private readonly EntityEntry _entry;
+        private readonly PropertyValues _current;
+        private readonly PropertyValues _original;
+        private readonly EntityState _state;
+        private readonly HashSet<string> _modified;
+
+        public CompletionEntrySnapshot(EntityEntry entry)
+        {
+            _entry = entry;
+            _current = entry.CurrentValues.Clone();
+            _original = entry.OriginalValues.Clone();
+            _state = entry.State;
+            _modified = entry.Properties
+                .Where(property => property.IsModified)
+                .Select(property => property.Metadata.Name)
+                .ToHashSet(StringComparer.Ordinal);
+        }
+
+        public void Restore()
+        {
+            _entry.CurrentValues.SetValues(_current);
+            _entry.OriginalValues.SetValues(_original);
+            _entry.State = _state;
+            if (_state == EntityState.Modified)
+            {
+                foreach (var property in _entry.Properties)
+                {
+                    property.IsModified = _modified.Contains(property.Metadata.Name);
+                }
+            }
+        }
     }
 
     private static PlaidHostedLinkCompletionResult

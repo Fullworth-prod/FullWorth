@@ -36,7 +36,10 @@ public sealed record PlanningPaycheckPlanRunDraft(
     string CurrencyCode,
     decimal RecommendedSetAside,
     decimal PaycheckRemainingAfterPlan,
-    decimal Shortfall);
+    decimal Shortfall)
+{
+    public PlanningPaycheckPlanCoverage? Coverage { get; init; }
+}
 
 public sealed record PlanningPaycheckPlanRunSnapshot(
     Guid Id,
@@ -47,7 +50,10 @@ public sealed record PlanningPaycheckPlanRunSnapshot(
     decimal RecommendedSetAside,
     decimal PaycheckRemainingAfterPlan,
     decimal Shortfall,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc)
+{
+    public PlanningPaycheckPlanCoverage? Coverage { get; init; }
+}
 
 public sealed record PlanningSavedPaycheckPlan(
     PlanningPaycheckPlanRunSnapshot Run,
@@ -108,7 +114,16 @@ public sealed class PlanningPaycheckAllocationStore(
                         run.RecommendedSetAside,
                         run.PaycheckRemainingAfterPlan,
                         run.Shortfall,
-                        run.CreatedAtUtc))
+                        run.CreatedAtUtc)
+                        {
+                            Coverage = PlanningPaycheckPlanCoverage.FromStored(
+                                run.CoverageEligibleBillCount,
+                                run.CoverageMissingStatementFactCount,
+                                run.CoverageMissingDueDateCount,
+                                run.CoverageCurrencyMismatchCount,
+                                run.CoverageInvalidStatementAmountCount,
+                                run.CoveragePriorCurrencyConflictCount)
+                        })
             .ToListAsync(
                 cancellationToken);
     }
@@ -347,6 +362,12 @@ public sealed class PlanningPaycheckAllocationStore(
                     normalizedRun.PaycheckRemainingAfterPlan,
                 Shortfall =
                     normalizedRun.Shortfall,
+                CoverageEligibleBillCount = normalizedRun.Coverage?.EligibleBillCount,
+                CoverageMissingStatementFactCount = normalizedRun.Coverage?.MissingStatementFactCount,
+                CoverageMissingDueDateCount = normalizedRun.Coverage?.MissingDueDateCount,
+                CoverageCurrencyMismatchCount = normalizedRun.Coverage?.CurrencyMismatchCount,
+                CoverageInvalidStatementAmountCount = normalizedRun.Coverage?.InvalidStatementAmountCount,
+                CoveragePriorCurrencyConflictCount = normalizedRun.Coverage?.PriorCurrencyConflictCount,
                 CreatedAtUtc =
                     createdAtUtc
             });
@@ -817,7 +838,16 @@ public sealed class PlanningPaycheckAllocationStore(
                             candidate.RecommendedSetAside,
                             candidate.PaycheckRemainingAfterPlan,
                             candidate.Shortfall,
-                            candidate.CreatedAtUtc))
+                            candidate.CreatedAtUtc)
+                            {
+                                Coverage = PlanningPaycheckPlanCoverage.FromStored(
+                                    candidate.CoverageEligibleBillCount,
+                                    candidate.CoverageMissingStatementFactCount,
+                                    candidate.CoverageMissingDueDateCount,
+                                    candidate.CoverageCurrencyMismatchCount,
+                                    candidate.CoverageInvalidStatementAmountCount,
+                                    candidate.CoveragePriorCurrencyConflictCount)
+                            })
                 .SingleOrDefaultAsync(
                     cancellationToken);
 
@@ -877,6 +907,8 @@ public sealed class PlanningPaycheckAllocationStore(
     private static PlanningPaycheckPlanRunDraft Normalize(
         PlanningPaycheckPlanRunDraft run)
     {
+        run.Coverage?.Validate();
+
         ValidateMoney(
             run.PaycheckAmount,
             nameof(run.PaycheckAmount));
@@ -1008,6 +1040,7 @@ public sealed class PlanningPaycheckAllocationStore(
                 requestedRun.PaycheckRemainingAfterPlan &&
             run.Shortfall ==
                 requestedRun.Shortfall &&
+            run.Coverage == requestedRun.Coverage &&
             Matches(
                 existing.Allocations,
                 requestedRun.PaycheckPostedDate,

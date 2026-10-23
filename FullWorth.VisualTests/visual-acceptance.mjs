@@ -14,6 +14,7 @@ const password = "FullWorth!Visual123";
 await mkdir(outputDir, { recursive: true });
 
 await (await import("./privacy-requests.test.mjs")).verifyPrivacyRequestModules();
+await (await import("./statement-upload-resume.test.mjs")).verifyStatementUploadResumeModule();
 
 await (await import("./experience-preferences.test.mjs")).verifyExperiencePreferenceModule();
 await (await import("./navigation-viewport.test.mjs")).verifyNavigationViewportModule();

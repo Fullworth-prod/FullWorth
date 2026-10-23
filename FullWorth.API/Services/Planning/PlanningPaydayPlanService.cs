@@ -46,7 +46,12 @@ public sealed record PlanningPaydayPlanSnapshot(
     decimal PaycheckRemainingAfterPlan,
     decimal Shortfall,
     IReadOnlyList<PlanningPaydayPlanItem> Items,
-    IReadOnlyList<PlanningPaydayPlanSkippedBill> SkippedBills);
+    IReadOnlyList<PlanningPaydayPlanSkippedBill> SkippedBills)
+{
+    public int? EligibleBillCount { get; init; }
+    public int? SkippedBillCount { get; init; }
+    public string? SkippedReasonSummary { get; init; }
+}
 
 public sealed class PlanningPaydayPlanService(
     PlanningSettingsService settingsService,
@@ -174,7 +179,11 @@ public sealed class PlanningPaydayPlanService(
                         PaycheckRemainingAfterPlan:
                             RoundMoney(
                                 payroll.Amount),
-                        Shortfall: 0m),
+                        Shortfall: 0m)
+                    {
+                        EligibleBillCount = 0,
+                        SkippedBillCount = 0
+                    },
                     allocations: [],
                     cancellationToken);
 
@@ -397,7 +406,16 @@ public sealed class PlanningPaydayPlanService(
                     plan.CurrencyCode,
                     plan.RecommendedSetAside,
                     plan.PaycheckRemainingAfterPlan,
-                    plan.Shortfall),
+                    plan.Shortfall)
+                {
+                    EligibleBillCount = activeBills.Count - skipped.Count,
+                    SkippedBillCount = skipped.Count,
+                    SkippedReasonSummary = skipped.Count == 0 ? null : string.Join(
+                        ",",
+                        skipped.GroupBy(item => item.Reason)
+                            .OrderBy(group => group.Key)
+                            .Select(group => $"{group.Key}:{group.Count()}"))
+                },
                 drafts,
                 cancellationToken);
 
@@ -461,7 +479,12 @@ public sealed class PlanningPaydayPlanService(
             run.PaycheckRemainingAfterPlan,
             run.Shortfall,
             items,
-            skippedBills);
+            skippedBills)
+        {
+            EligibleBillCount = run.EligibleBillCount,
+            SkippedBillCount = run.SkippedBillCount,
+            SkippedReasonSummary = run.SkippedReasonSummary
+        };
     }
 
     private static PlanningPaydayPlanSnapshot Ready(

@@ -46,7 +46,11 @@ public sealed record PlanningPaydayPlanSnapshot(
     decimal PaycheckRemainingAfterPlan,
     decimal Shortfall,
     IReadOnlyList<PlanningPaydayPlanItem> Items,
-    IReadOnlyList<PlanningPaydayPlanSkippedBill> SkippedBills);
+    IReadOnlyList<PlanningPaydayPlanSkippedBill> SkippedBills)
+{
+    // Authoritative saved coverage; SkippedBills is first-generation detail only.
+    public PlanningPaycheckPlanCoverage? Coverage { get; init; }
+}
 
 public sealed class PlanningPaydayPlanService(
     PlanningSettingsService settingsService,
@@ -174,7 +178,10 @@ public sealed class PlanningPaydayPlanService(
                         PaycheckRemainingAfterPlan:
                             RoundMoney(
                                 payroll.Amount),
-                        Shortfall: 0m),
+                        Shortfall: 0m)
+                    {
+                        Coverage = new PlanningPaycheckPlanCoverage(0, 0, 0, 0, 0, 0)
+                    },
                     allocations: [],
                     cancellationToken);
 
@@ -397,7 +404,16 @@ public sealed class PlanningPaydayPlanService(
                     plan.CurrencyCode,
                     plan.RecommendedSetAside,
                     plan.PaycheckRemainingAfterPlan,
-                    plan.Shortfall),
+                    plan.Shortfall)
+                {
+                    Coverage = new PlanningPaycheckPlanCoverage(
+                        generatorInputs.Count,
+                        skipped.Count(bill => bill.Reason == PlanningPaydayPlanSkipReason.MissingStatementFact),
+                        skipped.Count(bill => bill.Reason == PlanningPaydayPlanSkipReason.MissingDueDate),
+                        skipped.Count(bill => bill.Reason == PlanningPaydayPlanSkipReason.CurrencyMismatch),
+                        skipped.Count(bill => bill.Reason == PlanningPaydayPlanSkipReason.InvalidStatementAmount),
+                        skipped.Count(bill => bill.Reason == PlanningPaydayPlanSkipReason.PriorCurrencyConflict))
+                },
                 drafts,
                 cancellationToken);
 
@@ -461,7 +477,10 @@ public sealed class PlanningPaydayPlanService(
             run.PaycheckRemainingAfterPlan,
             run.Shortfall,
             items,
-            skippedBills);
+            skippedBills)
+        {
+            Coverage = run.Coverage
+        };
     }
 
     private static PlanningPaydayPlanSnapshot Ready(

@@ -12,7 +12,7 @@ public sealed class PlanningWorkspaceTests
     private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
     private const string Schedule = """{"frequency":"Biweekly","anchorPayDate":"2026-10-16","defaultPaychecksAhead":2}""";
     private const string BillId = "d8d88252-55c1-444c-9496-e0b63a941a61";
-    private const string Bills = """[{"id":"d8d88252-55c1-444c-9496-e0b63a941a61","providerName":"Example Utility","isActive":true,"currentAmount":89.25,"currencyCode":"USD"}]""";
+    private const string Bills = """[{"id":"d8d88252-55c1-444c-9496-e0b63a941a61","providerName":"Example Utility","isActive":true,"currentAmount":89.25,"currencyCode":"USD","hasTransactionEvidence":true}]""";
     private const string Prefs = """[{"billStreamId":"d8d88252-55c1-444c-9496-e0b63a941a61","paychecksAheadOverride":3}]""";
     private sealed class Module : IJSObjectReference
     {
@@ -262,6 +262,28 @@ public sealed class PlanningWorkspaceTests
         var page = Page(module); await Run(page, "LoadAsync");
         Assert.Equal(panel, Assert.Single(Get<HashSet<string>>(page, "_loadErrors")));
         Assert.False(Get<bool>(page, "_isInitializing"));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BillAmount_KeepsTransactionEvidenceDistinctFromZero(bool evidenced)
+    {
+        var module = new Module();
+        var normal = module.Reply;
+        var evidenceJson = evidenced ? "true" : "false";
+        module.Reply = (name, args) => name == "getBillStreams"
+            ? Task.FromResult<string?>(Bills.Replace("\"hasTransactionEvidence\":true",
+                "\"hasTransactionEvidence\":" + evidenceJson).Replace("89.25", "0"))
+            : normal(name, args);
+        var page = Page(module);
+        await Run(page, "LoadAsync");
+        var row = Bill(page);
+        Assert.Equal(0m, Get<decimal>(row, "CurrentAmount"));
+        Assert.Equal(evidenced, Get<bool>(row, "HasTransactionEvidence"));
+        Assert.Empty(Get<HashSet<string>>(page, "_loadErrors"));
+        Assert.DoesNotContain(module.Calls, call => call.Name.StartsWith("put") || call.Name.StartsWith("delete"));
+        await page.DisposeAsync();
     }
 
     [Fact]

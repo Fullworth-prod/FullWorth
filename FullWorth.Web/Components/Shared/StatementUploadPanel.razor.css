@@ -1,4 +1,7 @@
 ﻿.statement-upload-panel {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
     padding: 23px;
     display: grid;
     gap: 18px;
@@ -231,7 +234,18 @@
 
 .statement-upload-status > div {
     display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
     flex-direction: column;
+}
+
+/* Filename-like tokens in status messages must wrap, not widen the iPhone page. */
+.statement-upload-status strong,
+.statement-upload-status > div > span {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal;
 }
 
 .statement-upload-status strong {

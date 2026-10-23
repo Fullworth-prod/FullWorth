@@ -1,3 +1,4 @@
+import { loginRedirectUrl } from "./login-redirect.js";
 import { pollPlaidCompletion } from "./plaid-completion.js";
 import { confirmAction } from "./confirmation-dialog.js";
 
@@ -182,8 +183,7 @@ async function handleResponse(
     response) {
 
     if (response.status === 401) {
-        window.location.assign(
-            "/login");
+        window.location.assign(loginRedirectUrl(window.location));
 
         throw new Error(
             "FullWorth session expired.");

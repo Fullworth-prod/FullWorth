@@ -255,6 +255,67 @@ public sealed class BillStatementHistoryReadGatewayTests
         Assert.Equal(new[] { high, low }, result.Changes.Select(change => change.Id));
     }
 
+    [Fact]
+    public async Task OriginalDocumentLink_UsesOnlyMostRecentOwnedProcessedUpload()
+    {
+        await using var db = CreateDbContext();
+        var owner = Guid.NewGuid();
+        var other = Guid.NewGuid();
+        var stream = Guid.NewGuid();
+        var statement = CreateStatement(owner, stream,
+            new DateOnly(2026, 10, 1), new DateOnly(2026, 10, 31), 100m);
+        db.BillStatements.Add(statement);
+
+        var owned = new BillStatementUploadEntity
+        {
+            UserId = owner, BillStreamId = stream, BillStatementId = statement.Id,
+            Status = BillStatementUploadStatus.Processed,
+            StorageKey = "private-test-storage-key",
+            CreatedAtUtc = new DateTimeOffset(2026, 10, 1, 12, 0, 0, TimeSpan.Zero)
+        };
+        var rejected = new BillStatementUploadEntity
+        {
+            UserId = owner, BillStreamId = stream, BillStatementId = statement.Id,
+            Status = BillStatementUploadStatus.Failed,
+            CreatedAtUtc = new DateTimeOffset(2026, 10, 4, 12, 0, 0, TimeSpan.Zero)
+        };
+        var foreign = new BillStatementUploadEntity
+        {
+            UserId = other, BillStreamId = stream, BillStatementId = statement.Id,
+            Status = BillStatementUploadStatus.Processed,
+            CreatedAtUtc = new DateTimeOffset(2026, 10, 5, 12, 0, 0, TimeSpan.Zero)
+        };
+        db.BillStatementUploads.AddRange(owned, rejected, foreign);
+        await db.SaveChangesAsync();
+
+        var gateway = new BillStatementHistoryReadGateway(db);
+        var snapshot = await gateway.GetAsync(owner, stream);
+        Assert.Equal(owned.Id, Assert.Single(snapshot.Statements).UploadId);
+
+        var foreignSnapshot = await gateway.GetAsync(other, stream);
+        Assert.Empty(foreignSnapshot.Statements);
+        Assert.Empty(foreignSnapshot.Changes);
+    }
+
+    [Fact]
+    public async Task StatementWithoutOwnedProcessedUpload_HasNoDocumentLink()
+    {
+        await using var db = CreateDbContext();
+        var owner = Guid.NewGuid();
+        var stream = Guid.NewGuid();
+        var statement = CreateStatement(owner, stream,
+            new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 30), 80m);
+        db.BillStatements.Add(statement);
+        db.BillStatementUploads.Add(new BillStatementUploadEntity
+        {
+            UserId = owner, BillStreamId = stream,
+            BillStatementId = statement.Id, Status = BillStatementUploadStatus.Processing
+        });
+        await db.SaveChangesAsync();
+        var result = await new BillStatementHistoryReadGateway(db).GetAsync(owner, stream);
+        Assert.Null(Assert.Single(result.Statements).UploadId);
+    }
+
     private static FullWorthDbContext
         CreateDbContext()
     {

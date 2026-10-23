@@ -338,7 +338,12 @@ public sealed class PlanningController(
                                             allocation.BillDueDate,
                                             allocation.PlannedAmount,
                                             allocation.CurrencyCode))
-                                .ToList()))
+                                .ToList())
+                        {
+                            EligibleBillCount = plan.Run.EligibleBillCount,
+                            SkippedBillCount = plan.Run.SkippedBillCount,
+                            SkippedReasonSummary = plan.Run.SkippedReasonSummary
+                        })
                 .ToList());
     }
 
@@ -476,7 +481,12 @@ public sealed class PlanningController(
                             item.BillStreamId,
                             item.ProviderName,
                             item.Reason.ToString()))
-                .ToList());
+                .ToList())
+        {
+            EligibleBillCount = plan.EligibleBillCount,
+            SkippedBillCount = plan.SkippedBillCount,
+            SkippedReasonSummary = plan.SkippedReasonSummary
+        };
     }
 }
 
@@ -527,7 +537,12 @@ public sealed record PlanningPaydayPlanSummaryResponse(
     decimal PaycheckRemainingAfterPlan,
     decimal Shortfall,
     DateTimeOffset CreatedAtUtc,
-    IReadOnlyList<PlanningPaydayPlanHistoryItemResponse> Items);
+    IReadOnlyList<PlanningPaydayPlanHistoryItemResponse> Items)
+{
+    public int? EligibleBillCount { get; init; }
+    public int? SkippedBillCount { get; init; }
+    public string? SkippedReasonSummary { get; init; }
+}
 
 public sealed record PlanningPaydayPlanHistoryItemResponse(
     string? ProviderName,
@@ -548,7 +563,12 @@ public sealed record PlanningPaydayPlanResponse(
     decimal PaycheckRemainingAfterPlan,
     decimal Shortfall,
     IReadOnlyList<PlanningPaydayPlanItemResponse> Items,
-    IReadOnlyList<PlanningPaydayPlanSkippedBillResponse> SkippedBills);
+    IReadOnlyList<PlanningPaydayPlanSkippedBillResponse> SkippedBills)
+{
+    public int? EligibleBillCount { get; init; }
+    public int? SkippedBillCount { get; init; }
+    public string? SkippedReasonSummary { get; init; }
+}
 
 public sealed record PlanningPaydayPlanItemResponse(
     Guid BillStreamId,

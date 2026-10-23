@@ -533,3 +533,11 @@
     }
 }
 
+
+.planning-coverage-warning {
+    margin: 0.65rem 0;
+    line-height: 1.55;
+    font-size: 0.85rem;
+    color: var(--bw-text-muted);
+    overflow-wrap: anywhere;
+}

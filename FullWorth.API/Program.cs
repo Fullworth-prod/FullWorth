@@ -1035,6 +1035,9 @@ builder.Services.AddScoped<
     BillStatementPaymentDueAlertService>();
 
 builder.Services.AddScoped<
+    BillStatementDueReminderRefreshService>();
+
+builder.Services.AddScoped<
     BillStatementPersistenceService>();
 
 builder.Services.AddScoped<

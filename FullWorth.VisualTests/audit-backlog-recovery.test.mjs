@@ -34,8 +34,27 @@ export async function verifyAuditBacklogRecovery(page, outputDir) {
     };
     const sync = route => { synced = true; return route.fulfill({ json: {} }); };
     const adminReads = [];
+    let programWrites = 0, grants = 0, grantOperation;
     const admin = route => {
-        assert.equal(route.request().method(), "GET", "admin paging must not write");
+        const method = route.request().method();
+        if (method !== "GET") {
+            assert.ok(route.request().headers()["x-csrf-token"]);
+            const body = route.request().postDataJSON();
+            assert.equal(body.currentPassword, "Synthetic!Proof123");
+            if (method === "PUT") {
+                assert.match(route.request().url(), /\/programs\/BetaTester$/);
+                assert.equal(body.isActive, false);
+                programWrites++;
+                return route.fulfill({ status: 204 });
+            }
+            assert.equal(method, "POST");
+            assert.match(route.request().url(), /\/entitlements$/);
+            assert.match(body.operationId, /^[a-f0-9-]{36}$/i);
+            grants++;
+            if (grants === 1) { grantOperation = body.operationId; return route.abort("failed"); }
+            assert.equal(body.operationId, grantOperation, "retry must retain the queued grant identity");
+            return route.fulfill({ status: 201, json: { entitlementId: grantOperation } });
+        }
         const url = new URL(route.request().url()), skip = Number(url.searchParams.get("skip"));
         assert.equal(url.searchParams.get("take"), "50");
         adminReads.push([url.pathname, skip]);
@@ -43,7 +62,7 @@ export async function verifyAuditBacklogRecovery(page, outputDir) {
         const rows = Array.from({ length: skip === 0 ? 50 : 1 }, (_, i) => {
             const n = skip + i + 1;
             return { id: "b8240000-0000-0000-0000-" + String(n).padStart(12, "0"),
-                email: "synthetic-" + n + "@example.test", roles: [], programs: [], isActive: true,
+                email: "synthetic-" + n + "@example.test", roles: [], programs: ["BetaTester"], isActive: true,
                 displayPrefix: "SYN" + n, purpose: "Complimentary", tier: "Standard", status: "Active",
                 action: "SyntheticAudit" + n, subjectType: "Synthetic",
                 createdAtUtc: "2026-10-01T00:00:00Z", items: [] };
@@ -100,6 +119,23 @@ export async function verifyAuditBacklogRecovery(page, outputDir) {
         const groups = page.getByRole("group", { name: "Page controls", exact: true });
         await groups.first().waitFor();
         assert.equal(await groups.count(), 3);
+        const firstUser = page.locator(".admin-user-row").first();
+        await firstUser.getByRole("button", { name: "Remove beta tester", exact: true }).click();
+        await firstUser.getByLabel("Current password", { exact: true }).fill("Synthetic!Proof123");
+        await Promise.all([page.waitForEvent("domcontentloaded"),
+            firstUser.getByRole("button", { name: "Confirm", exact: true }).click()]);
+        await groups.first().waitFor();
+        await firstUser.getByRole("button", { name: "Grant 30 days", exact: true }).click();
+        await firstUser.getByLabel("Current password", { exact: true }).fill("Synthetic!Proof123");
+        await firstUser.getByRole("button", { name: "Confirm", exact: true }).click();
+        await firstUser.getByText("The grant could not be confirmed. Retry this confirmation with fresh credentials to recover the same grant, or cancel and review the account.", { exact: true }).waitFor();
+        assert.equal(await firstUser.getByLabel("Current password", { exact: true }).inputValue(), "");
+        await firstUser.getByLabel("Current password", { exact: true }).fill("Synthetic!Proof123");
+        await Promise.all([page.waitForEvent("domcontentloaded"),
+            firstUser.getByRole("button", { name: "Confirm", exact: true }).click()]);
+        await groups.first().waitFor();
+        assert.equal(programWrites, 1);
+        assert.equal(grants, 2);
         for (let i = 0; i < 3; i++) {
             await groups.nth(i).getByRole("button", { name: "Next page", exact: true }).click();
             await groups.nth(i).getByText("Records 51–51", { exact: true }).waitFor();
@@ -108,7 +144,7 @@ export async function verifyAuditBacklogRecovery(page, outputDir) {
             await groups.nth(i).getByText("Records 1–50", { exact: true }).waitFor();
         }
         assert.equal(adminReads.filter(([, skip]) => skip === 50).length, 3);
-        console.log("Audit backlog recovery passed: accepted statement read recovery with one POST, optional performance fallback, vanished account filter, and all three bounded admin pagers.");
+        console.log("Audit backlog recovery passed: accepted statement read recovery with one POST, optional performance fallback, vanished account filter, and required program-removal proof, stable grant retries, and all three bounded admin pagers.");
     } catch (error) {
         await page.screenshot({ path: path.join(outputDir, "audit-backlog-recovery-failure.png"), fullPage: true });
         throw error;

@@ -293,6 +293,15 @@
                                 <div class="statement-info">
                                     <strong>@FormatPeriod(statement.PeriodStart, statement.PeriodEnd)</strong>
                                     <span>@FormatStatementMeta(statement)</span>
+                                    @if (statement.SourceUploadId is { } sourceUploadId &&
+                                         sourceUploadId != Guid.Empty)
+                                    {
+                                        <a class="secondary-action"
+                                           href="@($"/bff/bill-streams/{BillStreamId:D}/statement-uploads/{sourceUploadId:D}/file")"
+                                           target="_blank" rel="noopener noreferrer">
+                                            @L["Download original statement"]
+                                        </a>
+                                    }
                                 </div>
 
                                 <div class="statement-amount">
@@ -742,6 +751,7 @@
         public DateOnly? DueDate { get; set; }
         public decimal TotalAmount { get; set; }
         public string? CurrencyCode { get; set; }
+        public Guid? SourceUploadId { get; set; }
     }
 
     public sealed class BillChangeViewModel

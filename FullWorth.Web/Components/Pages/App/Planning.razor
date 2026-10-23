@@ -260,14 +260,17 @@
                                 <span class="planning-change-status @(plan.Shortfall > 0m ? "needs-review" : "is-ready")">
                                     @(plan.Shortfall > 0m
                                         ? $"{L["Shortfall"].Value} {FormatAmount(plan.Shortfall, plan.CurrencyCode)}"
-                                        : L["On track"].Value)
+                                        : L["No recorded shortfall"].Value)
                                 </span>
                             </div>
 
                             <div class="planning-change-values">
                                 <span>@L["Planned for bills"]: @FormatAmount(plan.RecommendedSetAside, plan.CurrencyCode)</span>
-                                <strong>@L["Unplanned"]: @FormatAmount(plan.PaycheckRemainingAfterPlan, plan.CurrencyCode)</strong>
+                                <strong>@L["Not allocated by this plan"]: @FormatAmount(plan.PaycheckRemainingAfterPlan, plan.CurrencyCode)</strong>
                             </div>
+                            <p class="planning-coverage-warning" role="note">
+                                @L["Recorded amounts cover only bills included when this plan was generated. Historical coverage of all active bills was not saved, so a zero shortfall is not proof that every bill was accounted for."]
+                            </p>
 
                             @if (plan.Shortfall > 0m)
                             {
@@ -285,7 +288,7 @@
 
                                 @if (plan.Items.Count == 0)
                                 {
-                                    <p class="planning-plan-empty">@L["No bill recommendations were recorded for this paycheck."]</p>
+                                    <p class="planning-plan-empty">@L["No bill allocations were recorded for this paycheck. This is not evidence that no bills were due."]</p>
                                 }
                                 else
                                 {

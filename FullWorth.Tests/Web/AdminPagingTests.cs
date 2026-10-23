@@ -52,7 +52,7 @@ public sealed class AdminPagingTests
             "getAdminUsers", "getAdminAccessKeys", "getAdminAuditLog"
         })
         {
-            Assert.Contains($"\\"{endpoint}\\", next.Value, PageSize", source);
+            Assert.Contains("\"" + endpoint + "\", next.Value, PageSize", source);
         }
         Assert.Contains("GetTargetSkip(_usersSkip", source);
         Assert.Contains("GetTargetSkip(_keysSkip", source);

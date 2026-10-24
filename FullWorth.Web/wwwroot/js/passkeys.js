@@ -31,6 +31,28 @@
             response, clientExtensionResults: credential.getClientExtensionResults() };
     }
 
+
+    // Never trust a hidden returnUrl after a browser credential ceremony.
+    // Match the server's local-only policy, including nested percent encodings.
+    function localLoginDestination(value) {
+        if (typeof value !== "string" || !value.startsWith("/") || value.length > 2048)
+            return "/app";
+        let decoded = value;
+        try {
+            for (let round = 0; round < 4; round++) {
+                if (!decoded.startsWith("/") || decoded.startsWith("//") ||
+                    decoded.includes("\\") || /[\x00-\x1f\x7f]/.test(decoded))
+                    return "/app";
+                const next = decodeURIComponent(decoded);
+                if (next === decoded) return value;
+                decoded = next;
+            }
+        } catch {
+            return "/app";
+        }
+        return "/app";
+    }
+
     async function post(path, body) {
         let token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
         if (!token) {
@@ -148,7 +170,7 @@
                     twoFactorCode: creating ? null : value(root, "passkeyTwoFactorCode") || null,
                     rememberMe: !!document.querySelector('[name="rememberMe"]')?.checked };
                 await post(creating ? "/bff/account/security/passkeys/register" : "/auth/passkeys/login", body);
-                if (!creating) { location.assign(document.querySelector('input[name="returnUrl"]')?.value || "/app"); return; }
+                if (!creating) { location.assign(localLoginDestination(document.querySelector('input[name="returnUrl"]')?.value)); return; }
             }
             if (root.isConnected) {
                 if (await list(root))

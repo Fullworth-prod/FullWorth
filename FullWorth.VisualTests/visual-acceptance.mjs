@@ -309,6 +309,18 @@ try {
 
       await page.goto("/app/bills/" + currencyBillId, { waitUntil: "domcontentloaded" });
       await settle(".fw-detail-current");
+      const detailOrder = await page.evaluate(() => {
+        const story = document.querySelector(".fw-detail-change-story");
+        const upload = document.querySelector(".statement-upload-panel");
+        const choice = document.querySelector(".bill-monitoring-choice");
+        const history = document.querySelector(".fw-detail-history-grid");
+        if (!story || !upload || !choice || !history) return null;
+        const prior = (a, b) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+        return prior(story, choice) && prior(story, upload) &&
+          prior(choice, history) && prior(upload, history);
+      });
+      assert.equal(detailOrder, true,
+        "Bill evidence story must appear before upload and monitoring actions, then historical records.");
       const detailText = await page.locator(".app-page").innerText();
       assert.ok(detailText.includes("EUR 20.00"));
       assert.ok(detailText.includes("EUR 25.00"));

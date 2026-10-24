@@ -267,8 +267,19 @@ public sealed class PlaidLinkService
         _dbContext.PlaidLinkSessions.Add(
             linkSession);
 
-        await _dbContext.SaveChangesAsync(
-            cancellationToken);
+        try
+        {
+            await _dbContext.SaveChangesAsync(
+                cancellationToken);
+        }
+        catch
+        {
+            // A failed session insert must not be committed by a later,
+            // unrelated save on this scoped DbContext. A new Hosted Link
+            // attempt requires a fresh provider-generated token.
+            _dbContext.Entry(linkSession).State = EntityState.Detached;
+            throw;
+        }
 
         /*
          * Deliberately do not return the plaintext Link token.

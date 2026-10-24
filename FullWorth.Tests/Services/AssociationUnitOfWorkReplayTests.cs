@@ -12,7 +12,8 @@ public sealed class AssociationUnitOfWorkReplayTests
     {
         foreach (var tracked in new[] { false, true })
         foreach (var operation in new[] { "create-replay", "create-reassign", "create-remove",
-                     "update-replay", "remove-recreate", "remove-reassign", "remove-replay" })
+                     "update-replay", "remove-recreate", "remove-reassign", "remove-replay",
+                     "update-remove-recreate", "update-remove-restore" })
             yield return [operation, tracked];
     }
 
@@ -54,6 +55,10 @@ public sealed class AssociationUnitOfWorkReplayTests
             case "update-replay": await Stage(first.Id, second.Id); await Stage(second.Id, second.Id); final = second.Id; break;
             case "remove-recreate": await Stage(first.Id, null); await Stage(null, first.Id); final = first.Id; break;
             case "remove-reassign": await Stage(first.Id, null); await Stage(null, second.Id); final = second.Id; break;
+            case "update-remove-recreate": await Stage(first.Id, second.Id); await Stage(second.Id, null);
+                await Stage(null, second.Id); final = second.Id; break;
+            case "update-remove-restore": await Stage(first.Id, second.Id); await Stage(second.Id, null);
+                await Stage(null, first.Id); final = first.Id; break;
             default: await Stage(first.Id, null); await Stage(null, null); final = null; break;
         }
         // A stale expectation still fails against the staged state.
@@ -62,6 +67,10 @@ public sealed class AssociationUnitOfWorkReplayTests
         await using (var before = new FullWorthDbContext(options))
             Assert.Equal(hadExisting ? first.Id : (Guid?)null,
                 (await before.BillTransactionAssociations.SingleOrDefaultAsync(x => x.UserId == owner))?.BillStreamId);
+        if (hadExisting && final.HasValue)
+            Assert.Equal(first.Id, db.ChangeTracker.Entries<BillTransactionAssociationEntity>()
+                .Single(x => x.Entity.UserId == owner).OriginalValues
+                .GetValue<Guid>(nameof(BillTransactionAssociationEntity.BillStreamId)));
         await db.SaveChangesAsync();
         await using var verify = new FullWorthDbContext(options);
         Assert.Equal(final, (await verify.BillTransactionAssociations.SingleOrDefaultAsync(x => x.UserId == owner))?.BillStreamId);

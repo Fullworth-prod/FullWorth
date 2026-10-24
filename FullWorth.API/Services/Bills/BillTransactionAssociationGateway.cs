@@ -216,7 +216,10 @@ public sealed class BillTransactionAssociationGateway(
             {
                 // Reuse the composite key already tracked for deletion. EF
                 // cannot track a replacement instance with the same key.
-                dbContext.Entry(removed).State = EntityState.Unchanged;
+                var removedEntry = dbContext.Entry(removed);
+                var original = removedEntry.OriginalValues.Clone();
+                removedEntry.State = EntityState.Unchanged;
+                removedEntry.OriginalValues.SetValues(original);
                 existingAssociation = removed;
             }
 

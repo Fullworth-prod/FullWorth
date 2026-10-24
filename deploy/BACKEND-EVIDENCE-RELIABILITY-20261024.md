@@ -19,14 +19,14 @@ This is proposed development work. No production acceptance is recorded.
 ## Regression inventory
 
 - ChangeWatchReadReliabilityTests: 13 cases.
-- AssociationUnitOfWorkReplayTests: 20 cases.
+- AssociationUnitOfWorkReplayTests: 24 cases.
 - StatementUploadWriteRecoveryTests: 6 cases.
 - StatementGraphFailureRecoveryTests: 32 cases.
 - StatementChangeStagingReplayTests: 12 cases.
 - StatementProcessingWriteRecoveryTests: 33 cases.
-- Total: **116 new regression cases**, six dedicated new test classes plus a dedicated test support file.
+- Total: **120 new regression cases**, six dedicated new test classes plus a dedicated test support file.
 
-These are scenarios across seven gaps, not 116 distinct defects.
+These are scenarios across seven gaps, not 120 distinct defects.
 The first checkpoint exposed an incorrect root-provider resolution in the new upload fixture; the fixture now resolves UserManager from a proper scope. No production checks were weakened to make the tests pass.
 Final exact-commit GitHub verification is recorded in the PR.
 

@@ -131,13 +131,18 @@ public sealed class PlaidHostedCompletionFailureRecoveryTests
 
         if (mode == "new")
         {
-            // Exchange persisted a connection before the separate session save.
-            // Do not pretend that an already-consumed public token can replay:
-            // this test proves only that the failed session is still Pending.
-            Assert.Equal(2, await db.BankConnections.CountAsync());
-            Assert.True(await db.BankConnections.AnyAsync(c =>
+            // One database save stages both the bank and terminal session.
+            // A pre-commit error must not leave a bank connected to a Pending
+            // Hosted Link session (and must not persist the failed candidate
+            // through this context's subsequent unrelated caller save).
+            Assert.Single(await db.BankConnections.ToListAsync());
+            Assert.False(await db.BankConnections.AnyAsync(c =>
                 c.UserId == owner && c.PlaidItemId == "fixture-new-item"));
+            Assert.Null(session.BankConnectionId);
+            Assert.Null(storedSession.BankConnectionId);
             Assert.Equal(3, handler.Requests.Count);
+            // This does NOT make the provider's already-consumed public token
+            // replayable after failure. A new Link attempt may be required.
             return;
         }
 

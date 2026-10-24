@@ -8,6 +8,8 @@ import { runInNewContext } from "node:vm";
 async function completedPasskeyRedirect(filename, returnUrl) {
     let handler;
     let redirected;
+    let submitted = 0;
+    const followUpForm = { requestSubmit: () => { submitted++; } };
     const status = { textContent: "" };
     const root = {
         isConnected: true,
@@ -25,6 +27,7 @@ async function completedPasskeyRedirect(filename, returnUrl) {
             if (type === "click") handler = callback;
         },
         querySelector: selector => {
+            if (selector.includes("data-passkey-continue")) return followUpForm;
             if (selector.includes("__RequestVerificationToken")) return { value: "synthetic-csrf" };
             if (selector.includes("returnUrl")) return { value: returnUrl };
             return null;
@@ -53,9 +56,9 @@ async function completedPasskeyRedirect(filename, returnUrl) {
     runInNewContext(source, context, { filename });
     assert.equal(typeof handler, "function", filename + " must register its passkey handler");
     await handler({ target: { closest: () => button } });
-    assert.equal(typeof redirected, "string",
-        filename + " must navigate after successful WebAuthn: " + status.textContent);
-    return redirected;
+    assert.equal(submitted, 1, filename + " must submit the protected server form after WebAuthn");
+    assert.equal(redirected, undefined, filename + " must not navigate to a DOM-derived URL");
+    return { submitted, redirected };
 }
 
 const cases = [
@@ -78,10 +81,12 @@ const cases = [
 ];
 
 for (const filename of ["passkeys.js", "password-step.js"]) {
-    test(filename + " accepts only local destinations after WebAuthn", async () => {
-        for (const [input, expected] of cases) {
-            assert.equal(await completedPasskeyRedirect(filename, input), expected,
-                filename + " unsafe return URL: " + JSON.stringify(input));
+    test(filename + " never navigates directly to a DOM-derived destination after WebAuthn", async () => {
+        for (const [input] of cases) {
+            const result = await completedPasskeyRedirect(filename, input);
+            assert.equal(result.submitted, 1);
+            assert.equal(result.redirected, undefined,
+                filename + " must not navigate to browser-controlled URL: " + JSON.stringify(input));
         }
     });
 }

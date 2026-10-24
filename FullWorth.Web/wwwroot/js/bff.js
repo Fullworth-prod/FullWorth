@@ -1,5 +1,5 @@
 import { loginRedirectUrl } from "./login-redirect.js";
-import { pollPlaidCompletion } from "./plaid-completion.js";
+import { pollPlaidCompletion, isActiveLinkResult } from "./plaid-completion.js";
 import { confirmAction } from "./confirmation-dialog.js";
 
 let antiforgeryToken = null;
@@ -454,7 +454,7 @@ async function waitForPlaidCompletion(
     });
     if (!result || !isCurrent()) return;
     const state = String(result.status ?? "").toLowerCase();
-    if (state === "completed") {
+    if (state === "completed" && isActiveLinkResult(result)) {
         setConnectStatus(statusElement, completedMessage(
             result.connection?.institutionName ?? text.defaultInstitution), "success");
         await delay(900);

@@ -140,6 +140,13 @@ public sealed class PlaidController : ControllerBase
                 message = "Plaid Link session was not found."
             });
         }
+        catch (PlaidDisconnectedConnectionException)
+        {
+            return Conflict(new
+            {
+                message = "A previously disconnected bank cannot be reactivated. Start a new bank connection."
+            });
+        }
     }
 
     [HttpPost("accounts/sync")]
@@ -261,13 +268,23 @@ public sealed class PlaidController : ControllerBase
             });
         }
 
-        var connection =
-            await _exchangeService.ExchangeAndSaveAsync(
-                userId,
-                request.PublicToken,
-                cancellationToken);
+        try
+        {
+            var connection =
+                await _exchangeService.ExchangeAndSaveAsync(
+                    userId,
+                    request.PublicToken,
+                    cancellationToken);
 
-        return Ok(connection);
+            return Ok(connection);
+        }
+        catch (PlaidDisconnectedConnectionException)
+        {
+            return Conflict(new
+            {
+                message = "A previously disconnected bank cannot be reactivated. Start a new bank connection."
+            });
+        }
     }
 
     private bool TryGetUserId(

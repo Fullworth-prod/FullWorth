@@ -431,7 +431,13 @@ public sealed class PlaidLinkService
                 "Plaid returned an expired Link token.");
         }
 
-        return expiration;
+        // A provider response cannot extend local retention of an
+        // owner-scoped, protected Hosted Link credential indefinitely.
+        // Use the earlier of the provider expiration and our own limit.
+        var maximumExpiration = now.Add(DefaultLinkSessionLifetime);
+        return expiration < maximumExpiration
+            ? expiration
+            : maximumExpiration;
     }
 }
 

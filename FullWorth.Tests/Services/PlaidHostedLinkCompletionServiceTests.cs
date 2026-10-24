@@ -559,6 +559,72 @@ public sealed class PlaidHostedLinkCompletionServiceTests
             request => Assert.Equal("/link/token/get", request.Uri.AbsolutePath));
     }
 
+    [Theory]
+    [InlineData("exit-first")]
+    [InlineData("token-first")]
+    [InlineData("exit-with-token")]
+    public async Task InitialHostedLink_ExitedProviderEvidenceNeverExchangesPublicToken(
+        string mode)
+    {
+        await using var db = CreateDbContext();
+        var owner = Guid.NewGuid();
+        var protector = new PlaidTokenProtector(
+            new EphemeralDataProtectionProvider());
+        var session = new PlaidLinkSessionEntity
+        {
+            UserId = owner,
+            ProtectedLinkToken = protector.ProtectLinkToken("link-exit-conflict"),
+            ExpiresAtUtc = DateTimeOffset.UtcNow.AddHours(1)
+        };
+        db.PlaidLinkSessions.Add(session);
+        await db.SaveChangesAsync();
+
+        var providerState = mode switch
+        {
+            "exit-first" => """
+                {"link_sessions":[
+                    {"finished_at":"2026-08-30T18:00:00Z","exit":{}},
+                    {"finished_at":"2026-08-30T18:01:00Z",
+                     "results":{"item_add_results":[{"public_token":"public-exited"}]}}
+                ]}
+                """,
+            "token-first" => """
+                {"link_sessions":[
+                    {"finished_at":"2026-08-30T18:00:00Z",
+                     "results":{"item_add_results":[{"public_token":"public-exited"}]}},
+                    {"finished_at":"2026-08-30T18:01:00Z","exit":{}}
+                ]}
+                """,
+            _ => """
+                {"link_sessions":[{
+                    "finished_at":"2026-08-30T18:00:00Z","exit":{},
+                    "results":{"item_add_results":[{"public_token":"public-exited"}]}
+                }]}
+                """
+        };
+        using var handler = new ScriptedHttpMessageHandler(
+            JsonResponse(HttpStatusCode.OK, providerState));
+        using var http = new HttpClient(handler);
+        var api = CreateApiClient(http);
+        var service = new PlaidHostedLinkCompletionService(
+            db, api, protector,
+            new PlaidConnectionExchangeService(api, protector, db));
+
+        var result = await service.CheckAndCompleteAsync(owner, session.Id);
+
+        Assert.Equal("Exited", result.Status);
+        Assert.Null(result.Connection);
+        Assert.Equal(PlaidLinkSessionStatus.Exited, session.Status);
+        Assert.Equal(string.Empty, session.ProtectedLinkToken);
+        Assert.Null(session.BankConnectionId);
+        Assert.Empty(await db.BankConnections.ToListAsync());
+        Assert.Collection(handler.Requests,
+            request => Assert.Equal("/link/token/get", request.Uri.AbsolutePath));
+        var repeated = await service.CheckAndCompleteAsync(owner, session.Id);
+        Assert.Equal("Exited", repeated.Status);
+        Assert.Single(handler.Requests);
+    }
+
     private static PlaidApiClient CreateApiClient(
         HttpClient httpClient)
     {

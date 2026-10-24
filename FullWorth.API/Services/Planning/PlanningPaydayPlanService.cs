@@ -162,7 +162,11 @@ public sealed class PlanningPaydayPlanService(
                 userId,
                 cancellationToken);
 
-        if (schedule is null)
+        // Older versions could persist SemiMonthly without its second day.
+        // Require explicit reconfiguration before creating another immutable plan;
+        // historical saved-plan replay above remains independent of live settings.
+        if (schedule is null ||
+            (schedule.Frequency == PayScheduleFrequency.SemiMonthly && schedule.SecondaryDayOfMonth is null))
         {
             return Empty(
                 PlanningPaydayPlanStatus.PayScheduleRequired,

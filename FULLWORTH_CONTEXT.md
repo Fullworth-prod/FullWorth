@@ -1,3 +1,13 @@
+## CI execution blocker — 2026-10-24 UTC
+
+[Combined PR #953](https://github.com/Fullworth/FullWorth/pull/953) contains the reviewed reliability/vNext integration. Its initial head `0cec1c4e206ac6609ae86fa4f09debad06b229f6` triggered six workflows, but all eight jobs failed before executing any steps. [Run #40127391943](https://github.com/Fullworth/FullWorth/actions/runs/40127391943) reports that the account is locked due to a billing issue. This is an external execution block, not a tested application regression or permission to bypass required checks.
+
+Do not merge the combined candidate, close the source PRs, repeatedly rerun unchanged blocked workflows, or claim combined test success. Restore authorized GitHub Actions access through the account owner, then rerun the final candidate's failed jobs and inspect all protected, PostgreSQL and visual results. Preserve production and existing branch rules. Source-PR green checks remain evidence only for their own source commits.
+
+Independent review completed while blocked: all 38 source paths had unchanged merge-base preimages and no cross-PR path conflicts; reviewed source blobs were verified; the existing #945 visual artifact SHA256 `63c12b339284fedcdc262662bed01935cf694b4d93d741b9c3a00f65161ab10e` was downloaded and four screenshots inspected. That artifact revealed eight missing Spanish Activity-shell resource keys; the candidate now adds them without changing existing translations. XML parsing, duplicate-key checks and literal component-key coverage pass; new render/build acceptance is still blocked. This is prior-source visual evidence, not a combined-candidate screenshot.
+
+---
+
 ## Development integration scope — 2026-10-24 UTC: reliability and vNext R4/R5
 
 This checkpoint combines the reviewed development changes from [#941](https://github.com/Fullworth/FullWorth/pull/941), [#945](https://github.com/Fullworth/FullWorth/pull/945), [#948](https://github.com/Fullworth/FullWorth/pull/948), [#952](https://github.com/Fullworth/FullWorth/pull/952), and the verified subscription handoff in [#950](https://github.com/Fullworth/FullWorth/pull/950). Source PR checks are independent evidence; the combined branch must pass its own exact-head verification before integration. Consult the integration PR for its exact final SHA, test results and merge state; this scope record alone does not declare success.

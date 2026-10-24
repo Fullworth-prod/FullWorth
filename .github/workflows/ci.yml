@@ -137,7 +137,7 @@ jobs:
 
       - name: Verify transaction stream regression
         if: steps.backend_changes.outputs.required == 'true'
-        run: node --test FullWorth.Tests/transaction-stream.test.mjs
+        run: node --test FullWorth.Tests/transaction-stream.test.mjs FullWorth.Tests/passkey-return-url.test.mjs
 
   maui:
     name: MAUI Android build

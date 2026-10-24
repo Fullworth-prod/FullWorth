@@ -59,6 +59,19 @@ test("terminal provider states are preserved, real errors remain errors", async 
     await assert.rejects(pollPlaidCompletion({ isCurrent: () => true, sleep: async () => {},
         readStatus: async () => { throw new Error("network"); } }), /network/);
 });
+test("malformed and unknown completion states fail closed instead of appearing terminal", async () => {
+    for (const result of [null, {}, { status: null }, { status: 200 },
+        { status: "Authorized" }, { status: "  Completed  " }]) {
+        let time = 0, reads = 0;
+        await assert.rejects(pollPlaidCompletion({
+            now: () => time, sleep: async ms => { time += ms; },
+            isCurrent: () => true,
+            readStatus: async () => { reads++; return result; }
+        }), /Invalid Plaid Link completion response/);
+        assert.equal(reads, 1, "invalid results must not cause further provider polls");
+    }
+});
+
 test("abort cancels the real pending timer", async () => {
     const flow = new AbortController();
     const waiting = pollPlaidCompletion({ signal: flow.signal, isCurrent: () => true,

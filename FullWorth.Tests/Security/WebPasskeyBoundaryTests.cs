@@ -70,6 +70,11 @@ public sealed class WebPasskeyBoundaryTests
     {
         await using var factory = new FullWorthWebFactory();
         using var client = factory.CreateHttpsClient();
+        // The factory's default synthetic principal uses a new GUID on each
+        // request. Fix the owner identity across token issuance and POST so
+        // antiforgery tests exercise the endpoint rather than user mismatch.
+        client.DefaultRequestHeaders.Add(
+            "X-FullWorth-Test-UserId", "11111111-1111-1111-1111-111111111111");
         var token = await GetLoginAntiforgeryAsync(client);
 
         using var response = await client.PostAsync("/auth/passkeys/continue",

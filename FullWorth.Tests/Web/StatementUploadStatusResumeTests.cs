@@ -42,7 +42,13 @@ public sealed class StatementUploadStatusResumeTests
 
     private static StatementUploadPanel Create(Guid streamId, Module module)
     {
-        var component = new StatementUploadPanel { BillStreamId = streamId };
+        // This is a renderer-free unit fixture, not a component consumer.
+        // The reflection-based parameter setup matches the injected private
+        // dependencies below and avoids assigning a [Parameter] in C# markup.
+        var component = new StatementUploadPanel();
+        typeof(StatementUploadPanel).GetProperty(
+            nameof(StatementUploadPanel.BillStreamId), Flags)!
+            .SetValue(component, streamId);
         typeof(StatementUploadPanel).GetProperty("L", Flags)!.SetValue(component, new Localizer());
         typeof(StatementUploadPanel).GetField("_bffModule", Flags)!.SetValue(component, module);
         return component;

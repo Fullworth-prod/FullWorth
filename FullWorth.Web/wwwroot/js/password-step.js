@@ -51,6 +51,23 @@
         return "/app";
     }
 
+    function continueAfterPasskey() {
+        // A GET form is a browser navigation, not a JavaScript URL sink.
+        // The authenticated server endpoint revalidates the return target.
+        const form = document.createElement("form");
+        form.method = "get";
+        form.action = "/auth/passkeys/continue";
+        form.hidden = true;
+        const destination = document.createElement("input");
+        destination.type = "hidden";
+        destination.name = "returnUrl";
+        destination.value = localLoginDestination(
+            document.querySelector('input[name="returnUrl"]')?.value);
+        form.append(destination);
+        document.body.append(form);
+        form.submit();
+    }
+
     document.addEventListener("click", async event => {
         const button = event.target.closest("[data-password-passkey-button]");
         const root = button?.closest("[data-password-passkey]");
@@ -69,7 +86,7 @@
             if (!credential) throw new Error("No passkey was selected. You can still use an authenticator code.");
             await post("/auth/login/passkey-complete", { ceremonyId: begin.ceremonyId,
                 credentialJson: JSON.stringify(credentialJSON(credential)) });
-            location.assign(localLoginDestination(document.querySelector('input[name="returnUrl"]')?.value));
+            continueAfterPasskey();
         } catch (error) {
             status.textContent = error?.name === "NotAllowedError"
                 ? "Cancelled or timed out. You can try again or use an authenticator code."

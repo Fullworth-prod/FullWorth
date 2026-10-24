@@ -185,6 +185,32 @@ public sealed class PlaidApiClientTests
             StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("[]")]
+    [InlineData("null")]
+    [InlineData("7")]
+    [InlineData("\"untrusted error body\"")]
+    [InlineData("{\"error_type\":[\"bad\"],\"error_code\":{\"nested\":true}}")]
+    public async Task PostAsync_NonObjectOrUnexpectedErrorShape_ProducesSanitizedProviderException(
+        string response)
+    {
+        var handler = new RecordingHandler(_ =>
+            JsonResponse(HttpStatusCode.BadGateway, response));
+
+        var error = await Assert.ThrowsAsync<PlaidApiException>(
+            () => CreateClient(handler).PostAsync(
+                "item/get", new { access_token = "private-fixture-access" }));
+
+        Assert.Equal(HttpStatusCode.BadGateway, error.StatusCode);
+        Assert.Null(error.ErrorCode);
+        Assert.Null(error.ErrorType);
+        Assert.Equal(1, handler.RequestCount);
+        Assert.DoesNotContain("private-fixture-access", error.Message,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("untrusted error body", error.Message,
+            StringComparison.Ordinal);
+    }
+
     private static PlaidApiClient CreateClient(
         HttpMessageHandler handler)
     {

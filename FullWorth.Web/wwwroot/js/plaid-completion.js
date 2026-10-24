@@ -26,8 +26,14 @@ export async function pollPlaidCompletion({
         try {
             const result = await readStatus(signal);
             if (!isCurrent() || signal?.aborted) return null;
-            const state = String(result?.status ?? "").toLowerCase();
-            if (state !== "pending") return result;
+            if (typeof result?.status !== "string") {
+                throw new Error("FullWorth received an invalid Link status.");
+            }
+            const state = result.status.toLowerCase();
+            if (["completed", "exited", "expired", "failed"].includes(state)) return result;
+            if (state !== "pending") {
+                throw new Error("FullWorth received an invalid Link status.");
+            }
             popupClosedPendingChecks = isPopupClosed() ? popupClosedPendingChecks + 1 : 0;
             if (popupClosedPendingChecks >= 2) return { status: "PopupClosed" };
             waitMs = completionPollIntervalMs;
@@ -40,4 +46,14 @@ export async function pollPlaidCompletion({
         }
     }
     return isCurrent() && !signal?.aborted ? { status: "TimedOut" } : null;
+}
+
+// A completed Link session is not proof of a usable connected bank.
+// The BFF must supply a currently active owner-scoped bank with an ID.
+export function isActiveLinkResult(result) {
+    const bankId = result?.connection?.id;
+    return result?.status === "Completed" &&
+        result.connection?.status === "Active" &&
+        typeof bankId === "string" &&
+        /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(bankId);
 }

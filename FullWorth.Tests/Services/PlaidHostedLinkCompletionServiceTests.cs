@@ -486,6 +486,7 @@ public sealed class PlaidHostedLinkCompletionServiceTests
     [Theory]
     [InlineData("conflicting-sessions")]
     [InlineData("conflicting-fields")]
+    [InlineData("conflicting-item-add-results")]
     [InlineData("malformed-trailing-results")]
     public async Task HostedLinkMultipleTokenSources_RejectsConflictingOrMalformedEvidence(
         string mode)
@@ -519,6 +520,15 @@ public sealed class PlaidHostedLinkCompletionServiceTests
                   "finished_at":"2026-08-30T18:00:00Z",
                   "results":{"item_add_results":[{"public_token":"token-one"}]},
                   "on_success":{"public_token":"token-two"}
+                }]}
+                """,
+            "conflicting-item-add-results" => """
+                {"link_sessions":[{
+                  "finished_at":"2026-08-30T18:00:00Z",
+                  "results":{"item_add_results":[
+                    {"public_token":"token-one"},
+                    {"public_token":"token-two"}
+                  ]}
                 }]}
                 """,
             _ => """

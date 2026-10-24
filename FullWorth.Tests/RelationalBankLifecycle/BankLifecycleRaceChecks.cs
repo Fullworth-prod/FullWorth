@@ -37,6 +37,7 @@ public static class BankLifecycleRaceChecks
             foreach (var replaceCredential in new[] { false, true })
             foreach (var attention in new[] { false, true })
             {
+                Console.WriteLine($"Race: transactions={transactions}, beforeSave={duringSave}, replacement={replaceCredential}, attention={attention}");
                 await RaceAsync(options, transactions, duringSave, replaceCredential, attention);
                 count++;
             }
@@ -194,6 +195,13 @@ public static class BankLifecycleRaceChecks
         Require(foreign.Status == BankConnectionStatus.Active &&
             foreign.ProtectedPlaidAccessToken == fixture.Foreign.ProtectedPlaidAccessToken &&
             foreign.TransactionsCursor == "synthetic-original-cursor", "Foreign owner was mutated.");
+        var foreignAccount = await db.BankAccounts.AsNoTracking().SingleAsync(x => x.BankConnectionId == foreign.Id);
+        Require(foreignAccount.IsActive && foreignAccount.Name == "Synthetic foreign account",
+            "Foreign account was mutated.");
+        var foreignTransaction = await db.BankTransactions.AsNoTracking().SingleAsync(x => x.UserId == foreign.UserId);
+        Require(foreignTransaction.Amount == 99.50m && foreignTransaction.IsoCurrencyCode == "EUR" &&
+            !foreignTransaction.IsRemoved && foreignTransaction.Name == "Synthetic foreign charge",
+            "Foreign transaction history was mutated.");
     }
 
     private static async Task<Fixture> SeedAsync(DbContextOptions<FullWorthDbContext> options, bool attention)
@@ -213,7 +221,12 @@ public static class BankLifecycleRaceChecks
         var foreign = Bank(other.Id, "synthetic-foreign-access");
         var account = new BankAccountEntity { UserId = owner.Id, BankConnectionId = bank.Id,
             PlaidAccountId = Guid.NewGuid().ToString("N"), Name = "Synthetic original account", IsActive = true };
-        db.AddRange(owner, other, bank, foreign, account);
+        var foreignAccount = new BankAccountEntity { UserId = other.Id, BankConnectionId = foreign.Id,
+            PlaidAccountId = Guid.NewGuid().ToString("N"), Name = "Synthetic foreign account", IsActive = true };
+        db.AddRange(owner, other, bank, foreign, account, foreignAccount);
+        db.Add(new BankTransactionEntity { UserId = other.Id, BankAccountId = foreignAccount.Id,
+            PlaidTransactionId = "synthetic-foreign-transaction", Name = "Synthetic foreign charge",
+            Amount = 99.50m, PostedDate = new DateOnly(2026, 1, 5), IsoCurrencyCode = "EUR" });
         db.AddRange(new BankTransactionEntity { UserId = owner.Id, BankAccountId = account.Id,
             PlaidTransactionId = "synthetic-modified", Name = "Synthetic original charge", Amount = 10m,
             PostedDate = new DateOnly(2026, 1, 5), IsoCurrencyCode = "USD" },

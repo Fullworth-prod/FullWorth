@@ -6,6 +6,7 @@ using FullWorth.API.Services.Plaid;
 using FullWorth.Tests.Infrastructure;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Options;
 
 namespace FullWorth.Tests.Services;
@@ -15,8 +16,9 @@ public sealed class PlaidHostedLinkCompletionServiceTests
     [Fact]
     public async Task CompletedHostedLink_ExchangesTokenServerSideAndClearsSessionCredential()
     {
+        var observer = new CombinedInitialLinkSaveObserver();
         await using var dbContext =
-            CreateDbContext();
+            CreateDbContext(observer);
 
         var userId =
             Guid.NewGuid();
@@ -140,6 +142,10 @@ public sealed class PlaidHostedLinkCompletionServiceTests
             tokenProtector.Unprotect(
                 connection.ProtectedPlaidAccessToken!));
 
+        // Terminal session and newly added bank must share one database write.
+        Assert.Equal(connection.Id, session.BankConnectionId);
+        Assert.Equal(1, observer.CombinedWrites);
+
         Assert.Collection(
             handler.Requests,
             request =>
@@ -154,6 +160,11 @@ public sealed class PlaidHostedLinkCompletionServiceTests
                 Assert.Equal(
                     "/item/get",
                     request.Uri.AbsolutePath));
+
+        var replay = await service.CheckAndCompleteAsync(userId, session.Id);
+        Assert.Equal("Completed", replay.Status);
+        Assert.Equal(3, handler.Requests.Count);
+        Assert.Equal(1, observer.CombinedWrites);
     }
 
     [Fact]
@@ -392,15 +403,44 @@ public sealed class PlaidHostedLinkCompletionServiceTests
                 }));
     }
 
-    private static FullWorthDbContext CreateDbContext()
+    private sealed class CombinedInitialLinkSaveObserver : SaveChangesInterceptor
     {
-        return new FullWorthDbContext(
-            new DbContextOptionsBuilder<FullWorthDbContext>()
-                .UseInMemoryDatabase(
-                    Guid.NewGuid()
-                        .ToString(
-                            "N"))
-                .Options);
+        public int CombinedWrites { get; private set; }
+
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            var context = eventData.Context!;
+            var sessions = context.ChangeTracker.Entries<PlaidLinkSessionEntity>()
+                .Where(entry => entry.State == EntityState.Modified &&
+                    entry.Entity.Status == PlaidLinkSessionStatus.Completed)
+                .ToArray();
+
+            if (sessions.Length > 0)
+            {
+                var session = Assert.Single(sessions).Entity;
+                Assert.Contains(context.ChangeTracker.Entries<BankConnectionEntity>(),
+                    entry => entry.State == EntityState.Added &&
+                        entry.Entity.Id == session.BankConnectionId &&
+                        entry.Entity.UserId == session.UserId);
+                CombinedWrites++;
+            }
+            return ValueTask.FromResult(result);
+        }
+    }
+
+    private static FullWorthDbContext CreateDbContext(
+        SaveChangesInterceptor? observer = null)
+    {
+        var builder = new DbContextOptionsBuilder<FullWorthDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"));
+
+        if (observer is not null)
+            builder.AddInterceptors(observer);
+
+        return new FullWorthDbContext(builder.Options);
     }
 
     private static HttpResponseMessage JsonResponse(

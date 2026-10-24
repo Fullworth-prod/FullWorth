@@ -26,8 +26,15 @@ export async function pollPlaidCompletion({
         try {
             const result = await readStatus(signal);
             if (!isCurrent() || signal?.aborted) return null;
-            const state = String(result?.status ?? "").toLowerCase();
-            if (state !== "pending") return result;
+            // Never interpret an incomplete or unexpected server response as
+            // completed authorization. Only known terminal session states can
+            // end the poll successfully.
+            const state = typeof result?.status === "string"
+                ? result.status.toLowerCase() : "";
+            if (["completed", "exited", "expired", "failed"].includes(state))
+                return result;
+            if (state !== "pending")
+                throw new Error("Invalid Plaid Link completion response");
             popupClosedPendingChecks = isPopupClosed() ? popupClosedPendingChecks + 1 : 0;
             if (popupClosedPendingChecks >= 2) return { status: "PopupClosed" };
             waitMs = completionPollIntervalMs;

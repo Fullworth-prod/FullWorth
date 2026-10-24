@@ -36,7 +36,7 @@ Synthetic provider responses exercise actual EF/Npgsql concurrency predicates an
 
 The executable requires an explicit fixture opt-in, loopback host, fixed disposable database and fixture username. It never connects to production, exports data or deletes live contents. The GitHub job owns its ephemeral service; no hosted credentials or secrets are changed.
 
-Final exact-commit checks and results are recorded in the PR. Intermediate results are not final-head verification.
+The dedicated PostgreSQL workflow checks out the exact PR head explicitly. Shared CI validates GitHub's merge candidate against the current development branch; its tested merge commit and backend blob parity are recorded separately in the PR. Intermediate results are not final-head verification.
 
 ## Remaining release blockers
 

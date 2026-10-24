@@ -429,16 +429,36 @@ public sealed class PlaidHostedLinkCompletionService
                     true;
             }
 
-            publicToken ??=
+            // Always parse both provider fields, even after finding a token
+            // in an earlier session. Short-circuiting can conceal malformed
+            // responses or conflicting item credentials in later sessions.
+            var resultToken =
                 GetPublicTokenFromResults(
                     linkSession);
 
-            publicToken ??=
+            var legacyToken =
                 GetPublicTokenFromLegacySuccess(
                     linkSession);
 
-            // Examine every session even after finding a public token:
-            // a later unfinished session must prevent a premature exchange.
+            foreach (var candidate in new[] { resultToken, legacyToken })
+            {
+                if (candidate is null)
+                {
+                    continue;
+                }
+
+                if (publicToken is not null &&
+                    !string.Equals(publicToken, candidate,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Plaid returned conflicting Hosted Link public tokens.");
+                }
+
+                publicToken = candidate;
+            }
+
+            // A later unfinished session must prevent premature exchange.
         }
 
         return new PlaidSessionState(

@@ -197,6 +197,9 @@ public sealed class BillStatementUploadsController
         }
         catch
         {
+            // The file is removed below; its failed metadata insert must not
+            // survive in this context and later reference a deleted file.
+            _dbContext.Entry(upload).State = EntityState.Detached;
             _storageService.Delete(
                 storedFile.StorageKey);
 

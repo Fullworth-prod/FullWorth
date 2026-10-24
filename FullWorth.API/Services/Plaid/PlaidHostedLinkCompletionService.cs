@@ -108,8 +108,9 @@ public sealed class PlaidHostedLinkCompletionService
         if (session.Status !=
             PlaidLinkSessionStatus.Pending)
         {
-            return CreateResult(
-                session);
+            // A completed session is an idempotent owner-scoped read, not
+            // permission to repeat a consumed provider public-token exchange.
+            return await CreateTerminalResultAsync(session, cancellationToken);
         }
 
         var snapshot = new CompletionEntrySnapshot(_dbContext.Entry(session));
@@ -124,6 +125,40 @@ public sealed class PlaidHostedLinkCompletionService
             snapshot.Restore();
             throw;
         }
+    }
+
+    private async Task<PlaidHostedLinkCompletionResult> CreateTerminalResultAsync(
+        PlaidLinkSessionEntity session,
+        CancellationToken cancellationToken)
+    {
+        if (session.Status != PlaidLinkSessionStatus.Completed ||
+            session.BankConnectionId is not Guid bankId)
+        {
+            return CreateResult(session);
+        }
+
+        // Recheck the bank's owner independently of the session. A stale,
+        // removed or subsequently disconnected bank must not be presented
+        // as connected, and a forged cross-owner bank ID must reveal nothing.
+        var bank = await _dbContext.BankConnections.AsNoTracking()
+            .SingleOrDefaultAsync(candidate =>
+                candidate.Id == bankId &&
+                candidate.UserId == session.UserId &&
+                candidate.Status != BankConnectionStatus.Disconnected,
+                cancellationToken);
+
+        if (bank is null)
+        {
+            return CreateResult(session);
+        }
+
+        return new PlaidHostedLinkCompletionResult(
+            session.Id,
+            session.Status.ToString(),
+            new PlaidConnectionResult(
+                bank.Id,
+                bank.InstitutionName,
+                bank.Status.ToString()));
     }
 
     private async Task<PlaidHostedLinkCompletionResult> CompletePendingSessionAsync(
@@ -200,9 +235,14 @@ public sealed class PlaidHostedLinkCompletionService
                 session);
         }
 
-        if (plaidState.PublicToken is not null)
+        if (plaidState.PublicToken is not null &&
+            !plaidState.HasUnfinishedSession)
         {
             /*
+             * Do not consume the one-time public token while any provider
+             * session is unfinished. The response may contain multiple
+             * sessions, and their order must not change the decision.
+             *
              * The public token is immediately exchanged server-side. It is
              * never persisted and never returned to the MAUI client.
              */
@@ -424,18 +464,36 @@ public sealed class PlaidHostedLinkCompletionService
                     true;
             }
 
-            publicToken ??=
+            // Always parse both provider fields, even after finding a token
+            // in an earlier session. Short-circuiting can conceal malformed
+            // responses or conflicting item credentials in later sessions.
+            var resultToken =
                 GetPublicTokenFromResults(
                     linkSession);
 
-            publicToken ??=
+            var legacyToken =
                 GetPublicTokenFromLegacySuccess(
                     linkSession);
 
-            if (publicToken is not null)
+            foreach (var candidate in new[] { resultToken, legacyToken })
             {
-                break;
+                if (candidate is null)
+                {
+                    continue;
+                }
+
+                if (publicToken is not null &&
+                    !string.Equals(publicToken, candidate,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Plaid returned conflicting Hosted Link public tokens.");
+                }
+
+                publicToken = candidate;
             }
+
+            // A later unfinished session must prevent premature exchange.
         }
 
         return new PlaidSessionState(
@@ -489,6 +547,8 @@ public sealed class PlaidHostedLinkCompletionService
                 "Plaid returned too many Hosted Link item results.");
         }
 
+        string? selectedToken = null;
+
         foreach (var itemResult in
                  itemAddResultsElement.EnumerateArray())
         {
@@ -499,18 +559,30 @@ public sealed class PlaidHostedLinkCompletionService
                     "Plaid returned an invalid Hosted Link item result.");
             }
 
-            var publicToken =
+            var candidate =
                 GetOptionalPublicToken(
                     itemResult,
                     "public_token");
 
-            if (publicToken is not null)
+            if (candidate is null)
             {
-                return publicToken;
+                continue;
             }
+
+            // Multiple items or conflicting credentials cannot safely
+            // become one FullWorth bank connection by arbitrary ordering.
+            if (selectedToken is not null &&
+                !string.Equals(selectedToken, candidate,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Plaid returned conflicting Hosted Link public tokens.");
+            }
+
+            selectedToken = candidate;
         }
 
-        return null;
+        return selectedToken;
     }
 
     private static string?

@@ -2,6 +2,7 @@ using System.Collections;
 using FullWorth.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace FullWorth.API.Services.Statements;
 
@@ -35,14 +36,30 @@ internal sealed class StatementUnitOfWorkAttempt
             // DetectChanges would otherwise rediscover a failed graph through
             // a caller's still-tracked upload or statement collection.
             foreach (var snapshot in _baseline) snapshot.RestoreNavigations();
-            foreach (var entry in _db.ChangeTracker.Entries().ToArray())
-                if (!_known.Contains(entry.Entity)) entry.State = EntityState.Detached;
+            // Required dependents must be detached before their principals.
+            // Detaching a statement first would sever live line/change FKs.
+            var failedEntries = _db.ChangeTracker.Entries()
+                .Where(entry => !_known.Contains(entry.Entity))
+                .OrderByDescending(entry => DependencyDepth(entry.Metadata, []))
+                .ToArray();
+            foreach (var entry in failedEntries) entry.State = EntityState.Detached;
             foreach (var snapshot in _baseline) snapshot.Restore();
         }
         finally
         {
             _db.ChangeTracker.AutoDetectChangesEnabled = detectChanges;
         }
+    }
+
+    private static int DependencyDepth(IEntityType entityType, HashSet<IEntityType> visiting)
+    {
+        if (!visiting.Add(entityType)) return 0;
+        var depth = entityType.GetForeignKeys()
+            .Where(key => key.PrincipalEntityType != entityType)
+            .Select(key => 1 + DependencyDepth(key.PrincipalEntityType, visiting))
+            .DefaultIfEmpty(0).Max();
+        visiting.Remove(entityType);
+        return depth;
     }
 
     private sealed class EntrySnapshot(EntityEntry entry)

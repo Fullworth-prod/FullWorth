@@ -200,9 +200,14 @@ public sealed class PlaidHostedLinkCompletionService
                 session);
         }
 
-        if (plaidState.PublicToken is not null)
+        if (plaidState.PublicToken is not null &&
+            !plaidState.HasUnfinishedSession)
         {
             /*
+             * Do not consume the one-time public token while any provider
+             * session is unfinished. The response may contain multiple
+             * sessions, and their order must not change the decision.
+             *
              * The public token is immediately exchanged server-side. It is
              * never persisted and never returned to the MAUI client.
              */
@@ -432,10 +437,8 @@ public sealed class PlaidHostedLinkCompletionService
                 GetPublicTokenFromLegacySuccess(
                     linkSession);
 
-            if (publicToken is not null)
-            {
-                break;
-            }
+            // Examine every session even after finding a public token:
+            // a later unfinished session must prevent a premature exchange.
         }
 
         return new PlaidSessionState(

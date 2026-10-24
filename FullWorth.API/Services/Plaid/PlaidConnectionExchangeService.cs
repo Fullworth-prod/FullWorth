@@ -336,8 +336,7 @@ public sealed class PlaidConnectionExchangeService
     {
         if (connection.Status == BankConnectionStatus.Disconnected)
         {
-            throw new InvalidOperationException(
-                "Disconnected bank connection cannot be reactivated by token exchange.");
+            throw new PlaidDisconnectedConnectionException();
         }
     }
 

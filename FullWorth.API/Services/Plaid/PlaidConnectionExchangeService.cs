@@ -268,6 +268,11 @@ public sealed class PlaidConnectionExchangeService
                 connection);
         }
 
+        // A prior explicit disconnect is a lifecycle boundary, not a
+        // reconnectable attention state. A new provider token must never
+        // silently revive the archived connection or replace its credential.
+        EnsureConnectionCanAcceptExchange(connection);
+
         try
         {
             await ApplyAndSaveConnectionAsync(connection, institutionName,
@@ -308,6 +313,10 @@ public sealed class PlaidConnectionExchangeService
                 throw;
             }
 
+            // A competing insertion may have been disconnected by the time
+            // it is reloaded. Apply the same lifecycle gate on this path.
+            EnsureConnectionCanAcceptExchange(concurrentConnection);
+
             await ApplyAndSaveConnectionAsync(concurrentConnection, institutionName,
                 institutionId, itemId, protectedAccessToken, now,
                 isNewConnection: false, hostedSession, cancellationToken);
@@ -320,6 +329,16 @@ public sealed class PlaidConnectionExchangeService
             connection.Id,
             connection.InstitutionName,
             connection.Status.ToString());
+    }
+
+    private static void EnsureConnectionCanAcceptExchange(
+        BankConnectionEntity connection)
+    {
+        if (connection.Status == BankConnectionStatus.Disconnected)
+        {
+            throw new InvalidOperationException(
+                "Disconnected bank connection cannot be reactivated by token exchange.");
+        }
     }
 
     private async Task ApplyAndSaveConnectionAsync(

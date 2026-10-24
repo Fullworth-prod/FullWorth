@@ -4,6 +4,7 @@ using FullWorth.API.Data.Entities;
 using FullWorth.API.Services.Contracts;
 using FullWorth.Core.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 using BillCategory =
     FullWorth.Core.Models.BillCategory;
@@ -171,6 +172,24 @@ public sealed class RecurringBillDiscoveryPersistenceService
                 nameof(userId));
         }
 
+        // Preserve the caller's unit of work while discarding all work first
+        // tracked or changed by this discovery attempt if any stage fails.
+        var snapshot = new DiscoveryTrackingSnapshot(_dbContext);
+        try
+        {
+            return await DiscoverAndSaveCoreAsync(userId, cancellationToken);
+        }
+        catch
+        {
+            snapshot.Restore();
+            throw;
+        }
+    }
+
+    private async Task<RecurringBillDiscoveryPersistenceResult> DiscoverAndSaveCoreAsync(
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
         var transactionSnapshots =
             await _transactionGateway
                 .GetDiscoveryTransactionsAsync(
@@ -527,20 +546,10 @@ public sealed class RecurringBillDiscoveryPersistenceService
                             transaction.BillStreamId))
                 .ToArray();
 
-        try
-        {
-            await _associationGateway.StageAssignmentsAsync(
-                userId, linkAssignments, now, cancellationToken);
-            // Bill streams, alerts, and links commit in the same owning unit of work.
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
-        catch
-        {
-            // Secondary reconciliation must never replay staged writes after a
-            // failed assignment, cancellation, database error, or concurrency conflict.
-            _dbContext.ChangeTracker.Clear();
-            throw;
-        }
+        await _associationGateway.StageAssignmentsAsync(
+            userId, linkAssignments, now, cancellationToken);
+        // Bill streams, alerts, and links commit in the same owning unit of work.
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
         return new RecurringBillDiscoveryPersistenceResult(
             TransactionsAnalyzed:
@@ -578,6 +587,63 @@ public sealed class RecurringBillDiscoveryPersistenceService
                 BlockedByExistingBillAmbiguity = blockedByExistingBillAmbiguity
             }
         };
+    }
+
+    private sealed class DiscoveryTrackingSnapshot
+    {
+        private readonly FullWorthDbContext _context;
+        private readonly TrackedEntrySnapshot[] _entries;
+        private readonly HashSet<object> _entities;
+
+        public DiscoveryTrackingSnapshot(FullWorthDbContext context)
+        {
+            _context = context;
+            _entries = context.ChangeTracker.Entries()
+                .Select(entry => new TrackedEntrySnapshot(entry)).ToArray();
+            _entities = _entries.Select(entry => entry.Entity)
+                .ToHashSet(ReferenceEqualityComparer.Instance);
+        }
+
+        public void Restore()
+        {
+            foreach (var entry in _context.ChangeTracker.Entries().ToArray())
+                if (!_entities.Contains(entry.Entity))
+                    entry.State = EntityState.Detached;
+
+            foreach (var entry in _entries)
+                entry.Restore();
+        }
+    }
+
+    private sealed class TrackedEntrySnapshot
+    {
+        private readonly EntityEntry _entry;
+        private readonly PropertyValues _current;
+        private readonly PropertyValues _original;
+        private readonly EntityState _state;
+        private readonly HashSet<string> _modified;
+
+        public object Entity => _entry.Entity;
+
+        public TrackedEntrySnapshot(EntityEntry entry)
+        {
+            _entry = entry;
+            _current = entry.CurrentValues.Clone();
+            _original = entry.OriginalValues.Clone();
+            _state = entry.State;
+            _modified = entry.Properties.Where(property => property.IsModified)
+                .Select(property => property.Metadata.Name).ToHashSet(StringComparer.Ordinal);
+        }
+
+        public void Restore()
+        {
+            _entry.CurrentValues.SetValues(_current);
+            _entry.OriginalValues.SetValues(_original);
+            _entry.State = _state;
+            if (_state == EntityState.Modified)
+                foreach (var property in _entry.Properties)
+                    property.IsModified = _modified.Contains(property.Metadata.Name);
+        }
     }
 
     private DiscoveryAnalysis AnalyzeDiscovery(

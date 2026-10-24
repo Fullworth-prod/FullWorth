@@ -135,14 +135,10 @@ jobs:
         if: steps.backend_changes.outputs.required == 'true'
         run: dotnet test FullWorth.Tests/FullWorth.Tests.csproj --configuration Release --no-build --no-restore
 
-      - name: Verify Web authentication, Plaid completion and transaction regressions
+      - name: Verify all Node regression suites
         if: steps.backend_changes.outputs.required == 'true'
-        run: >-
-          node --test
-          FullWorth.Tests/login-redirect.test.mjs
-          FullWorth.Tests/passkey-return-url.test.mjs
-          FullWorth.Tests/plaid-completion-recovery.test.mjs
-          FullWorth.Tests/transaction-stream.test.mjs
+        shell: bash
+        run: node --test FullWorth.Tests/*.test.mjs
 
   maui:
     name: MAUI Android build

@@ -50,9 +50,9 @@ public sealed partial class MonitoringReliabilityBatchTests
         if (change == "deleted" && local is not null && acknowledged)
         {
             // A caller acknowledgement targets a row removed in another
-            // context. Preserve that intent and fail the write rather than
-            // falsely confirming a replacement or discarding the edit.
-            await Assert.ThrowsAnyAsync<DbUpdateException>(() =>
+            // context. Preserve that intent and reject it before writing,
+            // instead of confirming a replacement or discarding the edit.
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 gateway.EnsureAsync(f.Owner, request, Now.AddHours(1)));
             AssertRetained(db, before);
             await using var verify = f.Open();

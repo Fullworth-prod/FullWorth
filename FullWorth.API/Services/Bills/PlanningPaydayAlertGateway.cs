@@ -62,6 +62,19 @@ public sealed class PlanningPaydayAlertGateway(
             return;
         }
 
+        // A pending acknowledgement refers to the old row, not a new
+        // replacement. If its durable identity disappeared, preserve the edit
+        // and require reconciliation before attempting any write.
+        if (dbContext.ChangeTracker.Entries<BillAlertEntity>().Any(entry =>
+                entry.State == EntityState.Modified &&
+                entry.Entity.UserId == userId &&
+                entry.Entity.AlertType == BillAlertType.PaydayPlan &&
+                entry.Entity.SourceEventId == normalized.SourceEventId))
+        {
+            throw new InvalidOperationException(
+                "Payday alert changed. Reload before retrying its acknowledgement.");
+        }
+
         var pending =
             new BillAlertEntity
             {

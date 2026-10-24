@@ -32,25 +32,16 @@
     }
 
 
-    // Never trust a hidden returnUrl after a browser credential ceremony.
-    // Match the server's local-only policy, including nested percent encodings.
-    function localLoginDestination(value) {
-        if (typeof value !== "string" || !value.startsWith("/") || value.length > 2048)
-            return "/app";
-        let decoded = value;
-        try {
-            for (let round = 0; round < 4; round++) {
-                if (!decoded.startsWith("/") || decoded.startsWith("//") ||
-                    decoded.includes("\\") || /[\x00-\x1f\x7f]/.test(decoded))
-                    return "/app";
-                const next = decodeURIComponent(decoded);
-                if (next === decoded) return value;
-                decoded = next;
-            }
-        } catch {
-            return "/app";
+    // Browser code never chooses a destination based on DOM-controlled text.
+    // The server validates the posted hint and issues a local redirect after
+    // verifying both the authenticated session and an antiforgery token.
+    function completePasskeyNavigation() {
+        const form = document.querySelector('form[data-passkey-continue]');
+        if (!form) {
+            location.assign("/app");
+            return;
         }
-        return "/app";
+        form.requestSubmit();
     }
 
     async function post(path, body) {
@@ -170,7 +161,7 @@
                     twoFactorCode: creating ? null : value(root, "passkeyTwoFactorCode") || null,
                     rememberMe: !!document.querySelector('[name="rememberMe"]')?.checked };
                 await post(creating ? "/bff/account/security/passkeys/register" : "/auth/passkeys/login", body);
-                if (!creating) { location.assign(localLoginDestination(document.querySelector('input[name="returnUrl"]')?.value)); return; }
+                if (!creating) { completePasskeyNavigation(); return; }
             }
             if (root.isConnected) {
                 if (await list(root))

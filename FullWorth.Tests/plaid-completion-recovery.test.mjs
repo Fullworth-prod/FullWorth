@@ -80,3 +80,20 @@ test("closing a popup permits a final authoritative completion check", async () 
     assert.equal(closed.status, "PopupClosed");
     assert.equal(reads, 2);
 });
+
+test("unknown or malformed Link responses never count as terminal authorization", async () => {
+    const invalid = [
+        null, undefined, {}, { status: null }, { status: 200 },
+        { status: "" }, { status: "Unknown" }, { status: "Success" },
+        { status: "Connected" }, { status: {} }
+    ];
+    for (const response of invalid) {
+        let time = 0, reads = 0;
+        await assert.rejects(pollPlaidCompletion({
+            now: () => time, sleep: async ms => { time += ms; },
+            isCurrent: () => true,
+            readStatus: async () => { reads++; return response; }
+        }), /invalid Link status/);
+        assert.equal(reads, 1, "malformed data must not trigger more provider reads");
+    }
+});

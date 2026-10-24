@@ -53,6 +53,23 @@
         return "/app";
     }
 
+    function continueAfterPasskey() {
+        // A GET form is a browser navigation, not a JavaScript URL sink.
+        // The authenticated server endpoint revalidates the return target.
+        const form = document.createElement("form");
+        form.method = "get";
+        form.action = "/auth/passkeys/continue";
+        form.hidden = true;
+        const destination = document.createElement("input");
+        destination.type = "hidden";
+        destination.name = "returnUrl";
+        destination.value = localLoginDestination(
+            document.querySelector('input[name="returnUrl"]')?.value);
+        form.append(destination);
+        document.body.append(form);
+        form.submit();
+    }
+
     async function post(path, body) {
         let token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
         if (!token) {
@@ -170,7 +187,7 @@
                     twoFactorCode: creating ? null : value(root, "passkeyTwoFactorCode") || null,
                     rememberMe: !!document.querySelector('[name="rememberMe"]')?.checked };
                 await post(creating ? "/bff/account/security/passkeys/register" : "/auth/passkeys/login", body);
-                if (!creating) { location.assign(localLoginDestination(document.querySelector('input[name="returnUrl"]')?.value)); return; }
+                if (!creating) { continueAfterPasskey(); return; }
             }
             if (root.isConnected) {
                 if (await list(root))

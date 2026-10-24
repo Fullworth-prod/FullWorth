@@ -268,6 +268,53 @@ public sealed class PlaidLinkServiceTests
             dbContext.PlaidLinkSessions);
     }
 
+    [Theory]
+    [InlineData(5000)]
+    [InlineData(7000)]
+    public async Task ProviderLinkTokenMustFitEncryptedDatabaseColumn_BeforeTrackingSession(
+        int rawLength)
+    {
+        await using var db = CreateDbContext();
+        var protector = new PlaidTokenProtector(
+            new EphemeralDataProtectionProvider());
+        var providerToken = new string('z', rawLength);
+        using var handler = new ScriptedHttpMessageHandler(
+            JsonResponse(HttpStatusCode.OK,
+                JsonSerializer.Serialize(new
+                {
+                    link_token = providerToken,
+                    hosted_link_url = "https://secure.plaid.com/test",
+                    expiration = DateTimeOffset.UtcNow.AddMinutes(20).ToString("O")
+                })));
+        using var http = new HttpClient(handler);
+        var service = new PlaidLinkService(CreateApiClient(http), protector, db);
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.CreateLinkSessionAsync(Guid.NewGuid()));
+
+        Assert.Contains("too large for secure storage", error.Message,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(providerToken, error.Message,
+            StringComparison.Ordinal);
+        Assert.Empty(await db.PlaidLinkSessions.ToListAsync());
+        Assert.DoesNotContain(db.ChangeTracker.Entries<PlaidLinkSessionEntity>(),
+            entry => entry.State == EntityState.Added);
+        Assert.Collection(handler.Requests,
+            request => Assert.Equal("/link/token/create", request.Uri.AbsolutePath));
+    }
+
+    [Fact]
+    public void LinkCredentialColumnBoundMatchesModel()
+    {
+        using var db = CreateDbContext();
+        var entity = db.Model.FindEntityType(typeof(PlaidLinkSessionEntity));
+        Assert.NotNull(entity);
+        var property = entity.FindProperty(nameof(PlaidLinkSessionEntity.ProtectedLinkToken));
+        Assert.NotNull(property);
+        Assert.Equal(PlaidLinkSessionEntity.MaxProtectedLinkTokenLength,
+            property.GetMaxLength());
+    }
+
     private static PlaidApiClient CreateApiClient(
         HttpClient httpClient)
     {

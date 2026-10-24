@@ -47,3 +47,5 @@ export async function pollPlaidCompletion({
     }
     return isCurrent() && !signal?.aborted ? { status: "TimedOut" } : null;
 }
+
+export const isActiveLinkResult = result => result?.status === "Completed" && result.connection?.status === "Active" && typeof result.connection?.id === "string" && result.connection.id.length > 0;

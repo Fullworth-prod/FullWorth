@@ -3,11 +3,12 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { runInNewContext } from "node:vm";
 
-// Exercise the actual browser click handler after a successful synthetic
-// WebAuthn ceremony; no credentials, provider calls or real sessions are used.
+// Exercise actual click handlers after synthetic WebAuthn completion.
+// Navigation must submit a same-origin fixed-path GET form, never place
+// DOM-derived URL data directly in location.assign. No real credentials used.
 async function completedPasskeyRedirect(filename, returnUrl) {
     let handler;
-    let redirected;
+    let submitted;
     const status = { textContent: "" };
     const root = {
         isConnected: true,
@@ -29,7 +30,22 @@ async function completedPasskeyRedirect(filename, returnUrl) {
             if (selector.includes("returnUrl")) return { value: returnUrl };
             return null;
         },
-        querySelectorAll: () => []
+        querySelectorAll: () => [],
+        body: { append: () => {} },
+        createElement: tag => {
+            if (tag === "input") return { type: "", name: "", value: "" };
+            assert.equal(tag, "form");
+            return {
+                method: "", action: "", hidden: false, fields: [],
+                append(input) { this.fields.push(input); },
+                submit() {
+                    submitted = {
+                        action: this.action, method: this.method, hidden: this.hidden,
+                        destination: this.fields.find(input => input.name === "returnUrl")?.value
+                    };
+                }
+            };
+        }
     };
     const PublicKeyCredential = { parseRequestOptionsFromJSON: json => json };
     const response = {
@@ -43,7 +59,7 @@ async function completedPasskeyRedirect(filename, returnUrl) {
         PublicKeyCredential,
         navigator: { credentials: { get: async () => ({ toJSON: () => ({ type: "public-key" }) }) } },
         fetch: async () => response,
-        location: { assign: value => { redirected = value; } },
+        location: { assign: () => { throw new Error("Unsafe JavaScript URL sink"); } },
         MutationObserver: class { observe() {} },
         confirm: () => true,
         Uint8Array,
@@ -53,9 +69,11 @@ async function completedPasskeyRedirect(filename, returnUrl) {
     runInNewContext(source, context, { filename });
     assert.equal(typeof handler, "function", filename + " must register its passkey handler");
     await handler({ target: { closest: () => button } });
-    assert.equal(typeof redirected, "string",
-        filename + " must navigate after successful WebAuthn: " + status.textContent);
-    return redirected;
+    assert.ok(submitted, filename + " must submit a browser navigation after WebAuthn: " + status.textContent);
+    assert.equal(submitted.action, "/auth/passkeys/continue");
+    assert.equal(submitted.method, "get");
+    assert.equal(submitted.hidden, true);
+    return submitted.destination;
 }
 
 const cases = [

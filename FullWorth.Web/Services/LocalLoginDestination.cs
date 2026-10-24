@@ -27,5 +27,21 @@ public static class LocalLoginDestination
     private static bool Safe(string value) =>
         value.StartsWith("/", StringComparison.Ordinal) &&
         !value.StartsWith("//", StringComparison.Ordinal) &&
-        !value.Contains('\\') && !value.Any(char.IsControl);
+        !value.Contains('\\') && !value.Any(char.IsControl) &&
+        HasValidPercentEscapes(value);
+
+    // Uri.UnescapeDataString keeps invalid '%' escapes verbatim instead of
+    // always throwing. Reject them before treating a return hint as a local URL.
+    private static bool HasValidPercentEscapes(string value)
+    {
+        for (var i = 0; i < value.Length; i++)
+        {
+            if (value[i] != '%') continue;
+            if (i + 2 >= value.Length ||
+                !Uri.IsHexDigit(value[i + 1]) ||
+                !Uri.IsHexDigit(value[i + 2])) return false;
+            i += 2;
+        }
+        return true;
+    }
 }

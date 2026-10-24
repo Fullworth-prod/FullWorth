@@ -131,6 +131,7 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|GET|/auth/external/{provider}/link|authenticated|none",
         "WEB|GET|/auth/external/{provider}/register|anonymous-explicit|none",
         "WEB|GET|/auth/external/{provider}|anonymous-explicit|none",
+        "WEB|GET|/auth/passkeys/continue|authenticated|named:web-authentication",
         "WEB|GET|/bff/account/external|authenticated|none",
         "WEB|GET|/bff/account/preferences/|authenticated|none",
         "WEB|GET|/bff/account/security/passkeys|authenticated|none",

@@ -33,6 +33,7 @@ public sealed class StatementUploadWriteRecoveryTests
         string mode, bool callerChanges)
     {
         await using var factory = new FullWorthApiFactory();
+        using var identityScope = factory.Services.CreateScope();
         var name = Guid.NewGuid().ToString();
         var root = new InMemoryDatabaseRoot();
         var failure = new UploadFailure(mode);
@@ -63,7 +64,7 @@ public sealed class StatementUploadWriteRecoveryTests
             var states = db.ChangeTracker.Entries<BankConnectionEntity>().ToDictionary(x => x.Entity.Id, x => x.State);
             var flags = db.Entry(modified).Properties.Where(x => x.IsModified).Select(x => x.Metadata.Name).Order().ToArray();
             var controller = new BillStatementUploadsController(db,
-                factory.Services.GetRequiredService<UserManager<ApplicationUser>>(), storage,
+                identityScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>(), storage,
                 new BillStatementProcessingSignal(), new BillStreamReadGateway(db))
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext

@@ -9,6 +9,17 @@
       href="/auth.css" />
 
 <div class="auth-page">
+    @if (Configuration.GetValue<bool>("Passkeys:Enabled"))
+    {
+        @* A separate, hidden form carries returnUrl as data only. After a
+           successful credential ceremony the server validates this destination
+           and issues a LocalRedirect; JavaScript never navigates to DOM text. *@
+        <form method="post" action="/auth/passkeys/continue"
+              data-passkey-continue hidden>
+            <AntiforgeryToken />
+            <input type="hidden" name="returnUrl" value="@LocalReturnUrl" />
+        </form>
+    }
     <div class="auth-glow auth-glow-one"></div>
     <div class="auth-glow auth-glow-two"></div>
 

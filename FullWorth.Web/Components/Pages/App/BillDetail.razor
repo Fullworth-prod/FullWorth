@@ -145,29 +145,6 @@
             </div>
         </section>
 
-        <section class="app-panel bill-monitoring-choice" aria-labelledby="monitoring-choice-heading">
-            <h2 id="monitoring-choice-heading">@L["Monitoring choice"]</h2>
-            @if (!_detail.IsActive || _detail.Source != "Manual")
-            {
-                <p>@L["Choose to keep this bill monitored even when automatic discovery has insufficient evidence. This does not verify your bank connection, payment timing, or bill amount."]</p>
-                <button type="button" class="secondary-action" disabled="@(_isKeeping || _isRefreshing || _confirmationUncertain)" @onclick="KeepMonitoringAsync">
-                    @(_isKeeping ? L["Saving…"] : L["Keep monitoring this bill"])
-                </button>
-            }
-            else
-            {
-                <p>@L["You chose to keep this bill monitored. Automatic discovery will preserve that choice."]</p>
-            }
-            @if (!string.IsNullOrWhiteSpace(_keepMessage))
-            {
-                <p role="status">@_keepMessage</p>
-            }
-        </section>
-
-        <StatementUploadPanel @key="BillStreamId" BillStreamId="@BillStreamId"
-                              ProviderName="@_detail.ProviderName"
-                              OnProcessed="@HandleStatementProcessedAsync" />
-
         @if (latestChange is not null)
         {
             <section class="fw-detail-change-story">
@@ -260,6 +237,29 @@
                 </div>
             </section>
         }
+
+        <section class="app-panel bill-monitoring-choice" aria-labelledby="monitoring-choice-heading">
+            <h2 id="monitoring-choice-heading">@L["Monitoring choice"]</h2>
+            @if (!_detail.IsActive || _detail.Source != "Manual")
+            {
+                <p>@L["Choose to keep this bill monitored even when automatic discovery has insufficient evidence. This does not verify your bank connection, payment timing, or bill amount."]</p>
+                <button type="button" class="secondary-action" disabled="@(_isKeeping || _isRefreshing || _confirmationUncertain)" @onclick="KeepMonitoringAsync">
+                    @(_isKeeping ? L["Saving…"] : L["Keep monitoring this bill"])
+                </button>
+            }
+            else
+            {
+                <p>@L["You chose to keep this bill monitored. Automatic discovery will preserve that choice."]</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(_keepMessage))
+            {
+                <p role="status">@_keepMessage</p>
+            }
+        </section>
+
+        <StatementUploadPanel @key="BillStreamId" BillStreamId="@BillStreamId"
+                              ProviderName="@_detail.ProviderName"
+                              OnProcessed="@HandleStatementProcessedAsync" />
 
         <div class="detail-grid fw-detail-history-grid">
             <section class="detail-panel">

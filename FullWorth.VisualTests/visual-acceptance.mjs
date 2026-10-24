@@ -44,6 +44,36 @@ try {
   async function capture(name, route, selector) {
     await page.goto(route, { waitUntil: "domcontentloaded" });
     await settle(selector);
+
+    if (route.startsWith("/app") && await page.evaluate(() => window.innerWidth <= 900)) {
+      const geometry = await page.evaluate(() => {
+        const viewport = document.documentElement.clientWidth;
+        const documentWidth = document.documentElement.scrollWidth;
+        const bodyWidth = document.body.scrollWidth;
+
+        // Report only element types/classes, never financial text or bank IDs.
+        const candidates = [...document.querySelectorAll(".app-shell *")]
+          .filter(element => {
+            const rect = element.getBoundingClientRect();
+            const styles = getComputedStyle(element);
+            return styles.display !== "none" && styles.position !== "fixed" &&
+              rect.width > 0 && (rect.right > viewport + 2 || rect.left < -2);
+          })
+          .slice(0, 8)
+          .map(element => ({
+            element: element.tagName.toLowerCase(),
+            classes: [...element.classList].slice(0, 3)
+          }));
+
+        return { viewport, documentWidth, bodyWidth, candidates };
+      });
+
+      assert.ok(geometry.documentWidth <= geometry.viewport + 1 &&
+        geometry.bodyWidth <= geometry.viewport + 1,
+        "Authenticated " + route + " has unwanted sideways scrolling at " +
+        geometry.viewport + "px: " + JSON.stringify(geometry));
+    }
+
     await page.screenshot({
       path: path.join(outputDir, `${name}.png`),
       fullPage: true
@@ -225,6 +255,7 @@ try {
     ["overview-mobile-dark", "/app"],
     ["bills-mobile-dark", "/app/bills"],
     ["activity-mobile-dark", "/app/activity"],
+    ["planning-mobile-dark", "/app/planning"],
     ["account-mobile-dark", "/app/account"],
     ["transactions-mobile-dark", "/app/account/transactions"],
     ["settings-mobile-dark", "/app/account/settings"],
@@ -233,9 +264,14 @@ try {
     ["profile-mobile-dark", "/app/profile"]
   ];
 
-  for (const [name, route] of mobileRoutes) {
-    const selector = route === "/" ? ".landing-page" : ".app-shell";
-    await capture(name, route, selector);
+  // The 390px baseline remains unchanged; 320px and 430px guard against
+  // narrow phone overflow on every authenticated route, not just Bills.
+  for (const width of [390, 320, 430]) {
+    await page.setViewportSize({ width, height: 844 });
+    for (const [name, route] of mobileRoutes) {
+      const selector = route === "/" ? ".landing-page" : ".app-shell";
+      await capture(width === 390 ? name : name + "-" + width, route, selector);
+    }
   }
 
   // Render the real components with synthetic BFF evidence. The API contract
@@ -309,6 +345,18 @@ try {
 
       await page.goto("/app/bills/" + currencyBillId, { waitUntil: "domcontentloaded" });
       await settle(".fw-detail-current");
+      const detailOrder = await page.evaluate(() => {
+        const story = document.querySelector(".fw-detail-change-story");
+        const upload = document.querySelector(".statement-upload-panel");
+        const choice = document.querySelector(".bill-monitoring-choice");
+        const history = document.querySelector(".fw-detail-history-grid");
+        if (!story || !upload || !choice || !history) return null;
+        const prior = (a, b) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+        return prior(story, choice) && prior(story, upload) &&
+          prior(choice, history) && prior(upload, history);
+      });
+      assert.equal(detailOrder, true,
+        "Bill evidence story must appear before upload and monitoring actions, then historical records.");
       const detailText = await page.locator(".app-page").innerText();
       assert.ok(detailText.includes("EUR 20.00"));
       assert.ok(detailText.includes("EUR 25.00"));

@@ -78,7 +78,7 @@ public sealed class PlanningController(
 
         if (frequency == PayScheduleFrequency.SemiMonthly)
         {
-            if (request.SecondaryDayOfMonth is < 1 or > 31 ||
+            if (request.SecondaryDayOfMonth is null or < 1 or > 31 ||
                 request.SecondaryDayOfMonth == request.AnchorPayDate.Day)
             {
                 return BadRequest(

@@ -1,6 +1,8 @@
 using FullWorth.API.Data;
+using FullWorth.Core.Formatting;
 using FullWorth.API.Services.Contracts;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace FullWorth.API.Services.Statements;
 
@@ -39,16 +41,59 @@ public sealed class BillStatementDueAlertMaintenance(
             })
             .FirstOrDefaultAsync(cancellationToken);
 
-        // Inactive streams and missing/invalid historical evidence must not
-        // continue to claim an upcoming payable obligation.
-        DateOnly? dueDate = isActive.Value ? latest?.DueDate : null;
-        decimal total = latest?.TotalAmount ?? 0m;
-        string currency = latest?.CurrencyCode ?? "USD";
+        // Statements owns this scoped unit of work. Capture tracker metadata,
+        // leaving Bills-owned alert reads/writes inside the owner contract.
+        var snapshots = db.ChangeTracker.Entries().Select(entry => new ReminderSnapshot(entry)).ToArray();
+        var baseline = snapshots.Select(snapshot => snapshot.Entity).ToHashSet();
 
-        await dueAlerts.ReconcileAsync(
-            userId, billStreamId, dueDate, total, currency,
-            today, now, cancellationToken);
-        await db.SaveChangesAsync(cancellationToken);
+        try
+        {
+            // Invalid or absent latest evidence cannot support an asserted
+            // payable obligation. Do not borrow an older statement or invent USD.
+            if (!isActive.Value || latest is null || !latest.DueDate.HasValue ||
+                latest.DueDate.Value < today || latest.TotalAmount <= 0m ||
+                !FinancialAmountFormatter.TryNormalizeCurrency(latest.CurrencyCode, out _))
+            {
+                await dueAlerts.ClearAsync(userId, billStreamId, now, cancellationToken);
+            }
+            else
+            {
+                await dueAlerts.ReconcileAsync(userId, billStreamId, latest.DueDate,
+                    latest.TotalAmount, latest.CurrencyCode, today, now, cancellationToken);
+            }
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch
+        {
+            // Only entities first tracked by this failed reconciliation are
+            // discarded; preexisting caller work retains exact metadata.
+            foreach (var entry in db.ChangeTracker.Entries()
+                .Where(entry => !baseline.Contains(entry.Entity)).ToArray())
+                entry.State = EntityState.Detached;
+            foreach (var snapshot in snapshots) snapshot.Restore();
+            throw;
+        }
+    }
+
+    private sealed class ReminderSnapshot(EntityEntry entry)
+    {
+        public object Entity { get; } = entry.Entity;
+        private readonly PropertyValues _current = entry.CurrentValues.Clone();
+        private readonly PropertyValues _original = entry.OriginalValues.Clone();
+        private readonly EntityState _state = entry.State;
+        private readonly HashSet<string> _modified = entry.Properties
+            .Where(property => property.IsModified).Select(property => property.Metadata.Name).ToHashSet();
+
+        public void Restore()
+        {
+            entry.State = EntityState.Unchanged;
+            entry.CurrentValues.SetValues(_current);
+            entry.OriginalValues.SetValues(_original);
+            entry.State = _state;
+            if (_state is EntityState.Modified or EntityState.Unchanged)
+                foreach (var property in entry.Properties)
+                    property.IsModified = _modified.Contains(property.Metadata.Name);
+        }
     }
 }
 

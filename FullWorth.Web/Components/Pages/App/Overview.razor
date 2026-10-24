@@ -79,6 +79,14 @@
         </div>
     }
 
+    @if (_hasLoadedData && _connectionCoverage.MixedSyncCoverage)
+    {
+        <div class="connection-warning" role="status">
+            <p>@L["At least one active bank connection has not reported a successful sync. Recognized bills may be incomplete."]</p>
+            <a href="/app/account">@L["Review connection"]</a>
+        </div>
+    }
+
     @if (_isLoading)
     {
         <div class="dashboard-loading">
@@ -444,7 +452,9 @@
             </div>
         }
 
-        <OverviewBillSummary Summary="_summary" LatestSuccessfulSync="LatestSuccessfulSync" />
+        <OverviewBillSummary Summary="_summary" LatestSuccessfulSync="LatestSuccessfulSync"
+                            ActiveConnectionCount="_connectionCoverage.ActiveCount"
+                            SyncedConnectionCount="_connectionCoverage.SyncedCount" />
 
         <section class="fw-overview-grid">
             <article class="fw-watchlist">
@@ -627,6 +637,7 @@
     private DateTimeOffset? LatestSuccessfulSync { get; set; }
 
     private OverviewBillCoverage _summary = OverviewBillCoverage.Create([]);
+    private OverviewConnectionCoverage _connectionCoverage = OverviewConnectionCoverage.Create([]);
     private bool _hasLoadedData;
     private bool _disposed;
     private string? _refreshError;
@@ -788,37 +799,16 @@
 
     private void UpdateOverviewSummaries()
     {
-        HasActiveConnection =
-            _connections.Any(
-                connection =>
-                    connection.Status == 0);
+        _connectionCoverage = OverviewConnectionCoverage.Create(
+            _connections.Select(connection => new OverviewConnectionFact(
+                connection.Status, connection.LastSuccessfulSyncAtUtc)));
 
+        HasActiveConnection = _connectionCoverage.ActiveCount > 0;
         HasConnectionNeedingAttention =
-            _connections.Any(
-                connection =>
-                    connection.Status == 1);
+            _connections.Any(connection => connection.Status == 1);
 
-        IsWaitingForFirstSync =
-            _connections.Any(
-                connection =>
-                    connection.Status == 0 &&
-                    connection.LastSuccessfulSyncAtUtc is null);
-
-        LatestSuccessfulSync =
-            _connections
-                .Where(
-                    connection =>
-                        connection.Status == 0 &&
-                        connection.LastSuccessfulSyncAtUtc
-                            .HasValue)
-                .Select(
-                    connection =>
-                        connection.LastSuccessfulSyncAtUtc)
-                .OrderByDescending(
-                    value =>
-                        value)
-                .FirstOrDefault();
-
+        IsWaitingForFirstSync = _connectionCoverage.WaitingForInitialSync;
+        LatestSuccessfulSync = _connectionCoverage.MostRecentSuccessfulSync;
     }
 
     private static OverviewBillFact ToFact(BillStreamViewModel bill) => new(

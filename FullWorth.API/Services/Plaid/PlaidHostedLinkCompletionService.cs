@@ -206,33 +206,16 @@ public sealed class PlaidHostedLinkCompletionService
              * The public token is immediately exchanged server-side. It is
              * never persisted and never returned to the MAUI client.
              */
+            // A successful initial link is one database persistence unit:
+            // the exchange service saves both the owner-scoped bank connection
+            // and terminal Hosted Link session together. A separate save here
+            // could leave the bank committed while the session stays Pending.
             var connection =
-                await _exchangeService.ExchangeAndSaveAsync(
+                await _exchangeService.ExchangeAndCompleteHostedLinkAsync(
                     userId,
                     plaidState.PublicToken,
+                    session,
                     cancellationToken);
-
-            var completedAt =
-                DateTimeOffset.UtcNow;
-
-            session.Status =
-                PlaidLinkSessionStatus.Completed;
-
-            session.CompletedAtUtc =
-                completedAt;
-
-            session.UpdatedAtUtc =
-                completedAt;
-
-            /*
-             * A terminal Hosted Link session no longer needs its Link
-             * credential. Retaining the ciphertext serves no purpose.
-             */
-            session.ProtectedLinkToken =
-                string.Empty;
-
-            await _dbContext.SaveChangesAsync(
-                cancellationToken);
 
             return new PlaidHostedLinkCompletionResult(
                 session.Id,

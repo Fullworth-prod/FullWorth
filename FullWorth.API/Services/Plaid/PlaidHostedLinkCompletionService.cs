@@ -108,8 +108,9 @@ public sealed class PlaidHostedLinkCompletionService
         if (session.Status !=
             PlaidLinkSessionStatus.Pending)
         {
-            return CreateResult(
-                session);
+            // A completed session is an idempotent owner-scoped read, not
+            // permission to repeat a consumed provider public-token exchange.
+            return await CreateTerminalResultAsync(session, cancellationToken);
         }
 
         var snapshot = new CompletionEntrySnapshot(_dbContext.Entry(session));
@@ -124,6 +125,40 @@ public sealed class PlaidHostedLinkCompletionService
             snapshot.Restore();
             throw;
         }
+    }
+
+    private async Task<PlaidHostedLinkCompletionResult> CreateTerminalResultAsync(
+        PlaidLinkSessionEntity session,
+        CancellationToken cancellationToken)
+    {
+        if (session.Status != PlaidLinkSessionStatus.Completed ||
+            session.BankConnectionId is not Guid bankId)
+        {
+            return CreateResult(session);
+        }
+
+        // Recheck the bank's owner independently of the session. A stale,
+        // removed or subsequently disconnected bank must not be presented
+        // as connected, and a forged cross-owner bank ID must reveal nothing.
+        var bank = await _dbContext.BankConnections.AsNoTracking()
+            .SingleOrDefaultAsync(candidate =>
+                candidate.Id == bankId &&
+                candidate.UserId == session.UserId &&
+                candidate.Status != BankConnectionStatus.Disconnected,
+                cancellationToken);
+
+        if (bank is null)
+        {
+            return CreateResult(session);
+        }
+
+        return new PlaidHostedLinkCompletionResult(
+            session.Id,
+            session.Status.ToString(),
+            new PlaidConnectionResult(
+                bank.Id,
+                bank.InstitutionName,
+                bank.Status.ToString()));
     }
 
     private async Task<PlaidHostedLinkCompletionResult> CompletePendingSessionAsync(

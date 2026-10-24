@@ -411,7 +411,10 @@ public sealed class PlaidApiClient
         JsonElement element,
         string propertyName)
     {
-        if (!element.TryGetProperty(
+        // An upstream error can contain any JSON shape. Never turn a valid
+        // non-object error body into an unhandled InvalidOperationException.
+        if (element.ValueKind != JsonValueKind.Object ||
+            !element.TryGetProperty(
                 propertyName,
                 out var property) ||
             property.ValueKind !=

@@ -28,7 +28,7 @@ This is proposed development work. No production acceptance is recorded.
 
 These are scenarios across seven gaps, not 121 distinct defects.
 The first checkpoint exposed an incorrect root-provider resolution in the new upload fixture; the fixture now resolves UserManager from a proper scope. No production checks were weakened to make the tests pass.
-The second checkpoint exposed graph rediscovery through navigation references during restoration. Recovery now restores references and collection membership with change detection suspended before detaching failed graph entries; the full restoration assertions remain and now also check navigations. Final exact-commit GitHub verification is recorded in the PR.
+Checkpoint tests exposed incomplete graph restoration, including required-relationship severing when a statement was detached before its line items. Recovery now restores navigation baselines with change detection suspended and detaches dependents before principals; the full restoration assertions remain and also check references and collection membership. Final exact-commit GitHub verification is recorded in the PR.
 
 ## Preserved behavior and boundaries
 

@@ -524,6 +524,10 @@ public sealed class StripeBillingService(
             string.IsNullOrWhiteSpace(currency) ||
             !root.TryGetProperty("recurring", out var recurring) ||
             recurring.ValueKind != JsonValueKind.Object ||
+            !recurring.TryGetProperty("interval_count", out var intervalCount) ||
+            intervalCount.ValueKind != JsonValueKind.Number ||
+            !intervalCount.TryGetInt64(out var intervalCountValue) ||
+            intervalCountValue != 1 ||
             !string.Equals(
                 GetString(recurring, "interval"),
                 expectedInterval,

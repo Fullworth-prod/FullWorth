@@ -364,10 +364,12 @@ public sealed class HostedLinkDurableReplayTests
                 case "/item/public_token/exchange":
                     Exchanges++;
                     if (Exchanges > 1) throw new InvalidOperationException("One-time token replayed.");
-                    json = $$"""{"access_token":"synthetic-access-token","item_id":"{{ItemId}}"}""";
+                    json = System.Text.Json.JsonSerializer.Serialize(new
+                        { access_token = "synthetic-access-token", item_id = ItemId });
                     break;
                 case "/item/get":
-                    json = $$"""{"item":{"item_id":"{{ItemId}}","institution_name":"Synthetic fixture bank"}}""";
+                    json = System.Text.Json.JsonSerializer.Serialize(new
+                        { item = new { item_id = ItemId, institution_name = "Synthetic fixture bank" } });
                     break;
                 default: throw new InvalidOperationException("Unexpected provider endpoint.");
             }

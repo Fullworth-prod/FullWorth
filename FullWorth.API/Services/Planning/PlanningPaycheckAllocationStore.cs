@@ -351,7 +351,9 @@ public sealed class PlanningPaycheckAllocationStore(
         var createdAtUtc =
             timeProvider.GetUtcNow();
 
-        dbContext.PlanningPaycheckPlanRuns.Add(
+        var pending = new List<object>();
+
+        pending.Add(
             new PlanningPaycheckPlanRunEntity
             {
                 UserId =
@@ -383,7 +385,7 @@ public sealed class PlanningPaycheckAllocationStore(
         foreach (var allocation in
                  normalizedAllocations)
         {
-            dbContext.PlanningPaycheckAllocations.Add(
+            pending.Add(
                 new PlanningPaycheckAllocationEntity
                 {
                     UserId =
@@ -411,6 +413,7 @@ public sealed class PlanningPaycheckAllocationStore(
 
         try
         {
+            dbContext.AddRange(pending);
             /*
              * The immutable run row and every recommendation row are committed
              * by one SaveChanges call. A ready plan therefore cannot exist
@@ -421,7 +424,7 @@ public sealed class PlanningPaycheckAllocationStore(
         }
         catch (DbUpdateException)
         {
-            dbContext.ChangeTracker.Clear();
+            DetachCandidates(pending);
 
             existing =
                 await QuerySavedPaycheckPlanAsync(
@@ -442,6 +445,11 @@ public sealed class PlanningPaycheckAllocationStore(
                 };
             }
 
+            throw;
+        }
+        catch
+        {
+            DetachCandidates(pending);
             throw;
         }
 
@@ -753,10 +761,12 @@ public sealed class PlanningPaycheckAllocationStore(
         var createdAtUtc =
             timeProvider.GetUtcNow();
 
+        var pending = new List<object>();
+
         foreach (var allocation in
                  normalized)
         {
-            dbContext.PlanningPaycheckAllocations.Add(
+            pending.Add(
                 new PlanningPaycheckAllocationEntity
                 {
                     UserId = userId,
@@ -783,6 +793,7 @@ public sealed class PlanningPaycheckAllocationStore(
 
         try
         {
+            dbContext.AddRange(pending);
             await dbContext.SaveChangesAsync(
                 cancellationToken);
         }
@@ -793,7 +804,7 @@ public sealed class PlanningPaycheckAllocationStore(
              * boundary. If another request won the same-paycheck race, load
              * the persisted result and accept it only when it is identical.
              */
-            dbContext.ChangeTracker.Clear();
+            DetachCandidates(pending);
 
             existing =
                 await QueryPaycheckAsync(
@@ -813,11 +824,25 @@ public sealed class PlanningPaycheckAllocationStore(
 
             throw;
         }
+        catch
+        {
+            DetachCandidates(pending);
+            throw;
+        }
 
         return await QueryPaycheckAsync(
             userId,
             payrollTransactionId,
             cancellationToken);
+    }
+
+    private void DetachCandidates(IEnumerable<object> candidates)
+    {
+        // Only rows created by this attempt belong to this cleanup. Preserve
+        // unrelated caller work, and prevent a later monitoring save from
+        // committing a failed/canceled run or recommendation.
+        foreach (var candidate in candidates)
+            dbContext.Entry(candidate).State = EntityState.Detached;
     }
 
     private async Task<PlanningSavedPaycheckPlan?>

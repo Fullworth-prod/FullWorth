@@ -67,10 +67,41 @@ public sealed class PlaidConnectionExchangeService
             dbContext;
     }
 
-    public async Task<PlaidConnectionResult> ExchangeAndSaveAsync(
+    public Task<PlaidConnectionResult> ExchangeAndSaveAsync(
         Guid userId,
         string publicToken,
+        CancellationToken cancellationToken = default) =>
+        ExchangeAndSaveCoreAsync(userId, publicToken, null, cancellationToken);
+
+    // Initial Hosted Link completion and its new/updated bank must be persisted
+    // by the SAME SaveChanges operation. A separate terminal save can leave a
+    // consumed one-time token behind a Pending session after partial failure.
+    internal Task<PlaidConnectionResult> ExchangeAndCompleteHostedLinkAsync(
+        Guid userId,
+        string publicToken,
+        PlaidLinkSessionEntity hostedSession,
         CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(hostedSession);
+
+        // Validate the owner and initial-link mode BEFORE contacting Plaid.
+        if (hostedSession.UserId != userId)
+            throw new KeyNotFoundException("Plaid Link session was not found.");
+
+        if (hostedSession.Status != PlaidLinkSessionStatus.Pending ||
+            hostedSession.BankConnectionId is not null)
+            throw new InvalidOperationException(
+                "Plaid Link session cannot complete an initial bank connection.");
+
+        return ExchangeAndSaveCoreAsync(
+            userId, publicToken, hostedSession, cancellationToken);
+    }
+
+    private async Task<PlaidConnectionResult> ExchangeAndSaveCoreAsync(
+        Guid userId,
+        string publicToken,
+        PlaidLinkSessionEntity? hostedSession,
+        CancellationToken cancellationToken)
     {
         if (userId ==
             Guid.Empty)
@@ -241,7 +272,7 @@ public sealed class PlaidConnectionExchangeService
         {
             await ApplyAndSaveConnectionAsync(connection, institutionName,
                 institutionId, itemId, protectedAccessToken, now,
-                isNewConnection, cancellationToken);
+                isNewConnection, hostedSession, cancellationToken);
         }
         catch (DbUpdateException)
             when (isNewConnection)
@@ -279,7 +310,7 @@ public sealed class PlaidConnectionExchangeService
 
             await ApplyAndSaveConnectionAsync(concurrentConnection, institutionName,
                 institutionId, itemId, protectedAccessToken, now,
-                isNewConnection: false, cancellationToken);
+                isNewConnection: false, hostedSession, cancellationToken);
 
             connection =
                 concurrentConnection;
@@ -299,6 +330,7 @@ public sealed class PlaidConnectionExchangeService
         string protectedAccessToken,
         DateTimeOffset now,
         bool isNewConnection,
+        PlaidLinkSessionEntity? hostedSession,
         CancellationToken cancellationToken)
     {
         var snapshot = new ExchangeEntrySnapshot(_dbContext.Entry(connection));
@@ -306,6 +338,20 @@ public sealed class PlaidConnectionExchangeService
         {
             ApplyConnectionState(connection, institutionName, institutionId,
                 itemId, protectedAccessToken, now);
+
+            if (hostedSession is not null)
+            {
+                // EF Core commits these two owned rows as one relational
+                // SaveChanges unit (including its implicit transaction).
+                // Keep the protected token only while the session is Pending.
+                var completedAt = DateTimeOffset.UtcNow;
+                hostedSession.BankConnectionId = connection.Id;
+                hostedSession.Status = PlaidLinkSessionStatus.Completed;
+                hostedSession.CompletedAtUtc = completedAt;
+                hostedSession.UpdatedAtUtc = completedAt;
+                hostedSession.ProtectedLinkToken = string.Empty;
+            }
+
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
         catch

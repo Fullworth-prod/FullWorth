@@ -763,7 +763,7 @@ builder.Services
         "Plaid:Environment must be either 'sandbox' or 'production'.")
     .ValidateOnStart();
 
-builder.Services.AddHttpClient<PlaidApiClient>();
+builder.Services.AddPlaidApiClient();
 
 builder.Services.AddScoped<
     PlaidTokenProtector>();

@@ -185,6 +185,7 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|POST|/auth/login/passkey-options|anonymous-implicit|named:web-authentication",
         "WEB|POST|/auth/login|anonymous-implicit|named:web-authentication",
         "WEB|POST|/auth/logout|anonymous-implicit|none",
+        "WEB|POST|/auth/passkeys/continue|authenticated|named:web-authentication",
         "WEB|POST|/auth/passkeys/login|anonymous-implicit|named:web-authentication",
         "WEB|POST|/auth/passkeys/options|anonymous-implicit|named:web-authentication",
         "WEB|POST|/auth/register|anonymous-implicit|named:web-authentication",

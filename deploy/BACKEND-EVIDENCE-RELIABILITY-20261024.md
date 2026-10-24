@@ -8,27 +8,27 @@ This is proposed development work. No production acceptance is recorded.
 
 | Gap | Evidence in the pre-change source | Fix and regression evidence |
 | --- | --- | --- |
-| Overlapping scoped Planning reads | PlanningBillChangeWatchService starts three tasks before awaiting them; all production adapters receive the same scoped FullWorthDbContext. Real asynchronous database reads can overlap although synchronously completed InMemory tests hid it. | Sequential awaits; deterministic yielding adapter regressions reject overlap and verify failure stops later work. This does not claim a PostgreSQL runtime stress test. |
+| Overlapping scoped Planning reads | PlanningBillChangeWatchService starts three tasks before awaiting them; all production adapters receive the same scoped FullWorthDbContext. Real asynchronous database reads can overlap although synchronously completed InMemory tests hid it. | Sequential awaits; explicitly gated and yielding adapter regressions reject overlap and verify failure stops later work. This does not claim a PostgreSQL runtime stress test. |
 | Change watch fails beyond 500 active bills | ListOwnedActiveAsync is unbounded; statement-fact, change-fact and allocation adapters reject a request exceeding 500 IDs. | Read all IDs in sequential batches of at most 500 without dropping bills; 0/1/499/500/501/1001 boundaries and actual scoped adapters with foreign-owner evidence. Monetary formulas and evidence qualification remain unchanged. |
 | Failed upload metadata can outlive deleted file | UploadStatement deletes the file in its SaveChanges catch, but leaves the Added upload entity tracked. | Detach only the failed metadata candidate before existing file cleanup. Database failure, cancellation and unexpected pre-commit exceptions preserve caller Added/Modified/Deleted work; subsequent save writes no orphan, explicit retry creates readable file metadata. |
-| Failed statement graph can be flushed by later save | PersistAsync stages statements, line items, changes, alerts and upload completion without restoring them on any exception. A later caller/status save can flush a failed attempt. | Snapshot scalar current/original values, states and modified flags; detach only newly tracked attempt entities and restore baseline on failure. New statement, duplicate no-enrichment, duplicate enrichment and same-cycle correction tests inject database, cancellation, unexpected save and after-staging failures; preserve foreign evidence and caller work; retry and replay are idempotent. |
+| Failed statement graph can be flushed by later save | PersistAsync stages statements, line items, changes, alerts and upload completion without restoring them on any exception. A later caller/status save can flush a failed attempt. | Snapshot scalar current/original values, states, modified flags and navigation references/collection membership; detach only newly tracked attempt entities and restore baseline on failure. New statement, duplicate no-enrichment, duplicate enrichment and same-cycle correction tests inject database, cancellation, unexpected save and after-staging failures; preserve foreign evidence and caller work; retry and replay are idempotent. |
 | Association staging ignores pending assignments/removals | StageAssignmentsAsync queries only persisted rows. Repeated Added assignments are invisible; pending Deleted instances cannot be replaced under the composite key; persisted fallback accepts bill targets pending deletion. | Combine tracked current assignments with queried rows, exclude deleted targets before mutation, and reuse a removed composite-key entity when reassigning. Entire batch remains validated before mutation; stale expectations and original concurrency values are retained. Opaque transaction IDs remain at the existing Bills boundary; no cross-module BankTransactions reads are added. |
 | Statement change staging ignores current unit of work | ReconcileAsync reads persisted history/line items/change rows, ignoring Added records and pending deletions. Repeated staging can create duplicate changes and alerts before one save. | Combine owner/bill-scoped tracked history, prefer tracked line-item values, exclude pending deletions, reuse staged change rows deterministically, restore a failed staging attempt. Regression cases cover pending/modified/deleted history and fee evidence, repeated reconciliation with acknowledgments, foreign history and failures after alert staging. The comparison/classification algorithms are unchanged. |
 | Processor mistakes failed writes for invalid documents | Its document-error catch includes status and financial graph saves. InvalidOperationException from persistence can mark a valid document Failed; canceled/failed status writes leave terminal state tracked. | Perform persistence outside the document-validation catch and restore failed state writes. 33 cases span Uploaded/Processing, initial transition, OCR, incomplete/review evidence, genuine document failure, complete persistence, database errors, cancellation and unexpected writes. Genuine invalid documents still reach Failed only after a successful status save. |
 
 ## Regression inventory
 
-- ChangeWatchReadReliabilityTests: 13 cases.
+- ChangeWatchReadReliabilityTests: 14 cases.
 - AssociationUnitOfWorkReplayTests: 24 cases.
 - StatementUploadWriteRecoveryTests: 6 cases.
 - StatementGraphFailureRecoveryTests: 32 cases.
 - StatementChangeStagingReplayTests: 12 cases.
 - StatementProcessingWriteRecoveryTests: 33 cases.
-- Total: **120 new regression cases**, six dedicated new test classes plus a dedicated test support file.
+- Total: **121 new regression cases**, six dedicated new test classes plus a dedicated test support file.
 
-These are scenarios across seven gaps, not 120 distinct defects.
+These are scenarios across seven gaps, not 121 distinct defects.
 The first checkpoint exposed an incorrect root-provider resolution in the new upload fixture; the fixture now resolves UserManager from a proper scope. No production checks were weakened to make the tests pass.
-Final exact-commit GitHub verification is recorded in the PR.
+The second checkpoint exposed graph rediscovery through navigation references during restoration. Recovery now restores references and collection membership with change detection suspended before detaching failed graph entries; the full restoration assertions remain and now also check navigations. Final exact-commit GitHub verification is recorded in the PR.
 
 ## Preserved behavior and boundaries
 

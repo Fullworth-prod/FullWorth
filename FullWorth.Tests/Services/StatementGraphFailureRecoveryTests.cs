@@ -80,8 +80,8 @@ public sealed class StatementGraphFailureRecoveryTests
         IReadOnlyList<BillStatementStructuredLineItem> items = operation == "duplicate-empty"
             ? [] : [new("Fixture fee", operation == "correction" ? 50m : 25m, "Fee")];
         var error = await Record.ExceptionAsync(() => service.PersistAsync(upload, parsed, items, stop.Token));
-        if (mode == "cancel") Assert.IsAssignableFrom<OperationCanceledException>(error);
-        else if (mode == "database") Assert.IsType<DbUpdateException>(error);
+        if (mode == "cancel") Assert.True(error is OperationCanceledException, error?.ToString());
+        else if (mode == "database") Assert.True(error is DbUpdateException, error?.ToString());
         else Assert.IsType<InvalidOperationException>(error);
         EvidenceAttemptTestSupport.AssertRestored(db, before);
 

@@ -85,6 +85,35 @@ public sealed class OverviewBillSummaryTests
     }
 
     [Fact]
+    public async Task OverviewSpotlight_PromotesOnlySupportedIncreaseWithOwnedBillLink()
+    {
+        var bill = OverviewBillCoverageTests.Bill() with
+        {
+            ProviderName = "<script>Untrusted bank label</script>"
+        };
+        var summary = OverviewBillCoverage.Create([bill]);
+        var html = await RenderAsync("en", summary, decode: false);
+
+        Assert.Contains("fw-pulse-spotlight", html);
+        Assert.Contains($"/app/bills/{bill.Id:D}", html);
+        Assert.Contains("$9.00", html);
+        Assert.Contains("prior transaction average", html);
+        Assert.Contains("Review evidence", html);
+        Assert.DoesNotContain("<script>", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("<form", html, StringComparison.OrdinalIgnoreCase);
+
+        var noIncrease = await RenderAsync("en",
+            OverviewBillCoverage.Create([OverviewBillCoverageTests.Bill(29m, 29m)]));
+        Assert.DoesNotContain("fw-pulse-spotlight", noIncrease);
+        var multipleCurrencies = await RenderAsync("en",
+            OverviewBillCoverage.Create([
+                OverviewBillCoverageTests.Bill(),
+                OverviewBillCoverageTests.Bill(50m, 40m, "EUR")
+            ]));
+        Assert.DoesNotContain("fw-pulse-spotlight", multipleCurrencies);
+    }
+
+    [Fact]
     public async Task MixedCurrencies_KeepIncreasesUnranked()
     {
         var summary = OverviewBillCoverage.Create([

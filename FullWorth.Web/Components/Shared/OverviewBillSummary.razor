@@ -81,6 +81,10 @@ else
                     <strong>@L["Not yet available"]</strong>
                 }
             </div>
+            @if (ActiveConnectionCount > 0)
+            {
+                <small class="fw-coverage-note">@L["{0} of {1} active bank connections have reported a successful sync.", SyncedConnectionCount, ActiveConnectionCount]</small>
+            }
             <small class="fw-coverage-note">@L["A sync timestamp does not confirm every connection is current or every transaction was imported."]</small>
         </div>
     </section>
@@ -95,6 +99,12 @@ else
 
     [Parameter]
     public bool StatusOnly { get; set; }
+
+    [Parameter]
+    public int ActiveConnectionCount { get; set; }
+
+    [Parameter]
+    public int SyncedConnectionCount { get; set; }
 
     private string StatusHeading => Summary.IncreaseCount > 0
         ? L["Bills need review"].Value

@@ -94,10 +94,10 @@ From the repository root:
 ```powershell
 dotnet build .\FullWorth.Tests\FullWorth.Tests.csproj --configuration Release
 dotnet test .\FullWorth.Tests\FullWorth.Tests.csproj --configuration Release --no-build
-node --test FullWorth.Tests/*.test.mjs
+node --test (Get-ChildItem .\FullWorth.Tests\*.test.mjs | ForEach-Object { $_.FullName })
 ```
 
-The last command runs the standalone JavaScript regression suites; use a recent Node.js installation. The required GitHub checks include:
+The last command uses PowerShell to expand every standalone JavaScript regression suite before passing its path to Node.js. In Bash, use `node --test FullWorth.Tests/*.test.mjs`. Use a recent Node.js installation. The required GitHub checks include:
 
 - **Backend build and tests**: Release build, EF migration/model consistency, .NET tests, and **all** Node regression suites when applicable.
 - **MAUI Android build**: retained while native compatibility remains in the solution.

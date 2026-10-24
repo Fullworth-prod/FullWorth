@@ -88,9 +88,9 @@ public sealed class WebPasskeyBoundaryTests
     {
         var html = await client.GetStringAsync("/login");
         var tag = Regex.Match(html,
-            "<input[^>]*name=\\\"__RequestVerificationToken\\\"[^>]*>");
+            @"<input[^>]*name=""__RequestVerificationToken""[^>]*>");
         Assert.True(tag.Success, "Login page must issue an antiforgery token.");
-        var value = Regex.Match(tag.Value, "value=\\\"([^\\\"]+)\\\"");
+        var value = Regex.Match(tag.Value, @"value=""([^""]+)""");
         Assert.True(value.Success);
         return WebUtility.HtmlDecode(value.Groups[1].Value);
     }

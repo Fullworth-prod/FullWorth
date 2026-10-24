@@ -237,6 +237,16 @@ public sealed class PlaidLinkService
             _tokenProtector.ProtectLinkToken(
                 linkToken);
 
+        // Data Protection ciphertext is longer than the opaque provider
+        // input. Validate the *encrypted* length against the actual
+        // database column before tracking or storing any credential.
+        if (protectedLinkToken.Length >
+            PlaidLinkSessionEntity.MaxProtectedLinkTokenLength)
+        {
+            throw new InvalidOperationException(
+                "Plaid returned a Link token too large for secure storage.");
+        }
+
         cancellationToken.ThrowIfCancellationRequested();
 
         var linkSession =

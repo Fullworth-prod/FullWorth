@@ -17,7 +17,7 @@ public sealed class HostedLinkDurableReplayTests
     {
         foreach (var phase in new[] { "before-poll", "during-poll" })
         foreach (var mode in new[] { "initial", "update" })
-        foreach (var terminal in new[] { "active", "attention", "disconnected", "foreign",
+        foreach (var terminal in new[] { "active", "attention", "disconnected",
                      "expired", "exited", "failed" })
             yield return [phase, mode, terminal];
     }
@@ -46,7 +46,7 @@ public sealed class HostedLinkDurableReplayTests
                 "failed" => PlaidLinkSessionStatus.Failed,
                 _ => PlaidLinkSessionStatus.Completed
             };
-            session.BankConnectionId = terminal == "foreign" ? fixture.ForeignBankId : fixture.BankId;
+            session.BankConnectionId = fixture.BankId;
             session.ProtectedLinkToken = string.Empty;
             session.CompletedAtUtc = Fixture.Now.AddMinutes(2);
             session.UpdatedAtUtc = Fixture.Now.AddMinutes(2);
@@ -99,6 +99,45 @@ public sealed class HostedLinkDurableReplayTests
         Assert.Equal(Fixture.Now.AddMinutes(2), durable.CompletedAtUtc);
         Assert.True(await verify.BillStreams.AnyAsync(x => x.Id == callerBill.Id));
         await fixture.AssertHistoryAsync(verify);
+    }
+
+    [Theory]
+    [InlineData("initial")]
+    [InlineData("update")]
+    public async Task ForeignBankReference_IsRejectedByRelationalConstraint_OrHiddenByApplication(string mode)
+    {
+        var fixture = await Fixture.CreateAsync(mode);
+        await using var db = fixture.Open();
+        await db.PlaidLinkSessions.SingleAsync(x => x.Id == fixture.SessionId);
+        await using var other = fixture.Open();
+        var terminal = await other.PlaidLinkSessions.SingleAsync(x => x.Id == fixture.SessionId);
+        terminal.Status = PlaidLinkSessionStatus.Completed;
+        terminal.BankConnectionId = fixture.ForeignBankId;
+        terminal.ProtectedLinkToken = string.Empty;
+        if (other.Database.IsRelational())
+        {
+            var error = await Assert.ThrowsAsync<DbUpdateException>(() => other.SaveChangesAsync());
+            var postgres = Assert.IsType<PostgresException>(error.InnerException);
+            Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, postgres.SqlState);
+            await using var verify = fixture.Open();
+            Assert.Equal(PlaidLinkSessionStatus.Pending,
+                (await verify.PlaidLinkSessions.AsNoTracking().SingleAsync(x => x.Id == fixture.SessionId)).Status);
+            await fixture.AssertHistoryAsync(verify);
+        }
+        else
+        {
+            // InMemory does not enforce relational constraints. Retain the
+            // independent application defense without weakening PostgreSQL.
+            await other.SaveChangesAsync();
+            using var handler = new Provider();
+            using var http = new HttpClient(handler);
+            var result = await fixture.Service(db, http, handler)
+                .CheckAndCompleteAsync(fixture.Owner, fixture.SessionId);
+            Assert.Equal("Completed", result.Status);
+            Assert.Null(result.Connection);
+            Assert.Equal(0, handler.Calls);
+            await fixture.AssertHistoryAsync(other);
+        }
     }
 
     [Theory]

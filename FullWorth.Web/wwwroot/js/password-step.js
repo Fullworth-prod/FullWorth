@@ -30,25 +30,16 @@
         return response.status === 204 ? null : response.json();
     }
 
-    // Never trust a hidden returnUrl after a browser credential ceremony.
-    // Match the server's local-only policy, including nested percent encodings.
-    function localLoginDestination(value) {
-        if (typeof value !== "string" || !value.startsWith("/") || value.length > 2048)
-            return "/app";
-        let decoded = value;
-        try {
-            for (let round = 0; round < 4; round++) {
-                if (!decoded.startsWith("/") || decoded.startsWith("//") ||
-                    decoded.includes("\\") || /[\x00-\x1f\x7f]/.test(decoded))
-                    return "/app";
-                const next = decodeURIComponent(decoded);
-                if (next === decoded) return value;
-                decoded = next;
-            }
-        } catch {
-            return "/app";
+    // Browser code never chooses a destination based on DOM-controlled text.
+    // The server validates the posted hint and issues a local redirect after
+    // verifying both the authenticated session and an antiforgery token.
+    function completePasskeyNavigation() {
+        const form = document.querySelector('form[data-passkey-continue]');
+        if (!form) {
+            location.assign("/app");
+            return;
         }
-        return "/app";
+        form.requestSubmit();
     }
 
     document.addEventListener("click", async event => {
@@ -69,7 +60,7 @@
             if (!credential) throw new Error("No passkey was selected. You can still use an authenticator code.");
             await post("/auth/login/passkey-complete", { ceremonyId: begin.ceremonyId,
                 credentialJson: JSON.stringify(credentialJSON(credential)) });
-            location.assign(localLoginDestination(document.querySelector('input[name="returnUrl"]')?.value));
+            completePasskeyNavigation();
         } catch (error) {
             status.textContent = error?.name === "NotAllowedError"
                 ? "Cancelled or timed out. You can try again or use an authenticator code."

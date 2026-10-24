@@ -107,6 +107,29 @@ public static class AuthEndpointMappings
                     Results.Unauthorized();
             }).RequireRateLimiting(AuthenticationRateLimitPolicy);
 
+        // Complete a successful browser WebAuthn sign-in through a fixed
+        // same-origin navigation endpoint. JavaScript only submits a hidden
+        // GET field; it never assigns DOM-controlled text as a browser URL.
+        // Authorization is checked before redirecting, and the server owns
+        // the final local-only destination decision.
+        endpoints.MapGet("/auth/passkeys/continue",
+            (HttpContext context) =>
+            {
+                context.Response.Headers.CacheControl = "no-store";
+                var destination = LocalLoginDestination.Normalize(
+                    context.Request.Query["returnUrl"].ToString());
+
+                // Prevent recursive continuation navigation even if a local
+                // query was manipulated after the original login response.
+                if (destination.StartsWith("/auth/passkeys/continue",
+                        StringComparison.OrdinalIgnoreCase))
+                    destination = "/app";
+
+                return Results.LocalRedirect(destination);
+            })
+            .RequireAuthorization()
+            .RequireRateLimiting(AuthenticationRateLimitPolicy);
+
         endpoints.MapPost(
             "/auth/register",
             async (

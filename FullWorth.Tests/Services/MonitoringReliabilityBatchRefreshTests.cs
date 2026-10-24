@@ -47,7 +47,9 @@ public sealed partial class MonitoringReliabilityBatchTests
         var error = await Record.ExceptionAsync(() => service.RefreshAsync(f.Owner));
         Assert.Same(failure, error);
         Assert.Equal(payrolls.Facts.Select(x => x.TransactionId), payrolls.Attempts);
-        Assert.Contains(nameof(PaydayBatch_AttemptsHealthySiblings_PreservesFirstFailure_AndRetries), error!.StackTrace!);
+        Assert.Contains(stage == "facts"
+            ? nameof(PaydayBatch_AttemptsHealthySiblings_PreservesFirstFailure_AndRetries)
+            : nameof(WriteFault.SavingChangesAsync), error!.StackTrace!);
         Assert.DoesNotContain(db.ChangeTracker.Entries<BillAlertEntity>(),
             x => x.State == EntityState.Added && x.Entity.SourceEventId == target);
         Assert.DoesNotContain(db.ChangeTracker.Entries<PlanningPaycheckPlanRunEntity>(),

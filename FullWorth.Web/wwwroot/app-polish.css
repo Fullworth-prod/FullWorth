@@ -317,12 +317,18 @@
 /* Ordinary desktop columns remain roomy. On mobile they must never carry
    a desktop-sized minimum into the page's horizontal scroll dimension. */
 @media (max-width: 680px) {
+    /* Premium-app uses a vertical header below 720px. Wrapping a column
+       produces a second off-screen COLUMN, not another row. */
     .app-shell.app-shell .page-heading {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
         gap: 14px;
     }
 
     .app-shell.app-shell .page-heading > div {
-        flex-basis: 100%;
+        flex: none;
+        width: 100%;
     }
 
     .app-shell.app-shell .page-heading > :is(a, button) {

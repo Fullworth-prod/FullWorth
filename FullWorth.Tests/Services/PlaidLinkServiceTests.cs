@@ -268,6 +268,46 @@ public sealed class PlaidLinkServiceTests
             dbContext.PlaidLinkSessions);
     }
 
+    [Theory]
+    [InlineData("short")]
+    [InlineData("long")]
+    [InlineData("missing")]
+    public async Task LinkSessionExpiration_IsBoundedByProviderAndLocalRetention(string mode)
+    {
+        await using var db = CreateDbContext();
+        var protector = new PlaidTokenProtector(
+            new EphemeralDataProtectionProvider());
+        var owner = Guid.NewGuid();
+        var start = DateTimeOffset.UtcNow;
+        var providerExpiration = mode == "short"
+            ? start.AddMinutes(20)
+            : mode == "long"
+                ? start.AddDays(90)
+                : (DateTimeOffset?)null;
+        using var handler = new ScriptedHttpMessageHandler(
+            JsonResponse(HttpStatusCode.OK,
+                JsonSerializer.Serialize(new
+                {
+                    link_token = "expiry-test-link",
+                    hosted_link_url = "https://secure.plaid.com/session",
+                    expiration = providerExpiration?.ToString("O")
+                })));
+        using var http = new HttpClient(handler);
+        var service = new PlaidLinkService(CreateApiClient(http), protector, db);
+
+        await service.CreateLinkSessionAsync(owner);
+
+        var session = await db.PlaidLinkSessions.AsNoTracking().SingleAsync();
+        Assert.Equal(owner, session.UserId);
+        Assert.Equal(PlaidLinkSessionStatus.Pending, session.Status);
+        Assert.InRange(session.ExpiresAtUtc,
+            mode == "short" ? start.AddMinutes(19) : start.AddHours(3).AddMinutes(59),
+            mode == "short" ? start.AddMinutes(21) : start.AddHours(4).AddSeconds(3));
+        if (providerExpiration.HasValue)
+            Assert.True(session.ExpiresAtUtc <= providerExpiration.Value);
+        Assert.Single(handler.Requests);
+    }
+
     private static PlaidApiClient CreateApiClient(
         HttpClient httpClient)
     {

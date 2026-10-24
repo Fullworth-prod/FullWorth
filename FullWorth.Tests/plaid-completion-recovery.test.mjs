@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { pollPlaidCompletion } from "../FullWorth.Web/wwwroot/js/plaid-completion.js";
+import { pollPlaidCompletion, isActiveLinkResult } from "../FullWorth.Web/wwwroot/js/plaid-completion.js";
 
 test("normal multi-minute authorization fits the unchanged provider budget", async () => {
     let time = 0, permits = 1;
@@ -95,5 +95,22 @@ test("unknown or malformed Link responses never count as terminal authorization"
             readStatus: async () => { reads++; return response; }
         }), /invalid Link status/);
         assert.equal(reads, 1, "malformed data must not trigger more provider reads");
+    }
+});
+
+test("completed polling requires active bank connection evidence before success", () => {
+    const active = { status: "Completed", connection: {
+        id: "d933d7d3-934e-4abe-9436-1f97f1729ec7",
+        institutionName: "Synthetic Bank", status: "Active"
+    }};
+    assert.equal(isActiveLinkResult(active), true);
+    for (const rejected of [
+        null, { status: "Completed" }, { status: "Completed", connection: null },
+        { status: "Completed", connection: { id: "", status: "Active" } },
+        { status: "Completed", connection: { id: active.connection.id, status: "Disconnected" } },
+        { status: "Completed", connection: { id: active.connection.id, status: "RequiresAttention" } },
+        { status: "Failed", connection: active.connection }
+    ]) {
+        assert.equal(isActiveLinkResult(rejected), false);
     }
 });

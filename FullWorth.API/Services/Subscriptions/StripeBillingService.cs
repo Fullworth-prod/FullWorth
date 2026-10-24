@@ -696,12 +696,6 @@ public sealed class StripeBillingService(
         {
             foreach (var item in itemData.EnumerateArray())
             {
-                currentPeriodStart ??=
-                    FromUnixSeconds(GetInt64(item, "current_period_start"));
-
-                currentPeriodEnd ??=
-                    FromUnixSeconds(GetInt64(item, "current_period_end"));
-
                 if (!item.TryGetProperty("price", out var price))
                 {
                     continue;
@@ -711,17 +705,26 @@ public sealed class StripeBillingService(
 
                 if (string.Equals(priceId, options.YearlyPriceId, StringComparison.Ordinal))
                 {
-                    isFullWorthPlan = true;
                     billingInterval = "yearly";
-                    break;
+                }
+                else if (string.Equals(priceId, options.MonthlyPriceId, StringComparison.Ordinal))
+                {
+                    billingInterval = "monthly";
+                }
+                else
+                {
+                    continue;
                 }
 
-                if (string.Equals(priceId, options.MonthlyPriceId, StringComparison.Ordinal))
-                {
-                    isFullWorthPlan = true;
-                    billingInterval = "monthly";
-                    break;
-                }
+                // Item periods belong to that item's product. Never borrow
+                // another product's dates to grant or expire FullWorth access.
+                // Retain root-period fallback for legacy provider responses.
+                isFullWorthPlan = true;
+                currentPeriodStart =
+                    FromUnixSeconds(GetInt64(item, "current_period_start")) ?? currentPeriodStart;
+                currentPeriodEnd =
+                    FromUnixSeconds(GetInt64(item, "current_period_end")) ?? currentPeriodEnd;
+                break;
             }
         }
 

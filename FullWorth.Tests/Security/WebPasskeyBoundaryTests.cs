@@ -86,7 +86,9 @@ public sealed class WebPasskeyBoundaryTests
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal(expected, response.Headers.Location?.OriginalString);
-        Assert.Equal("no-store", response.Headers.CacheControl?.ToString());
+        // Other security middleware may add no-cache/must-revalidate;
+        // require no-store without rejecting stronger cache controls.
+        Assert.True(response.Headers.CacheControl?.NoStore);
     }
 
     private static async Task<string> GetLoginAntiforgeryAsync(HttpClient client)

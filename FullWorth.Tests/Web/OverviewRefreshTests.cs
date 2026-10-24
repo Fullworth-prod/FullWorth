@@ -186,7 +186,10 @@ public sealed class OverviewRefreshTests
         await harness.Call("LoadAsync");
 
         Assert.True(harness.Get<bool>("HasActiveConnection"));
-        Assert.Equal(waitingForFirstSync, harness.Get<bool>("IsWaitingForFirstSync"));
+        // A first sync is pending only when NO active bank has succeeded.
+        // An attention-only second bank does not count as successfully synced.
+        Assert.Equal(waitingForFirstSync && brokenSecondConnection,
+            harness.Get<bool>("IsWaitingForFirstSync"));
         Assert.Equal(brokenSecondConnection, harness.Get<bool>("HasConnectionNeedingAttention"));
         Assert.Equal(brokenSecondConnection,
             harness.Get<bool>("ShouldShowMixedConnectionWarning"));

@@ -512,6 +512,8 @@ public sealed class PlaidHostedLinkCompletionService
                 "Plaid returned too many Hosted Link item results.");
         }
 
+        string? selectedToken = null;
+
         foreach (var itemResult in
                  itemAddResultsElement.EnumerateArray())
         {
@@ -522,18 +524,30 @@ public sealed class PlaidHostedLinkCompletionService
                     "Plaid returned an invalid Hosted Link item result.");
             }
 
-            var publicToken =
+            var candidate =
                 GetOptionalPublicToken(
                     itemResult,
                     "public_token");
 
-            if (publicToken is not null)
+            if (candidate is null)
             {
-                return publicToken;
+                continue;
             }
+
+            // Multiple items or conflicting credentials cannot safely
+            // become one FullWorth bank connection by arbitrary ordering.
+            if (selectedToken is not null &&
+                !string.Equals(selectedToken, candidate,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Plaid returned conflicting Hosted Link public tokens.");
+            }
+
+            selectedToken = candidate;
         }
 
-        return null;
+        return selectedToken;
     }
 
     private static string?

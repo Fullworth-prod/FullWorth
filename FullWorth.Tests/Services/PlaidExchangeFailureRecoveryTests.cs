@@ -216,7 +216,7 @@ public sealed class PlaidExchangeFailureRecoveryTests
         }));
         var service = new PlaidConnectionExchangeService(api, protector, db);
 
-        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+        var error = await Assert.ThrowsAsync<PlaidDisconnectedConnectionException>(
             () => service.ExchangeAndSaveAsync(owner, "new-public-token"));
         Assert.Contains("Disconnected bank connection", error.Message,
             StringComparison.Ordinal);

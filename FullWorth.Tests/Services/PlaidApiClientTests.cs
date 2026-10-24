@@ -143,6 +143,48 @@ public sealed class PlaidApiClientTests
             exception.Message);
     }
 
+    [Fact]
+    public void ProductionPlaidTransport_DoesNotFollowRedirectsOrHandleCookies()
+    {
+        using var handler = Assert.IsType<SocketsHttpHandler>(
+            PlaidHttpClientRegistration.CreatePrimaryHandler());
+
+        // HttpClient's default handler permits redirects, which may carry
+        // custom provider authentication headers to a different origin.
+        Assert.False(handler.AllowAutoRedirect);
+        Assert.False(handler.UseCookies);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.MovedPermanently)]
+    [InlineData(HttpStatusCode.Redirect)]
+    [InlineData(HttpStatusCode.TemporaryRedirect)]
+    [InlineData(HttpStatusCode.PermanentRedirect)]
+    public async Task PostAsync_RedirectResponseIsError_NotProviderSuccess(
+        HttpStatusCode redirectStatus)
+    {
+        var handler = new RecordingHandler(_ =>
+        {
+            var response = new HttpResponseMessage(redirectStatus);
+            response.Headers.Location =
+                new Uri("https://untrusted.invalid/collect?hint=private");
+            return response;
+        });
+
+        var error = await Assert.ThrowsAsync<PlaidApiException>(
+            () => CreateClient(handler).PostAsync(
+                "item/get", new { access_token = "private-fixture-access" }));
+
+        Assert.Equal(redirectStatus, error.StatusCode);
+        Assert.Equal(1, handler.RequestCount);
+        Assert.Equal(new Uri("https://sandbox.plaid.com/item/get"),
+            handler.RequestUri);
+        Assert.DoesNotContain("untrusted.invalid", error.Message,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("private-fixture-access", error.Message,
+            StringComparison.Ordinal);
+    }
+
     private static PlaidApiClient CreateClient(
         HttpMessageHandler handler)
     {

@@ -236,12 +236,13 @@ public sealed class PlaidHostedLinkCompletionService
         }
 
         if (plaidState.PublicToken is not null &&
-            !plaidState.HasUnfinishedSession)
+            !plaidState.HasUnfinishedSession &&
+            !plaidState.HasExitedSession)
         {
             /*
              * Do not consume the one-time public token while any provider
-             * session is unfinished. The response may contain multiple
-             * sessions, and their order must not change the decision.
+             * session is unfinished or has exited. The response may contain
+             * multiple sessions, and their order must not change the decision.
              *
              * The public token is immediately exchanged server-side. It is
              * never persisted and never returned to the MAUI client.

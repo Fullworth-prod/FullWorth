@@ -22,7 +22,7 @@ No Web, VisualTests, shared workflow or context/roadmap/handoff edits. The new w
 
 ## Regression evidence
 
-The ordinary suite adds 12 cases: direct/stale disconnected account/transaction preflight; stale protected credentials; foreign owners; normal RequiresAttention retries; both model concurrency predicates.
+The executable entry point is separate from the scenario helper linked into the ordinary test assembly, avoiding test-host entry-point warnings. The ordinary suite adds 12 cases: direct/stale disconnected account/transaction preflight; stale protected credentials; foreign owners; normal RequiresAttention retries; both model concurrency predicates.
 
 The dedicated executable runs **26 scenarios against disposable real PostgreSQL 17**, using the existing production PostgreSQL image digest and pinned existing action SHAs:
 - 16 races: account/transaction sync × provider-response/pre-save interleaving × disconnect/credential replacement × initial Active/RequiresAttention.

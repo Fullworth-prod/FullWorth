@@ -17,7 +17,7 @@ public static class BankLifecycleRaceChecks
     private static readonly DateTimeOffset OriginalTime = DateTimeOffset.Parse("2026-01-01T00:00:00Z");
     private static readonly DateTimeOffset WinnerTime = OriginalTime.AddHours(1);
 
-    public static async Task<int> Main()
+    public static async Task<int> RunAsync()
     {
         // Deliberately refuse arbitrary hosts/databases. This executable is
         // only for the new workflow's disposable, loopback PostgreSQL service.

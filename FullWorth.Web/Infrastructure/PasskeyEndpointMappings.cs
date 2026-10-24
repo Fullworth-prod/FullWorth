@@ -38,6 +38,21 @@ public static class PasskeyEndpointMappings
                 result.IsRateLimited ? Results.StatusCode(StatusCodes.Status429TooManyRequests) :
                 Results.Unauthorized();
         }).RequireRateLimiting(AuthEndpointMappings.AuthenticationRateLimitPolicy);
+        // A passkey ceremony is finalized by a trusted browser form POST, not
+        // client navigation to an arbitrary value read from the DOM.
+        // Only an authenticated cookie may follow a local return destination.
+        endpoints.MapPost("/auth/passkeys/continue",
+            async (HttpContext context, IAntiforgery antiforgery) =>
+            {
+                await antiforgery.ValidateRequestAsync(context);
+                context.Response.Headers.CacheControl = "no-store";
+                var form = await context.Request.ReadFormAsync(context.RequestAborted);
+                return Results.LocalRedirect(
+                    LocalLoginDestination.Normalize(form["returnUrl"].ToString()));
+            })
+            .RequireAuthorization()
+            .RequireRateLimiting(AuthEndpointMappings.AuthenticationRateLimitPolicy);
+
         return endpoints;
     }
 }

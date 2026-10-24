@@ -26,8 +26,14 @@ export async function pollPlaidCompletion({
         try {
             const result = await readStatus(signal);
             if (!isCurrent() || signal?.aborted) return null;
-            const state = String(result?.status ?? "").toLowerCase();
-            if (state !== "pending") return result;
+            if (typeof result?.status !== "string") {
+                throw new Error("FullWorth received an invalid Link status.");
+            }
+            const state = result.status.toLowerCase();
+            if (["completed", "exited", "expired", "failed"].includes(state)) return result;
+            if (state !== "pending") {
+                throw new Error("FullWorth received an invalid Link status.");
+            }
             popupClosedPendingChecks = isPopupClosed() ? popupClosedPendingChecks + 1 : 0;
             if (popupClosedPendingChecks >= 2) return { status: "PopupClosed" };
             waitMs = completionPollIntervalMs;

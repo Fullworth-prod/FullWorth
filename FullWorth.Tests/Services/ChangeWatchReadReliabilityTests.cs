@@ -11,6 +11,31 @@ namespace FullWorth.Tests.Services;
 
 public sealed class ChangeWatchReadReliabilityTests
 {
+    [Fact]
+    public async Task IncompleteFirstRead_PreventsAnyOtherScopedReadFromStarting()
+    {
+        await using var db = Db();
+        var owner = Guid.NewGuid();
+        var gate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var probe = new ReadProbe(owner) { FirstReadGate = gate };
+        var bills = new[] { new BillStreamReadRecord(Guid.NewGuid(), "Fixture", BillCategory.Internet) };
+        var service = new PlanningBillChangeWatchService(new Streams(owner, bills), new Facts(probe),
+            new Changes(probe), new PlanningPaycheckAllocationStore(db, TimeProvider.System));
+        var request = service.GetAsync(owner);
+        try
+        {
+            Assert.Equal(new[] { "facts" }, probe.Calls.Select(x => x.Kind));
+            Assert.False(request.IsCompleted);
+            gate.SetResult(true);
+            Assert.Single(await request);
+        }
+        finally
+        {
+            gate.TrySetResult(true);
+            await Record.ExceptionAsync(() => request);
+        }
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(1)]
@@ -137,6 +162,7 @@ public sealed class ChangeWatchReadReliabilityTests
     private sealed class ReadProbe(Guid owner)
     {
         public bool Busy { get; private set; }
+        public TaskCompletionSource<bool>? FirstReadGate { get; init; }
         public string? FailStage { get; set; }
         public Action? Cancel { get; set; }
         public List<(string Kind, int Count)> Calls { get; } = [];
@@ -149,7 +175,10 @@ public sealed class ChangeWatchReadReliabilityTests
             Busy = true;
             try
             {
-                await Task.Yield(); // Ensure the adapter remains incomplete when the caller regains control.
+                if (kind == "facts" && FirstReadGate is not null)
+                    await FirstReadGate.Task.WaitAsync(token);
+                else
+                    await Task.Yield();
                 token.ThrowIfCancellationRequested();
                 if (FailStage == kind)
                 {

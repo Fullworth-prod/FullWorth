@@ -1,3 +1,23 @@
+## Operator checkpoint after real independent recovery — 2026-10-25 UTC
+
+Current release candidate on `master`:
+
+`1041bde352c2d30b01719c6d492c6ae284cd1bf1`
+
+Current verified live production release marker:
+
+`dd31836703bd110a30f303ed3ce9fd13c0f61d82`
+
+Independent production recovery [40223645645](https://github.com/Fullworth-prod/FullWorth/actions/runs/40223645645) actually passed on a fresh GitHub-hosted runner using the approved read-only credential and provider-protected snapshot `46772e80141cfd2528cf3c17b885bb651fa1b20749b0d0e05db1d6218d2c90da`. Its private metadata pins runner release `1041bde352c2d30b01719c6d492c6ae284cd1bf1`, backed-up live release `dd31836703bd110a30f303ed3ce9fd13c0f61d82`, explicit provider read-only denials and completion at 2026-10-25T18:57:26Z. No recovery artifacts were uploaded. Nonempty real-statement acceptance remains explicitly unestablished.
+
+#967's guarded configuration-probe fix passed all nine source checks and merged as `1041bde352c2d30b01719c6d492c6ae284cd1bf1`. Its subsequent master CI 40223585134 hit an independent Windows toolchain failure: the floating Microsoft aka.ms download selected SDK10.0.403/runtime10.0.14 and redirected to a blob endpoint returning HTTP409. Official .NET10 release metadata still identifies SDK10.0.402/runtime10.0.13 (release date 2026-10-13); these are also the versions used by the passing source checks. The correction pins only the two Windows main-CI SDK inputs to 10.0.402. No build/test/branch gate is weakened, no alternate untrusted feed is added, and no application runtime is changed. Require new final-head/master checks and exact-release signing before deployment.
+
+An owner-held recovery kit was encrypted with Windows DPAPI CurrentUser and round-trip verified off the production host. It contains repository/password/snapshot metadata, excludes the expiring S3 key and requires the current owner Windows profile. Disaster bootstrap from that kit is a separate, unexercised operator procedure. The temporary read-only key copy remains owner/SYSTEM-only because automatic review rejected its deletion; its provider access expires after 24 hours.
+
+Production remains on the healthy existing release. No deployment or paid activation has occurred. Preserve the real-provider/device/legal/nonempty-statement distinctions, branches and disabled hourly automation. Private completion record: `/home/deploy/fullworth-acceptance/recovery-results/run-40223645645.json`.
+
+---
+
 ## Operator checkpoint after approved read-only recovery access — 2026-10-25 UTC
 
 Current release candidate on `master`:

@@ -116,7 +116,7 @@ public sealed class PlaidHostedCompletionFailureRecoveryTests
         var storedSession = await db.PlaidLinkSessions.AsNoTracking().SingleAsync(s => s.Id == session.Id);
         Assert.Equal(PlaidLinkSessionStatus.Pending, storedSession.Status);
         Assert.Null(storedSession.CompletedAtUtc);
-        Assert.Equal(protectedLink, storedSession.ProtectedLinkToken);
+        Assert.Equal(mode == "new" ? string.Empty : protectedLink, storedSession.ProtectedLinkToken);
         Assert.Equal(expectedUpdated, storedSession.UpdatedAtUtc);
         var storedConnection = await db.BankConnections.AsNoTracking().SingleAsync(c => c.Id == connection.Id);
         Assert.Equal(BankConnectionStatus.RequiresAttention, storedConnection.Status);
@@ -141,8 +141,14 @@ public sealed class PlaidHostedCompletionFailureRecoveryTests
             Assert.Null(session.BankConnectionId);
             Assert.Null(storedSession.BankConnectionId);
             Assert.Equal(3, handler.Requests.Count);
-            // This does NOT make the provider's already-consumed public token
-            // replayable after failure. A new Link attempt may be required.
+            // A durable exchange fence now prevents reusing the consumed token.
+            var attempt = await db.PlaidLinkCompletionAttempts.AsNoTracking()
+                .SingleAsync(a => a.UserId == owner && a.SessionId == session.Id);
+            Assert.Equal(PlaidLinkCompletionStage.Interrupted, attempt.Stage);
+            var retry = await service.CheckAndCompleteAsync(owner, session.Id);
+            Assert.Equal("RecoveryRequired", retry.Status);
+            Assert.Null(retry.Connection);
+            Assert.Equal(3, handler.Requests.Count);
             return;
         }
 

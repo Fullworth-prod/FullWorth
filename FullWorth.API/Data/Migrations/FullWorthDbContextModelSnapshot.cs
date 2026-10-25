@@ -825,6 +825,21 @@ namespace FullWorth.API.Data.Migrations
                     b.ToTable("BillStreams", (string)null);
                 });
 
+            modelBuilder.Entity("FullWorth.API.Data.Entities.PlaidLinkCompletionAttemptEntity", b =>
+                {
+                    b.Property<Guid>("SessionId").HasColumnType("uuid");
+                    b.Property<Guid>("UserId").HasColumnType("uuid");
+                    b.Property<Guid>("AttemptId").IsConcurrencyToken().HasColumnType("uuid");
+                    b.Property<string>("Stage").IsRequired().IsConcurrencyToken()
+                        .HasMaxLength(24).HasColumnType("character varying(24)");
+                    b.Property<DateTimeOffset>("StartedAtUtc").HasColumnType("timestamp with time zone");
+                    b.Property<DateTimeOffset>("UpdatedAtUtc").HasColumnType("timestamp with time zone");
+                    b.HasKey("SessionId", "UserId");
+                    b.HasIndex("AttemptId").IsUnique();
+                    b.HasIndex("UserId");
+                    b.ToTable("PlaidLinkCompletionAttempts", (string)null);
+                });
+
             modelBuilder.Entity("FullWorth.API.Data.Entities.PlaidLinkSessionEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -860,6 +875,8 @@ namespace FullWorth.API.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasAlternateKey("Id", "UserId");
 
                     b.HasIndex("UserId");
 
@@ -1707,6 +1724,18 @@ namespace FullWorth.API.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FullWorth.API.Data.Entities.PlaidLinkCompletionAttemptEntity", b =>
+                {
+                    b.HasOne("FullWorth.API.Data.Entities.PlaidLinkSessionEntity", "Session")
+                        .WithMany()
+                        .HasForeignKey("SessionId", "UserId")
+                        .HasPrincipalKey("Id", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_PlaidCompletionAttempts_LinkSession_Owner");
+                    b.Navigation("Session");
                 });
 
             modelBuilder.Entity("FullWorth.API.Data.Entities.PlaidLinkSessionEntity", b =>

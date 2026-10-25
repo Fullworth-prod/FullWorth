@@ -281,6 +281,56 @@ public sealed class HostedLinkRecoveryTests
         await f.VerifyHistoryAsync();
     }
 
+    [Theory]
+    [InlineData("new", "/item/public_token/exchange")]
+    [InlineData("new", "/item/get")]
+    [InlineData("existing", "/item/public_token/exchange")]
+    [InlineData("existing", "/item/get")]
+    public async Task BrowserDisconnectAfterFence_CompletesOnceWithoutReplayingToken(string mode, string phase)
+    {
+        var f = await HostedRecoveryFixture.CreateAsync(mode);
+        await using var db = f.Open();
+        using var browserRequest = new CancellationTokenSource();
+        using var provider = new RecoveryProvider(f.ItemId);
+        using var http = new HttpClient(provider);
+        provider.BeforeResponse = async (path, workToken) =>
+        {
+            if (path != phase) return;
+            browserRequest.Cancel();
+            // Simulate the item response arriving after the browser disappears.
+            await Task.Delay(10, workToken);
+            workToken.ThrowIfCancellationRequested();
+        };
+        var result = await f.Service(db, http).CheckAndCompleteAsync(
+            f.Owner, f.SessionId, browserRequest.Token);
+        Assert.True(browserRequest.IsCancellationRequested);
+        Assert.Equal("Completed", result.Status);
+        Assert.NotNull(result.Connection);
+        Assert.Equal("Active", result.Connection.Status);
+        Assert.Equal(1, provider.Polls);
+        Assert.Equal(1, provider.Exchanges);
+        Assert.Equal(1, provider.Items);
+        Assert.Equal(1, provider.MaximumExchangesPerToken);
+        await using (var proof = f.OpenDirect())
+        {
+            var session = await proof.PlaidLinkSessions.AsNoTracking().SingleAsync(s => s.Id == f.SessionId);
+            Assert.Equal(PlaidLinkSessionStatus.Completed, session.Status);
+            Assert.Equal(result.Connection.Id, session.BankConnectionId);
+            Assert.Equal(PlaidLinkCompletionStage.Completed,
+                (await proof.PlaidLinkCompletionAttempts.AsNoTracking()
+                    .SingleAsync(a => a.SessionId == f.SessionId && a.UserId == f.Owner)).Stage);
+            Assert.Equal(1, await proof.BankConnections.CountAsync(b =>
+                b.UserId == f.Owner && b.PlaidItemId == f.ItemId && b.Status == BankConnectionStatus.Active));
+        }
+        await using var fresh = f.Open();
+        var replay = await f.Service(fresh, http).CheckAndCompleteAsync(f.Owner, f.SessionId);
+        Assert.Equal(result.Connection.Id, replay.Connection?.Id);
+        Assert.Equal(1, provider.Polls);
+        Assert.Equal(1, provider.Exchanges);
+        Assert.Equal(1, provider.Items);
+        await f.VerifyHistoryAsync();
+    }
+
     private sealed class CompletionFault : SaveChangesInterceptor
     {
         internal bool BeforeCommit, AfterCommit;

@@ -18,8 +18,9 @@ export async function verifyNativeSelectLayout(browser, engine) {
   let passed = 0;
   try {
     const page = await context.newPage();
-    for (const fixture of fixtures) {
-      await page.setContent('<style>body{margin:0}.app-page{width:calc(100% - 24px);margin:auto}' +
+    for (const fixture of fixtures)
+    for (const fontFamily of ["serif", "sans-serif", "monospace"]) {
+      await page.setContent('<style>body{margin:0;font-family:' + fontFamily + '}.app-page{width:calc(100% - 24px);margin:auto}' +
         fixture.css + '</style><main class="app-page">' + fixture.html + '</main>');
       const select = page.locator("#choice");
       const options = await select.locator("option").allTextContents();
@@ -49,7 +50,7 @@ export async function verifyNativeSelectLayout(browser, engine) {
           });
           assert.ok(result.document <= width + 1 && result.body <= width + 1 &&
             result.left >= 0 && result.right <= width + 1,
-            engine + "/" + fixture.name + "/" + scale + ": " + JSON.stringify(result));
+            engine + "/" + fixture.name + "/" + fontFamily + "/" + scale + ": " + JSON.stringify(result));
           assert.ok(result.font >= 16 * scale, "Do not shrink enlarged text");
           assert.notEqual(result.appearance, "none", "Keep native dropdown affordances");
           assert.deepEqual(await select.locator("option").allTextContents(), options,

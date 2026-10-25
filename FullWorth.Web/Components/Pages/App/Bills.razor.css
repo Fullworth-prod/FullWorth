@@ -67,4 +67,5 @@
    the document or replacing native dropdown behavior. */
 .bill-workspace-tools select {
     white-space: normal;
+    overflow-wrap: anywhere;
 }

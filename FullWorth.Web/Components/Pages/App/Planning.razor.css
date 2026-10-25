@@ -561,4 +561,5 @@
 .planning-fields select,
 .planning-bill-row select {
     white-space: normal;
+    overflow-wrap: anywhere;
 }

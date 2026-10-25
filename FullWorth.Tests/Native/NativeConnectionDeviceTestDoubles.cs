@@ -29,10 +29,11 @@ namespace FullWorth.Tests.Native
     {
         private readonly Channel<StepTimer> _scheduled = Channel.CreateUnbounded<StepTimer>();
         private long _ticks;
+        public TimeSpan UtcAdjustment { get; set; }
         public override long TimestampFrequency => TimeSpan.TicksPerSecond;
         public override long GetTimestamp() => Interlocked.Read(ref _ticks);
         public override DateTimeOffset GetUtcNow() =>
-            new DateTimeOffset(2026, 10, 25, 0, 0, 0, TimeSpan.Zero).AddTicks(GetTimestamp());
+            new DateTimeOffset(2026, 10, 25, 0, 0, 0, TimeSpan.Zero).AddTicks(GetTimestamp()).Add(UtcAdjustment);
 
         public override ITimer CreateTimer(TimerCallback callback, object? state,
             TimeSpan dueTime, TimeSpan period)

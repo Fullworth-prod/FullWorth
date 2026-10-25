@@ -4,7 +4,7 @@
     gap: 28px; padding: 28px; overflow: visible;
 }
 .experience-setup-page .onboarding-copy { min-width: 0; max-width: none; }
-.experience-setup-page .onboarding-copy > h2 { font-size: clamp(1.5rem, 3vw, 2.2rem); line-height: 1.15; scroll-margin-top: 120px; }
+.experience-setup-page .onboarding-copy > h2 { font-size: clamp(1.5rem, 3vw, 2.2rem); line-height: 1.15; overflow-wrap: anywhere; scroll-margin-top: 120px; }
 .experience-setup-page .setup-fields { border: 0; margin: 20px 0 0; padding: 0; min-width: 0; }
 .experience-setup-page .setup-fields .settings-card-grid { grid-template-columns: minmax(0, 1fr); }
 .experience-setup-page .setup-fields .settings-card { min-width: 0; }

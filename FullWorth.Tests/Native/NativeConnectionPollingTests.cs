@@ -45,6 +45,26 @@ public sealed class NativeConnectionPollingTests
         Assert.False(vm.IsBusy);
     }
 
+    [Fact]
+    public async Task BackwardDeviceClockAdjustment_DoesNotExtendPollingOrExhaustTheBudget()
+    {
+        var clock = new NativeStepTimeProvider();
+        using var handler = new ProviderFixture(clock, null, "Active")
+        {
+            AfterPoll = () => clock.UtcAdjustment = TimeSpan.FromHours(-1)
+        };
+        using var http = Client(handler);
+        var vm = await ViewModel(http, clock);
+        var operation = vm.ConnectBankAsync();
+        await Drive(clock, operation);
+        Assert.Contains("stopped waiting", vm.StatusMessage);
+        Assert.Equal(18, handler.Polls.Count);
+        Assert.Equal(TimeSpan.FromMinutes(10), clock.GetElapsedTime(0));
+        Assert.Equal(1, handler.Created);
+        Assert.Equal(0, handler.ReadBanks);
+        Assert.False(vm.IsBusy);
+    }
+
     [Theory]
     [InlineData("RequiresAttention")]
     [InlineData("Disconnected")]
@@ -129,6 +149,7 @@ public sealed class NativeConnectionPollingTests
         public string BankStatus { get; set; } = bankStatus;
         public List<Guid> SessionIds { get; } = [];
         public int Created, ReadBanks;
+        public Action? AfterPoll { get; init; }
         public List<TimeSpan> Polls { get; } = [];
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -147,6 +168,7 @@ public sealed class NativeConnectionPollingTests
             {
                 var elapsed = clock.GetUtcNow() - _start;
                 Polls.Add(elapsed);
+                AfterPoll?.Invoke();
                 if (Created + Polls.Count > 20)
                     return Task.FromResult(new HttpResponseMessage(HttpStatusCode.TooManyRequests));
                 var complete = completesAt is not null && elapsed >= completesAt.Value;

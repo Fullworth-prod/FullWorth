@@ -12,6 +12,7 @@
 .settings-header h1 {
     margin: 5px 0 7px;
     font-size: clamp(2.15rem, 4vw, 3.05rem);
+    overflow-wrap: anywhere;
     line-height: 1;
     letter-spacing: -0.05em;
 }
@@ -31,7 +32,9 @@
     gap: 4px;
     margin-bottom: 18px;
     padding: 4px;
-    overflow-x: auto;
+    flex-wrap: wrap;
+    overflow: visible;
+    box-sizing: border-box;
     border: 1px solid var(--app-border);
     border-radius: 15px;
     background: color-mix(in srgb, var(--app-surface) 92%, transparent);
@@ -49,7 +52,8 @@
     font-size: 0.84rem;
     font-weight: 760;
     text-decoration: none;
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 a.settings-tab:hover,
@@ -398,6 +402,8 @@ a.settings-tab:focus-visible {
 .settings-field {
     min-width: 0;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    overflow-wrap: anywhere;
     gap: 7px;
 }
 
@@ -948,7 +954,7 @@ a.settings-tab:focus-visible {
 }
 
 .app-shell .settings-tab {
-    min-height: 36px;
+    min-height: 44px;
     padding: 0 13px;
     border-radius: 999px;
     color: var(--fw-muted);

@@ -226,20 +226,19 @@ public sealed class ConnectBankPageViewModel :
             StatusMessage =
                 "Complete the connection in your browser. When you are done — or if you close the Plaid tab — return to FullWorth and click anywhere in this window. FullWorth will refresh or stop waiting.";
 
-            var deadline =
-                _timeProvider.GetUtcNow()
-                    .AddMinutes(10);
+            var timeout = TimeSpan.FromMinutes(10);
+            var startedAt = _timeProvider.GetTimestamp();
             var pollDelay = TimeSpan.FromSeconds(2);
 
-            while (_timeProvider.GetUtcNow() < deadline)
+            while (_timeProvider.GetElapsedTime(startedAt) < timeout)
             {
-                var remaining = deadline - _timeProvider.GetUtcNow();
+                var remaining = timeout - _timeProvider.GetElapsedTime(startedAt);
                 if (remaining <= TimeSpan.Zero) break;
                 await Task.Delay(
                     pollDelay < remaining ? pollDelay : remaining,
                     _timeProvider,
                     connectionWaitCancellation.Token);
-                if (_timeProvider.GetUtcNow() >= deadline) break;
+                if (_timeProvider.GetElapsedTime(startedAt) >= timeout) break;
 
                 var result =
                     await _plaidConnectionService

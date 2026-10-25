@@ -14,7 +14,7 @@
 
 <link rel="stylesheet" href="/account-privacy.css" />
 
-<div class="app-page privacy-page" aria-busy="@IsBusy">
+<div class="app-page privacy-page" aria-busy="@(IsBusy ? "true" : "false")">
     <a class="privacy-back-link fw-back-link" href="/app/account">
         <svg class="bw-sprite" aria-hidden="true">
             <use href="/assets/billwatch-sprites.svg#chevron-left"></use>

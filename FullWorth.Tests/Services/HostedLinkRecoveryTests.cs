@@ -111,6 +111,11 @@ public sealed class HostedLinkRecoveryTests
         await using (var verify = f.OpenDirect())
         {
             Assert.True(await verify.BillStreams.AnyAsync(b => b.Id == caller.Id));
+            Assert.Equal(string.Empty, (await verify.PlaidLinkSessions.AsNoTracking()
+                .SingleAsync(link => link.Id == f.SessionId)).ProtectedLinkToken);
+            Assert.Equal(PlaidLinkCompletionStage.Interrupted,
+                (await verify.PlaidLinkCompletionAttempts.AsNoTracking()
+                    .SingleAsync(attempt => attempt.SessionId == f.SessionId)).Stage);
             var bank = await verify.BankConnections.AsNoTracking().SingleAsync(b => b.Id == f.BankId);
             Assert.Equal(BankConnectionStatus.RequiresAttention, bank.Status);
             Assert.Equal("owned-original", f.Protector.Unprotect(bank.ProtectedPlaidAccessToken!));

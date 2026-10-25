@@ -3,6 +3,7 @@ using FullWorth.API.Services.Plaid;
 using Microsoft.Extensions.Options;
 using FullWorth.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 if (Environment.GetEnvironmentVariable("FULLWORTH_LINK_RECOVERY_POSTGRES") != "ci-fixture-only")
     throw new InvalidOperationException("Explicit disposable PostgreSQL fixture required.");
@@ -63,8 +64,11 @@ foreach (var mode in new[] { "new", "existing" })
 {
     var f = await HostedRecoveryFixture.CreateAsync(mode);
     var suffix = f.SessionId.ToString("N");
-    var function = "synthetic_recovery_fail_" + suffix;
-    var trigger = "synthetic_recovery_guard_" + suffix;
+    // DDL identifiers cannot be SQL parameters. They contain only a generated
+    // Guid and are additionally quoted with the provider's identifier encoder.
+    using var identifierEncoder = new Npgsql.NpgsqlCommandBuilder();
+    var function = identifierEncoder.QuoteIdentifier("synthetic_recovery_fail_" + suffix);
+    var trigger = identifierEncoder.QuoteIdentifier("synthetic_recovery_guard_" + suffix);
     await using (var setup = f.OpenDirect())
     {
         var sql = $"""
@@ -114,8 +118,49 @@ foreach (var mode in new[] { "new", "existing" })
     finally
     {
         await using var cleanup = f.OpenDirect();
-        await cleanup.Database.ExecuteSqlRawAsync($"DROP TRIGGER {trigger} ON \"PlaidLinkSessions\"; DROP FUNCTION {function}();");
+        var cleanupSql = $"DROP TRIGGER {trigger} ON \"PlaidLinkSessions\"; DROP FUNCTION {function}();";
+        await cleanup.Database.ExecuteSqlRawAsync(cleanupSql);
     }
+}
+
+// Interrupt AFTER the old writer has prepared its final save. Only the
+// real database concurrency predicate can stop this stale commit now.
+foreach (var mode in new[] { "new", "existing" })
+{
+    var hold = new HoldFinalCompletion();
+    var f = await HostedRecoveryFixture.CreateAsync(mode, hold);
+    using var provider = new RecoveryProvider(f.ItemId);
+    using var http = new HttpClient(provider);
+    await using var first = f.Open();
+    await using var second = f.Open();
+    var old = f.Service(first, http).CheckAndCompleteAsync(f.Owner, f.SessionId);
+    await hold.Entered.Task.WaitAsync(TimeSpan.FromSeconds(20));
+    try
+    {
+        f.Clock.Now = f.Clock.Now.AddMinutes(7);
+        var competing = await f.Service(second, http).CheckAndCompleteAsync(f.Owner, f.SessionId);
+        Check(competing.Status == "RecoveryRequired", "The stale lease must be interrupted.");
+    }
+    finally { hold.Release.TrySetResult(); }
+    Exception? error = null;
+    try { await old; }
+    catch (DbUpdateConcurrencyException e) { error = e; }
+    Check(error is not null, "The database predicate must reject a writer interrupted after final preparation.");
+    await using var proof = f.OpenDirect();
+    var session = await proof.PlaidLinkSessions.AsNoTracking().SingleAsync(link => link.Id == f.SessionId);
+    var attempt = await proof.PlaidLinkCompletionAttempts.AsNoTracking().SingleAsync(a => a.SessionId == f.SessionId);
+    var bank = await proof.BankConnections.AsNoTracking().SingleAsync(b => b.Id == f.BankId);
+    Check(session.Status == PlaidLinkSessionStatus.Pending && session.ProtectedLinkToken == string.Empty &&
+        attempt.Stage == PlaidLinkCompletionStage.Interrupted &&
+        bank.Status == BankConnectionStatus.RequiresAttention &&
+        f.Protector.Unprotect(bank.ProtectedPlaidAccessToken!) == "owned-original" &&
+        await proof.BankConnections.CountAsync(b => b.UserId == f.Owner) == 1,
+        "The stale completion transaction must roll back every bank/session mutation.");
+    Check(provider.Polls == 1 && provider.Exchanges == 1 && provider.Items == 1,
+        "A contender cannot poll or exchange while the final writer is paused.");
+    await f.VerifyHistoryAsync();
+    Console.WriteLine($"PASS PostgreSQL interrupted-after-prepare atomic rollback: {mode}");
+    cases++;
 }
 
 // An owner-bound FK must reject a forged permit even when both owners exist.
@@ -208,4 +253,23 @@ Console.WriteLine($"Hosted recovery relational checks passed: {cases}; provider 
 static void Check(bool condition, string message)
 {
     if (!condition) throw new InvalidOperationException(message);
+}
+
+internal sealed class HoldFinalCompletion : SaveChangesInterceptor
+{
+    internal TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    internal TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
+        DbContextEventData data, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+    {
+        if (data.Context!.ChangeTracker.Entries<PlaidLinkSessionEntity>()
+            .Any(entry => entry.State == EntityState.Modified &&
+                entry.Entity.Status == PlaidLinkSessionStatus.Completed))
+        {
+            Entered.TrySetResult();
+            await Release.Task.WaitAsync(cancellationToken);
+        }
+        return result;
+    }
 }

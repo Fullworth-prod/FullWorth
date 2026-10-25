@@ -30,6 +30,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production
+    env:
+      RECOVERY_MEMORY_DIR: /dev/shm/fullworth-recovery-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Check out recovery tools
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -94,15 +96,17 @@ jobs:
         run: |
           set -euo pipefail
           umask 077
+          [[ "$(stat -f -c %T /dev/shm)" == tmpfs ]]
+          mkdir -m 700 "$RECOVERY_MEMORY_DIR"
           # Fixed path. Never fetch the production environment or write credential.
           ssh fullworth-recovery-source \
             'test ! -L /home/deploy/fullworth-acceptance/recovery-runner/bundle.json && test "$(stat -c %a /home/deploy/fullworth-acceptance/recovery-runner/bundle.json)" = 600 && test "$(stat -c %u /home/deploy/fullworth-acceptance/recovery-runner/bundle.json)" = "$(id -u)" && cat /home/deploy/fullworth-acceptance/recovery-runner/bundle.json' \
-            > "$RUNNER_TEMP/fullworth-recovery-bundle.json"
+            > "$RECOVERY_MEMORY_DIR/bundle.json"
           python3 -m venv "$RUNNER_TEMP/recovery-python"
           "$RUNNER_TEMP/recovery-python/bin/pip" --disable-pip-version-check install \
             --index-url https://pypi.org/simple boto3==1.43.118 > "$RUNNER_TEMP/recovery-install.log" 2>&1
           "$RUNNER_TEMP/recovery-python/bin/python" deploy/prepare-recovery-runner.py \
-            "$RUNNER_TEMP/fullworth-recovery-bundle.json" "$RUNNER_TEMP/recovery-private" "$GITHUB_SHA" \
+            "$RECOVERY_MEMORY_DIR/bundle.json" "$RECOVERY_MEMORY_DIR/private" "$GITHUB_SHA" \
             > "$RUNNER_TEMP/recovery-source.json"
 
       - name: Restore and verify privately on fresh runner
@@ -113,8 +117,8 @@ jobs:
           [[ "$(stat -f -c %T /dev/shm)" == tmpfs ]]
           export TMPDIR=/dev/shm
           export BILLWATCH_RECOVERY_PROOF_EVIDENCE_FILE="$RUNNER_TEMP/recovery-proof.env"
-          if ! "$RUNNER_TEMP/recovery-python/bin/python" deploy/prepare-recovery-runner.py --proof "$RUNNER_TEMP/recovery-private/recovery.env" \
-            > "$RUNNER_TEMP/recovery-private.log" 2>&1; then
+          if ! "$RUNNER_TEMP/recovery-python/bin/python" deploy/prepare-recovery-runner.py --proof "$RECOVERY_MEMORY_DIR/private/recovery.env" "$RECOVERY_MEMORY_DIR/bundle.json" \
+            > "$RECOVERY_MEMORY_DIR/private.log" 2>&1; then
             echo "Independent recovery failed; private logs and restored data were not published." >&2
             exit 1
           fi
@@ -124,7 +128,7 @@ jobs:
           root = Path(os.environ["RUNNER_TEMP"])
           source = json.loads((root/"recovery-source.json").read_text())
           marker = "Encrypted backup restore verification passed for snapshot "+source["snapshotId"]+"."
-          if marker not in (root/"recovery-private.log").read_text():
+          if marker not in (Path(os.environ["RECOVERY_MEMORY_DIR"])/"private.log").read_text():
               raise SystemExit("The restored snapshot did not match the staged recovery point.")
           proof = dict(line.split("=",1) for line in (root/"recovery-proof.env").read_text().splitlines())
           if proof.get("RESULT") != "complete" or proof.get("RELEASE_SHA") != os.environ["GITHUB_SHA"]:
@@ -151,10 +155,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # All targets are fixed descendants of this ephemeral runner's temp/home.
-          rm -rf -- "$RUNNER_TEMP/recovery-private" "$RUNNER_TEMP/recovery-python"
-          rm -f -- "$RUNNER_TEMP/fullworth-recovery-bundle.json" \
-            "$RUNNER_TEMP/recovery-source.json" "$RUNNER_TEMP/recovery-proof.env" \
-            "$RUNNER_TEMP/recovery-result.json" "$RUNNER_TEMP/recovery-private.log" \
-            "$RUNNER_TEMP/recovery-install.log" "$HOME/.ssh/fullworth-recovery" \
-            "$HOME/.ssh/config" "$HOME/.ssh/known_hosts"
+          # This private tmpfs directory belongs only to this disposable run.
+          [[ "$RECOVERY_MEMORY_DIR" == /dev/shm/fullworth-recovery-"$GITHUB_RUN_ID"-"$GITHUB_RUN_ATTEMPT" ]]
+          rm -rf -- "$RECOVERY_MEMORY_DIR" "$RUNNER_TEMP/recovery-python"
+          rm -f -- "$RUNNER_TEMP/recovery-source.json" "$RUNNER_TEMP/recovery-proof.env" \
+            "$RUNNER_TEMP/recovery-result.json" "$RUNNER_TEMP/recovery-install.log" \
+            "$HOME/.ssh/fullworth-recovery" "$HOME/.ssh/config" "$HOME/.ssh/known_hosts"

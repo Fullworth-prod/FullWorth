@@ -70,7 +70,6 @@ def prepare(bundle_path, destination, release, now=None):
         "BILLWATCH_RECOVERY_IMMUTABLE_COPY=true\n"
         "BILLWATCH_RECOVERY_AWS_CREDENTIALS_FILE="+str(destination/"credentials")+"\n"
         "RESTIC_REPOSITORY="+bundle["repository"]+"\n"
-        "RESTIC_PASSWORD="+bundle["resticPassword"]+"\n"
         "")
     for path in destination.iterdir():
         path.chmod(0o600)
@@ -106,19 +105,21 @@ def verify_readonly(bundle):
             raise ValueError("read-only permission denial was not established") from None
         raise ValueError("recovery credential unexpectedly permits writes")
 
-def run_proof(environment_file):
+def run_proof(environment_file, bundle_path, now=None):
+    bundle = validate(private_read(bundle_path), now or dt.datetime.now(dt.timezone.utc))
     # This password exists only for this isolated database lifetime. Keep it
     # out of the persisted recovery configuration and public workflow outputs.
     environment = os.environ.copy()
     environment["BILLWATCH_RECOVERY_EPHEMERAL_DATABASE_PASSWORD"] = secrets.token_hex(32)
+    environment["BILLWATCH_RECOVERY_EPHEMERAL_RESTIC_PASSWORD"] = bundle["resticPassword"]
     runner = Path(__file__).resolve().parent/"run-clean-host-recovery-proof.sh"
     subprocess.run(["sh", str(runner), str(environment_file)],
                    env=environment, check=True)
 
 def main():
     os.umask(0o077)
-    if len(sys.argv) == 3 and sys.argv[1] == "--proof":
-        run_proof(Path(sys.argv[2]))
+    if len(sys.argv) == 4 and sys.argv[1] == "--proof":
+        run_proof(Path(sys.argv[2]), Path(sys.argv[3]))
         return
     if len(sys.argv) != 4:
         raise ValueError("expected bundle, private destination, and runner release")

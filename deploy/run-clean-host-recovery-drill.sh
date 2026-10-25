@@ -174,7 +174,14 @@ if ! awk '
     fail "the recovery AWS credentials file must contain one [default] profile with non-empty access and secret keys."
 fi
 
-restic_password=$(read_required_env_value RESTIC_PASSWORD "$env_file")
+if [ -n "${BILLWATCH_RECOVERY_EPHEMERAL_RESTIC_PASSWORD:-}" ]; then
+    restic_password=$BILLWATCH_RECOVERY_EPHEMERAL_RESTIC_PASSWORD
+    [ "${#restic_password}" -ge 24 ] ||
+        fail "the ephemeral Restic password is too short."
+    unset BILLWATCH_RECOVERY_EPHEMERAL_RESTIC_PASSWORD
+else
+    restic_password=$(read_required_env_value RESTIC_PASSWORD "$env_file")
+fi
 if [ -n "${BILLWATCH_RECOVERY_EPHEMERAL_DATABASE_PASSWORD:-}" ]; then
     database_password=$BILLWATCH_RECOVERY_EPHEMERAL_DATABASE_PASSWORD
     printf '%s\n' "$database_password" | grep -Eq '^[0-9a-f]{64}$' ||

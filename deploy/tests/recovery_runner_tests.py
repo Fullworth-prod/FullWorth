@@ -76,12 +76,16 @@ class BundleTests(unittest.TestCase):
             env=(out/"recovery.env").read_text()
             self.assertIn("BILLWATCH_RECOVERY_IMMUTABLE_COPY=true\n",env)
             self.assertNotIn("secretAccessKey",env)
+            self.assertNotIn(bundle()["resticPassword"],env)
+            self.assertNotIn("RESTIC_PASSWORD=",env)
             self.assertNotIn("BILLWATCH_DATABASE_PASSWORD=",env)
             self.assertNotIn("BILLWATCH_RECOVERY_EPHEMERAL_DATABASE_PASSWORD=",env)
 
     def test_ephemeral_database_password_is_passed_only_to_child(self):
-        with patch.object(module.subprocess,"run") as run:
-            module.run_proof(Path("/synthetic/recovery.env"))
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/"bundle";path.write_text(json.dumps(bundle()));path.chmod(0o600)
+            with patch.object(module.subprocess,"run") as run:
+                module.run_proof(Path("/synthetic/recovery.env"),path,NOW)
         args,kwargs=run.call_args
         self.assertEqual(args[0][0],"sh")
         self.assertEqual(args[0][-1],"/synthetic/recovery.env")
@@ -89,6 +93,8 @@ class BundleTests(unittest.TestCase):
         self.assertRegex(secret,r"^[0-9a-f]{64}$")
         self.assertNotIn(secret," ".join(args[0]))
         self.assertTrue(kwargs["check"])
+        self.assertEqual(kwargs["env"]["BILLWATCH_RECOVERY_EPHEMERAL_RESTIC_PASSWORD"],bundle()["resticPassword"])
+        self.assertNotIn(bundle()["resticPassword"]," ".join(args[0]))
 
     def test_public_bundle_symlink_oversize_and_existing_destination_fail(self):
         with tempfile.TemporaryDirectory() as temp:

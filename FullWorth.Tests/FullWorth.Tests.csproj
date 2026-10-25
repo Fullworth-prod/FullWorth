@@ -57,7 +57,9 @@
   <ItemGroup>
     <Compile Include="../Services/FullWorthApiClient.cs" Link="Native/FullWorthApiClient.cs" />
     <Compile Include="../Services/AuthenticationService.cs" Link="Native/AuthenticationService.cs" />
+    <Compile Include="../Services/PlaidConnectionService.cs" Link="Native/PlaidConnectionService.cs" />
     <Compile Include="../ViewModels/LoginPageViewModel.cs" Link="Native/LoginPageViewModel.cs" />
+    <Compile Include="../ViewModels/ConnectBankPageViewModel.cs" Link="Native/ConnectBankPageViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <!-- The disposable PostgreSQL executable is built separately. Link only

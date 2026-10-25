@@ -12,6 +12,8 @@ public sealed class ConnectBankPageViewModel :
     private readonly PlaidConnectionService
         _plaidConnectionService;
 
+    private readonly TimeProvider _timeProvider;
+
     private bool _isBusy;
 
     private CancellationTokenSource?
@@ -24,8 +26,10 @@ public sealed class ConnectBankPageViewModel :
         string.Empty;
 
     public ConnectBankPageViewModel(
-        PlaidConnectionService plaidConnectionService)
+        PlaidConnectionService plaidConnectionService,
+        TimeProvider? timeProvider = null)
     {
+        _timeProvider = timeProvider ?? TimeProvider.System;
         _plaidConnectionService =
             plaidConnectionService;
 
@@ -223,15 +227,19 @@ public sealed class ConnectBankPageViewModel :
                 "Complete the connection in your browser. When you are done — or if you close the Plaid tab — return to FullWorth and click anywhere in this window. FullWorth will refresh or stop waiting.";
 
             var deadline =
-                DateTimeOffset.UtcNow
+                _timeProvider.GetUtcNow()
                     .AddMinutes(10);
+            var pollDelay = TimeSpan.FromSeconds(2);
 
-            while (DateTimeOffset.UtcNow <
-                   deadline)
+            while (_timeProvider.GetUtcNow() < deadline)
             {
+                var remaining = deadline - _timeProvider.GetUtcNow();
+                if (remaining <= TimeSpan.Zero) break;
                 await Task.Delay(
-                    TimeSpan.FromSeconds(2),
+                    pollDelay < remaining ? pollDelay : remaining,
+                    _timeProvider,
                     connectionWaitCancellation.Token);
+                if (_timeProvider.GetUtcNow() >= deadline) break;
 
                 var result =
                     await _plaidConnectionService
@@ -245,6 +253,9 @@ public sealed class ConnectBankPageViewModel :
                         "Pending",
                         StringComparison.OrdinalIgnoreCase))
                 {
+                    // Creation plus at most 18 status requests fit the shared 20/10min
+                    // provider budget. Never race a user's browser authorization.
+                    pollDelay = TimeSpan.FromSeconds(35);
                     continue;
                 }
 

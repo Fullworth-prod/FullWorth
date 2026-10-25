@@ -43,10 +43,13 @@ public sealed class PlaidConnectionExchangeService
     private readonly FullWorthDbContext
         _dbContext;
 
+    private readonly TimeProvider _timeProvider;
+
     public PlaidConnectionExchangeService(
         PlaidApiClient plaidApiClient,
         PlaidTokenProtector tokenProtector,
-        FullWorthDbContext dbContext)
+        FullWorthDbContext dbContext,
+        TimeProvider? timeProvider = null)
     {
         ArgumentNullException.ThrowIfNull(
             plaidApiClient);
@@ -65,13 +68,14 @@ public sealed class PlaidConnectionExchangeService
 
         _dbContext =
             dbContext;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public Task<PlaidConnectionResult> ExchangeAndSaveAsync(
         Guid userId,
         string publicToken,
         CancellationToken cancellationToken = default) =>
-        ExchangeAndSaveCoreAsync(userId, publicToken, null, cancellationToken);
+        ExchangeAndSaveCoreAsync(userId, publicToken, null, null, cancellationToken);
 
     // Initial Hosted Link completion and its new/updated bank must be persisted
     // by the SAME SaveChanges operation. A separate terminal save can leave a
@@ -80,9 +84,11 @@ public sealed class PlaidConnectionExchangeService
         Guid userId,
         string publicToken,
         PlaidLinkSessionEntity hostedSession,
+        PlaidLinkCompletionAttemptEntity completionAttempt,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(hostedSession);
+        ArgumentNullException.ThrowIfNull(completionAttempt);
 
         // Validate the owner and initial-link mode BEFORE contacting Plaid.
         if (hostedSession.UserId != userId)
@@ -93,14 +99,27 @@ public sealed class PlaidConnectionExchangeService
             throw new InvalidOperationException(
                 "Plaid Link session cannot complete an initial bank connection.");
 
+        if (completionAttempt.UserId != userId ||
+            completionAttempt.SessionId != hostedSession.Id ||
+            completionAttempt.Stage != PlaidLinkCompletionStage.Exchanging ||
+            !PlaidLinkCompletionAttemptStore.IsFresh(completionAttempt, hostedSession, _timeProvider.GetUtcNow()))
+            throw new PlaidLinkRecoveryRequiredException();
+        // The durable attempt was materialized by a separate DbContext. Its
+        // Session navigation may point at that context's session instance;
+        // Attach() walks that graph and conflicts with the caller's tracked
+        // session. Track only this owner-validated permit, allowing EF fixup
+        // to use the existing session without overwriting caller edits.
+        _dbContext.Entry(completionAttempt).State = EntityState.Unchanged;
+
         return ExchangeAndSaveCoreAsync(
-            userId, publicToken, hostedSession, cancellationToken);
+            userId, publicToken, hostedSession, completionAttempt, cancellationToken);
     }
 
     private async Task<PlaidConnectionResult> ExchangeAndSaveCoreAsync(
         Guid userId,
         string publicToken,
         PlaidLinkSessionEntity? hostedSession,
+        PlaidLinkCompletionAttemptEntity? completionAttempt,
         CancellationToken cancellationToken)
     {
         if (userId ==
@@ -228,7 +247,7 @@ public sealed class PlaidConnectionExchangeService
                     "institution_name"));
 
         var now =
-            DateTimeOffset.UtcNow;
+            _timeProvider.GetUtcNow();
 
         /*
          * Every lookup is ownership-scoped.
@@ -277,7 +296,7 @@ public sealed class PlaidConnectionExchangeService
         {
             await ApplyAndSaveConnectionAsync(connection, institutionName,
                 institutionId, itemId, protectedAccessToken, now,
-                isNewConnection, hostedSession, cancellationToken);
+                isNewConnection, hostedSession, completionAttempt, cancellationToken);
         }
         catch (DbUpdateException)
             when (isNewConnection)
@@ -319,7 +338,7 @@ public sealed class PlaidConnectionExchangeService
 
             await ApplyAndSaveConnectionAsync(concurrentConnection, institutionName,
                 institutionId, itemId, protectedAccessToken, now,
-                isNewConnection: false, hostedSession, cancellationToken);
+                isNewConnection: false, hostedSession, completionAttempt, cancellationToken);
 
             connection =
                 concurrentConnection;
@@ -349,9 +368,12 @@ public sealed class PlaidConnectionExchangeService
         DateTimeOffset now,
         bool isNewConnection,
         PlaidLinkSessionEntity? hostedSession,
+        PlaidLinkCompletionAttemptEntity? completionAttempt,
         CancellationToken cancellationToken)
     {
         var snapshot = new ExchangeEntrySnapshot(_dbContext.Entry(connection));
+        var attemptSnapshot = completionAttempt is null ? null :
+            new ExchangeEntrySnapshot(_dbContext.Entry(completionAttempt));
         try
         {
             ApplyConnectionState(connection, institutionName, institutionId,
@@ -362,7 +384,7 @@ public sealed class PlaidConnectionExchangeService
                 // EF Core commits these two owned rows as one relational
                 // SaveChanges unit (including its implicit transaction).
                 // Keep the protected token only while the session is Pending.
-                var completedAt = DateTimeOffset.UtcNow;
+                var completedAt = _timeProvider.GetUtcNow();
                 hostedSession.BankConnectionId = connection.Id;
                 hostedSession.Status = PlaidLinkSessionStatus.Completed;
                 hostedSession.CompletedAtUtc = completedAt;
@@ -370,6 +392,9 @@ public sealed class PlaidConnectionExchangeService
                 hostedSession.ProtectedLinkToken = string.Empty;
             }
 
+            if (hostedSession is not null && completionAttempt is not null)
+                PlaidLinkCompletionAttemptStore.PrepareCompletion(
+                    _dbContext, completionAttempt, hostedSession, _timeProvider.GetUtcNow());
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
         catch
@@ -380,6 +405,7 @@ public sealed class PlaidConnectionExchangeService
                 _dbContext.Entry(connection).State = EntityState.Detached;
             else
                 snapshot.Restore();
+            attemptSnapshot?.Restore();
             throw;
         }
     }

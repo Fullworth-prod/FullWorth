@@ -30,7 +30,7 @@ export async function pollPlaidCompletion({
                 throw new Error("FullWorth received an invalid Link status.");
             }
             const state = result.status.toLowerCase();
-            if (["completed", "exited", "expired", "failed"].includes(state)) return result;
+            if (["completed", "exited", "expired", "failed", "recoveryrequired"].includes(state)) return result;
             if (state !== "pending") {
                 throw new Error("FullWorth received an invalid Link status.");
             }

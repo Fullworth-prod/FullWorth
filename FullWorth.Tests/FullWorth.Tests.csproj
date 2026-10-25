@@ -63,6 +63,7 @@
     <!-- The disposable PostgreSQL executable is built separately. Link only
          its reusable scenarios, never its generated obj/bin sources. -->
     <Compile Remove="RelationalBankLifecycle/**" />
+    <Compile Remove="RelationalHostedRecovery/**" />
     <Compile Include="RelationalBankLifecycle/BankLifecycleRaceChecks.cs" />
   </ItemGroup>
 </Project>

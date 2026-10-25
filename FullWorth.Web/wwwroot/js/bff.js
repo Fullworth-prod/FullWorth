@@ -33,6 +33,11 @@ const plaidUiText = {
         completionFailed:
             "The bank connection could not be completed.",
 
+        recoveryRequired:
+            "FullWorth could not verify this bank connection. Review connected banks first. If it is missing or still needs attention, use Connect or Reconnect to start a new secure Plaid session. The previous session cannot be retried.",
+
+        reviewConnections: "Review connected banks",
+
         waitTimedOut:
             "FullWorth stopped waiting for the Plaid session. You can try again.",
 
@@ -53,7 +58,7 @@ const plaidUiText = {
                 `${institution} is connected. FullWorth will begin automatic monitoring.`,
 
         connectionFailed:
-            "FullWorth could not start or complete the secure bank connection.",
+            "FullWorth could not start or verify the secure bank connection. Review connected banks before starting a new secure session.",
 
         preparingReauthorization:
             institution =>
@@ -68,7 +73,7 @@ const plaidUiText = {
 
         reauthorizationFailed:
             institution =>
-                `FullWorth could not reauthorize ${institution}.`
+                `FullWorth could not verify reauthorization for ${institution}. Review connected banks before starting a new secure session.`
     },
 
     es: {
@@ -90,6 +95,11 @@ const plaidUiText = {
         completionFailed:
             "No se pudo completar la conexión bancaria.",
 
+        recoveryRequired:
+            "FullWorth no pudo verificar esta conexión bancaria. Revisa primero los bancos conectados. Si falta la conexión o necesita atención, usa Conectar o Reconectar para iniciar una nueva sesión segura de Plaid. La sesión anterior no se puede volver a intentar.",
+
+        reviewConnections: "Revisar bancos conectados",
+
         waitTimedOut:
             "FullWorth dejó de esperar la sesión de Plaid. Puedes intentarlo de nuevo.",
 
@@ -110,7 +120,7 @@ const plaidUiText = {
                 `La conexión con ${institution} está activa. FullWorth comenzará el monitoreo automático.`,
 
         connectionFailed:
-            "FullWorth no pudo iniciar o completar la conexión bancaria segura.",
+            "FullWorth no pudo iniciar o verificar la conexión bancaria segura. Revisa los bancos conectados antes de iniciar una nueva sesión segura.",
 
         preparingReauthorization:
             institution =>
@@ -125,7 +135,7 @@ const plaidUiText = {
 
         reauthorizationFailed:
             institution =>
-                `FullWorth no pudo reautorizar la conexión con ${institution}.`
+                `FullWorth no pudo verificar la reautorización de ${institution}. Revisa los bancos conectados antes de iniciar una nueva sesión segura.`
     }
 };
 
@@ -388,6 +398,14 @@ function setConnectStatus(
         state;
 }
 
+function appendConnectionReview(element) {
+    if (!element) return;
+    const link = document.createElement("a");
+    link.href = "/app/account";
+    link.textContent = getPlaidUiText().reviewConnections;
+    element.append(" ", link);
+}
+
 function delay(milliseconds) {
     return new Promise(
         resolve =>
@@ -487,6 +505,9 @@ async function waitForPlaidCompletion(
         setConnectStatus(statusElement, text.canceled, "neutral");
     } else if (state === "expired") {
         setConnectStatus(statusElement, text.expired, "error");
+    } else if (state === "recoveryrequired") {
+        setConnectStatus(statusElement, text.recoveryRequired, "error");
+        appendConnectionReview(statusElement);
     } else {
         setConnectStatus(statusElement, text.completionFailed, "error");
     }
@@ -1046,6 +1067,7 @@ export function wirePlaidConnectButton(
                     status,
                     text.connectionFailed,
                     "error");
+                appendConnectionReview(status);
             } finally {
                 bankFlows.delete(flow);
                 button.dataset.busy =
@@ -1180,6 +1202,7 @@ export function wirePlaidReconnectButton(
                     text.reauthorizationFailed(
                         displayInstitution),
                     "error");
+                appendConnectionReview(status);
             } finally {
                 bankFlows.delete(flow);
                 button.dataset.busy =

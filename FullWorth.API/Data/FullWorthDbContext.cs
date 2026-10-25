@@ -18,6 +18,9 @@ public sealed class FullWorthDbContext
     {
     }
 
+    public DbSet<PlaidLinkCompletionAttemptEntity> PlaidLinkCompletionAttempts =>
+        Set<PlaidLinkCompletionAttemptEntity>();
+
     public DbSet<BillStreamEntity> BillStreams =>
         Set<BillStreamEntity>();
 
@@ -121,6 +124,7 @@ public sealed class FullWorthDbContext
         ConfigureBillStatementUpload(builder);
         ConfigureBillStatementAiEvaluation(builder);
         ConfigurePlaidLinkSession(builder);
+        ConfigurePlaidLinkCompletionAttempts(builder);
     }
 
     private static void SeedStaffRoles(
@@ -957,6 +961,7 @@ public sealed class FullWorthDbContext
                 entity.ToTable("PlaidLinkSessions");
 
                 entity.HasKey(session => session.Id);
+                entity.HasAlternateKey(session => new { session.Id, session.UserId });
 
                 entity.Property(session => session.ProtectedLinkToken)
                     .HasMaxLength(PlaidLinkSessionEntity.MaxProtectedLinkTokenLength)
@@ -1004,6 +1009,29 @@ public sealed class FullWorthDbContext
                     })
                     .OnDelete(DeleteBehavior.Cascade);
             });
+    }
+
+    private static void ConfigurePlaidLinkCompletionAttempts(ModelBuilder builder)
+    {
+        builder.Entity<PlaidLinkCompletionAttemptEntity>(entity =>
+        {
+            entity.ToTable("PlaidLinkCompletionAttempts");
+            entity.HasKey(attempt => new { attempt.SessionId, attempt.UserId });
+            entity.Property(attempt => attempt.SessionId).ValueGeneratedNever();
+            entity.Property(attempt => attempt.UserId).ValueGeneratedNever();
+            entity.Property(attempt => attempt.AttemptId).IsConcurrencyToken();
+            entity.Property(attempt => attempt.Stage).HasConversion<string>()
+                .HasMaxLength(24).IsRequired().IsConcurrencyToken();
+            entity.Property(attempt => attempt.StartedAtUtc).IsRequired();
+            entity.Property(attempt => attempt.UpdatedAtUtc).IsRequired();
+            entity.HasIndex(attempt => attempt.AttemptId).IsUnique();
+            entity.HasIndex(attempt => attempt.UserId);
+            entity.HasOne(attempt => attempt.Session).WithMany()
+                .HasForeignKey(attempt => new { attempt.SessionId, attempt.UserId })
+                .HasPrincipalKey(session => new { session.Id, session.UserId })
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_PlaidCompletionAttempts_LinkSession_Owner");
+        });
     }
 
     private static void ConfigureBillStatementAiEvaluation(

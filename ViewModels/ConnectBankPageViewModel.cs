@@ -292,6 +292,17 @@ public sealed class ConnectBankPageViewModel :
                     return;
                 }
 
+                if (string.Equals(
+                        result.Status,
+                        "RecoveryRequired",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    StatusMessage =
+                        "FullWorth could not verify the bank connection. Refresh connected banks first. If it is missing or still needs attention, use Connect or Reconnect for a new secure Plaid session. The previous session cannot be retried.";
+
+                    return;
+                }
+
                 StatusMessage =
                     "The bank connection could not be completed. Please try again.";
 
@@ -311,7 +322,7 @@ public sealed class ConnectBankPageViewModel :
         catch
         {
             StatusMessage =
-                "FullWorth could not connect to your bank. Please try again.";
+                "FullWorth could not start or verify the bank connection. Refresh connected banks before starting a new secure session.";
         }
         finally
         {

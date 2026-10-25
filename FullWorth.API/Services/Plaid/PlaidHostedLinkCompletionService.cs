@@ -29,11 +29,15 @@ public sealed class PlaidHostedLinkCompletionService
     private readonly PlaidConnectionExchangeService
         _exchangeService;
 
+    private readonly TimeProvider _timeProvider;
+    private readonly PlaidLinkCompletionAttemptStore _attemptStore;
+
     public PlaidHostedLinkCompletionService(
         FullWorthDbContext dbContext,
         PlaidApiClient plaidApiClient,
         PlaidTokenProtector tokenProtector,
-        PlaidConnectionExchangeService exchangeService)
+        PlaidConnectionExchangeService exchangeService,
+        TimeProvider? timeProvider = null)
     {
         ArgumentNullException.ThrowIfNull(
             dbContext);
@@ -58,74 +62,107 @@ public sealed class PlaidHostedLinkCompletionService
 
         _exchangeService =
             exchangeService;
+        _timeProvider = timeProvider ?? TimeProvider.System;
+        _attemptStore = new PlaidLinkCompletionAttemptStore(dbContext, _timeProvider);
     }
 
-    public async Task<PlaidHostedLinkCompletionResult>
-        CheckAndCompleteAsync(
-            Guid userId,
-            Guid sessionId,
-            CancellationToken cancellationToken = default)
+    public async Task<PlaidHostedLinkCompletionResult> CheckAndCompleteAsync(
+        Guid userId, Guid sessionId, CancellationToken cancellationToken = default)
     {
-        if (userId ==
-            Guid.Empty)
-        {
-            throw new ArgumentException(
-                "A valid user ID is required.",
-                nameof(userId));
-        }
-
-        if (sessionId ==
-            Guid.Empty)
-        {
-            throw new ArgumentException(
-                "A valid Plaid Link session ID is required.",
-                nameof(sessionId));
-        }
-
+        if (userId == Guid.Empty)
+            throw new ArgumentException("A valid user ID is required.", nameof(userId));
+        if (sessionId == Guid.Empty)
+            throw new ArgumentException("A valid Plaid Link session ID is required.", nameof(sessionId));
         cancellationToken.ThrowIfCancellationRequested();
+        // The provider operation cannot be enlisted in a caller's later commit.
+        if (System.Transactions.Transaction.Current is not null ||
+            (_dbContext.Database.IsRelational() && _dbContext.Database.CurrentTransaction is not null))
+            throw new InvalidOperationException("Check bank connection status in a fresh request.");
 
-        // Read durable state before consulting EF's identity map. A tracked
-        // Pending row can outlive a completion committed by another request
-        // (or a commit whose acknowledgement was lost).
-        var durableSession = await GetDurableSessionAsync(
-            userId, sessionId, cancellationToken);
+        var durable = await GetDurableSessionAsync(userId, sessionId, cancellationToken);
+        if (durable.Status != PlaidLinkSessionStatus.Pending)
+            return await CreateTerminalResultAsync(durable, cancellationToken);
+        var observed = await ReadAttemptResultAsync(durable, cancellationToken);
+        if (observed is not null) return observed;
 
-        if (durableSession.Status != PlaidLinkSessionStatus.Pending)
-        {
-            return await CreateTerminalResultAsync(durableSession, cancellationToken);
-        }
-
-        var trackedEntry = _dbContext.ChangeTracker.Entries<PlaidLinkSessionEntity>()
+        var tracked = _dbContext.ChangeTracker.Entries<PlaidLinkSessionEntity>()
             .SingleOrDefault(entry => entry.Entity.Id == sessionId);
-        var session = durableSession;
-        if (trackedEntry is not null)
+        var session = durable;
+        if (tracked is not null)
         {
-            if (trackedEntry.State is EntityState.Added or EntityState.Deleted)
-            {
-                throw new InvalidOperationException(
-                    "Plaid Link session changed. Reload before checking its status.");
-            }
+            if (tracked.State is EntityState.Added or EntityState.Deleted)
+                throw new InvalidOperationException("Plaid Link session changed. Reload before checking its status.");
+            EnsureSamePendingSession(tracked.Entity, durable);
+            session = tracked.Entity;
+        }
+        else _dbContext.PlaidLinkSessions.Attach(session);
 
-            EnsureSamePendingSession(trackedEntry.Entity, durableSession);
-            session = trackedEntry.Entity;
-        }
-        else
-        {
-            _dbContext.PlaidLinkSessions.Attach(session);
-        }
+        if (_dbContext.ChangeTracker.Entries<PlaidLinkCompletionAttemptEntity>()
+            .Any(entry => entry.Entity.SessionId == sessionId))
+            throw new InvalidOperationException("Bank connection recovery state is already tracked. Reload first.");
 
         var snapshot = new CompletionEntrySnapshot(_dbContext.Entry(session));
+        PlaidLinkCompletionAttemptEntity? claim = null;
         try
         {
-            return await CompletePendingSessionAsync(session, cancellationToken);
+            var acquisition = await _attemptStore.TryAcquireAsync(session, cancellationToken);
+            if (!acquisition.Acquired)
+            {
+                durable = await GetDurableSessionAsync(userId, sessionId, cancellationToken);
+                if (durable.Status != PlaidLinkSessionStatus.Pending)
+                    return await CreateTerminalResultAsync(durable, cancellationToken);
+                return await ReadAttemptResultAsync(durable, cancellationToken) ?? CreateResult(durable);
+            }
+            claim = acquisition.Attempt!;
+            durable = await GetDurableSessionAsync(userId, sessionId, cancellationToken);
+            if (durable.Status != PlaidLinkSessionStatus.Pending)
+                return await CreateTerminalResultAsync(durable, cancellationToken);
+            EnsureSamePendingSession(session, durable);
+            return await CompletePendingSessionAsync(session, claim, cancellationToken);
+        }
+        catch (PlaidLinkRecoveryRequiredException)
+        {
+            snapshot.Restore();
+            DetachAttempt(sessionId);
+            return new(sessionId, "RecoveryRequired", null);
         }
         catch
         {
-            // Do not turn a failed save into an apparently terminal session on
-            // the next call or let another operation persist cleared credentials.
             snapshot.Restore();
+            DetachAttempt(sessionId);
             throw;
         }
+        finally
+        {
+            if (claim is not null) await _attemptStore.TryAbortAsync(claim);
+        }
+    }
+
+    private void DetachAttempt(Guid sessionId)
+    {
+        // Only this method's owned permit can have been attached after preflight.
+        var entry = _dbContext.ChangeTracker.Entries<PlaidLinkCompletionAttemptEntity>()
+            .SingleOrDefault(candidate => candidate.Entity.SessionId == sessionId);
+        if (entry is not null) entry.State = EntityState.Detached;
+    }
+
+    private async Task<PlaidHostedLinkCompletionResult?> ReadAttemptResultAsync(
+        PlaidLinkSessionEntity session, CancellationToken cancellationToken)
+    {
+        var attempt = await _attemptStore.ReadAsync(session.UserId, session.Id, cancellationToken);
+        if (attempt is null) return null;
+        if ((attempt.Stage is PlaidLinkCompletionStage.Polling or PlaidLinkCompletionStage.Exchanging) &&
+            PlaidLinkCompletionAttemptStore.IsFresh(attempt, session, _timeProvider.GetUtcNow()))
+            return new(session.Id, "Pending", null);
+
+        if (attempt.Stage is PlaidLinkCompletionStage.Polling or PlaidLinkCompletionStage.Exchanging)
+            await _attemptStore.InterruptAsync(attempt, cancellationToken);
+
+        // A completion can win while an interrupted/stale claim is being read.
+        var latest = await GetDurableSessionAsync(session.UserId, session.Id, cancellationToken);
+        if (latest.Status != PlaidLinkSessionStatus.Pending)
+            return await CreateTerminalResultAsync(latest, cancellationToken);
+        return new(session.Id, "RecoveryRequired", null);
     }
 
     private async Task<PlaidLinkSessionEntity> GetDurableSessionAsync(
@@ -199,11 +236,12 @@ public sealed class PlaidHostedLinkCompletionService
 
     private async Task<PlaidHostedLinkCompletionResult> CompletePendingSessionAsync(
         PlaidLinkSessionEntity session,
+        PlaidLinkCompletionAttemptEntity claim,
         CancellationToken cancellationToken)
     {
         var userId = session.UserId;
         var now =
-            DateTimeOffset.UtcNow;
+            _timeProvider.GetUtcNow();
 
         if (session.ExpiresAtUtc <=
             now)
@@ -211,6 +249,7 @@ public sealed class PlaidHostedLinkCompletionService
             return await SetTerminalStatusAsync(
                 session,
                 PlaidLinkSessionStatus.Expired,
+                claim,
                 cancellationToken);
         }
 
@@ -250,6 +289,12 @@ public sealed class PlaidHostedLinkCompletionService
             return await CreateTerminalResultAsync(durableSession, cancellationToken);
         }
 
+        var durableClaim = await _attemptStore.ReadAsync(
+            userId, session.Id, cancellationToken);
+        if (durableClaim is null || durableClaim.AttemptId != claim.AttemptId ||
+            durableClaim.Stage != PlaidLinkCompletionStage.Polling ||
+            !PlaidLinkCompletionAttemptStore.IsFresh(durableClaim, durableSession, _timeProvider.GetUtcNow()))
+            throw new PlaidLinkRecoveryRequiredException();
         EnsureSamePendingSession(session, durableSession);
 
         var plaidState =
@@ -270,6 +315,7 @@ public sealed class PlaidHostedLinkCompletionService
                 return await SetTerminalStatusAsync(
                     session,
                     PlaidLinkSessionStatus.Exited,
+                    claim,
                     cancellationToken);
             }
 
@@ -277,6 +323,7 @@ public sealed class PlaidHostedLinkCompletionService
             {
                 return await CompleteUpdateModeAsync(
                     session,
+                    claim,
                     cancellationToken);
             }
 
@@ -300,11 +347,14 @@ public sealed class PlaidHostedLinkCompletionService
             // the exchange service saves both the owner-scoped bank connection
             // and terminal Hosted Link session together. A separate save here
             // could leave the bank committed while the session stays Pending.
+            var exchangeClaim = await _attemptStore.BeginExchangeAsync(
+                claim, session, cancellationToken);
             var connection =
                 await _exchangeService.ExchangeAndCompleteHostedLinkAsync(
                     userId,
                     plaidState.PublicToken,
                     session,
+                    exchangeClaim,
                     cancellationToken);
 
             return new PlaidHostedLinkCompletionResult(
@@ -329,6 +379,7 @@ public sealed class PlaidHostedLinkCompletionService
             return await SetTerminalStatusAsync(
                 session,
                 PlaidLinkSessionStatus.Exited,
+                claim,
                 cancellationToken);
         }
 
@@ -341,6 +392,7 @@ public sealed class PlaidHostedLinkCompletionService
             return await SetTerminalStatusAsync(
                 session,
                 PlaidLinkSessionStatus.Failed,
+                claim,
                 cancellationToken);
         }
 
@@ -351,6 +403,7 @@ public sealed class PlaidHostedLinkCompletionService
     private async Task<PlaidHostedLinkCompletionResult>
         CompleteUpdateModeAsync(
             PlaidLinkSessionEntity session,
+            PlaidLinkCompletionAttemptEntity claim,
             CancellationToken cancellationToken)
     {
         if (session.BankConnectionId is not Guid connectionId)
@@ -380,7 +433,7 @@ public sealed class PlaidHostedLinkCompletionService
         try
         {
             var completedAt =
-                DateTimeOffset.UtcNow;
+                _timeProvider.GetUtcNow();
 
             connection.Status =
                 BankConnectionStatus.Active;
@@ -400,6 +453,8 @@ public sealed class PlaidHostedLinkCompletionService
             session.ProtectedLinkToken =
                 string.Empty;
 
+            PlaidLinkCompletionAttemptStore.PrepareCompletion(
+                _dbContext, claim, session, completedAt);
             await _dbContext.SaveChangesAsync(
                 cancellationToken);
         }
@@ -785,6 +840,7 @@ public sealed class PlaidHostedLinkCompletionService
         SetTerminalStatusAsync(
             PlaidLinkSessionEntity session,
             PlaidLinkSessionStatus status,
+            PlaidLinkCompletionAttemptEntity claim,
             CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(
@@ -799,7 +855,7 @@ public sealed class PlaidHostedLinkCompletionService
         }
 
         var now =
-            DateTimeOffset.UtcNow;
+            _timeProvider.GetUtcNow();
 
         session.Status =
             status;
@@ -816,6 +872,8 @@ public sealed class PlaidHostedLinkCompletionService
         session.ProtectedLinkToken =
             string.Empty;
 
+        PlaidLinkCompletionAttemptStore.PrepareCompletion(
+            _dbContext, claim, session, now, requireUnexpiredSession: false);
         await _dbContext.SaveChangesAsync(
             cancellationToken);
 

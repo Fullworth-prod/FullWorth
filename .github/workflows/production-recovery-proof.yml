@@ -1,0 +1,163 @@
+name: FullWorth Independent Recovery Proof
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: "Exact current master SHA whose recovery tools will run"
+        required: true
+        type: string
+      confirm_production_host:
+        description: "Exact existing production SSH host"
+        required: true
+        type: string
+      confirm_private_recovery:
+        description: "Restore the staged frozen backup on this disposable runner"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: billwatch-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  recovery:
+    name: Independent encrypted recovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      RECOVERY_MEMORY_DIR: /dev/shm/fullworth-recovery-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Check out recovery tools
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify exact master and production target
+        shell: bash
+        env:
+          RELEASE: ${{ inputs.release_sha }}
+          CONFIRMED: ${{ inputs.confirm_private_recovery }}
+          HOST: ${{ vars.FULLWORTH_PRODUCTION_SSH_HOST }}
+          CONFIRMED_HOST: ${{ inputs.confirm_production_host }}
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE" =~ ^[0-9a-f]{40}$ && "$CONFIRMED" == true ]]
+          [[ "$GITHUB_REF" == refs/heads/master && "$GITHUB_SHA" == "$RELEASE" ]]
+          [[ "$(git rev-parse HEAD)" == "$RELEASE" ]]
+          [[ -z "$(git status --porcelain --untracked-files=normal)" ]]
+          sh deploy/confirm-production-target.sh "$HOST" "$CONFIRMED_HOST"
+          current_master="$(git ls-remote origin refs/heads/master | cut -f1)"
+          [[ "$current_master" == "$RELEASE" ]]
+          [[ "$RUNNER_ENVIRONMENT" == github-hosted ]]
+          python3 -m unittest discover -s deploy/tests -p 'recovery_runner_tests.py'
+
+      - name: Configure pinned existing SSH transport
+        shell: bash
+        env:
+          SSH_HOST: ${{ vars.FULLWORTH_PRODUCTION_SSH_HOST }}
+          SSH_USER: ${{ secrets.FULLWORTH_PRODUCTION_SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.FULLWORTH_PRODUCTION_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.FULLWORTH_PRODUCTION_SSH_KNOWN_HOSTS }}
+          SSH_PORT: ${{ secrets.FULLWORTH_PRODUCTION_SSH_PORT }}
+        run: |
+          set -euo pipefail
+          umask 077
+          [[ "$SSH_HOST" =~ ^[A-Za-z0-9.-]+$ && "$SSH_USER" =~ ^[A-Za-z0-9._-]+$ ]]
+          port="${SSH_PORT:-22}"
+          [[ "$port" =~ ^[0-9]+$ ]] && (( port >= 1 && port <= 65535 ))
+          [[ -n "$SSH_PRIVATE_KEY" && -n "$SSH_KNOWN_HOSTS" ]]
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/fullworth-recovery"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          cat > "$HOME/.ssh/config" <<EOF
+          Host fullworth-recovery-source
+            HostName $SSH_HOST
+            User $SSH_USER
+            Port $port
+            IdentityFile $HOME/.ssh/fullworth-recovery
+            IdentitiesOnly yes
+            BatchMode yes
+            PasswordAuthentication no
+            KbdInteractiveAuthentication no
+            StrictHostKeyChecking yes
+            UserKnownHostsFile $HOME/.ssh/known_hosts
+          EOF
+          chmod 600 "$HOME/.ssh/"{config,known_hosts,fullworth-recovery}
+
+      - name: Read staged recovery-only credentials privately
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          [[ "$(stat -f -c %T /dev/shm)" == tmpfs ]]
+          mkdir -m 700 "$RECOVERY_MEMORY_DIR"
+          # Fixed path. Never fetch the production environment or write credential.
+          ssh fullworth-recovery-source \
+            'test ! -L /home/deploy/fullworth-acceptance/recovery-runner/bundle.json && test "$(stat -c %a /home/deploy/fullworth-acceptance/recovery-runner/bundle.json)" = 600 && test "$(stat -c %u /home/deploy/fullworth-acceptance/recovery-runner/bundle.json)" = "$(id -u)" && cat /home/deploy/fullworth-acceptance/recovery-runner/bundle.json' \
+            > "$RECOVERY_MEMORY_DIR/bundle.json"
+          python3 -m venv "$RUNNER_TEMP/recovery-python"
+          "$RUNNER_TEMP/recovery-python/bin/pip" --disable-pip-version-check install \
+            --index-url https://pypi.org/simple boto3==1.43.118 > "$RUNNER_TEMP/recovery-install.log" 2>&1
+          "$RUNNER_TEMP/recovery-python/bin/python" deploy/prepare-recovery-runner.py \
+            "$RECOVERY_MEMORY_DIR/bundle.json" "$RECOVERY_MEMORY_DIR/private" "$GITHUB_SHA" \
+            > "$RUNNER_TEMP/recovery-source.json"
+
+      - name: Restore and verify privately on fresh runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          [[ "$(stat -f -c %T /dev/shm)" == tmpfs ]]
+          export TMPDIR=/dev/shm
+          export BILLWATCH_RECOVERY_PROOF_EVIDENCE_FILE="$RUNNER_TEMP/recovery-proof.env"
+          if ! "$RUNNER_TEMP/recovery-python/bin/python" deploy/prepare-recovery-runner.py --proof "$RECOVERY_MEMORY_DIR/private/recovery.env" "$RECOVERY_MEMORY_DIR/bundle.json" \
+            > "$RECOVERY_MEMORY_DIR/private.log" 2>&1; then
+            echo "Independent recovery failed; private logs and restored data were not published." >&2
+            exit 1
+          fi
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"])
+          source = json.loads((root/"recovery-source.json").read_text())
+          marker = "Encrypted backup restore verification passed for snapshot "+source["snapshotId"]+"."
+          if marker not in (Path(os.environ["RECOVERY_MEMORY_DIR"])/"private.log").read_text():
+              raise SystemExit("The restored snapshot did not match the staged recovery point.")
+          proof = dict(line.split("=",1) for line in (root/"recovery-proof.env").read_text().splitlines())
+          if proof.get("RESULT") != "complete" or proof.get("RELEASE_SHA") != os.environ["GITHUB_SHA"]:
+              raise SystemExit("Recovery proof did not match this runner release.")
+          evidence = {**source, "runnerRelease":os.environ["GITHUB_SHA"],
+                      "runnerEnvironment":"github-hosted", "runId":os.environ["GITHUB_RUN_ID"],
+                      "completedAtUtc":proof["COMPLETED_AT_UTC"],
+                      "result":"complete", "realNonemptyStatementAcceptance":"not established"}
+          (root/"recovery-result.json").write_text(json.dumps(evidence,indent=2)+"\n")
+          PY
+
+      - name: Retain metadata only on existing private evidence host
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_RUN_ID" =~ ^[0-9]+$ ]]
+          ssh fullworth-recovery-source \
+            "umask 077; mkdir -p /home/deploy/fullworth-acceptance/recovery-results; set -C; cat > /home/deploy/fullworth-acceptance/recovery-results/run-$GITHUB_RUN_ID.json" \
+            < "$RUNNER_TEMP/recovery-result.json"
+          printf 'Independent encrypted recovery passed. Private data and credentials were not uploaded as artifacts.\n' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove runner-only credentials and private logs
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          # This private tmpfs directory belongs only to this disposable run.
+          [[ "$RECOVERY_MEMORY_DIR" == /dev/shm/fullworth-recovery-"$GITHUB_RUN_ID"-"$GITHUB_RUN_ATTEMPT" ]]
+          rm -rf -- "$RECOVERY_MEMORY_DIR" "$RUNNER_TEMP/recovery-python"
+          rm -f -- "$RUNNER_TEMP/recovery-source.json" "$RUNNER_TEMP/recovery-proof.env" \
+            "$RUNNER_TEMP/recovery-result.json" "$RUNNER_TEMP/recovery-install.log" \
+            "$HOME/.ssh/fullworth-recovery" "$HOME/.ssh/config" "$HOME/.ssh/known_hosts"

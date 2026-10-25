@@ -407,6 +407,8 @@ jobs:
           sh deploy/tests/parser-native-boundary-tests.sh
           sh deploy/tests/operations-alert-sender-tests.sh
           sh deploy/tests/backup-trust-boundary-tests.sh
+          sh deploy/tests/recovery-readonly-tests.sh
+          python3 -m unittest discover -s deploy/tests -p 'recovery_runner_tests.py'
           sh deploy/tests/release-integrity-tests.sh
           sh deploy/tests/runtime-release-tests.sh
           sh deploy/tests/http-security-boundary-tests.sh

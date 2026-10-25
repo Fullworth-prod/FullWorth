@@ -1,3 +1,21 @@
+## Operator checkpoint after approved read-only recovery access — 2026-10-25 UTC
+
+Current release candidate on `master`:
+
+`e9e5687d7affb4525e1159efceb514cad69ce0dc`
+
+Current verified live production release marker:
+
+`dd31836703bd110a30f303ed3ce9fd13c0f61d82`
+
+The owner approved the temporary 24-hour, single-bucket Object Read only key. Actual S3 reads passed; synthetic write/delete returned HTTP403/AccessDenied. The recovery-only bundle is privately staged, with no production write credential transferred.
+
+Fresh GitHub-hosted recovery run [40222367338](https://github.com/Fullworth-prod/FullWorth/actions/runs/40222367338) failed before acceptance. A real Restic probe against the protected snapshot reproduced a lock-write rejection on ordinary `cat config`; `--no-lock cat config` and the exact frozen snapshot list succeeded. The correction routes only the verifier's initial configuration probe through its existing guarded recovery wrapper. Normal verification/capture/maintenance keep locks. The regression executes the real verification entry point: it fails on the old source and passes on the corrected source.
+
+The independent recovery gate remains open until the corrected exact-master workflow passes. Require protected final-head checks, current-master signed image/SBOM material, real recovery proof, guarded deployment and same-release health/authentication verification. No production update has occurred; paid activations stay off. Preserve prior evidence and source branches. A temporary local read-only credential copy remains restricted to its owner and SYSTEM because automatic approval review rejected deletion; the key expires after 24 hours.
+
+---
+
 ## Operator checkpoint after protected release promotion — 2026-10-25 UTC
 
 Current release candidate on `master`:

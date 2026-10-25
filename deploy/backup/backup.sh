@@ -424,13 +424,21 @@ recovery_restic()
     fi
 }
 
+require_recovery_repository()
+{
+    if ! recovery_restic cat config >/dev/null 2>&1; then
+        echo "The encrypted backup repository is unavailable or not initialized." >&2
+        exit 1
+    fi
+}
+
 verify_restore()
 {
     configure_recovery_readonly
     validate_client_mode
     cleanup_work
     prepare_database_passfile
-    require_repository
+    require_recovery_repository
     mkdir -p "$restore_path"
 
     if ! pg_isready --host="$restore_database_host" --username=billwatch --dbname=postgres --timeout=5 >/dev/null 2>&1; then

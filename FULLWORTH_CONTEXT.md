@@ -1,3 +1,35 @@
+## Independent recovery configuration-probe correction — 2026-10-25 UTC
+
+- current release candidate on `master`: `e9e5687d7affb4525e1159efceb514cad69ce0dc`.
+- Verified live production release: `dd31836703bd110a30f303ed3ce9fd13c0f61d82`.
+
+The owner approved the temporary 24-hour, single-bucket Object Read only key. Actual S3 reads passed; synthetic write/delete returned HTTP403/AccessDenied. The recovery-only bundle is privately staged, with no production write credential transferred.
+
+Fresh GitHub-hosted recovery run [40222367338](https://github.com/Fullworth-prod/FullWorth/actions/runs/40222367338) failed before acceptance. A real Restic probe against the protected snapshot reproduced a lock-write rejection on ordinary `cat config`; `--no-lock cat config` and the exact frozen snapshot list succeeded. The correction routes only the verifier's initial configuration probe through its existing guarded recovery wrapper. Normal verification/capture/maintenance keep locks. The regression executes the real verification entry point: it fails on the old source and passes on the corrected source.
+
+The independent recovery gate remains open until the corrected exact-master workflow passes. Require protected final-head checks, current-master signed image/SBOM material, real recovery proof, guarded deployment and same-release health/authentication verification. No production update has occurred; paid activations stay off. Preserve prior evidence and source branches. A temporary local read-only credential copy remains restricted to its owner and SYSTEM because automatic approval review rejected deletion; the key expires after 24 hours.
+
+---
+
+## Verified release promotion and protected-backup checkpoint — 2026-10-25 UTC
+
+- current release candidate on `master`: `e9e5687d7affb4525e1159efceb514cad69ce0dc`.
+- Verified live production release: `dd31836703bd110a30f303ed3ce9fd13c0f61d82`.
+
+[#965](https://github.com/Fullworth-prod/FullWorth/pull/965) promoted the reviewed development release plus independent recovery safeguards through the protected PR process. Exact source `d636072a02cf21bfebff8a987d09a74876f74244`, tested and integrated tree `a9682dde73c4e63dcc536213b3cbd5f8d6bdc816`. All 17 final-source checks passed: 2,786 .NET/106 Node; 14 recovery-runner Python tests and full shell/secret boundaries; PostgreSQL bank 26+12 related xUnit, Hosted 53 durable/16 recovery+12 relational faults, monitoring 124, confirmation 118; Chromium/WebKit 672 geometry+126 native+37 ARIA per engine plus 38 dialog/74 BFF/24 recovery cases; Android and unsigned iPhone packaging. CodeQL passed all four languages, automatically closed both password-storage findings, and showed zero open PR findings and unresolved threads.
+
+This is a release promotion, **not a deployment**. Exact-master CI/signing [40195520636](https://github.com/Fullworth-prod/FullWorth/actions/runs/40195520636) is running; governance 40195520603 passed. Require successful current-master image/SBOM attestations and real independent recovery before guarded deployment. The owner authorized preparation and deployment; hourly automation stays deleted/off.
+
+Actual SSH inspection verified the existing production checkout and release marker at `dd31836703bd110a30f303ed3ce9fd13c0f61d82`. A fresh normal encrypted backup completed at 2026-10-25 12:15 UTC; all host/public readiness checks passed after services resumed. The completed snapshot `46772e80141cfd2528cf3c17b885bb651fa1b20749b0d0e05db1d6218d2c90da` was copied server-side into the separately enabled R2 `immutable-recovery/` bucket-lock prefix: 399 encrypted objects / 7,879,162 bytes, verified object-by-object. The valid production credential received HTTP409/ObjectLockedByBucketPolicy for synthetic overwrite and delete within that prefix. Live Restic capture/tagging/lock cleanup remain outside this prefix. Private metadata: `/home/debian/fullworth-recovery-evidence/protected-backup-46772e80141c.json`.
+
+**Required approval remains:** the saved separate recovery credential fails with SignatureDoesNotMatch. A Cloudflare Object Read only key scoped only to `billwatch-production-backups-01`, expiring after 24 hours, is prepared but uncreated. Browser security requires action-time approval for new access. The pending request also specifies use on a fresh GitHub-hosted runner to restore the encrypted backup. Do not create the key or run dependent recovery before approval, copy production write credentials into the runner, or claim the clean-host gate passed.
+
+Use the new manual exact-master production-environment recovery workflow after a valid separate read-only bundle is privately staged. It proves explicit 403/AccessDenied write/delete failures against an unlocked synthetic canary, verifies the exact frozen snapshot through the existing database/statement/both-keyring verifier, and retains metadata only. Passwords pass in memory into mounted tmpfs secrets; the received bundle, read-only credential and private logs stay in a private per-run tmpfs directory. Frozen-copy no-lock mode is restore-only and refuses mutable/live repository paths. Detailed handoff: `deploy/INDEPENDENT-RECOVERY-20261025.md`.
+
+The old zero-runtime inventory and R2 AccessDenied paragraphs below are historical evidence, superseded for current host state by the fresh inspection and protected-copy proof above. Independent production restore, nonempty real-statement recovery and same-release provider/physical-device/security/legal acceptance remain distinct and open. Paid features, creators and other activations remain default-off; no new UI concept was selected. Preserve branches and the fail-closed cleanup guard.
+
+---
+
 ## Verified accessible interaction states — 2026-10-25 UTC
 
 Latest verified development runtime: `1b1de0cd56aeb55ca66e0c8f04e44433d25366fd`. Current release candidate on `master`: `33223f74d171e0af2fc39b5a1c94ee2ceaaae7c3`. Last independently recorded live production release remains `dd31836703bd110a30f303ed3ce9fd13c0f61d82`; no production host inspection/promotion/deployment in this pass.

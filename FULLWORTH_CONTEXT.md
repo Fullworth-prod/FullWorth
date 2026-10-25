@@ -1,3 +1,29 @@
+## Verified Hosted Link consumed-token recovery — 2026-10-25 UTC
+
+- Latest verified development runtime: `1d6c114d9d62f9619b0903b95449b98829c12963`.
+- current release candidate on `master`: `33223f74d171e0af2fc39b5a1c94ee2ceaaae7c3`.
+- Verified live production release: `dd31836703bd110a30f303ed3ce9fd13c0f61d82`.
+
+[PR #958](https://github.com/Fullworth-prod/FullWorth/pull/958) implements the #912 **software recovery milestone**: owner/session-bound durable permits; protected Link-token clearing before one-time exchange; conditional final bank/session/permit persistence; committed-result reconciliation without re-exchange; interrupted/stale fail-closed recovery; and explicit bank review before a fresh Link session. It adds an owner-bound table and additive migration, with no production migration performed.
+
+Verified final source: `a2c6a2f094197e6d583fbe0f097cbfa41d4c5aec`; final source and tested merge-candidate tree: `bdb284cb68f22d66620f480c00a8b80549d19da0`. Development runtime integration: `1d6c114d9d62f9619b0903b95449b98829c12963`.
+
+[Main CI](https://github.com/Fullworth-prod/FullWorth/actions/runs/40164677190) passed **2,765 .NET and 106 Node tests**, zero failed/skipped, and matched the committed EF model/migration. Backend and offline builds have zero warnings/errors. All 12 exact-source check runs passed, including Android, unsigned iPhone package, dependency and production-container checks. Android and unsigned iPhone builds have zero warnings/errors. [PostgreSQL Hosted recovery](https://github.com/Fullworth-prod/FullWorth/actions/runs/40164677162) passed **16 consumed-token cases, 53 durable-replay cases and 12 relational fault scenarios**: six TCP acknowledgements lost after real server ReadyForQuery; two server-trigger rollbacks; two after-prepare stale-writer atomic rollbacks; composite-owner FK/cascade and owned deletion preserving foreign state. Provider responses are synthetic.
+
+Other exact-source PostgreSQL suites passed **26 bank-lifecycle race checks plus 12 related xUnit cases**, **124 monitoring** and **118 bill-confirmation** cases. [Chromium/WebKit](https://github.com/Fullworth-prod/FullWorth/actions/runs/40164677191) passed **24 Hosted Link recovery, 38 dialog and 74 BFF boundary cases**. Tests verify no false connected state, no silent exchange/new-session retry, localized bank-review links and explicit fresh session creation. Native guidance directs bank refresh first. No installed-device acceptance is inferred.
+
+Runbook: [Hosted Link recovery boundaries](deploy/HOSTED-LINK-RECOVERY-20261025.md). A later separately authorized release must verify migration/backup/lock safeguards and prevent mixed old/new completion writers from bypassing the durable permit. Never remove/reset an Exchanging or Interrupted permit just to retry the consumed token.
+
+**#912 stays open** for controlled Plaid Sandbox/error-mode and physical-device acceptance. The software milestone does not satisfy real provider/device/production recovery, qualified legal, #934/vNext as a whole, or other release gates. #762/#293 private expected-bill/import/payroll/provider proof, #251/#258 physical devices, and #291/#669 real clean-host/off-host/both-keyring/security/legal proof remain open without fabricated evidence. Source-level fixture results must not be promoted into those claims.
+
+The `master` release candidate remains `33223f74d171e0af2fc39b5a1c94ee2ceaaae7c3`; latest independently recorded live release remains `dd31836703bd110a30f303ed3ce9fd13c0f61d82`. This pass merged development only. No master promotion, deployment, production migration, paid activation, financial/secret/account change, payout, outreach or private-data export occurred. Branches are preserved; do not enable the old-name cleanup guard.
+
+The three new Overview design concepts still await human selection; this is functional recovery UX, not selection or implementation of a visual redesign. Preserve reduced motion/performance profiles and financial behavior. Creator terms stay proposed and features default-off. Current canonical repository is `Fullworth-prod/FullWorth` (ID `1344061157`).
+
+This verified checkpoint supersedes candidate/pending notes below; prior history is preserved.
+
+---
+
 ## Verified development reliability milestone — 2026-10-25 UTC
 
 - Latest verified **runtime integration**: `0a3ec424086a02bc81c85044660da8011e1b7879`. Later documentation-only commits may advance development; read the actual branch head from GitHub.

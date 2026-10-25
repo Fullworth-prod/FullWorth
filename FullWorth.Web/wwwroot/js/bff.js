@@ -33,6 +33,9 @@ const plaidUiText = {
         completionFailed:
             "The bank connection could not be completed.",
 
+        recoveryRequired:
+            "FullWorth could not verify this bank connection. For your security, start a new secure Plaid connection. The previous session cannot be retried.",
+
         waitTimedOut:
             "FullWorth stopped waiting for the Plaid session. You can try again.",
 
@@ -89,6 +92,9 @@ const plaidUiText = {
 
         completionFailed:
             "No se pudo completar la conexión bancaria.",
+
+        recoveryRequired:
+            "FullWorth no pudo verificar esta conexión bancaria. Por seguridad, inicia una nueva conexión segura con Plaid. La sesión anterior no se puede volver a intentar.",
 
         waitTimedOut:
             "FullWorth dejó de esperar la sesión de Plaid. Puedes intentarlo de nuevo.",
@@ -487,6 +493,8 @@ async function waitForPlaidCompletion(
         setConnectStatus(statusElement, text.canceled, "neutral");
     } else if (state === "expired") {
         setConnectStatus(statusElement, text.expired, "error");
+    } else if (state === "recoveryrequired") {
+        setConnectStatus(statusElement, text.recoveryRequired, "error");
     } else {
         setConnectStatus(statusElement, text.completionFailed, "error");
     }

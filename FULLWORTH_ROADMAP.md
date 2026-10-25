@@ -1,3 +1,14 @@
+## Completed accessible interaction slice — 2026-10-25 UTC
+
+Verified development runtime `1b1de0cd56aeb55ca66e0c8f04e44433d25366fd`; current release candidate on `master` `33223f74d171e0af2fc39b5a1c94ee2ceaaae7c3`; last independently recorded live production `dd31836703bd110a30f303ed3ce9fd13c0f61d82` remains separate.
+
+- #963 fixes16 ARIA selection/expansion/busy bindings across Bills,Activity,Privacy,Transactions. Exact source `32769d3313f83ddcbe5058fa827ecf159d471d64`, source/merge tree `eb56c14a9460a55db7f2079bdf77734b1e08a378`. All five final-head checks passed:37 new state checks per engine,672 geometry+126 native cases per engine,2786 .NET/106 Node,38 dialog/74 BFF/24 recovery browser cases; container security/disposable recovery and Android passed. Context records exact runs/artifact/readback.
+- Three runtime checkpoints #960/#961/#963 complete for this owner-authorized pass; prior context/roadmap history preserved. No failing check or unpublished source remains. Hourly automation stays off; stop with verification headroom.
+- Broader #934/R6 remains open: physical VoiceOver/safe areas, further consolidation and human choice among three Overview concepts are not complete. #912/#762/#293/#251/#258/#291/#669 external gates stay open. No production/master promotion or activation.
+- Next independent source inspection: keyboard focus restoration/live-region feedback after failed Activity/transaction refresh with synthetic held responses; reproduce before fixing and preserve financial data/no write replay.
+
+---
+
 ## Completed measured responsiveness and native recovery slices — 2026-10-25 UTC
 
 Verified development runtime: `938a2a09ca812396dfd00b1ae96130ed3fb4553d`. Current release candidate on `master`: `33223f74d171e0af2fc39b5a1c94ee2ceaaae7c3`. Last independently recorded live production release remains `dd31836703bd110a30f303ed3ce9fd13c0f61d82`; no deployment or host acceptance in this pass.

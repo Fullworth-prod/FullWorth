@@ -1,3 +1,17 @@
+## Verified accessible interaction states — 2026-10-25 UTC
+
+Latest verified development runtime: `1b1de0cd56aeb55ca66e0c8f04e44433d25366fd`. Current release candidate on `master`: `33223f74d171e0af2fc39b5a1c94ee2ceaaae7c3`. Last independently recorded live production release remains `dd31836703bd110a30f303ed3ce9fd13c0f61d82`; no production host inspection/promotion/deployment in this pass.
+
+- [#963](https://github.com/Fullworth-prod/FullWorth/pull/963) merged source `32769d3313f83ddcbe5058fa827ecf159d471d64`; tested source/merge/integrated tree `eb56c14a9460a55db7f2079bdf77734b1e08a378`. Six files: Bills/Activity/AccountPrivacy/AccountTransactions Razor components, new aria-states.test.mjs and visual-acceptance.mjs entry. Sixteen bindings now emit explicit true/false ARIA strings for selected filters, expanded discovery and busy operations; events, disabled controls and financial/request behavior unchanged.
+- All five exact-head checks passed: main40174028764/browser40174028826/dependency40174028774. Actual37 ARIA state checks per Chromium/WebKit engine (keyboard/pressed roles, held reads/operations, error recovery, exactly two intercepted synthetic writes without replay);672 geometry+126 native-control cases per engine;2786 .NET/106 Node, zero failed/skipped;38 dialog/74 BFF/24 recovery browser cases,18 ownership fixtures,Android/container HTTP/security/virtual-passkey/disposable encrypted restore passed. New requests never reached real providers or exported real data.
+- Artifact12591043995 SHA256 `f5939b7e9079cd4dc837472ded7049a9fcf54128004fe6955719c718e228f8e6` verified; both geometry reports672/0;390px Bills/Activity screenshots inspected. This is synthetic browser acceptance, not real VoiceOver/physical-device/provider/production recovery acceptance.
+- Owner-authorized pass began at development `4348f348444d94bcaf737fe0827c53d3fb3701a8`; three runtime milestones #960/#961/#963 integrated, with #962 recording the preceding handoff. Current source branch `codex/aria-interaction-states-20261025` and earlier source branches retained. No uncommitted/unpushed preparation or failing current-head check remains. Do not repeat these completed fixes. Older #932 remains a separate historical handoff PR.
+- The pass ends with usage headroom reserved for verification/handoff. Hourly automation remains deleted/off. No production/master promotion, paid activation, spending/outreach/payouts, secrets/account/rule changes, real bank connection, private financial-data export or destructive operation.
+- Remaining gates: #934 broader visual system/QA and unselected Overview concepts; #912 controlled provider/installed-device acceptance; #762/#293 private expected-truth evidence; #251/#258 devices; #291/#669 actual immutable off-host/clean-host statements/both-keyring/two-owner/security/legal/same-release acceptance. Keep these open; do not infer them from CI.
+- Next precise independent source checkpoint: inspect focus restoration and live-region feedback after failed Activity/transaction refresh using held synthetic responses; fix only reproduced defects and verify keyboard behavior. Real VoiceOver and nonzero iOS safe areas still need physical-device evidence. Current verified notes supersede older pending statements below.
+
+---
+
 ## Verified responsive and native recovery checkpoints — 2026-10-25 UTC
 
 - Latest verified development runtime: `938a2a09ca812396dfd00b1ae96130ed3fb4553d`.

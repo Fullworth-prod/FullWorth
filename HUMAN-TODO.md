@@ -1,3 +1,13 @@
+## Operator checkpoint after accessible interaction software — 2026-10-25 UTC
+
+Latest verified development runtime: `1b1de0cd56aeb55ca66e0c8f04e44433d25366fd` (#963), exact source `32769d3313f83ddcbe5058fa827ecf159d471d64`. Current release candidate on `master`: `33223f74d171e0af2fc39b5a1c94ee2ceaaae7c3`. Last independently recorded live production release: `dd31836703bd110a30f303ed3ce9fd13c0f61d82`. No deployment or host acceptance in this pass.
+
+All five final-head checks passed, including37 state checks per browser engine and2786 .NET/106 Node; context has exact tree/runs/artifact evidence. #960/#961/#963 are integrated software checkpoints; prior acceptance/operator instructions remain below. No unpublished work or new owner action is required for these merges.
+
+Keep real provider/device/VoiceOver/safe-area, private expected-truth, actual off-host/clean-host/database/statements/both-keyring/two-owner/security/legal and release approval gates open. Creator terms/features remain proposed/default-off. Three Overview designs remain unselected. Hourly automation stays deleted/off; no financial/account/secret/rule changes, spending/activation, outreach/payouts, private export or branch deletion occurred.
+
+---
+
 ## Operator checkpoint after responsive/native recovery software — 2026-10-25 UTC
 
 Current release candidate on `master`:

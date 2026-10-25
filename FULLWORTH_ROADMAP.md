@@ -1,3 +1,14 @@
+## Release branch identity reconciled — 2026-10-25 UTC
+
+- The `master` release branch at candidate `33223f74d171e0af2fc39b5a1c94ee2ceaaae7c3` has advanced; deployment of this newer commit is not established here.
+Currently verified live production release: `dd31836703bd110a30f303ed3ce9fd13c0f61d82`.
+
+The `master` branch advanced independently through [release PR #878](https://github.com/Fullworth-prod/FullWorth/pull/878) on 2026-10-25. This records repository state, not a deployment or new launch approval. The latest independently recorded live evidence remains the October 21 [guarded deployment](https://github.com/Fullworth-prod/FullWorth/actions/runs/39665707749) and [same-release authentication smoke](https://github.com/Fullworth-prod/FullWorth/actions/runs/39666163983). No fresh host inspection or later deployment is established by this reconciliation.
+
+The reliability work remains in development integration [#953](https://github.com/Fullworth-prod/FullWorth/pull/953), pending its final-head checks. Keep real recovery, two-owner/provider/statement, physical-device and qualified legal gates open. Do not promote/deploy or activate billing/creators/passkeys/AI merely to reconcile these documents. Earlier release identities below are historical.
+
+---
+
 ## Verified production release — 2026-10-21 UTC
 
 - The `master` release branch at candidate `dd31836703bd110a30f303ed3ce9fd13c0f61d82` is independently verified deployed by [guarded deployment #39665707749](https://github.com/Fullworth/FullWorth/actions/runs/39665707749).

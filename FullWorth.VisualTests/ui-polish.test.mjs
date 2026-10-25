@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 import { verifyResponsiveMatrix } from "./responsive-geometry.test.mjs";
+import { verifyNativeSelectLayout } from "./native-select-layout.test.mjs";
 import { webkit } from "playwright";
 import { mkdir } from "node:fs/promises";
 
@@ -257,12 +258,14 @@ export async function verifyUiPolish(page, outputDir) {
       }
     }
 
+    await verifyNativeSelectLayout(page.context().browser(), "chromium");
     await verifyResponsiveMatrix(page, outputDir, setCulture);
 
     // Reuse only the disposable test owner's authenticated cookies. Run actual
     // rendered components in WebKit too, without another account or API writes.
     const webkitBrowser = await webkit.launch({ headless: true });
     try {
+      await verifyNativeSelectLayout(webkitBrowser, "webkit");
       const origin = new URL(page.url()).origin;
       const webkitContext = await webkitBrowser.newContext({
         baseURL: origin, ignoreHTTPSErrors: true, serviceWorkers: "block",

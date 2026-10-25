@@ -47,7 +47,8 @@ export async function verifyResponsiveMatrix(page, outputDir, setCulture) {
     ["privacy", "/app/account/privacy", ".app-page"],
     ["profile", "/app/profile", ".app-page"],
     ["subscription", "/app/subscription", ".app-page"],
-    ["setup", "/app/setup", ".app-page"]
+    ["setup-loading", "/app/setup", ".onboarding-card"],
+    ["setup", "/app/setup", ".setup-fields"]
   ];
   const report = [];
   const failures = [];
@@ -62,16 +63,36 @@ export async function verifyResponsiveMatrix(page, outputDir, setCulture) {
     for (const language of ["en-US", "es"]) {
       await setCulture(language);
       for (const [label, url, ready] of routes) {
-        await page.setViewportSize({ width: 390, height: 1000 });
-        await page.goto(url, { waitUntil: "domcontentloaded" });
-        await page.locator(ready).first().waitFor({ state: "visible" });
-        await page.waitForFunction(() => Boolean(document.querySelector('link[href="/app-polish.css"]')?.sheet));
-        const original = await page.evaluate(() => ({
-          html: document.documentElement.style.cssText,
-          body: document.body.style.cssText,
-          theme: document.documentElement.dataset.theme
-        }));
+        let original = null, releaseLoading = null, loadingHandler = null;
+        const heldLoading = label === "setup-loading";
         try {
+          if (heldLoading) {
+            const gate = new Promise(resolve => { releaseLoading = resolve; });
+            loadingHandler = async route => { await gate; await route.continue(); };
+            await page.route("**/bff/account/preferences", loadingHandler);
+          }
+          await page.setViewportSize({ width: 390, height: 1000 });
+          await page.goto(url, { waitUntil: "domcontentloaded" });
+          await page.locator(ready).first().waitFor({ state: "visible" });
+          await page.waitForFunction(() => Boolean(document.querySelector('link[href="/app-polish.css"]')?.sheet));
+          if (!heldLoading) {
+            // Measure the intended ready view, rather than racing initial API
+            // loads. Loading is a separate held-response case below.
+            await page.waitForFunction(() => {
+              const root = document.querySelector(".app-page");
+              const busy = root?.getAttribute("aria-busy")?.toLowerCase() === "true";
+              const loading = [...document.querySelectorAll(
+                ".settings-loading-card,.fw-profile-loading,.planning-loading,.planning-section-loading")]
+                .some(element => element.getClientRects().length > 0);
+              return root && !busy && !loading;
+            });
+          }
+          await page.evaluate(() => document.fonts?.ready);
+          original = await page.evaluate(() => ({
+            html: document.documentElement.style.cssText,
+            body: document.body.style.cssText,
+            theme: document.documentElement.dataset.theme
+          }));
           // Test layout rather than a global clipping rule. This intentionally
           // makes accidental overflow visible; it never masks a defect.
           await page.evaluate(() => {
@@ -102,6 +123,8 @@ export async function verifyResponsiveMatrix(page, outputDir, setCulture) {
                   Math.max(0, parseFloat(getComputedStyle(bar).bottom) || 0) + 20) : 0;
                 return Number.isFinite(actual) && Math.abs(actual - expected) <= 1;
               });
+              if (heldLoading) assert.equal(await page.locator(".experience-setup-page")
+                .getAttribute("aria-busy").then(value => value?.toLowerCase()), "true", "The loading fixture must remain held throughout inspection");
               const name = label + "/" + width + "/" + language + "/" + theme + "/" + scale;
               const geometry = await measureDocumentGeometry(page);
               const caseFailures = [];
@@ -141,11 +164,17 @@ export async function verifyResponsiveMatrix(page, outputDir, setCulture) {
           await page.screenshot({ path: path.join(outputDir, "responsive-matrix-failure.png"), fullPage: true });
           throw error;
         } finally {
-          await page.evaluate(original => {
+          if (original) await page.evaluate(original => {
             document.documentElement.style.cssText = original.html;
             document.body.style.cssText = original.body;
             document.documentElement.dataset.theme = original.theme;
           }, original);
+          if (releaseLoading) {
+            releaseLoading();
+            await page.unroute("**/bff/account/preferences", loadingHandler);
+            await page.waitForFunction(() => document.querySelector(".experience-setup-page")
+              ?.getAttribute("aria-busy")?.toLowerCase() !== "true");
+          }
         }
       }
     }

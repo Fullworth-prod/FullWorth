@@ -1,3 +1,29 @@
+## Verified development reliability milestone — 2026-10-25 UTC
+
+- Latest verified **runtime integration**: `0a3ec424086a02bc81c85044660da8011e1b7879`. Later documentation-only commits may advance development; read the actual branch head from GitHub.
+- current release candidate on `master`: `33223f74d171e0af2fc39b5a1c94ee2ceaaae7c3`.
+- Verified live production release: `dd31836703bd110a30f303ed3ce9fd13c0f61d82`.
+
+[Integration #953](https://github.com/Fullworth-prod/FullWorth/pull/953) merged into development as `0a3ec424086a02bc81c85044660da8011e1b7879` after **all nine** checks passed on exact final source `c3f58dacf2852aaf4e6e698c0060c316f56c019f`. The tested merge-candidate tree and integrated tree both equal `3020e22b57bd1ebc7039775307df54967a4ced9a`.
+
+[Final main CI](https://github.com/Fullworth-prod/FullWorth/actions/runs/40150705166) executed **2,749 .NET and 104 Node tests**, zero failed/skipped and zero backend/offline/Android build warnings/errors. Android, container, HTTP security, passkey/browser and disposable encrypted-backup/recovery fixtures passed. Dedicated PostgreSQL suites passed **26 bank-lifecycle**, **53 Hosted Link**, **124 monitoring** and **118 bill-confirmation** cases. [Chromium/WebKit](https://github.com/Fullworth-prod/FullWorth/actions/runs/40150705140) passed **38 dialog plus 74 BFF scenarios**. These repeated/isolated suites are not a claim of real-provider, installed-device or production recovery acceptance.
+
+Final-head visual artifact `12581863951` was downloaded and SHA256 verified as `92bd74ec419c235d623eeeef91eb3e4a3c147ecfdb749f4ed605777b602de763`; four screenshots were inspected for 320px first-sync/Activity, 390px Account and Spanish Activity states. This is the existing vNext integration, not implementation of the three unselected new mockups.
+
+Delivered: winning bank lifecycle/credential concurrency protection; durable Hosted Link and immutable alert replay; independent paycheck error isolation and pending health-alert composition; deterministic bill-confirmation ambiguity/durable-state/save recovery; browser JSON/no-content/redirect/token handling without automatic write replay; truthful connection/first-sync Activity states and Spanish labels. Existing financial arithmetic, ownership, schema and production flags are preserved.
+
+Current release state: master advanced independently through #878; that is repository state, not evidence of deployment. The latest independently recorded live proof remains the October 21 guarded deployment/authentication smoke. This pass merged development only and dispatched no production deployment or master promotion.
+
+Code issues #940/#951/#954 are closed as completed in development. Represented PRs #941/#942/#943/#944/#945/#948/#950/#952/#955/#956 were closed as **superseded, not individually merged**; all ten source branches were verified present. No branch was deleted.
+
+Continue #912 failed/unknown-commit consumed-token and controlled provider recovery; #762/#293 private expected-bill/import/payroll/provider evidence; #251/#258 physical Android/iPhone acceptance; and #291/#669 immutable off-host/real clean-host statements plus both-keyring recovery, controlled two-owner/document/security and qualified legal acceptance. Those gates remain open. No paid/creator/passkey/AI activation, financial account/secret change, outreach, payout or private financial-data export occurred.
+
+The three new Overview visual concepts still require human selection; preserve financial behavior, reduced-motion and performance settings. Creator terms remain proposals and features default-off. Use the current canonical repository `Fullworth-prod/FullWorth` (unchanged repository ID `1344061157`); do not enable its old-name branch-cleanup guard without separate authorization.
+
+This checkpoint supersedes candidate/pending/billing-lock notes below. Historical evidence remains intact.
+
+---
+
 ## Release branch identity reconciled — 2026-10-25 UTC
 
 - current release candidate on `master`: `33223f74d171e0af2fc39b5a1c94ee2ceaaae7c3`.

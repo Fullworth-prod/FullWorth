@@ -65,6 +65,7 @@ export async function verifyResponsiveMatrix(page, outputDir, setCulture) {
       for (const [label, url, ready] of routes) {
         let original = null, releaseLoading = null, loadingHandler = null;
         const heldLoading = label === "setup-loading";
+        console.log("Responsive matrix route: " + language + "/" + label);
         try {
           if (heldLoading) {
             const gate = new Promise(resolve => { releaseLoading = resolve; });
@@ -72,9 +73,9 @@ export async function verifyResponsiveMatrix(page, outputDir, setCulture) {
             await page.route("**/bff/account/preferences", loadingHandler);
           }
           await page.setViewportSize({ width: 390, height: 1000 });
-          await page.goto(url, { waitUntil: "domcontentloaded" });
-          await page.locator(ready).first().waitFor({ state: "visible" });
-          await page.waitForFunction(() => Boolean(document.querySelector('link[href="/app-polish.css"]')?.sheet));
+          await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20000 });
+          await page.locator(ready).first().waitFor({ state: "visible", timeout: 15000 });
+          await page.waitForFunction(() => Boolean(document.querySelector('link[href="/app-polish.css"]')?.sheet), null, { timeout: 15000 });
           if (!heldLoading) {
             // Measure the intended ready view, rather than racing initial API
             // loads. Loading is a separate held-response case below.
@@ -85,9 +86,9 @@ export async function verifyResponsiveMatrix(page, outputDir, setCulture) {
                 ".settings-loading-card,.fw-profile-loading,.planning-loading,.planning-section-loading")]
                 .some(element => element.getClientRects().length > 0);
               return root && !busy && !loading;
-            });
+            }, null, { timeout: 15000 });
           }
-          await page.evaluate(() => document.fonts?.ready);
+          await page.waitForFunction(() => !document.fonts || document.fonts.status === "loaded", null, { timeout: 15000 });
           original = await page.evaluate(() => ({
             html: document.documentElement.style.cssText,
             body: document.body.style.cssText,
@@ -122,7 +123,7 @@ export async function verifyResponsiveMatrix(page, outputDir, setCulture) {
                 const expected = mobile ? Math.ceil(bar.getBoundingClientRect().height +
                   Math.max(0, parseFloat(getComputedStyle(bar).bottom) || 0) + 20) : 0;
                 return Number.isFinite(actual) && Math.abs(actual - expected) <= 1;
-              });
+              }, null, { timeout: 15000 });
               if (heldLoading) assert.equal(await page.locator(".experience-setup-page")
                 .getAttribute("aria-busy").then(value => value?.toLowerCase()), "true", "The loading fixture must remain held throughout inspection");
               const name = label + "/" + width + "/" + language + "/" + theme + "/" + scale;
@@ -150,7 +151,7 @@ export async function verifyResponsiveMatrix(page, outputDir, setCulture) {
                 failures.push({ name, failures: caseFailures, ...geometry });
                 if (failures.filter(f => f.name.startsWith(label + "/")).length === 1)
                   await page.screenshot({ path: path.join(outputDir,
-                    "responsive-failure-" + label + ".png"), fullPage: true });
+                    "responsive-failure-" + label + ".png"), fullPage: true, timeout: 15000 });
               }
               if (language === "en-US" && theme === "dark" &&
                   ((width === 375 && scale === 1) || (width === 320 && scale === 2))) {
@@ -173,7 +174,7 @@ export async function verifyResponsiveMatrix(page, outputDir, setCulture) {
             releaseLoading();
             await page.unroute("**/bff/account/preferences", loadingHandler);
             await page.waitForFunction(() => document.querySelector(".experience-setup-page")
-              ?.getAttribute("aria-busy")?.toLowerCase() !== "true");
+              ?.getAttribute("aria-busy")?.toLowerCase() !== "true", null, { timeout: 15000 });
           }
         }
       }

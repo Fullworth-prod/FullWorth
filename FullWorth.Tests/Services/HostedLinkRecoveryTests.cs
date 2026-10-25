@@ -245,6 +245,7 @@ public sealed class HostedLinkRecoveryTests
     {
         var f = await HostedRecoveryFixture.CreateAsync("existing");
         var nonce = Guid.NewGuid();
+        DateTimeOffset persistedUpdated;
         await using (var seed = f.OpenDirect())
         {
             seed.PlaidLinkCompletionAttempts.Add(new PlaidLinkCompletionAttemptEntity
@@ -254,6 +255,8 @@ public sealed class HostedLinkRecoveryTests
                 StartedAtUtc = f.Clock.Now.AddHours(-1), UpdatedAtUtc = f.Clock.Now.AddHours(-1)
             });
             await seed.SaveChangesAsync();
+            persistedUpdated = await seed.PlaidLinkCompletionAttempts.AsNoTracking()
+                .Where(a => a.SessionId == f.SessionId).Select(a => a.UpdatedAtUtc).SingleAsync();
         }
         await using var db = f.Open();
         using var provider = new RecoveryProvider(f.ItemId);
@@ -267,7 +270,7 @@ public sealed class HostedLinkRecoveryTests
         Assert.Equal(f.Owner, actual.UserId);
         Assert.Equal(nonce, actual.AttemptId);
         Assert.Equal(PlaidLinkCompletionStage.Exchanging, actual.Stage);
-        Assert.Equal(f.Clock.Now.AddHours(-1), actual.UpdatedAtUtc);
+        Assert.Equal(persistedUpdated, actual.UpdatedAtUtc);
         Assert.False(await verify.PlaidLinkCompletionAttempts
             .AnyAsync(a => a.SessionId == f.SessionId && a.UserId == f.ForeignOwner));
         await f.VerifyHistoryAsync();

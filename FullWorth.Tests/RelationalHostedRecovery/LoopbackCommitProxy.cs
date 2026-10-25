@@ -79,6 +79,7 @@ internal sealed class LoopbackCommitProxy : IAsyncDisposable
     private async Task RepliesAsync(NetworkStream source, NetworkStream destination, CancellationToken ct)
     {
         var header = new byte[5];
+        var withholdingReply = false;
         while (true)
         {
             var read = await source.ReadAsync(header.AsMemory(0, 1), ct);
@@ -95,12 +96,20 @@ internal sealed class LoopbackCommitProxy : IAsyncDisposable
                 var armed = Volatile.Read(ref _dropTag);
                 if (armed == tag && Interlocked.CompareExchange(ref _dropTag, null, armed) == armed)
                 {
-                    // CommandComplete follows execution on the real server.
-                    // Closing BOTH sockets here loses the reply, not the commit.
+                    // Withhold CommandComplete, then wait for ReadyForQuery.
+                    // This also proves the implicit INSERT transaction committed.
+                    withholdingReply = true;
+                }
+            }
+            if (withholdingReply)
+            {
+                if (header[0] == (byte)'Z')
+                {
                     Drops++;
                     _dropped.TrySetResult();
                     return;
                 }
+                continue;
             }
             await destination.WriteAsync(header, ct);
             await destination.WriteAsync(payload, ct);

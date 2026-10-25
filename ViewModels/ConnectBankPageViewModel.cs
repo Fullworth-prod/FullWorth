@@ -298,7 +298,7 @@ public sealed class ConnectBankPageViewModel :
                         StringComparison.OrdinalIgnoreCase))
                 {
                     StatusMessage =
-                        "FullWorth could not verify the bank connection. Start a new secure Plaid session using Connect or Reconnect. The previous session cannot be retried.";
+                        "FullWorth could not verify the bank connection. Refresh connected banks first. If it is missing or still needs attention, use Connect or Reconnect for a new secure Plaid session. The previous session cannot be retried.";
 
                     return;
                 }
@@ -322,7 +322,7 @@ public sealed class ConnectBankPageViewModel :
         catch
         {
             StatusMessage =
-                "FullWorth could not connect to your bank. Please try again.";
+                "FullWorth could not start or verify the bank connection. Refresh connected banks before starting a new secure session.";
         }
         finally
         {

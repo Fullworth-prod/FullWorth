@@ -180,7 +180,18 @@ async function getSafeErrorMessage(
 }
 
 async function handleResponse(
-    response) {
+    response,
+    allowNoContent = false) {
+
+    // A login/proxy page is not evidence that a financial operation succeeded.
+    if (response.redirected) {
+        throw new Error("FullWorth refused a redirected response.");
+    }
+
+    // Invalidate only for a later explicit attempt. Never replay a write.
+    if ([400, 401, 403].includes(response.status)) {
+        antiforgeryToken = null;
+    }
 
     if (response.status === 401) {
         window.location.assign(loginRedirectUrl(window.location));
@@ -201,7 +212,7 @@ async function handleResponse(
         throw error;
     }
 
-    if (response.status === 204) {
+    if (response.status === 204 && allowNoContent) {
         return null;
     }
 
@@ -209,15 +220,18 @@ async function handleResponse(
         response.headers.get(
             "content-type") ?? "";
 
-    if (!contentType.includes(
-        "application/json")) {
-        return null;
+    if (contentType.split(";")[0].trim().toLowerCase() !== "application/json") {
+        throw new Error("FullWorth received an unexpected response.");
     }
 
-    return await response.json();
+    try {
+        return await response.json();
+    } catch {
+        throw new Error("FullWorth received an invalid JSON response.");
+    }
 }
 
-async function getJson(url) {
+async function getJson(url, allowNoContent = false) {
     const response =
         await fetch(
             url,
@@ -227,6 +241,7 @@ async function getJson(url) {
 
                 credentials:
                     "same-origin",
+                redirect: "error",
 
                 headers: {
                     "Accept":
@@ -238,7 +253,7 @@ async function getJson(url) {
             });
 
     return await handleResponse(
-        response);
+        response, allowNoContent);
 }
 
 async function getAntiforgeryToken() {
@@ -255,6 +270,7 @@ async function getAntiforgeryToken() {
 
                 credentials:
                     "same-origin",
+                redirect: "error",
 
                 headers: {
                     "Accept":
@@ -269,7 +285,7 @@ async function getAntiforgeryToken() {
         await handleResponse(
             response);
 
-    if (!result?.requestToken) {
+    if (typeof result?.requestToken !== "string" || !result.requestToken.trim()) {
         throw new Error(
             "FullWorth could not establish a secure request token.");
     }
@@ -298,6 +314,7 @@ async function mutateJson(
 
                 credentials:
                     "same-origin",
+                redirect: "error",
 
                 headers: {
                     "Accept":
@@ -312,7 +329,7 @@ async function mutateJson(
             });
 
     return await handleResponse(
-        response);
+        response, true);
 }
 
 async function mutateJsonWithBody(
@@ -331,6 +348,7 @@ async function mutateJsonWithBody(
 
                 credentials:
                     "same-origin",
+                redirect: "error",
 
                 headers: {
                     "Accept":
@@ -351,7 +369,7 @@ async function mutateJsonWithBody(
             });
 
     return await handleResponse(
-        response);
+        response, true);
 }
 
 function setConnectStatus(
@@ -602,6 +620,7 @@ export async function getPlanningPaySchedule() {
             {
                 method: "GET",
                 credentials: "same-origin",
+                redirect: "error",
                 headers: { "Accept": "application/json" },
                 cache: "no-store"
             });
@@ -698,6 +717,7 @@ export async function deleteFullWorthAccount(
 
                 credentials:
                     "same-origin",
+                redirect: "error",
 
                 headers: {
                     "Accept":
@@ -714,11 +734,7 @@ export async function deleteFullWorthAccount(
                     "no-store"
             });
 
-    if (!response.ok) {
-        throw new Error(
-            await getSafeErrorMessage(
-                response));
-    }
+    await handleResponse(response, true);
 
     return true;
 }
@@ -875,6 +891,7 @@ export async function uploadBillStatement(
 
                 credentials:
                     "same-origin",
+                redirect: "error",
 
                 headers: {
                     "Accept":
@@ -901,7 +918,7 @@ export async function getLatestBillStatementUpload(billStreamId) {
     }
 
     return await getJson(
-        `/bff/bill-streams/${encodeURIComponent(billStreamId)}/statement-uploads/latest`);
+        `/bff/bill-streams/${encodeURIComponent(billStreamId)}/statement-uploads/latest`, true);
 }
 
 export async function getBillStatementUploadStatus(

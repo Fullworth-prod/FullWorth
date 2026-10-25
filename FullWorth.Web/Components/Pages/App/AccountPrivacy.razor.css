@@ -24,3 +24,14 @@
 @media (max-width: 700px) {
     .privacy-page .export-confirmation { grid-column: 1 / -1; width: 100%; }
 }
+
+/* Let the translated deletion heading shrink inside its flex row instead of
+   extending the page at enlarged text. Keep every word visible. */
+.privacy-page .danger-zone-heading > div:not(.danger-icon) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.privacy-page .danger-zone-heading .danger-icon {
+    flex-shrink: 0;
+}

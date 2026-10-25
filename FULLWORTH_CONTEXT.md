@@ -1,3 +1,34 @@
+## Reliability integration candidate — 2026-10-25 UTC
+
+Canonical connected repository: `Fullworth-prod/FullWorth`, unchanged repository ID `1344061157` and organization ID `333422185`. Old `Fullworth/FullWorth` API paths now redirect; resolve and use the canonical repository name for connector calls. This is a repository-name change, not a production deployment or permission to retarget a host. The active protected ruleset remains `24230011`: mandatory PR, strict backend/Android/container/dependency checks, resolved review threads and no bypass. Branch cleanup remains unauthorized; do not enable or invoke its old-name guard merely because of the rename.
+
+GitHub Actions execution has resumed. The older billing-lock checkpoints below are historical and superseded by this checkpoint. All real results must still be checked against the exact source/merge-candidate tree and latest attempt; the account change itself proves no application acceptance.
+
+Existing [integration PR #953](https://github.com/Fullworth-prod/FullWorth/pull/953) now combines the previously reviewed 38-path reliability/vNext candidate `9d786c2e64bab61dbe76b0c1ecf6c2299619c4ce` with the 13 non-overlapping paths from:
+- [#955](https://github.com/Fullworth-prod/FullWorth/pull/955), source `f8e0fa06e56fa0114f947d6fffa9d6fc907e9f8c`: deterministic rejection of ambiguous owned bill matches, durable exact-ID lifecycle checks and per-attempt save-failure/tracker restoration.
+- [#956](https://github.com/Fullworth-prod/FullWorth/pull/956), source `31fc3c4a1b23ed6492a4e8746718df407f2e6d7e`: browser JSON/no-content response contracts, blocked Fetch redirects, validated security tokens and rejected-token refresh only for later explicit attempts. No automatic write replay.
+
+The original source components #941/#945/#948/#950/#952 and the eight Spanish Activity translations remain included. All incoming runtime/test/workflow blobs are copied from their inspected source commits; merge-base preimages match and there are no changed-path conflicts. This context prefix records the expanded candidate. Source PRs remain preserved until final integration succeeds; then disposition them accurately as represented/superseded rather than individually merged.
+
+### Independently executed source evidence, not a combined-candidate pass
+
+- Original #953 source: [backend CI attempt 2](https://github.com/Fullworth-prod/FullWorth/actions/runs/40129442677) passed **2,631 .NET / 37 Node** tests with zero failed/skipped and zero backend/offline build warnings/errors. Dedicated disposable PostgreSQL passed **26 bank-lifecycle cases**, **53 Hosted Link replay cases** and **124 monitoring cases** in runs [40129442514](https://github.com/Fullworth-prod/FullWorth/actions/runs/40129442514), [40129442549](https://github.com/Fullworth-prod/FullWorth/actions/runs/40129442549) and [40129442509](https://github.com/Fullworth-prod/FullWorth/actions/runs/40129442509).
+- #955 source: [backend CI attempt 2](https://github.com/Fullworth-prod/FullWorth/actions/runs/40133578841) passed **2,556 .NET / 37 Node**, zero failed/skipped and zero backend/offline build warnings/errors; its [dedicated PostgreSQL run](https://github.com/Fullworth-prod/FullWorth/actions/runs/40133578954) executed and passed **118 cases**.
+- #956 source: [backend CI attempt 2](https://github.com/Fullworth-prod/FullWorth/actions/runs/40146489098) passed **2,438 .NET / 104 Node**, zero failed/skipped and zero backend/offline build warnings/errors. The [browser workflow](https://github.com/Fullworth-prod/FullWorth/actions/runs/40146489154) passed **38 confirmation-dialog cases plus 74 BFF response cases across Chromium and WebKit**.
+- All three source Android builds passed. These source results, including the PostgreSQL fixtures, do not prove that the expanded integration passes. Do not sum repeated test-suite runs into a unique-test or real-provider acceptance count.
+
+### Required next checkpoint and boundaries
+
+Require all four protected checks, all **four** dedicated PostgreSQL suites (including manual bill confirmation), and the Chromium/WebKit dialog+BFF workflow on the final expanded #953 head before merging into `development`. Inspect executed counts, warnings, actual failed steps and authenticated visual artifacts; fix actual failures without weakening checks. Preserve source branches; no duplicate integration PR is needed. Consult the current #953 head/checks/merge state for authoritative final evidence rather than treating this candidate record as completion.
+
+The newest three Overview visual concepts remain unselected; this integration does not implement those mockups or establish animation/device acceptance. Preserve existing financial behavior, reduced-motion/performance settings, privacy, ownership and recovery. Creator terms remain proposals and features default-off.
+
+Production remains separately recorded at `dd31836703bd110a30f303ed3ce9fd13c0f61d82`, with no fresh host inspection, deployment or master promotion in this pass. #912 failed/unknown-commit and controlled provider recovery; #762/#293 private bill/import/payroll/provider evidence; #251/#258 physical devices; and #291/#669 immutable off-host/real clean-host recovery, controlled two-owner/statement/security/legal acceptance remain open. No paid/creator activation, spending, outreach, payout, secret/account-setting mutation, private financial export or destructive operation is authorized.
+
+Earlier snapshots below are historical, including the now-cleared Actions execution block.
+
+---
+
 ## CI execution blocker — 2026-10-24 UTC
 
 [Combined PR #953](https://github.com/Fullworth/FullWorth/pull/953) contains the reviewed reliability/vNext integration. Its initial head `0cec1c4e206ac6609ae86fa4f09debad06b229f6` triggered six workflows, but all eight jobs failed before executing any steps. [Run #40127391943](https://github.com/Fullworth/FullWorth/actions/runs/40127391943) reports that the account is locked due to a billing issue. This is an external execution block, not a tested application regression or permission to bypass required checks.

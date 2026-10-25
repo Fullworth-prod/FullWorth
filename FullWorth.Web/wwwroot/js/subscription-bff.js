@@ -5,18 +5,28 @@ async function requestToken() {
 
     const response = await fetch("/bff/antiforgery", {
         credentials: "same-origin",
+        redirect: "error",
         cache: "no-store"
     });
 
-    if (!response.ok) {
+    const result = await handle(response, "Unable to establish a secure request.");
+    if (typeof result?.requestToken !== "string" || !result.requestToken.trim()) {
         throw new Error("Unable to establish a secure request.");
     }
 
-    token = (await response.json()).requestToken;
+    token = result.requestToken;
     return token;
 }
 
 async function handle(response, fallbackMessage) {
+    if (response.redirected) {
+        throw new Error(fallbackMessage);
+    }
+
+    // A subsequent user attempt can obtain a fresh token; do not replay writes.
+    if ([400, 401, 403].includes(response.status)) {
+        token = null;
+    }
     if (response.status === 401) {
         window.location.assign("/login");
         throw new Error("Session expired.");
@@ -36,13 +46,23 @@ async function handle(response, fallbackMessage) {
         throw new Error(message);
     }
 
-    return await response.json();
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.split(";")[0].trim().toLowerCase() !== "application/json") {
+        throw new Error(fallbackMessage);
+    }
+
+    try {
+        return await response.json();
+    } catch {
+        throw new Error(fallbackMessage);
+    }
 }
 
 async function postJson(path, body, fallbackMessage) {
     return await handle(await fetch(path, {
         method: "POST",
         credentials: "same-origin",
+        redirect: "error",
         cache: "no-store",
         headers: {
             "Accept": "application/json",
@@ -57,6 +77,7 @@ async function postEmpty(path, fallbackMessage) {
     return await handle(await fetch(path, {
         method: "POST",
         credentials: "same-origin",
+        redirect: "error",
         cache: "no-store",
         headers: {
             "Accept": "application/json",
@@ -68,6 +89,7 @@ async function postEmpty(path, fallbackMessage) {
 export async function getSubscription() {
     return await handle(await fetch("/bff/subscription", {
         credentials: "same-origin",
+        redirect: "error",
         cache: "no-store",
         headers: { "Accept": "application/json" }
     }), "FullWorth could not load your subscription status.");
@@ -76,6 +98,7 @@ export async function getSubscription() {
 export async function getSubscriptionPlans() {
     return await handle(await fetch("/bff/subscription/plans", {
         credentials: "same-origin",
+        redirect: "error",
         cache: "no-store",
         headers: { "Accept": "application/json" }
     }), "FullWorth could not load paid subscription plans.");

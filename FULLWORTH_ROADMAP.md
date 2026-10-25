@@ -1,3 +1,15 @@
+## Completed measured responsiveness and native recovery slices — 2026-10-25 UTC
+
+Verified development runtime: `938a2a09ca812396dfd00b1ae96130ed3fb4553d`. Current release candidate on `master`: `33223f74d171e0af2fc39b5a1c94ee2ceaaae7c3`. Last independently recorded live production release remains `dd31836703bd110a30f303ed3ce9fd13c0f61d82`; no deployment or host acceptance in this pass.
+
+- **#934 R1/R6 measured overflow slice completed via #960**, merge `b21e2eb77492a1a67fb4dcc6fbd7738db59c5738`, exact source `c9bb0b15a5e7d3c425681f808f0504b6560def2a`.672 geometry+126 native cases per engine at320/375/390/430/768/1024/1440, EN/ES, light/dark,100/200% text, reduced motion and held loading passed. Actual2765 .NET/106 Node plus38 dialog/74 BFF/24 recovery browser cases passed. No global masking/font reduction. Artifact12590827471 checksum/reports/screenshots verified; context has full evidence.
+- **Native recovery and ownership prevention completed via #961**, exact source `7487c2b3cd799a64b966f89c38ddfc89fd297adf`, merge `938a2a09ca812396dfd00b1ae96130ed3fb4553d`. Reject false success for missing/inactive/wrong-session evidence, pace status requests within a fresh provider budget, use monotonic deadline and preserve cancellation/explicit fresh sessions. Expand ownership scanner coverage for completion attempts/generic accesses/renamed contexts.
+- Final #961 all eight checks passed:2786 .NET including21 native cases,106 Node,18 negative guard fixtures; PostgreSQL53 durable/16 consumed-token/12 relational faults; Android,unsigned iPhone,container security/disposable recovery. Source/integrated tree `1fcb654e27796a3f42f5f4be47051b1dff5b2b37`. Main40172730461/Hosted40172730377/dependency40172730392/iOS40172730437. Fixture and build evidence is separate from real provider/device/recovery acceptance.
+- **Keep broad R1/R6/R4 acceptance open.** Physical safe areas, VoiceOver/device QA, further visual-system consolidation and owner choice among three Overview concepts remain. No new visual redesign was chosen. #912/#762/#293/#251/#258/#291/#669 external evidence remains open; no public/private acceptance is inferred from fixtures.
+- Hourly automation stays off; source branches retained. Older #932 remains a separate historical handoff PR after fresh diff inspection. Next bounded source work: audit remaining dynamic ARIA/busy states and meaningful interaction regressions; no production promotion, paid activation, secret/rule/account changes, outreach/payouts or private exports.
+
+---
+
 ## Completed #912 software recovery milestone — 2026-10-25 UTC
 
 - Verified development runtime: `1d6c114d9d62f9619b0903b95449b98829c12963`.

@@ -1,3 +1,15 @@
+## Actual independent-run configuration-probe failure — 2026-10-25 UTC
+
+The owner approved the 24-hour, single-bucket Object Read only recovery key. Actual provider reads passed and synthetic write/delete returned HTTP403/AccessDenied. The key was privately staged; no production write credential was transferred to the runner.
+
+The first fresh GitHub-hosted production recovery run [40222367338](https://github.com/Fullworth-prod/FullWorth/actions/runs/40222367338) failed before acceptance. A separate real Restic diagnostic against the same protected snapshot established the initial `cat config` also acquires a repository lock: ordinary configuration read failed with a lock/access-denied error, while explicit `--no-lock cat config` and the frozen snapshot list succeeded. The initial verifier called the ordinary repository check before its guarded snapshot/restore operations.
+
+The fix routes only the verification configuration probe through the existing guarded recovery wrapper. Ordinary verification, capture, listing and retention keep their existing locking behavior. The regression executes the real verification entry point against a backend stub that rejects lock writes and confirms it reaches database readiness; the old source fails that assertion. No recovery gate is waived and no write permission is granted.
+
+Independent production recovery remains unproven until the corrected exact-master workflow actually passes. The source diagnostic is not separate-host acceptance. Existing protected metadata remains outside the checkout. A local temporary credential file remains restricted to the Windows owner and SYSTEM because automatic approval review rejected its deletion; the approved key expires after 24 hours.
+
+---
+
 # Independent recovery and protected-copy checkpoint — 2026-10-25
 
 This adds a manual, production-environment, exact-master recovery workflow on a fresh standard GitHub-hosted Ubuntu runner. It uses the existing pinned production SSH transport to read a separately staged recovery-only bundle. It never retrieves the production environment or its write credential, publishes restored data, or uploads backup/log artifacts.

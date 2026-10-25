@@ -1,3 +1,49 @@
+## Completed guarded deployment and current-release recovery — 2026-10-25 UTC
+
+- The `master` release branch at candidate `3fd3aa5e019d35f11418c526aeaca3d772bd37ea` is also the verified deployed release.
+Currently verified live production release: `3fd3aa5e019d35f11418c526aeaca3d772bd37ea`.
+
+Normal guarded deployment is verified complete; this is not a claim that every external-beta acceptance gate is complete. No paid feature/creator activation, payout, outreach, branch deletion or hourly-automation restart occurred. Earlier deployment/billing/recovery failures below are dated history, superseded by this verified checkpoint.
+
+- [x] #965 application release plus #967 guarded configuration-probe correction and #968 reproducible Windows SDK pin integrated through protected PRs. Exact-master CI/signing40225561325 passed; deployment40226147172 and same-release authentication40226442461 passed.
+- [x] Actual live Git/marker/environment/running revisions verified; expected migration applied; all36 tracked existing configuration fields and five core financial-table counts unchanged. Production readiness, owner/roles, disabled subscription enforcement and operational timers passed.
+- [x] New deployed-release encrypted snapshot `8067b8e455c187515a36ce7bec89002383021068874bf22144f5a5ced3bc24f6` protected and verified:405 objects/8,045,790 bytes, production overwrite/delete denied by provider policy. Independent fresh-runner recovery40227647810 passed with source=runner=live release and actual read-only-provider denials. Context contains exact artifact/hash/private evidence pointers.
+- [x] Owner-held Windows-profile-encrypted recovery kit created and round-trip verified; temporary S3 credential excluded. Actual disaster bootstrap remains unexercised.
+- [ ] Complete the still-separate nonempty-real-statement, two-owner/document/security/legal, controlled Plaid/network/private expected-truth and physical-device acceptance. Do not close #912/#762/#293/#251/#258/#291/#669 from synthetic fixtures or broaden the actual restore claim.
+- [ ] Continue #934 only with reproduced, independently actionable source defects. Three Overview concepts remain unselected; retain reduced-motion/performance/financial behavior and wait for a human selection before visual redesign.
+
+This development reconciliation retains the deployed master safeguards; no new application runtime changes are introduced. Preserve source branches and older #932. Hourly automation remains off; creator/paid activations stay off.
+
+---
+
+## Independent recovery proven; Windows toolchain checkpoint — 2026-10-25 UTC
+
+- The `master` release branch at candidate `1041bde352c2d30b01719c6d492c6ae284cd1bf1` awaits corrected exact-master CI.
+Currently verified live production release: `dd31836703bd110a30f303ed3ce9fd13c0f61d82`.
+
+Independent production recovery [40223645645](https://github.com/Fullworth-prod/FullWorth/actions/runs/40223645645) actually passed on a fresh GitHub-hosted runner using the approved read-only credential and provider-protected snapshot `46772e80141cfd2528cf3c17b885bb651fa1b20749b0d0e05db1d6218d2c90da`. Its private metadata pins runner release `1041bde352c2d30b01719c6d492c6ae284cd1bf1`, backed-up live release `dd31836703bd110a30f303ed3ce9fd13c0f61d82`, explicit provider read-only denials and completion at 2026-10-25T18:57:26Z. No recovery artifacts were uploaded. Nonempty real-statement acceptance remains explicitly unestablished.
+
+#967's guarded configuration-probe fix passed all nine source checks and merged as `1041bde352c2d30b01719c6d492c6ae284cd1bf1`. Its subsequent master CI 40223585134 hit an independent Windows toolchain failure: the floating Microsoft aka.ms download selected SDK10.0.403/runtime10.0.14 and redirected to a blob endpoint returning HTTP409. Official .NET10 release metadata still identifies SDK10.0.402/runtime10.0.13 (release date 2026-10-13); these are also the versions used by the passing source checks. The correction pins only the two Windows main-CI SDK inputs to 10.0.402. No build/test/branch gate is weakened, no alternate untrusted feed is added, and no application runtime is changed. Require new final-head/master checks and exact-release signing before deployment.
+
+An owner-held recovery kit was encrypted with Windows DPAPI CurrentUser and round-trip verified off the production host. It contains repository/password/snapshot metadata, excludes the expiring S3 key and requires the current owner Windows profile. Disaster bootstrap from that kit is a separate, unexercised operator procedure. The temporary read-only key copy remains owner/SYSTEM-only because automatic review rejected its deletion; its provider access expires after 24 hours.
+
+Production remains on the healthy existing release. No deployment or paid activation has occurred. Preserve the real-provider/device/legal/nonempty-statement distinctions, branches and disabled hourly automation. Private completion record: `/home/deploy/fullworth-acceptance/recovery-results/run-40223645645.json`.
+
+---
+
+## Independent recovery configuration probe — 2026-10-25 UTC
+
+- The `master` release branch at candidate `e9e5687d7affb4525e1159efceb514cad69ce0dc` awaits corrected real recovery acceptance.
+Currently verified live production release: `dd31836703bd110a30f303ed3ce9fd13c0f61d82`.
+
+The owner approved the temporary 24-hour, single-bucket Object Read only key. Actual S3 reads passed; synthetic write/delete returned HTTP403/AccessDenied. The recovery-only bundle is privately staged, with no production write credential transferred.
+
+Fresh GitHub-hosted recovery run [40222367338](https://github.com/Fullworth-prod/FullWorth/actions/runs/40222367338) failed before acceptance. A real Restic probe against the protected snapshot reproduced a lock-write rejection on ordinary `cat config`; `--no-lock cat config` and the exact frozen snapshot list succeeded. The correction routes only the verifier's initial configuration probe through its existing guarded recovery wrapper. Normal verification/capture/maintenance keep locks. The regression executes the real verification entry point: it fails on the old source and passes on the corrected source.
+
+The independent recovery gate remains open until the corrected exact-master workflow passes. Require protected final-head checks, current-master signed image/SBOM material, real recovery proof, guarded deployment and same-release health/authentication verification. No production update has occurred; paid activations stay off. Preserve prior evidence and source branches. A temporary local read-only credential copy remains restricted to its owner and SYSTEM because automatic approval review rejected deletion; the key expires after 24 hours.
+
+---
+
 ## Release promotion complete; independent recovery remains gated — 2026-10-25 UTC
 
 - The `master` release branch at candidate `e9e5687d7affb4525e1159efceb514cad69ce0dc` is separate from deployment.

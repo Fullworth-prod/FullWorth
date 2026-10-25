@@ -9,7 +9,9 @@ namespace FullWorth.API.Services.Plaid;
 // provider operation must never commit unrelated work in the caller's tracker.
 internal sealed class PlaidLinkCompletionAttemptStore
 {
-    internal static readonly TimeSpan Lifetime = TimeSpan.FromMinutes(3);
+    // Polling, exchange and item lookup each have a bounded provider deadline.
+    // Allow those calls plus database writes before expiring an abandoned permit.
+    internal static readonly TimeSpan Lifetime = TimeSpan.FromMinutes(6);
     private readonly DbContextOptions<FullWorthDbContext> _options;
     private readonly TimeProvider _time;
 

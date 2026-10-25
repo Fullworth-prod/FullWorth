@@ -203,7 +203,7 @@ public sealed class HostedLinkRecoveryTests
         };
         var old = f.Service(first, http).CheckAndCompleteAsync(f.Owner, f.SessionId);
         await entered.Task.WaitAsync(TimeSpan.FromSeconds(20));
-        f.Clock.Now = f.Clock.Now.AddMinutes(4);
+        f.Clock.Now = f.Clock.Now.AddMinutes(7);
         try
         {
             var recovery = await f.Service(second, http).CheckAndCompleteAsync(f.Owner, f.SessionId);
@@ -237,6 +237,39 @@ public sealed class HostedLinkRecoveryTests
         Assert.Equal(0, provider.Polls + provider.Exchanges + provider.Items);
         await using var verify = f.OpenDirect();
         Assert.False(await verify.PlaidLinkCompletionAttempts.AnyAsync(a => a.SessionId == f.SessionId));
+        await f.VerifyHistoryAsync();
+    }
+
+    [Fact]
+    public async Task ForeignOwner_CannotObserveOrInterruptExistingCompletionAttempt()
+    {
+        var f = await HostedRecoveryFixture.CreateAsync("existing");
+        var nonce = Guid.NewGuid();
+        await using (var seed = f.OpenDirect())
+        {
+            seed.PlaidLinkCompletionAttempts.Add(new PlaidLinkCompletionAttemptEntity
+            {
+                UserId = f.Owner, SessionId = f.SessionId, AttemptId = nonce,
+                Stage = PlaidLinkCompletionStage.Exchanging,
+                StartedAtUtc = f.Clock.Now.AddHours(-1), UpdatedAtUtc = f.Clock.Now.AddHours(-1)
+            });
+            await seed.SaveChangesAsync();
+        }
+        await using var db = f.Open();
+        using var provider = new RecoveryProvider(f.ItemId);
+        using var http = new HttpClient(provider);
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            f.Service(db, http).CheckAndCompleteAsync(f.ForeignOwner, f.SessionId));
+        Assert.Equal(0, provider.Polls + provider.Exchanges + provider.Items);
+        await using var verify = f.OpenDirect();
+        var actual = await verify.PlaidLinkCompletionAttempts.AsNoTracking()
+            .SingleAsync(a => a.SessionId == f.SessionId);
+        Assert.Equal(f.Owner, actual.UserId);
+        Assert.Equal(nonce, actual.AttemptId);
+        Assert.Equal(PlaidLinkCompletionStage.Exchanging, actual.Stage);
+        Assert.Equal(f.Clock.Now.AddHours(-1), actual.UpdatedAtUtc);
+        Assert.False(await verify.PlaidLinkCompletionAttempts
+            .AnyAsync(a => a.SessionId == f.SessionId && a.UserId == f.ForeignOwner));
         await f.VerifyHistoryAsync();
     }
 

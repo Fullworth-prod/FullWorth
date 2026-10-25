@@ -6,6 +6,8 @@ on:
       - 'FullWorth.Tests/Services/HostedLinkDurableReplayTests.cs'
       - 'FullWorth.Tests/Services/HostedLinkRecoveryTests.cs'
       - 'FullWorth.Tests/Infrastructure/HostedRecoveryFixture.cs'
+      - 'FullWorth.Tests/RelationalHostedRecovery/**'
+      - 'FullWorth.Tests/FullWorth.Tests.csproj'
       - '.github/workflows/backend-hosted-replay-postgres-20261024.yml'
   workflow_dispatch:
 permissions:
@@ -76,3 +78,9 @@ jobs:
           FULLWORTH_LINK_RECOVERY_POSTGRES: ci-fixture-only
           FULLWORTH_LINK_RECOVERY_DATABASE: Host=127.0.0.1;Port=5432;Database=fullworth_link_recovery_fixture;Username=fixture;Password=synthetic-ci-fixture-password;Include Error Detail=false
         run: dotnet test FullWorth.Tests/FullWorth.Tests.csproj --configuration Release --filter FullyQualifiedName~HostedLinkRecoveryTests --logger "console;verbosity=normal"
+
+      - name: Verify actual lost PostgreSQL commit replies on loopback
+        env:
+          FULLWORTH_LINK_RECOVERY_POSTGRES: ci-fixture-only
+          FULLWORTH_LINK_RECOVERY_DATABASE: Host=127.0.0.1;Port=5432;Database=fullworth_link_recovery_fixture;Username=fixture;Password=synthetic-ci-fixture-password;Include Error Detail=false
+        run: dotnet run --project FullWorth.Tests/RelationalHostedRecovery/FullWorth.HostedRecoveryChecks.csproj --configuration Release

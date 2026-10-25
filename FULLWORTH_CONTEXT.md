@@ -1,3 +1,48 @@
+## Bank-link browser-disconnect fix verified in development — 2026-10-25 UTC
+
+Development runtime: `6f0b27a624da4c4e56d92493b8c1646907585950`.
+Master and verified live production remain `3fd3aa5e019d35f11418c526aeaca3d772bd37ea`; no new deployment occurred.
+
+The owner reported Wells Fargo showed success in Plaid but was absent from FullWorth.
+Read-only host evidence found an interrupted initial Hosted Link finalization with no saved bank;
+token exchange succeeded, item lookup began and browser Account.DisposeAsync disconnect events
+immediately followed. No private financial values, tokens or session IDs were published.
+
+[#973](https://github.com/Fullworth-prod/FullWorth/pull/973) fixes the reproduced cancellation path.
+Before the durable one-time exchange fence, browser cancellation is honored. The fence, single
+exchange, item lookup and atomic persistence then run under a separate four-minute server deadline,
+awaited by the handler. Ownership, consent/session expiry, nonce/concurrency and no-reexchange guards
+remain. Real provider/database failures, independent timeout and process termination remain fail-closed.
+
+All four new disconnect cases failed on old source `9685da0c10f70ed7c3c7d5b8a25c2d3e5cb57643`
+in PostgreSQL run40246135156 (16 prior scenarios passed). Corrected source
+`796e1c0dbeedf707cb044fb4b30b48aef50906ae` passed all nine checks before merge.
+Tested candidate and integrated tree: `68a848b9f1a9f05f8cab800089f0a8b16b0d819f`.
+Main40246345177 passed2,792 .NET/106 Node, zero failed/skipped; Android/container/dependency passed.
+Hosted40246345197 passed22 actual PostgreSQL recovery and53 durable-replay tests plus12 actual
+network/relational fault scenarios; bank-lifecycle/monitoring/confirmation suites passed.
+These use synthetic providers and do not establish real Wells Fargo acceptance.
+
+**Next required release decision:** the current merchant goal explicitly reserves master promotion/
+production deployment for separate authorization. Obtain that authorization before guarded release.
+Do not reset the interrupted permit, replay its consumed token, delete an existing account or initiate
+a real relink automatically. After authorized deployment, the owner must start a fresh secure Link
+session and verify bank visibility and initial sync. Keep [#972](https://github.com/Fullworth-prod/FullWorth/issues/972)
+open for that live acceptance. Detailed source/release handoff: deploy/BANK-LINK-BROWSER-DISCONNECT-972.md.
+
+The original merchant-subscription goal/#970 remains active. Preserve separate open #971 at initial
+head65ade1d: its17 new PostgreSQL checks passed, but the workflow's test filter needs shell quoting
+and three explicit security endpoint/resource-coverage inventories need registration. Initial main CI
+passed2,826 tests and failed those three inventory/coverage guards; no #971 integration is established.
+Additional source refinements were prepared in conversation scratch only, not committed. Read actual
+GitHub source and failures before resuming; do not duplicate the PR or treat scratch as tested source.
+
+Hourly automation remains off. No production, real-bank, credential/account-setting, paid/creator,
+outreach/payout or destructive action occurred. Existing UI concept selection and broader external
+provider/device/legal/recovery gates remain unchanged.
+
+---
+
 ## Verified production deployment and same-release protected recovery — 2026-10-25 UTC
 
 - current release candidate on `master`: `3fd3aa5e019d35f11418c526aeaca3d772bd37ea`.

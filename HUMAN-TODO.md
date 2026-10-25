@@ -1,3 +1,23 @@
+## Operator checkpoint after responsive/native recovery software — 2026-10-25 UTC
+
+Current release candidate on `master`:
+
+`33223f74d171e0af2fc39b5a1c94ee2ceaaae7c3`
+
+Last independently recorded live production release:
+
+`dd31836703bd110a30f303ed3ce9fd13c0f61d82`
+
+Latest verified development runtime: `938a2a09ca812396dfd00b1ae96130ed3fb4553d` (#961); preceding responsive merge #960 `b21e2eb77492a1a67fb4dcc6fbd7738db59c5738`. Neither is deployed. All required final-head gates passed with review requirements respected; no rules changed.
+
+Software evidence: #960 actual2765 .NET/106 Node,672 app geometry+126 native cases per engine; #961 actual2786 .NET including21 native cases,106 Node,18 ownership fixtures,PostgreSQL53 durable/16 consumed-token/12 faults,Android/unsigned iPhone/container recovery. Full exact source/tree/run/artifact details are at the top of FULLWORTH_CONTEXT.md. Synthetic providers, virtual passkeys, device doubles and disposable encrypted fixtures are not real acceptance.
+
+No new owner action is required for these software merges. Existing owner/operator gates remain: controlled Plaid Sandbox and installed Android/iPhone recovery (#912,#251/#258), approved private expected-bill/import/payroll/provider truth (#762/#293), actual immutable off-host/clean-host database+statements+both keyrings, two-owner/security/document/legal/same-release acceptance and explicit deployment authorization (#291/#669). Keep them open; do not export private data or activate/spend to manufacture evidence. Creator terms remain proposed/default-off.
+
+Three Overview concepts remain unselected; no choice or redesign was made. Hourly automation remains deleted/off. Source branches retained; older #932's historical handoff is still separate. Preserve all existing operator instructions below.
+
+---
+
 ## Operator checkpoint after Hosted Link software recovery — 2026-10-25 UTC
 
 Current release candidate on `master`:

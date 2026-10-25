@@ -13,7 +13,7 @@
 <PageTitle>@L["Set up FullWorth"]</PageTitle>
 <link rel="stylesheet" href="/account-settings.css" />
 
-<div class="app-page settings-page experience-setup-page" aria-busy="@(_isLoading || _isSaving || _isChecking)">
+<div class="app-page settings-page experience-setup-page" aria-busy="@((_isLoading || _isSaving || _isChecking) ? "true" : "false")">
     <header class="settings-header">
         <div>
             <span class="page-kicker">@L["Personal setup"]</span>

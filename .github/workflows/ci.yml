@@ -407,6 +407,8 @@ jobs:
           sh deploy/tests/parser-native-boundary-tests.sh
           sh deploy/tests/operations-alert-sender-tests.sh
           sh deploy/tests/backup-trust-boundary-tests.sh
+          sh deploy/tests/recovery-readonly-tests.sh
+          python3 -m unittest discover -s deploy/tests -p 'recovery_runner_tests.py'
           sh deploy/tests/release-integrity-tests.sh
           sh deploy/tests/runtime-release-tests.sh
           sh deploy/tests/http-security-boundary-tests.sh
@@ -1382,9 +1384,9 @@ jobs:
         if: steps.visual_changes.outputs.required == 'true'
         run: npm --prefix FullWorth.VisualTests install --no-audit --no-fund
 
-      - name: Install Chromium for visual acceptance
+      - name: Install Chromium and WebKit for visual acceptance
         if: steps.visual_changes.outputs.required == 'true'
-        run: npm --prefix FullWorth.VisualTests exec playwright install --with-deps chromium
+        run: npm --prefix FullWorth.VisualTests exec -- playwright install --with-deps chromium webkit
 
       - name: Capture visual acceptance screenshots
         if: steps.visual_changes.outputs.required == 'true'

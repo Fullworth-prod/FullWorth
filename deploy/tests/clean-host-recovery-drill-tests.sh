@@ -41,6 +41,11 @@ if grep -Eq '^[[:space:]]+(api|web|edge|database):[[:space:]]*$' "$compose_file"
     fail "recovery drill topology must not define production application services."
 fi
 
+if grep -Eq '^[[:space:]]*POSTGRES_PASSWORD:' "$compose_file"; then
+    fail "isolated database must use a mounted password secret, never container environment."
+fi
+grep -Fq 'POSTGRES_PASSWORD_FILE: /run/secrets/database_password' "$compose_file" ||
+    fail "isolated database password-file mount is missing."
 grep -Fq 'internal: true' "$compose_file" || fail "recovery drill network must remain isolated from external ingress."
 grep -Fq 'BILLWATCH_ALLOW_LOCAL_BACKUP_REPOSITORY: "false"' "$compose_file" || fail "recovery verifier must force local repositories off."
 grep -Fq 'AWS_SHARED_CREDENTIALS_FILE: /run/secrets/aws_credentials' "$compose_file" || fail "recovery verifier must use a mounted AWS shared-credentials file."
@@ -73,6 +78,8 @@ set -eu
 : "${BILLWATCH_TEST_SECRET_FILE_LOG:?}"
 : "${BILLWATCH_TEST_EXPECTED_RESTIC_PASSWORD:?}"
 : "${BILLWATCH_TEST_EXPECTED_AWS_CREDENTIALS:?}"
+[ -z "${BILLWATCH_RECOVERY_EPHEMERAL_DATABASE_PASSWORD:-}" ] || { echo "ephemeral database password leaked to Docker environment." >&2; exit 1; }
+[ -z "${BILLWATCH_RECOVERY_EPHEMERAL_RESTIC_PASSWORD:-}" ] || { echo "ephemeral Restic password leaked to Docker environment." >&2; exit 1; }
 original_args=$*
 if [ "$original_args" = "compose version" ]; then
     printf '%s\n' "$original_args" >> "$BILLWATCH_TEST_DOCKER_LOG"
@@ -96,6 +103,14 @@ done
     exit 1
 }
 
+database_password_file="$(sed -n 's/^BILLWATCH_RECOVERY_DATABASE_PASSWORD_FILE=//p' "$supplemental_env_file")"
+[ -f "$database_password_file" ] && [ ! -L "$database_password_file" ] || { echo "temporary database password secret is missing." >&2; exit 1; }
+[ "$(stat -c '%a' "$database_password_file")" = 644 ] || { echo "database password secret mode mismatch." >&2; exit 1; }
+if [ -n "${BILLWATCH_TEST_EPHEMERAL_DB:-}" ]; then
+    [ "$(cat "$database_password_file")" = "$BILLWATCH_TEST_EPHEMERAL_DB" ] || { echo "ephemeral database secret mismatch." >&2; exit 1; }
+else
+[ "$(cat "$database_password_file")" = 'ci\path:isolated-restore-password' ] || { echo "database password secret content mismatch." >&2; exit 1; }
+fi
 secret_file="$(sed -n 's/^BILLWATCH_RECOVERY_RESTIC_PASSWORD_FILE=//p' "$supplemental_env_file")"
 [ -n "$secret_file" ] && [ -f "$secret_file" ] && [ ! -L "$secret_file" ] || { echo "temporary Restic secret file is missing or unsafe." >&2; exit 1; }
 secret_file_mode=$(stat -c '%a' "$secret_file")
@@ -107,7 +122,11 @@ database_secret_file="$(sed -n 's/^BILLWATCH_RECOVERY_DATABASE_PGPASS_FILE=//p' 
 [ -n "$database_secret_file" ] && [ -f "$database_secret_file" ] && [ ! -L "$database_secret_file" ] || { echo "temporary database passfile is missing or unsafe." >&2; exit 1; }
 [ "$(stat -c '%a' "$database_secret_file")" = 644 ] || { echo "temporary database passfile mode mismatch." >&2; exit 1; }
 [ "$(stat -c '%a' "${database_secret_file%/*}")" = 700 ] || { echo "temporary database passfile directory mode mismatch." >&2; exit 1; }
+if [ -n "${BILLWATCH_TEST_EPHEMERAL_DB:-}" ]; then
+    [ "$(cat "$database_secret_file")" = "restore-database:5432:*:billwatch:$BILLWATCH_TEST_EPHEMERAL_DB" ] || { echo "ephemeral database passfile mismatch." >&2; exit 1; }
+else
 [ "$(cat "$database_secret_file")" = 'restore-database:5432:*:billwatch:ci\\path\:isolated-restore-password' ] || { echo "temporary database passfile content mismatch." >&2; exit 1; }
+fi
 
 aws_secret_file="$(sed -n 's/^BILLWATCH_RECOVERY_AWS_CREDENTIALS_FILE=//p' "$supplemental_env_file")"
 [ -n "$aws_secret_file" ] && [ -f "$aws_secret_file" ] && [ ! -L "$aws_secret_file" ] || { echo "temporary AWS credentials file is missing or unsafe." >&2; exit 1; }
@@ -115,7 +134,7 @@ aws_secret_file="$(sed -n 's/^BILLWATCH_RECOVERY_AWS_CREDENTIALS_FILE=//p' "$sup
 [ "$(stat -c '%a' "${aws_secret_file%/*}")" = 700 ] || { echo "temporary AWS credentials directory mode is not 700." >&2; exit 1; }
 [ "$(cat "$aws_secret_file")" = "$BILLWATCH_TEST_EXPECTED_AWS_CREDENTIALS" ] || { echo "temporary AWS credentials content mismatch." >&2; exit 1; }
 printf '%s\n' "$original_args" >> "$BILLWATCH_TEST_DOCKER_LOG"
-printf '%s\n' "$secret_file" "$database_secret_file" "$aws_secret_file" >> "$BILLWATCH_TEST_SECRET_FILE_LOG"
+printf '%s\n' "$secret_file" "$database_secret_file" "$aws_secret_file" "$database_password_file" >> "$BILLWATCH_TEST_SECRET_FILE_LOG"
 EOF
 chmod 755 "$fake_bin/docker"
 
@@ -147,7 +166,7 @@ EOF
 
 run_runner()
 {
-    PATH="$fake_bin:$PATH" BILLWATCH_TEST_DOCKER_LOG="$docker_log" BILLWATCH_TEST_SECRET_FILE_LOG="$secret_file_log" BILLWATCH_TEST_EXPECTED_RESTIC_PASSWORD=ci-recovery-password-with-32-characters BILLWATCH_TEST_EXPECTED_AWS_CREDENTIALS="$aws_credentials_expected" sh "$runner" "$env_file"
+    BILLWATCH_TEST_EPHEMERAL_DB="${BILLWATCH_TEST_EPHEMERAL_DB:-}" PATH="$fake_bin:$PATH" BILLWATCH_TEST_DOCKER_LOG="$docker_log" BILLWATCH_TEST_SECRET_FILE_LOG="$secret_file_log" BILLWATCH_TEST_EXPECTED_RESTIC_PASSWORD=ci-recovery-password-with-32-characters BILLWATCH_TEST_EXPECTED_AWS_CREDENTIALS="$aws_credentials_expected" sh "$runner" "$env_file"
 }
 
 write_env false 's3:https://backup.example.invalid/billwatch' "$head_sha"
@@ -217,6 +236,31 @@ grep -Fq 'down --volumes --remove-orphans' "$docker_log" || fail "recovery drill
 while IFS= read -r secret_file
 do
     [ -z "$secret_file" ] || [ ! -e "$secret_file" ] || fail "temporary recovery secret file was not removed after the drill."
+done < "$secret_file_log"
+
+# The hosted runner supplies passwords in memory, never in its configuration.
+awk '!/^RESTIC_PASSWORD=/ && !/^BILLWATCH_DATABASE_PASSWORD=/' "$env_file" > "$temp_dir/no-password-env"
+cat "$temp_dir/no-password-env" > "$env_file"
+: > "$docker_log"
+if BILLWATCH_RECOVERY_EPHEMERAL_RESTIC_PASSWORD=short BILLWATCH_RECOVERY_EPHEMERAL_DATABASE_PASSWORD=invalid run_runner >/dev/null 2>&1; then
+    fail "short ephemeral passwords were accepted."
+fi
+if BILLWATCH_RECOVERY_EPHEMERAL_RESTIC_PASSWORD=ci-recovery-password-with-32-characters BILLWATCH_RECOVERY_EPHEMERAL_DATABASE_PASSWORD=invalid run_runner >/dev/null 2>&1; then
+    fail "malformed ephemeral database password was accepted."
+fi
+[ ! -s "$docker_log" ] || fail "invalid ephemeral credentials reached Docker."
+ephemeral_database_password=$(printf '%064d' 1)
+: > "$secret_file_log"
+if ! BILLWATCH_TEST_EPHEMERAL_DB="$ephemeral_database_password" BILLWATCH_RECOVERY_EPHEMERAL_RESTIC_PASSWORD=ci-recovery-password-with-32-characters BILLWATCH_RECOVERY_EPHEMERAL_DATABASE_PASSWORD="$ephemeral_database_password" run_runner >"$runner_output_file" 2>&1; then
+    cat "$runner_output_file" >&2
+    fail "valid in-memory recovery passwords were rejected."
+fi
+if grep -Fq "$ephemeral_database_password" "$runner_output_file"; then
+    fail "ephemeral database password leaked to drill output."
+fi
+while IFS= read -r secret_file
+do
+    [ -z "$secret_file" ] || [ ! -e "$secret_file" ] || fail "ephemeral recovery secret file was not removed."
 done < "$secret_file_log"
 
 sh "$root_dir/deploy/tests/private-beta-technical-evidence-tests.sh" || fail "private-beta technical evidence regression suite failed."

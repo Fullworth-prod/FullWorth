@@ -394,8 +394,39 @@ list_completed_snapshot()
         --latest 1
 }
 
+configure_recovery_readonly()
+{
+    recovery_no_lock=false
+    case "${BILLWATCH_RECOVERY_IMMUTABLE_COPY:-false}" in
+        false) ;;
+        true)
+            # A frozen copy cannot acquire/delete Restic lock objects. Never
+            # suppress locking on the live repository used for capture/prune.
+            if ! printf '%s\n' "$RESTIC_REPOSITORY" | grep -Eq '^s3:https://[a-z0-9]+\.r2\.cloudflarestorage\.com/[a-z0-9][a-z0-9-]*/immutable-recovery/[A-Za-z0-9_-]+/$'; then
+                echo "Lock-free recovery requires a frozen R2 immutable-recovery copy." >&2
+                exit 64
+            fi
+            recovery_no_lock=true
+            ;;
+        *)
+            echo "BILLWATCH_RECOVERY_IMMUTABLE_COPY must be true or false." >&2
+            exit 64
+            ;;
+    esac
+}
+
+recovery_restic()
+{
+    if [ "$recovery_no_lock" = true ]; then
+        restic --no-lock "$@"
+    else
+        restic "$@"
+    fi
+}
+
 verify_restore()
 {
+    configure_recovery_readonly
     validate_client_mode
     cleanup_work
     prepare_database_passfile
@@ -407,14 +438,14 @@ verify_restore()
         exit 1
     fi
 
-    snapshot_id="$(restic snapshots --json --host "$backup_host" --tag "$complete_tag" --latest 1 | jq -r '.[0].id // empty')"
+    snapshot_id="$(recovery_restic snapshots --json --host "$backup_host" --tag "$complete_tag" --latest 1 | jq -r '.[0].id // empty')"
 
     if [ -z "$snapshot_id" ]; then
         echo "No completed FullWorth backup snapshot exists." >&2
         exit 1
     fi
 
-    restic restore "$snapshot_id" --target "$restore_path"
+    recovery_restic restore "$snapshot_id" --target "$restore_path"
 
     restored_bundle="$restore_path/work/bundle"
 

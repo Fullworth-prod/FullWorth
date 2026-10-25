@@ -556,3 +556,10 @@
 .planning-coverage-summary.needs-review {
     border-inline-start: 3px solid #d59b35;
 }
+
+/* Keep translated native dropdown labels from expanding WebKit's scroll area. */
+.planning-fields select,
+.planning-bill-row select {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}

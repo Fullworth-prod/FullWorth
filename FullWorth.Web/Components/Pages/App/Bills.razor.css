@@ -61,3 +61,11 @@
 }
 .bills-page .fw-bills-stat strong { margin: 0; }
 .bills-page .fw-bills-stat small { grid-column: 1 / -1; margin: 0; padding: 0; }
+
+/* WebKit can propagate the intrinsic selected-label width past the native
+   control even when its border box fits. Allow text reflow without clipping
+   the document or replacing native dropdown behavior. */
+.bill-workspace-tools select {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}

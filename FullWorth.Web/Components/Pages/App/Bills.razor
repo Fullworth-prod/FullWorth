@@ -149,7 +149,7 @@
             <div class="fw-bills-stats">
                 <button type="button"
                         class="@GetPulseFilterClass(BillLedgerFilter.Increased, "is-alert")"
-                        aria-pressed="@(_filter == BillLedgerFilter.Increased)"
+                        aria-pressed="@(_filter == BillLedgerFilter.Increased ? "true" : "false")"
                         @onclick="() => SetFilter(BillLedgerFilter.Increased)">
                     <span>@L["Increased"]</span>
                     <strong>@_increasedCount</strong>
@@ -158,7 +158,7 @@
 
                 <button type="button"
                         class="@GetPulseFilterClass(BillLedgerFilter.Decreased, "is-positive")"
-                        aria-pressed="@(_filter == BillLedgerFilter.Decreased)"
+                        aria-pressed="@(_filter == BillLedgerFilter.Decreased ? "true" : "false")"
                         @onclick="() => SetFilter(BillLedgerFilter.Decreased)">
                     <span>@L["Decreased"]</span>
                     <strong>@_decreasedCount</strong>
@@ -167,7 +167,7 @@
 
                 <button type="button"
                         class="@GetPulseFilterClass(BillLedgerFilter.NoHistory, string.Empty)"
-                        aria-pressed="@(_filter == BillLedgerFilter.NoHistory)"
+                        aria-pressed="@(_filter == BillLedgerFilter.NoHistory ? "true" : "false")"
                         @onclick="() => SetFilter(BillLedgerFilter.NoHistory)">
                     <span>@L["Building history"]</span>
                     <strong>@_noHistoryCount</strong>
@@ -235,7 +235,7 @@
                  aria-label="@L["Filter bills by change"]">
                 <button type="button"
                         class="@GetFilterClass(BillLedgerFilter.All)"
-                        aria-pressed="@(_filter == BillLedgerFilter.All)"
+                        aria-pressed="@(_filter == BillLedgerFilter.All ? "true" : "false")"
                         @onclick="() => SetFilter(BillLedgerFilter.All)">
                     @L["All"]
                     <span>@_billStreams.Count</span>
@@ -243,7 +243,7 @@
 
                 <button type="button"
                         class="@GetFilterClass(BillLedgerFilter.Increased)"
-                        aria-pressed="@(_filter == BillLedgerFilter.Increased)"
+                        aria-pressed="@(_filter == BillLedgerFilter.Increased ? "true" : "false")"
                         @onclick="() => SetFilter(BillLedgerFilter.Increased)">
                     @L["Increased"]
                     <span>@_increasedCount</span>
@@ -251,7 +251,7 @@
 
                 <button type="button"
                         class="@GetFilterClass(BillLedgerFilter.Decreased)"
-                        aria-pressed="@(_filter == BillLedgerFilter.Decreased)"
+                        aria-pressed="@(_filter == BillLedgerFilter.Decreased ? "true" : "false")"
                         @onclick="() => SetFilter(BillLedgerFilter.Decreased)">
                     @L["Decreased"]
                     <span>@_decreasedCount</span>
@@ -259,7 +259,7 @@
 
                 <button type="button"
                         class="@GetFilterClass(BillLedgerFilter.NoHistory)"
-                        aria-pressed="@(_filter == BillLedgerFilter.NoHistory)"
+                        aria-pressed="@(_filter == BillLedgerFilter.NoHistory ? "true" : "false")"
                         @onclick="() => SetFilter(BillLedgerFilter.NoHistory)">
                     @L["Building history"]
                     <span>@_noHistoryCount</span>
@@ -270,7 +270,7 @@
                 @foreach (var item in new[] { BillLedgerFilter.Unchanged, BillLedgerFilter.Unavailable })
                 {
                     <button type="button" class="@GetFilterClass(item)"
-                            aria-pressed="@(_filter == item)" @onclick="() => SetFilter(item)">
+                            aria-pressed="@(_filter == item ? "true" : "false")" @onclick="() => SetFilter(item)">
                         @(item == BillLedgerFilter.Unchanged ? L["No change"] : L["Amount unavailable"])
                         <span>@(item == BillLedgerFilter.Unchanged ? _snapshot.UnchangedCount : _snapshot.UnavailableCount)</span>
                     </button>
@@ -377,13 +377,13 @@
     <section class="app-panel bill-discovery-panel" aria-labelledby="discovery-heading">
         <h2 id="discovery-heading">@L["Missing a bill?"]</h2>
         <button type="button" class="secondary-action"
-                aria-expanded="@_showDiscovery" aria-controls="discovery-details"
+                aria-expanded="@(_showDiscovery ? "true" : "false")" aria-controls="discovery-details"
                 @onclick="ToggleDiscoveryAsync">
             @(_showDiscovery ? L["Hide discovery details"] : L["Check discovery details"])
         </button>
         @if (_showDiscovery)
         {
-            <div id="discovery-details" aria-busy="@_discoveryLoading">
+            <div id="discovery-details" aria-busy="@(_discoveryLoading ? "true" : "false")">
                 @if (_discoveryLoading)
                 {
                     <p role="status">@L["Checking imported history…"]</p>

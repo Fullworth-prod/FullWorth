@@ -50,7 +50,7 @@ test("navigation during delay or a held response suppresses old results", async 
     }
 });
 test("terminal provider states are preserved, real errors remain errors", async () => {
-    for (const status of ["Exited", "Expired", "Failed"]) {
+    for (const status of ["Exited", "Expired", "Failed", "RecoveryRequired"]) {
         let time = 0;
         const result = await pollPlaidCompletion({ now: () => time, sleep: async ms => { time += ms; },
             isCurrent: () => true, readStatus: async () => ({ status }) });
@@ -59,6 +59,18 @@ test("terminal provider states are preserved, real errors remain errors", async 
     await assert.rejects(pollPlaidCompletion({ isCurrent: () => true, sleep: async () => {},
         readStatus: async () => { throw new Error("network"); } }), /network/);
 });
+test("recovery-required stops polling and never silently retries an uncertain exchange", async () => {
+    let time = 0, reads = 0;
+    const result = await pollPlaidCompletion({
+        now: () => time, sleep: async ms => { time += ms; }, isCurrent: () => true,
+        readStatus: async () => { reads++; return { status: "RecoveryRequired", connection: null }; }
+    });
+    assert.equal(result.status, "RecoveryRequired");
+    assert.equal(result.connection, null);
+    assert.equal(reads, 1, "an uncertain one-time exchange must not trigger another completion POST");
+    assert.equal(isActiveLinkResult(result), false);
+});
+
 test("abort cancels the real pending timer", async () => {
     const flow = new AbortController();
     const waiting = pollPlaidCompletion({ signal: flow.signal, isCurrent: () => true,

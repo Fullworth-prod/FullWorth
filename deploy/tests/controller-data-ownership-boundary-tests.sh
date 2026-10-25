@@ -22,6 +22,7 @@ owners = {
     "BankAccounts": "Plaid",
     "BankTransactions": "Plaid",
     "PlaidLinkSessions": "Plaid",
+    "PlaidLinkCompletionAttempts": "Plaid",
     "BillStatements": "Statements",
     "BillLineItems": "Statements",
     "BillChanges": "Statements",
@@ -35,6 +36,29 @@ owners = {
     "UserProgramMemberships": "Subscriptions",
     "SubscriptionAccessKeys": "Subscriptions",
     "SubscriptionAccessKeyRedemptions": "Subscriptions",
+}
+
+entity_owners = {
+    "BillStreamEntity": "Bills",
+    "BillAlertEntity": "Bills",
+    "BankConnectionEntity": "Plaid",
+    "BankAccountEntity": "Plaid",
+    "BankTransactionEntity": "Plaid",
+    "PlaidLinkSessionEntity": "Plaid",
+    "PlaidLinkCompletionAttemptEntity": "Plaid",
+    "BillStatementEntity": "Statements",
+    "BillLineItemEntity": "Statements",
+    "BillChangeEntity": "Statements",
+    "BillStatementUploadEntity": "Statements",
+    "BillStatementAiEvaluationEntity": "Statements",
+    "PlanningPayScheduleEntity": "Planning",
+    "PlanningBillFundingPreferenceEntity": "Planning",
+    "PlanningPaycheckAllocationEntity": "Planning",
+    "PlanningPaycheckPlanRunEntity": "Planning",
+    "SubscriptionEntitlementEntity": "Subscriptions",
+    "UserProgramMembershipEntity": "Subscriptions",
+    "SubscriptionAccessKeyEntity": "Subscriptions",
+    "SubscriptionAccessKeyRedemptionEntity": "Subscriptions",
 }
 
 allowed_cross_owner_access = set()
@@ -58,15 +82,20 @@ def controller_module(filename):
         return "Identity"
     return None
 
-set_pattern = re.compile(
-    r"\b(?:_dbContext|dbContext)\s*\.\s*("
-    + "|".join(
-        sorted(
-            map(re.escape, owners),
-            key=len,
-            reverse=True))
-    + r")\b"
-)
+# Resolve declared contexts as the service guard does. Keep the two legacy
+# names covered when a controller inherits its database field.
+context_identifier_pattern = re.compile(r"\bFullWorthDbContext\s+([A-Za-z_][A-Za-z0-9_]*)")
+
+def references(content, names, generic=False):
+    identifiers = {"_dbContext", "dbContext"} | set(context_identifier_pattern.findall(content))
+    result = set()
+    alternatives = "|".join(sorted(map(re.escape, names), key=len, reverse=True))
+    for identifier in identifiers:
+        context = re.escape(identifier)
+        pattern = (rf"\b{context}\s*\.\s*Set\s*<\s*({alternatives})\s*>\s*\("
+                   if generic else rf"\b{context}\s*\.\s*({alternatives})\b")
+        result.update(re.findall(pattern, content))
+    return result
 
 seen_allowances = set()
 errors = []
@@ -98,11 +127,10 @@ else:
                 encoding="utf-8-sig") as handle:
             content = handle.read()
 
-        referenced_sets = set(
-            set_pattern.findall(
-                content))
+        referenced_sets = references(content, owners)
+        referenced_entities = references(content, entity_owners, generic=True)
 
-        if not referenced_sets:
+        if not referenced_sets and not referenced_entities:
             continue
 
         module = controller_module(
@@ -133,6 +161,19 @@ else:
             errors.append(
                 f"forbidden direct controller cross-owner data access: "
                 f"{module} -> {db_set} (owned by {owner}) in {rel}; "
+                "use an explicit owner contract")
+
+        for entity_type in sorted(referenced_entities):
+            owner = entity_owners[entity_type]
+            if owner == module:
+                continue
+            edge = (module, entity_type, rel)
+            if edge in allowed_cross_owner_access:
+                seen_allowances.add(edge)
+                continue
+            errors.append(
+                f"forbidden direct controller cross-owner entity access: "
+                f"{module} -> {entity_type} (owned by {owner}) in {rel}; "
                 "use an explicit owner contract")
 
 stale = sorted(

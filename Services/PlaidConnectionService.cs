@@ -108,11 +108,24 @@ public sealed class PlaidConnectionService
             await GetRequiredAccessTokenAsync(
                 cancellationToken);
 
-        return await _apiClient
+        var result = await _apiClient
             .CompletePlaidLinkSessionAsync(
                 accessToken,
                 sessionId,
                 cancellationToken);
+
+        // A terminal Link session alone is not proof of a usable owned bank.
+        // Never show a success message for a different session or a missing,
+        // inactive or malformed bank. No automatic provider/session retry.
+        if (result.SessionId != sessionId ||
+            (string.Equals(result.Status, "Completed", StringComparison.OrdinalIgnoreCase) &&
+             (result.Connection is null || result.Connection.Id == Guid.Empty ||
+              !string.Equals(result.Connection.Status, "Active", StringComparison.Ordinal))))
+        {
+            return new PlaidHostedLinkCompletionResult(sessionId, "RecoveryRequired", null);
+        }
+
+        return result;
     }
 
     public async Task<PlaidConnectionResult>

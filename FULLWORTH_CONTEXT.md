@@ -1,3 +1,161 @@
+## Verified accessible interaction states — 2026-10-25 UTC
+
+Latest verified development runtime: `1b1de0cd56aeb55ca66e0c8f04e44433d25366fd`. Current release candidate on `master`: `33223f74d171e0af2fc39b5a1c94ee2ceaaae7c3`. Last independently recorded live production release remains `dd31836703bd110a30f303ed3ce9fd13c0f61d82`; no production host inspection/promotion/deployment in this pass.
+
+- [#963](https://github.com/Fullworth-prod/FullWorth/pull/963) merged source `32769d3313f83ddcbe5058fa827ecf159d471d64`; tested source/merge/integrated tree `eb56c14a9460a55db7f2079bdf77734b1e08a378`. Six files: Bills/Activity/AccountPrivacy/AccountTransactions Razor components, new aria-states.test.mjs and visual-acceptance.mjs entry. Sixteen bindings now emit explicit true/false ARIA strings for selected filters, expanded discovery and busy operations; events, disabled controls and financial/request behavior unchanged.
+- All five exact-head checks passed: main40174028764/browser40174028826/dependency40174028774. Actual37 ARIA state checks per Chromium/WebKit engine (keyboard/pressed roles, held reads/operations, error recovery, exactly two intercepted synthetic writes without replay);672 geometry+126 native-control cases per engine;2786 .NET/106 Node, zero failed/skipped;38 dialog/74 BFF/24 recovery browser cases,18 ownership fixtures,Android/container HTTP/security/virtual-passkey/disposable encrypted restore passed. New requests never reached real providers or exported real data.
+- Artifact12591043995 SHA256 `f5939b7e9079cd4dc837472ded7049a9fcf54128004fe6955719c718e228f8e6` verified; both geometry reports672/0;390px Bills/Activity screenshots inspected. This is synthetic browser acceptance, not real VoiceOver/physical-device/provider/production recovery acceptance.
+- Owner-authorized pass began at development `4348f348444d94bcaf737fe0827c53d3fb3701a8`; three runtime milestones #960/#961/#963 integrated, with #962 recording the preceding handoff. Current source branch `codex/aria-interaction-states-20261025` and earlier source branches retained. No uncommitted/unpushed preparation or failing current-head check remains. Do not repeat these completed fixes. Older #932 remains a separate historical handoff PR.
+- The pass ends with usage headroom reserved for verification/handoff. Hourly automation remains deleted/off. No production/master promotion, paid activation, spending/outreach/payouts, secrets/account/rule changes, real bank connection, private financial-data export or destructive operation.
+- Remaining gates: #934 broader visual system/QA and unselected Overview concepts; #912 controlled provider/installed-device acceptance; #762/#293 private expected-truth evidence; #251/#258 devices; #291/#669 actual immutable off-host/clean-host statements/both-keyring/two-owner/security/legal/same-release acceptance. Keep these open; do not infer them from CI.
+- Next precise independent source checkpoint: inspect focus restoration and live-region feedback after failed Activity/transaction refresh using held synthetic responses; fix only reproduced defects and verify keyboard behavior. Real VoiceOver and nonzero iOS safe areas still need physical-device evidence. Current verified notes supersede older pending statements below.
+
+---
+
+## Verified responsive and native recovery checkpoints — 2026-10-25 UTC
+
+- Latest verified development runtime: `938a2a09ca812396dfd00b1ae96130ed3fb4553d`.
+- Current release candidate on `master`: `33223f74d171e0af2fc39b5a1c94ee2ceaaae7c3`.
+- Last independently recorded live production release: `dd31836703bd110a30f303ed3ce9fd13c0f61d82`. No host inspection, promotion, deployment, activation, financial/account/secret/rule changes or private financial-data export occurred in this pass.
+- [#960](https://github.com/Fullworth-prod/FullWorth/pull/960) merged as `b21e2eb77492a1a67fb4dcc6fbd7738db59c5738`; exact source `c9bb0b15a5e7d3c425681f808f0504b6560def2a`, source/merge tree `c535271978288513f28da3502719ea2cf3f89226`. Root wrapping/shrink fixes remove measured document overflow in Settings/Profile/Account/Privacy/Bills/Planning/setup; native controls, text size and financial behavior remain. Setup emits explicit accessible busy strings. No global overflow hiding or unselected visual redesign.
+- Final #960 main40171652659/browser40171652671/dependency40171652652 passed all five checks. Actual2765 .NET/106 Node, zero failed/skipped;672 authenticated geometry cases and126 native-control cases **per Chromium/WebKit engine**, seven widths320–1440, EN/ES, themes,100/200% text, reduced-motion enlarged profile and held setup loading.38 dialog/74 BFF/24 recovery browser cases, virtual passkey, HTTP security and disposable encrypted recovery passed. Artifact12590827471 SHA256 `d65f289ea07aff91c2625ec2b9d70398c1a1d554cea064be7e34be2a5a6c0ff4` verified; both reports672/0 and final/earlier representative phone screenshots inspected. One healthy earlier run was replaced prematurely; it is recorded as cancelled, never a successful protected check.
+- [#961](https://github.com/Fullworth-prod/FullWorth/pull/961) merged as `938a2a09ca812396dfd00b1ae96130ed3fb4553d`; exact source `7487c2b3cd799a64b966f89c38ddfc89fd297adf`, source/merge tree `1fcb654e27796a3f42f5f4be47051b1dff5b2b37`. Native success requires matching session and valid Active bank; otherwise explicit recovery without write replay. Poll initially2seconds, then35seconds within a monotonic10-minute deadline. Creation plus at most18status requests fits a fresh20/10-minute provider budget; device clock changes cannot extend the deadline. Ownership ratchets now register completion attempts, generic entity access and controller context names; no current cross-user leak was established.
+- Final #961 main40172730461/Hosted40172730377/dependency40172730392/iOS40172730437 passed all eight exact-head checks. Actual2786 .NET (21 linked-source native cases),106 Node,18 canonical negative ownership fixtures; PostgreSQL53 durable replay,16 consumed-token and12 real relational fault cases with synthetic provider calls. Backend/offline/Android/unsigned iPhone builds and container security/disposable encrypted restore passed. Device/storage/HTTP/time doubles do not prove physical-device or provider acceptance. The prior candidate6752db42 passed20 native cases; final monotonic regression passed only on7487c2b3.
+- All source branches remain; merges obey active ruleset24230011 with no bypass, zero required approvals and resolved threads. Hourly automation remains deleted/off; the owner-authorized goal is separate. Older [#932](https://github.com/Fullworth-prod/FullWorth/pull/932) remains open: its fresh diff contains a distinct nine-line historical #930 context addition and was not overwritten or claimed integrated.
+- [#934](https://github.com/Fullworth-prod/FullWorth/issues/934) records the measured responsive slice but broader R1/R6 and the unselected Overview concepts remain incomplete. [#912](https://github.com/Fullworth-prod/FullWorth/issues/912) remains open for controlled provider/installed-device acceptance; #762/#293 private expected-truth evidence, #251/#258 real devices and #291/#669 immutable off-host/clean-host actual statements/both-keyring/two-owner/security/legal gates remain open. Synthetic CI never closes them.
+- Next actionable software checkpoint: inspect other dynamic ARIA/busy states and associated interaction regressions before choosing further bounded fixes; preserve financial truth and request boundaries. Follow fresh source, checks and user design selection. Preparation history in deploy/MAXIMUM-PROGRESS-CHECKPOINT-20261024.md is superseded by this verified header.
+
+---
+
+## Verified Hosted Link consumed-token recovery — 2026-10-25 UTC
+
+- Latest verified development runtime: `1d6c114d9d62f9619b0903b95449b98829c12963`.
+- current release candidate on `master`: `33223f74d171e0af2fc39b5a1c94ee2ceaaae7c3`.
+- Verified live production release: `dd31836703bd110a30f303ed3ce9fd13c0f61d82`.
+
+[PR #958](https://github.com/Fullworth-prod/FullWorth/pull/958) implements the #912 **software recovery milestone**: owner/session-bound durable permits; protected Link-token clearing before one-time exchange; conditional final bank/session/permit persistence; committed-result reconciliation without re-exchange; interrupted/stale fail-closed recovery; and explicit bank review before a fresh Link session. It adds an owner-bound table and additive migration, with no production migration performed.
+
+Verified final source: `a2c6a2f094197e6d583fbe0f097cbfa41d4c5aec`; final source and tested merge-candidate tree: `bdb284cb68f22d66620f480c00a8b80549d19da0`. Development runtime integration: `1d6c114d9d62f9619b0903b95449b98829c12963`.
+
+[Main CI](https://github.com/Fullworth-prod/FullWorth/actions/runs/40164677190) passed **2,765 .NET and 106 Node tests**, zero failed/skipped, and matched the committed EF model/migration. Backend and offline builds have zero warnings/errors. All 12 exact-source check runs passed, including Android, unsigned iPhone package, dependency and production-container checks. Android and unsigned iPhone builds have zero warnings/errors. [PostgreSQL Hosted recovery](https://github.com/Fullworth-prod/FullWorth/actions/runs/40164677162) passed **16 consumed-token cases, 53 durable-replay cases and 12 relational fault scenarios**: six TCP acknowledgements lost after real server ReadyForQuery; two server-trigger rollbacks; two after-prepare stale-writer atomic rollbacks; composite-owner FK/cascade and owned deletion preserving foreign state. Provider responses are synthetic.
+
+Other exact-source PostgreSQL suites passed **26 bank-lifecycle race checks plus 12 related xUnit cases**, **124 monitoring** and **118 bill-confirmation** cases. [Chromium/WebKit](https://github.com/Fullworth-prod/FullWorth/actions/runs/40164677191) passed **24 Hosted Link recovery, 38 dialog and 74 BFF boundary cases**. Tests verify no false connected state, no silent exchange/new-session retry, localized bank-review links and explicit fresh session creation. Native guidance directs bank refresh first. No installed-device acceptance is inferred.
+
+Runbook: [Hosted Link recovery boundaries](deploy/HOSTED-LINK-RECOVERY-20261025.md). A later separately authorized release must verify migration/backup/lock safeguards and prevent mixed old/new completion writers from bypassing the durable permit. Never remove/reset an Exchanging or Interrupted permit just to retry the consumed token.
+
+**#912 stays open** for controlled Plaid Sandbox/error-mode and physical-device acceptance. The software milestone does not satisfy real provider/device/production recovery, qualified legal, #934/vNext as a whole, or other release gates. #762/#293 private expected-bill/import/payroll/provider proof, #251/#258 physical devices, and #291/#669 real clean-host/off-host/both-keyring/security/legal proof remain open without fabricated evidence. Source-level fixture results must not be promoted into those claims.
+
+The `master` release candidate remains `33223f74d171e0af2fc39b5a1c94ee2ceaaae7c3`; latest independently recorded live release remains `dd31836703bd110a30f303ed3ce9fd13c0f61d82`. This pass merged development only. No master promotion, deployment, production migration, paid activation, financial/secret/account change, payout, outreach or private-data export occurred. Branches are preserved; do not enable the old-name cleanup guard.
+
+The three new Overview design concepts still await human selection; this is functional recovery UX, not selection or implementation of a visual redesign. Preserve reduced motion/performance profiles and financial behavior. Creator terms stay proposed and features default-off. Current canonical repository is `Fullworth-prod/FullWorth` (ID `1344061157`).
+
+This verified checkpoint supersedes candidate/pending notes below; prior history is preserved.
+
+---
+
+## Verified development reliability milestone — 2026-10-25 UTC
+
+- Latest verified **runtime integration**: `0a3ec424086a02bc81c85044660da8011e1b7879`. Later documentation-only commits may advance development; read the actual branch head from GitHub.
+- current release candidate on `master`: `33223f74d171e0af2fc39b5a1c94ee2ceaaae7c3`.
+- Verified live production release: `dd31836703bd110a30f303ed3ce9fd13c0f61d82`.
+
+[Integration #953](https://github.com/Fullworth-prod/FullWorth/pull/953) merged into development as `0a3ec424086a02bc81c85044660da8011e1b7879` after **all nine** checks passed on exact final source `c3f58dacf2852aaf4e6e698c0060c316f56c019f`. The tested merge-candidate tree and integrated tree both equal `3020e22b57bd1ebc7039775307df54967a4ced9a`.
+
+[Final main CI](https://github.com/Fullworth-prod/FullWorth/actions/runs/40150705166) executed **2,749 .NET and 104 Node tests**, zero failed/skipped and zero backend/offline/Android build warnings/errors. Android, container, HTTP security, passkey/browser and disposable encrypted-backup/recovery fixtures passed. Dedicated PostgreSQL suites passed **26 bank-lifecycle**, **53 Hosted Link**, **124 monitoring** and **118 bill-confirmation** cases. [Chromium/WebKit](https://github.com/Fullworth-prod/FullWorth/actions/runs/40150705140) passed **38 dialog plus 74 BFF scenarios**. These repeated/isolated suites are not a claim of real-provider, installed-device or production recovery acceptance.
+
+Final-head visual artifact `12581863951` was downloaded and SHA256 verified as `92bd74ec419c235d623eeeef91eb3e4a3c147ecfdb749f4ed605777b602de763`; four screenshots were inspected for 320px first-sync/Activity, 390px Account and Spanish Activity states. This is the existing vNext integration, not implementation of the three unselected new mockups.
+
+Delivered: winning bank lifecycle/credential concurrency protection; durable Hosted Link and immutable alert replay; independent paycheck error isolation and pending health-alert composition; deterministic bill-confirmation ambiguity/durable-state/save recovery; browser JSON/no-content/redirect/token handling without automatic write replay; truthful connection/first-sync Activity states and Spanish labels. Existing financial arithmetic, ownership, schema and production flags are preserved.
+
+Current release state: master advanced independently through #878; that is repository state, not evidence of deployment. The latest independently recorded live proof remains the October 21 guarded deployment/authentication smoke. This pass merged development only and dispatched no production deployment or master promotion.
+
+Code issues #940/#951/#954 are closed as completed in development. Represented PRs #941/#942/#943/#944/#945/#948/#950/#952/#955/#956 were closed as **superseded, not individually merged**; all ten source branches were verified present. No branch was deleted.
+
+Continue #912 failed/unknown-commit consumed-token and controlled provider recovery; #762/#293 private expected-bill/import/payroll/provider evidence; #251/#258 physical Android/iPhone acceptance; and #291/#669 immutable off-host/real clean-host statements plus both-keyring recovery, controlled two-owner/document/security and qualified legal acceptance. Those gates remain open. No paid/creator/passkey/AI activation, financial account/secret change, outreach, payout or private financial-data export occurred.
+
+The three new Overview visual concepts still require human selection; preserve financial behavior, reduced-motion and performance settings. Creator terms remain proposals and features default-off. Use the current canonical repository `Fullworth-prod/FullWorth` (unchanged repository ID `1344061157`); do not enable its old-name branch-cleanup guard without separate authorization.
+
+This checkpoint supersedes candidate/pending/billing-lock notes below. Historical evidence remains intact.
+
+---
+
+## Release branch identity reconciled — 2026-10-25 UTC
+
+- current release candidate on `master`: `33223f74d171e0af2fc39b5a1c94ee2ceaaae7c3`.
+- Verified live production release: `dd31836703bd110a30f303ed3ce9fd13c0f61d82`.
+
+The `master` branch advanced independently through [release PR #878](https://github.com/Fullworth-prod/FullWorth/pull/878) on 2026-10-25. This records repository state, not a deployment or new launch approval. The latest independently recorded live evidence remains the October 21 [guarded deployment](https://github.com/Fullworth-prod/FullWorth/actions/runs/39665707749) and [same-release authentication smoke](https://github.com/Fullworth-prod/FullWorth/actions/runs/39666163983). No fresh host inspection or later deployment is established by this reconciliation.
+
+The reliability work remains in development integration [#953](https://github.com/Fullworth-prod/FullWorth/pull/953), pending its final-head checks. Keep real recovery, two-owner/provider/statement, physical-device and qualified legal gates open. Do not promote/deploy or activate billing/creators/passkeys/AI merely to reconcile these documents. Earlier release identities below are historical.
+
+---
+
+## Reliability integration candidate — 2026-10-25 UTC
+
+Canonical connected repository: `Fullworth-prod/FullWorth`, unchanged repository ID `1344061157` and organization ID `333422185`. Old `Fullworth/FullWorth` API paths now redirect; resolve and use the canonical repository name for connector calls. This is a repository-name change, not a production deployment or permission to retarget a host. The active protected ruleset remains `24230011`: mandatory PR, strict backend/Android/container/dependency checks, resolved review threads and no bypass. Branch cleanup remains unauthorized; do not enable or invoke its old-name guard merely because of the rename.
+
+GitHub Actions execution has resumed. The older billing-lock checkpoints below are historical and superseded by this checkpoint. All real results must still be checked against the exact source/merge-candidate tree and latest attempt; the account change itself proves no application acceptance.
+
+Existing [integration PR #953](https://github.com/Fullworth-prod/FullWorth/pull/953) now combines the previously reviewed 38-path reliability/vNext candidate `9d786c2e64bab61dbe76b0c1ecf6c2299619c4ce` with the 13 non-overlapping paths from:
+- [#955](https://github.com/Fullworth-prod/FullWorth/pull/955), source `f8e0fa06e56fa0114f947d6fffa9d6fc907e9f8c`: deterministic rejection of ambiguous owned bill matches, durable exact-ID lifecycle checks and per-attempt save-failure/tracker restoration.
+- [#956](https://github.com/Fullworth-prod/FullWorth/pull/956), source `31fc3c4a1b23ed6492a4e8746718df407f2e6d7e`: browser JSON/no-content response contracts, blocked Fetch redirects, validated security tokens and rejected-token refresh only for later explicit attempts. No automatic write replay.
+
+The original source components #941/#945/#948/#950/#952 and the eight Spanish Activity translations remain included. All incoming runtime/test/workflow blobs are copied from their inspected source commits; merge-base preimages match and there are no changed-path conflicts. This context prefix records the expanded candidate. Source PRs remain preserved until final integration succeeds; then disposition them accurately as represented/superseded rather than individually merged.
+
+### Independently executed source evidence, not a combined-candidate pass
+
+- Original #953 source: [backend CI attempt 2](https://github.com/Fullworth-prod/FullWorth/actions/runs/40129442677) passed **2,631 .NET / 37 Node** tests with zero failed/skipped and zero backend/offline build warnings/errors. Dedicated disposable PostgreSQL passed **26 bank-lifecycle cases**, **53 Hosted Link replay cases** and **124 monitoring cases** in runs [40129442514](https://github.com/Fullworth-prod/FullWorth/actions/runs/40129442514), [40129442549](https://github.com/Fullworth-prod/FullWorth/actions/runs/40129442549) and [40129442509](https://github.com/Fullworth-prod/FullWorth/actions/runs/40129442509).
+- #955 source: [backend CI attempt 2](https://github.com/Fullworth-prod/FullWorth/actions/runs/40133578841) passed **2,556 .NET / 37 Node**, zero failed/skipped and zero backend/offline build warnings/errors; its [dedicated PostgreSQL run](https://github.com/Fullworth-prod/FullWorth/actions/runs/40133578954) executed and passed **118 cases**.
+- #956 source: [backend CI attempt 2](https://github.com/Fullworth-prod/FullWorth/actions/runs/40146489098) passed **2,438 .NET / 104 Node**, zero failed/skipped and zero backend/offline build warnings/errors. The [browser workflow](https://github.com/Fullworth-prod/FullWorth/actions/runs/40146489154) passed **38 confirmation-dialog cases plus 74 BFF response cases across Chromium and WebKit**.
+- All three source Android builds passed. These source results, including the PostgreSQL fixtures, do not prove that the expanded integration passes. Do not sum repeated test-suite runs into a unique-test or real-provider acceptance count.
+
+### Required next checkpoint and boundaries
+
+Require all four protected checks, all **four** dedicated PostgreSQL suites (including manual bill confirmation), and the Chromium/WebKit dialog+BFF workflow on the final expanded #953 head before merging into `development`. Inspect executed counts, warnings, actual failed steps and authenticated visual artifacts; fix actual failures without weakening checks. Preserve source branches; no duplicate integration PR is needed. Consult the current #953 head/checks/merge state for authoritative final evidence rather than treating this candidate record as completion.
+
+The newest three Overview visual concepts remain unselected; this integration does not implement those mockups or establish animation/device acceptance. Preserve existing financial behavior, reduced-motion/performance settings, privacy, ownership and recovery. Creator terms remain proposals and features default-off.
+
+Production remains separately recorded at `dd31836703bd110a30f303ed3ce9fd13c0f61d82`, with no fresh host inspection, deployment or master promotion in this pass. #912 failed/unknown-commit and controlled provider recovery; #762/#293 private bill/import/payroll/provider evidence; #251/#258 physical devices; and #291/#669 immutable off-host/real clean-host recovery, controlled two-owner/statement/security/legal acceptance remain open. No paid/creator activation, spending, outreach, payout, secret/account-setting mutation, private financial export or destructive operation is authorized.
+
+Earlier snapshots below are historical, including the now-cleared Actions execution block.
+
+---
+
+## CI execution blocker — 2026-10-24 UTC
+
+[Combined PR #953](https://github.com/Fullworth/FullWorth/pull/953) contains the reviewed reliability/vNext integration. Its initial head `0cec1c4e206ac6609ae86fa4f09debad06b229f6` triggered six workflows, but all eight jobs failed before executing any steps. [Run #40127391943](https://github.com/Fullworth/FullWorth/actions/runs/40127391943) reports that the account is locked due to a billing issue. This is an external execution block, not a tested application regression or permission to bypass required checks.
+
+Do not merge the combined candidate, close the source PRs, repeatedly rerun unchanged blocked workflows, or claim combined test success. Restore authorized GitHub Actions access through the account owner, then rerun the final candidate's failed jobs and inspect all protected, PostgreSQL and visual results. Preserve production and existing branch rules. Source-PR green checks remain evidence only for their own source commits.
+
+Independent review completed while blocked: all 38 source paths had unchanged merge-base preimages and no cross-PR path conflicts; reviewed source blobs were verified; the existing #945 visual artifact SHA256 `63c12b339284fedcdc262662bed01935cf694b4d93d741b9c3a00f65161ab10e` was downloaded and four screenshots inspected. That artifact revealed eight missing Spanish Activity-shell resource keys; the candidate now adds them without changing existing translations. XML parsing, duplicate-key checks and literal component-key coverage pass; new render/build acceptance is still blocked. This is prior-source visual evidence, not a combined-candidate screenshot.
+
+---
+
+## Development integration scope — 2026-10-24 UTC: reliability and vNext R4/R5
+
+This checkpoint combines the reviewed development changes from [#941](https://github.com/Fullworth/FullWorth/pull/941), [#945](https://github.com/Fullworth/FullWorth/pull/945), [#948](https://github.com/Fullworth/FullWorth/pull/948), [#952](https://github.com/Fullworth/FullWorth/pull/952), and the verified subscription handoff in [#950](https://github.com/Fullworth/FullWorth/pull/950). Source PR checks are independent evidence; the combined branch must pass its own exact-head verification before integration. Consult the integration PR for its exact final SHA, test results and merge state; this scope record alone does not declare success.
+
+- Bank sync: optimistic status/credential concurrency predicates, durable owner-scoped preflight, and preservation of winning disconnect/credential state.
+- Hosted Link: durable terminal-session evidence before and after provider polling, preserving caller edits and avoiding re-exchange where completion is already committed. Consumed-token recovery after a genuinely failed database commit remains open under #912.
+- Monitoring: independent paycheck failure isolation, immutable payday-alert replay, pending connection-health composition, caller-work restoration and safe cancellation.
+- vNext: truthful partial-bank sync counts, functional Activity connection-issue filtering/repair navigation, and first-sync waiting guidance in English/Spanish, with authenticated responsive browser acceptance.
+- Compatibility: the EF changes add concurrency metadata only, not columns or migration DDL. Preserve the current subscription cadence/item-period fixes and all existing owner/privacy/security controls. Combined tests must include all three new disposable PostgreSQL suites, the standard protected backend/Android/Linux/dependency gates and UI/browser verification.
+- Continue remaining #934 financial-truth/experience work and #912/#762/#293/#291/#669/#251/#258 real provider, two-user/document, physical-device, immutable off-host/clean-host and qualified legal acceptance. No production deployment, master promotion, billing/creator enablement, secret change or customer-data operation is authorized by this checkpoint.
+
+Earlier checkpoint details below are historical for exact development identity. The latest independently recorded production release remains `dd31836703bd110a30f303ed3ce9fd13c0f61d82`; no fresh host inspection or new deployment is claimed.
+
+---
+
+## Verified development checkpoint — 2026-10-24 UTC: subscription period isolation
+
+- [PR #949](https://github.com/Fullworth/FullWorth/pull/949) merged into `development` as `67cff66012ed79ca1b7b7541664d7763fc876904`. Subscription reconciliation now selects the configured FullWorth Price before reading item dates, preventing an unrelated product's period from extending or prematurely revoking FullWorth access. Explicit matched-item dates take precedence; legacy root-period fallback remains supported. No schema, live Price, enforcement, provider credential or production configuration changed.
+- Exact tested source head: `0215e28065f0a3ee3e77c3ae4c56e1991236ad99`. [FullWorth CI #2209](https://github.com/Fullworth/FullWorth/actions/runs/40073375990) and [Dependency Security](https://github.com/Fullworth/FullWorth/actions/runs/40073376097) passed all four protected checks: backend, MAUI Android, Linux production container and dependency review. **2,438 .NET tests and 37 Node tests**, zero failed/skipped and zero backend build warnings/errors. The 22 new fixed-clock cases cover product order, monthly/yearly, active/expired, missing dates, legacy fallback, matched-item precedence and both direct and signed-webhook entitlement reconciliation. Merged parser and regression files were read back exactly. Provider responses and encrypted recovery fixtures are synthetic/disposable, not live acceptance.
+- Earlier [PR #946](https://github.com/Fullworth/FullWorth/pull/946) recorded the planned creator attribution/commission/reporting contract in `CREATOR_REFERRAL_PROGRAM.md` and intended USD 7.99/month or USD 59.99/year pricing. [PR #947](https://github.com/Fullworth/FullWorth/pull/947) added explicit single-period Stripe Price validation before display/checkout; its exact-head protected checks passed with 2,416 .NET and 37 Node tests. Creator implementation and live commercial configuration remain unverified; proposed commission terms are not an executed agreement.
+- Continue from fresh GitHub branches, open PRs and exact-head checks. At this checkpoint, #941/#948 contain separate active bank-lifecycle/Hosted Link work and #945 contains combined vNext R4/R5 work; do not duplicate or claim those merged. Financial truth, #934 and remaining #912/#762/#293/#291/#669/#251/#258 acceptance outrank creator rollout. Context-only PR #932 is older pending handoff work; preserve this newer verified checkpoint when reconciling it.
+- **Production boundary:** no deployment was dispatched. The latest independently recorded guarded deployment remains `dd31836703bd110a30f303ed3ce9fd13c0f61d82` from October 21, not a fresh host inspection. Preserve remaining real provider/two-user/document, physical-device, immutable off-host/clean-host statement and both-key-ring recovery, qualified legal and guarded-release gates.
+
+---
+
 ## Verified development integration — 2026-10-24 UTC (2026-10-23 MDT)
 
 - Current verified `development` integration commit: `2c8ab520dcb5d16aa1625f236b5f69399552bace`, merged [PR #927](https://github.com/Fullworth/FullWorth/pull/927). This is **development only**, not a production release.

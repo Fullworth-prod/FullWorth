@@ -78,3 +78,19 @@
     font-size: 0.8rem;
     line-height: 1.5;
 }
+
+/* Long localized trust copy must shrink inside its grid track at enlarged text. */
+.privacy-copy,
+.privacy-points {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.privacy-points div {
+    min-width: 0;
+    white-space: normal;
+}
+
+.privacy-points span {
+    flex-shrink: 0;
+}

@@ -105,6 +105,11 @@ public sealed class AccountBankDeletionGateway(
         dbContext.BankAccounts.RemoveRange(
             accounts);
 
+        var completionAttempts = await dbContext.PlaidLinkCompletionAttempts
+            .Where(attempt => attempt.UserId == userId)
+            .ToListAsync(cancellationToken);
+        dbContext.PlaidLinkCompletionAttempts.RemoveRange(completionAttempts);
+
         dbContext.PlaidLinkSessions.RemoveRange(
             linkSessions);
 

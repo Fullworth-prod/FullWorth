@@ -74,13 +74,13 @@ Do not perform a big-bang rewrite.
 
 The first explicit data ownership map covers the highest-risk finance domains:
 
-- Plaid owns `BankConnections`, `BankAccounts`, `BankTransactions`, and `PlaidLinkSessions`.
+- Plaid owns `BankConnections`, `BankAccounts`, `BankTransactions`, `PlaidLinkSessions`, and owner-bound `PlaidLinkCompletionAttempts`.
 - Bills owns `BillStreams` and `BillAlerts`.
 - Statements owns `BillStatements`, `BillLineItems`, `BillChanges`, `BillStatementUploads`, and `BillStatementAiEvaluations`.
 
 CI enforces service-module persistence ownership through `deploy/tests/data-ownership-boundary-tests.sh`. Accounts, Bills, Plaid, and Statements now have zero direct cross-owner finance DbSet exceptions. The guard resolves actual `FullWorthDbContext` identifiers and also rejects cross-owner `Set<Entity>()` access, so DTO/property names cannot create false positives or bypass ownership. New cross-owner service-table access fails CI.
 
-Controller/application orchestration is separately ratcheted by `deploy/tests/controller-data-ownership-boundary-tests.sh`. The controller baseline now has zero cross-owner DbSet exceptions. New controller cross-owner DbSet access fails CI.
+Controller/application orchestration is separately ratcheted by `deploy/tests/controller-data-ownership-boundary-tests.sh`. It covers both named DbSets and generic `Set<Entity>()` access through declared or legacy context names; disposable negative fixtures verify foreign completion-attempt access is rejected while owner access and similarly named DTO properties remain valid. The controller baseline now has zero cross-owner DbSet exceptions. New controller cross-owner DbSet access fails CI.
 
 Statements no longer reads or mutates Bills-owned `BillStreams` or `BillAlerts` directly. Bill Stream context crosses `IBillStreamReadGateway`, and statement-driven alert desired state crosses `IBillAlertReconciliationGateway`; Bills owns alert persistence and stages those changes inside the shared modular-monolith unit of work.
 

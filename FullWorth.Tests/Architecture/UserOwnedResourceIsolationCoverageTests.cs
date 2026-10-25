@@ -72,6 +72,10 @@ public sealed class UserOwnedResourceIsolationCoverageTests
                     Evidence<Security.AccountDataExportTests>(
                         nameof(Security.AccountDataExportTests.ExportAccountData_ReturnsOnlyOwnedSafeData)),
 
+                [typeof(PlaidLinkCompletionAttemptEntity)] =
+                    Evidence<HostedLinkRecoveryTests>(
+                        nameof(HostedLinkRecoveryTests.ForeignOwner_CannotObserveOrInterruptExistingCompletionAttempt)),
+
                 [typeof(PlaidLinkSessionEntity)] =
                     Evidence<Security.PlaidOwnershipBoundaryTests>(
                         nameof(Security.PlaidOwnershipBoundaryTests.OtherUsersHostedLinkSession_CannotBeCompleted)),

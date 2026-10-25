@@ -33,6 +33,11 @@ const plaidUiText = {
         completionFailed:
             "The bank connection could not be completed.",
 
+        recoveryRequired:
+            "FullWorth could not verify this bank connection. Review connected banks first. If it is missing or still needs attention, use Connect or Reconnect to start a new secure Plaid session. The previous session cannot be retried.",
+
+        reviewConnections: "Review connected banks",
+
         waitTimedOut:
             "FullWorth stopped waiting for the Plaid session. You can try again.",
 
@@ -53,7 +58,7 @@ const plaidUiText = {
                 `${institution} is connected. FullWorth will begin automatic monitoring.`,
 
         connectionFailed:
-            "FullWorth could not start or complete the secure bank connection.",
+            "FullWorth could not start or verify the secure bank connection. Review connected banks before starting a new secure session.",
 
         preparingReauthorization:
             institution =>
@@ -68,7 +73,7 @@ const plaidUiText = {
 
         reauthorizationFailed:
             institution =>
-                `FullWorth could not reauthorize ${institution}.`
+                `FullWorth could not verify reauthorization for ${institution}. Review connected banks before starting a new secure session.`
     },
 
     es: {
@@ -90,6 +95,11 @@ const plaidUiText = {
         completionFailed:
             "No se pudo completar la conexión bancaria.",
 
+        recoveryRequired:
+            "FullWorth no pudo verificar esta conexión bancaria. Revisa primero los bancos conectados. Si falta la conexión o necesita atención, usa Conectar o Reconectar para iniciar una nueva sesión segura de Plaid. La sesión anterior no se puede volver a intentar.",
+
+        reviewConnections: "Revisar bancos conectados",
+
         waitTimedOut:
             "FullWorth dejó de esperar la sesión de Plaid. Puedes intentarlo de nuevo.",
 
@@ -110,7 +120,7 @@ const plaidUiText = {
                 `La conexión con ${institution} está activa. FullWorth comenzará el monitoreo automático.`,
 
         connectionFailed:
-            "FullWorth no pudo iniciar o completar la conexión bancaria segura.",
+            "FullWorth no pudo iniciar o verificar la conexión bancaria segura. Revisa los bancos conectados antes de iniciar una nueva sesión segura.",
 
         preparingReauthorization:
             institution =>
@@ -125,7 +135,7 @@ const plaidUiText = {
 
         reauthorizationFailed:
             institution =>
-                `FullWorth no pudo reautorizar la conexión con ${institution}.`
+                `FullWorth no pudo verificar la reautorización de ${institution}. Revisa los bancos conectados antes de iniciar una nueva sesión segura.`
     }
 };
 
@@ -180,7 +190,18 @@ async function getSafeErrorMessage(
 }
 
 async function handleResponse(
-    response) {
+    response,
+    allowNoContent = false) {
+
+    // A login/proxy page is not evidence that a financial operation succeeded.
+    if (response.redirected) {
+        throw new Error("FullWorth refused a redirected response.");
+    }
+
+    // Invalidate only for a later explicit attempt. Never replay a write.
+    if ([400, 401, 403].includes(response.status)) {
+        antiforgeryToken = null;
+    }
 
     if (response.status === 401) {
         window.location.assign(loginRedirectUrl(window.location));
@@ -201,7 +222,7 @@ async function handleResponse(
         throw error;
     }
 
-    if (response.status === 204) {
+    if (response.status === 204 && allowNoContent) {
         return null;
     }
 
@@ -209,15 +230,18 @@ async function handleResponse(
         response.headers.get(
             "content-type") ?? "";
 
-    if (!contentType.includes(
-        "application/json")) {
-        return null;
+    if (contentType.split(";")[0].trim().toLowerCase() !== "application/json") {
+        throw new Error("FullWorth received an unexpected response.");
     }
 
-    return await response.json();
+    try {
+        return await response.json();
+    } catch {
+        throw new Error("FullWorth received an invalid JSON response.");
+    }
 }
 
-async function getJson(url) {
+async function getJson(url, allowNoContent = false) {
     const response =
         await fetch(
             url,
@@ -227,6 +251,7 @@ async function getJson(url) {
 
                 credentials:
                     "same-origin",
+                redirect: "error",
 
                 headers: {
                     "Accept":
@@ -238,7 +263,7 @@ async function getJson(url) {
             });
 
     return await handleResponse(
-        response);
+        response, allowNoContent);
 }
 
 async function getAntiforgeryToken() {
@@ -255,6 +280,7 @@ async function getAntiforgeryToken() {
 
                 credentials:
                     "same-origin",
+                redirect: "error",
 
                 headers: {
                     "Accept":
@@ -269,7 +295,7 @@ async function getAntiforgeryToken() {
         await handleResponse(
             response);
 
-    if (!result?.requestToken) {
+    if (typeof result?.requestToken !== "string" || !result.requestToken.trim()) {
         throw new Error(
             "FullWorth could not establish a secure request token.");
     }
@@ -298,6 +324,7 @@ async function mutateJson(
 
                 credentials:
                     "same-origin",
+                redirect: "error",
 
                 headers: {
                     "Accept":
@@ -312,7 +339,7 @@ async function mutateJson(
             });
 
     return await handleResponse(
-        response);
+        response, true);
 }
 
 async function mutateJsonWithBody(
@@ -331,6 +358,7 @@ async function mutateJsonWithBody(
 
                 credentials:
                     "same-origin",
+                redirect: "error",
 
                 headers: {
                     "Accept":
@@ -351,7 +379,7 @@ async function mutateJsonWithBody(
             });
 
     return await handleResponse(
-        response);
+        response, true);
 }
 
 function setConnectStatus(
@@ -368,6 +396,14 @@ function setConnectStatus(
 
     element.dataset.state =
         state;
+}
+
+function appendConnectionReview(element) {
+    if (!element) return;
+    const link = document.createElement("a");
+    link.href = "/app/account";
+    link.textContent = getPlaidUiText().reviewConnections;
+    element.append(" ", link);
 }
 
 function delay(milliseconds) {
@@ -469,6 +505,9 @@ async function waitForPlaidCompletion(
         setConnectStatus(statusElement, text.canceled, "neutral");
     } else if (state === "expired") {
         setConnectStatus(statusElement, text.expired, "error");
+    } else if (state === "recoveryrequired") {
+        setConnectStatus(statusElement, text.recoveryRequired, "error");
+        appendConnectionReview(statusElement);
     } else {
         setConnectStatus(statusElement, text.completionFailed, "error");
     }
@@ -602,6 +641,7 @@ export async function getPlanningPaySchedule() {
             {
                 method: "GET",
                 credentials: "same-origin",
+                redirect: "error",
                 headers: { "Accept": "application/json" },
                 cache: "no-store"
             });
@@ -698,6 +738,7 @@ export async function deleteFullWorthAccount(
 
                 credentials:
                     "same-origin",
+                redirect: "error",
 
                 headers: {
                     "Accept":
@@ -714,11 +755,7 @@ export async function deleteFullWorthAccount(
                     "no-store"
             });
 
-    if (!response.ok) {
-        throw new Error(
-            await getSafeErrorMessage(
-                response));
-    }
+    await handleResponse(response, true);
 
     return true;
 }
@@ -875,6 +912,7 @@ export async function uploadBillStatement(
 
                 credentials:
                     "same-origin",
+                redirect: "error",
 
                 headers: {
                     "Accept":
@@ -901,7 +939,7 @@ export async function getLatestBillStatementUpload(billStreamId) {
     }
 
     return await getJson(
-        `/bff/bill-streams/${encodeURIComponent(billStreamId)}/statement-uploads/latest`);
+        `/bff/bill-streams/${encodeURIComponent(billStreamId)}/statement-uploads/latest`, true);
 }
 
 export async function getBillStatementUploadStatus(
@@ -1029,6 +1067,7 @@ export function wirePlaidConnectButton(
                     status,
                     text.connectionFailed,
                     "error");
+                appendConnectionReview(status);
             } finally {
                 bankFlows.delete(flow);
                 button.dataset.busy =
@@ -1163,6 +1202,7 @@ export function wirePlaidReconnectButton(
                     text.reauthorizationFailed(
                         displayInstitution),
                     "error");
+                appendConnectionReview(status);
             } finally {
                 bankFlows.delete(flow);
                 button.dataset.busy =

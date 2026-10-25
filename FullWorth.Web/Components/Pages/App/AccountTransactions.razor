@@ -43,7 +43,7 @@
         <button type="button"
                 class="secondary-action"
                 disabled="@(_isLoading || _isRefreshing || _isLoadingMore)"
-                aria-busy="@_isRefreshing"
+                aria-busy="@(_isRefreshing ? "true" : "false")"
                 @onclick="SyncNowAsync">
             @(_isRefreshing
                 ? L["Syncing…"]

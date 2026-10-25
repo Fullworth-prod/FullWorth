@@ -19,6 +19,7 @@ owners = {
     "BankAccounts": "Plaid",
     "BankTransactions": "Plaid",
     "PlaidLinkSessions": "Plaid",
+    "PlaidLinkCompletionAttempts": "Plaid",
     "BillStatements": "Statements",
     "BillLineItems": "Statements",
     "BillChanges": "Statements",
@@ -47,6 +48,7 @@ entity_owners = {
     "BankAccountEntity": "Plaid",
     "BankTransactionEntity": "Plaid",
     "PlaidLinkSessionEntity": "Plaid",
+    "PlaidLinkCompletionAttemptEntity": "Plaid",
     "BillStatementEntity": "Statements",
     "BillLineItemEntity": "Statements",
     "BillChangeEntity": "Statements",
@@ -174,3 +176,6 @@ if errors:
 
 print("FullWorth data-ownership ratchet passed.")
 PY
+
+# Verify that this ratchet rejects synthetic bypasses as well as current source.
+python3 "$root_dir/deploy/tests/data-ownership-guard-negative-tests.py"

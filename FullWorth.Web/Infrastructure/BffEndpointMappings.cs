@@ -1,4 +1,5 @@
 using System.Text.Json;
+using FullWorth.Core.Subscriptions;
 using System.Threading.RateLimiting;
 using FullWorth.Web.Services;
 using Microsoft.AspNetCore.Antiforgery;
@@ -58,6 +59,29 @@ public static class BffEndpointMappings
             await antiforgery.ValidateRequestAsync(context);
             return await proxy.ForwardJsonAsync(context, HttpMethod.Post, "/api/subscription/access-keys/redeem", request, context.RequestAborted);
         });
+
+
+        bff.MapGet("/subscription-reviews", async (HttpContext context, FullWorthBffProxyService proxy) =>
+            await proxy.ForwardGetAsync(context, "/api/subscription-reviews", context.RequestAborted));
+        bff.MapGet("/subscription-reviews/{reviewId:guid}", async (HttpContext context, FullWorthBffProxyService proxy, Guid reviewId) =>
+            reviewId == Guid.Empty ? Results.NotFound() :
+            await proxy.ForwardGetAsync(context, $"/api/subscription-reviews/{reviewId:D}", context.RequestAborted));
+        bff.MapPost("/subscription-reviews", async (HttpContext context, IAntiforgery antiforgery,
+            AdminBffWriteProxyService proxy, CreateSubscriptionReviewRequest request) =>
+        {
+            await antiforgery.ValidateRequestAsync(context);
+            return await proxy.ForwardJsonAsync(context, HttpMethod.Post,
+                "/api/subscription-reviews", request, context.RequestAborted);
+        }).RequireRateLimiting(FinancialRefreshRateLimitPolicy);
+        bff.MapPost("/subscription-reviews/{reviewId:guid}/evidence", async (HttpContext context,
+            IAntiforgery antiforgery, AdminBffWriteProxyService proxy, Guid reviewId,
+            SubscriptionEvidenceRequest request) =>
+        {
+            await antiforgery.ValidateRequestAsync(context);
+            return reviewId == Guid.Empty ? Results.NotFound() :
+                await proxy.ForwardJsonAsync(context, HttpMethod.Post,
+                    $"/api/subscription-reviews/{reviewId:D}/evidence", request, context.RequestAborted);
+        }).RequireRateLimiting(FinancialRefreshRateLimitPolicy);
 
         bff.MapGet("/bill-discovery/diagnostics", async (HttpContext context, FullWorthBffProxyService proxy) =>
             await proxy.ForwardGetAsync(context, "/api/bill-discovery/diagnostics", context.RequestAborted))

@@ -66,6 +66,7 @@
          its reusable scenarios, never its generated obj/bin sources. -->
     <Compile Remove="RelationalBankLifecycle/**" />
     <Compile Remove="RelationalHostedRecovery/**" />
+    <Compile Remove="RelationalSubscriptionVerification/**" />
     <Compile Include="RelationalBankLifecycle/BankLifecycleRaceChecks.cs" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,361 @@
+@page "/app/subscription-checks"
+@using FullWorth.Core.Subscriptions
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@layout AppLayout
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject Microsoft.Extensions.Localization.IStringLocalizer<SubscriptionReviews> L
+
+<PageTitle>@L["Subscription verification"] · FullWorth</PageTitle>
+<div class="app-page subscription-reviews">
+    <a class="fw-back-link" href="/app/bills">@L["Bills"]</a>
+    <header>
+        <h1>@L["Subscription verification"]</h1>
+        <p>@L["A payment does not prove that another payment is scheduled. Check access and renewal separately."]</p>
+    </header>
+    <p class="review-notice">@L["Direct merchant verification is unavailable. Details here are confirmed by you or supported by a document you reviewed, not checked live with the merchant."]</p>
+    @if (_loading)
+    {
+        <p role="status">@L["Loading subscription reviews…"]</p>
+    }
+    @if (!string.IsNullOrWhiteSpace(_message))
+    {
+        <p role="status" class="review-notice">@_message</p>
+    }
+    <button type="button" class="secondary-action" disabled="@_busy" @onclick="ReloadAsync">@L["Refresh reviews"]</button>
+    <section class="app-panel">
+        <h2>@L["Your subscription reviews"]</h2>
+        <p>@L["These reviews do not change your bank history, monitored bills or financial totals."]</p>
+        @if (_list.Reviews.Count == 0 && !_loading)
+        {
+            <p>@L["No subscription reviews yet. You can start with just one posted payment."]</p>
+        }
+        @foreach (var review in _list.Reviews)
+        {
+            <button type="button" class="secondary-action review-list-item" disabled="@_busy"
+                    aria-pressed="@((_selected?.Id == review.Id).ToString().ToLowerInvariant())"
+                    @onclick="() => SelectAsync(review.Id)">
+                @review.MerchantName · @review.PlanLabel · @review.BillingParty
+            </button>
+        }
+        @if (_list.HasMore)
+        {
+            <p>@L["Showing the 100 most recent reviews."]</p>
+        }
+    </section>
+    <section class="app-panel">
+        <h2>@L["Start a subscription review"]</h2>
+        <p>@L["Use a label that identifies the exact account and plan. Do not enter passwords or full account numbers."]</p>
+        @if (SourceTransactionId is not null)
+        {
+            <p>@L["This review will reference the selected posted payment. It does not establish recurrence."]</p>
+        }
+        @if (BillStreamId is not null)
+        {
+            <p>@L["This review will reference the selected bill and can use its existing documents."]</p>
+        }
+        <form @onsubmit="CreateAsync" @onsubmit:preventDefault>
+            <fieldset disabled="@_busy">
+                <label for="review-merchant">@L["Merchant"]</label>
+                <input id="review-merchant" maxlength="200" required @bind="_merchant" />
+                <label for="review-plan">@L["Account and plan label"]</label>
+                <input id="review-plan" maxlength="100" required @bind="_plan" />
+                <label for="review-party">@L["Billed by"]</label>
+                <input id="review-party" maxlength="100" required @bind="_billingParty" />
+                <p>@L["For example: directly by the merchant, Apple, Google Play or another billing provider. Use Unknown if you do not know."]</p>
+                <button type="submit" class="primary-action">@L["Start review"]</button>
+            </fieldset>
+        </form>
+    </section>
+
+    @if (_selected is { } selected)
+    {
+        <section class="app-panel" aria-labelledby="review-detail-heading" aria-busy="@_busy.ToString().ToLowerInvariant()">
+            <h2 id="review-detail-heading">@selected.MerchantName · @selected.PlanLabel</h2>
+            <p>@L["Billed by"]: @selected.BillingParty</p>
+            @if (selected.NeedsReview)
+            {
+                <p class="review-notice">@L["Needs review: renewal is unknown, evidence is stale or the details disagree."]</p>
+            }
+            <dl class="review-facts">
+                @foreach (var fact in selected.Facts)
+                {
+                    <div>
+                        <dt>@FieldLabel(fact.Field)</dt>
+                        <dd>@FactValue(fact.Field, fact.Value) · @StateLabel(fact.State)</dd>
+                        @if (fact.Evidence.Count > 0)
+                        {
+                            <dd>
+                                <details>
+                                    <summary>@L["Evidence history"] (@fact.Evidence.Count)</summary>
+                                    <p>@L["Showing the 10 most recent entries for this detail. Dates describe the evidence, not a new merchant check."]</p>
+                                    @foreach (var observation in fact.Evidence.Take(10))
+                                    {
+                                        <p>
+                                            @SourceLabel(observation.Source): @FactValue(fact.Field, observation.Fact.Value).
+                                            @L["As of"] @Date(observation.Fact.ObservedAtUtc) ·
+                                            @L["Review by"] @Date(observation.Fact.ValidUntilUtc)
+                                            @if (observation.SourceUploadId is { } uploadId && selected.BillStreamId is { } billId)
+                                            {
+                                                <a href="@($"/bff/bill-streams/{billId:D}/statement-uploads/{uploadId:D}/file")"
+                                                   target="_blank" rel="noopener">@L["View source document"]</a>
+                                            }
+                                        </p>
+                                    }
+                                </details>
+                            </dd>
+                        }
+                    </div>
+                }
+            </dl>
+            <h3>@L["Confirm subscription details"]</h3>
+            <p>@L["Leave unsupported details as Unknown. Prepaid access can still renew later; cancellation can leave access until the paid-through date."]</p>
+            <form @onsubmit="SaveAsync" @onsubmit:preventDefault>
+                <fieldset disabled="@(_busy || _uncertain)">
+                    <label for="review-source">@L["Evidence source"]</label>
+                    <select id="review-source" @bind="_source">
+                        <option value="UserConfirmed">@L["Confirmed by you"]</option>
+                        @if (_documents.Count > 0)
+                        {
+                            <option value="DocumentConfirmed">@L["Document reviewed by you"]</option>
+                        }
+                    </select>
+                    @if (_source == "DocumentConfirmed")
+                    {
+                        <label for="review-document">@L["Source document"]</label>
+                        <select id="review-document" @bind="_upload">
+                            <option value="">@L["Choose a document"]</option>
+                            @foreach (var doc in _documents)
+                            {
+                                <option value="@doc.SourceUploadId">@doc.PeriodEnd.ToString("yyyy-MM-dd")</option>
+                            }
+                        </select>
+                    }
+                    @foreach (var field in SubscriptionVerification.Fields)
+                    {
+                        <label for="@($"review-{field}")">@FieldLabel(field)</label>
+                        @if (Options(field) is { } options)
+                        {
+                            <select id="@($"review-{field}")" @bind="_values[field]">
+                                @foreach (var option in options)
+                                {
+                                    <option value="@option">@FactValue(field, option)</option>
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            <input id="@($"review-{field}")" maxlength="40" @bind="_values[field]"
+                                   placeholder="@(field is "PaidThrough" or "NextChargeDate" ? "YYYY-MM-DD" : "")" />
+                        }
+                    }
+                    <label for="review-observed">@L["Evidence date"]</label>
+                    <input id="review-observed" type="date" required @bind="_observedDate" />
+                    <label for="review-until">@L["Review again by"]</label>
+                    <input id="review-until" type="date" required @bind="_validDate" />
+                    <p>@L["Evidence stays current for at most 31 days from its evidence date. Old evidence can be saved, but will be marked stale."]</p>
+                    <label class="review-attestation">
+                        <input type="checkbox" @bind="_reviewed" />
+                        @L["I reviewed these details for this exact account, plan and billing provider."]
+                    </label>
+                    <button type="submit" class="primary-action">@L["Save my confirmation"]</button>
+                </fieldset>
+            </form>
+            @if (_uncertain)
+            {
+                <p role="status">@L["The save result is uncertain. Refresh this review before making another change. FullWorth will not repeat the write automatically."]</p>
+                <button type="button" class="secondary-action" disabled="@_busy"
+                        @onclick="() => SelectAsync(selected.Id)">@L["Check saved result"]</button>
+            }
+            @if (selected.BillStreamId is { } linkedBill)
+            {
+                <p><a href="@($"/app/bills/{linkedBill:D}")">@L["Open bill and upload supporting documents"]</a></p>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "transaction")] public Guid? SourceTransactionId { get; set; }
+    [SupplyParameterFromQuery(Name = "bill")] public Guid? BillStreamId { get; set; }
+    private IJSObjectReference? _module;
+    private ReviewList _list = new();
+    private SubscriptionVerificationResult? _selected;
+    private List<DocumentOption> _documents = [];
+    private Dictionary<string, string> _values = SubscriptionVerification.Fields.ToDictionary(f => f, _ => "Unknown");
+    private bool _loading = true, _busy, _uncertain, _reviewed;
+    private string? _message;
+    private string _merchant = "", _plan = "", _billingParty = "", _source = "UserConfirmed", _upload = "";
+    private Guid _createId = Guid.NewGuid();
+    private DateOnly _observedDate = DateOnly.FromDateTime(DateTime.UtcNow);
+    private DateOnly _validDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30));
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await ReloadAsync();
+        StateHasChanged();
+    }
+
+    private async Task<IJSObjectReference> Module() =>
+        _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/bff.js");
+
+    private async Task ReloadAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+        _message = null;
+        try
+        {
+            _list = await (await Module()).InvokeAsync<ReviewList>("getSubscriptionReviews");
+            if (_list is null || _list.Reviews is null) throw new InvalidDataException();
+            if (_selected is { } current) await LoadSelected(current.Id);
+        }
+        catch { _message = L["Reviews could not be refreshed. Previously loaded details may be out of date."]; }
+        finally { _busy = false; _loading = false; }
+    }
+
+    private async Task SelectAsync(Guid id)
+    {
+        if (_busy) return;
+        _busy = true;
+        _message = null;
+        try { await LoadSelected(id); }
+        catch { _message = L["This review could not be refreshed. Previously loaded details may be out of date."]; }
+        finally { _busy = false; }
+    }
+
+    private async Task LoadSelected(Guid id)
+    {
+        var result = await (await Module()).InvokeAsync<SubscriptionVerificationResult>("getSubscriptionReview", id);
+        Validate(result, id);
+        _selected = result;
+        _values = result.Facts.ToDictionary(f => f.Field, f => f.Value ?? "Unknown");
+        _documents = [];
+        _source = "UserConfirmed"; _upload = ""; _reviewed = false;
+        // Reading persisted state resolves an uncertain write; never replay it.
+        _uncertain = false;
+        if (result.BillStreamId is { } bill)
+        {
+            try
+            {
+                var detail = await (await Module()).InvokeAsync<DocumentList>("getBillStreamDetail", bill);
+                _documents = detail.Statements.Where(s => s.SourceUploadId is not null)
+                    .DistinctBy(s => s.SourceUploadId).ToList();
+            }
+            catch { _message = L["Supporting documents could not be loaded. You can still record your own confirmation."]; }
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        if (_busy) return;
+        _busy = true; _message = null;
+        try
+        {
+            var request = new CreateSubscriptionReviewRequest(_createId, _merchant, _plan, _billingParty,
+                SourceTransactionId, BillStreamId);
+            var result = await (await Module()).InvokeAsync<SubscriptionVerificationResult>("createSubscriptionReview", request);
+            Validate(result, _createId);
+            _selected = result;
+            _list = await (await Module()).InvokeAsync<ReviewList>("getSubscriptionReviews");
+            await LoadSelected(result.Id);
+            _createId = Guid.NewGuid();
+            _message = L["Review created. Renewal remains unverified until supporting details are recorded."];
+        }
+        catch { _message = L["The review could not be confirmed. Refresh the list before retrying. Repeating this request uses the same review ID."]; }
+        finally { _busy = false; }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy || _uncertain || _selected is null) return;
+        if (!_reviewed || _validDate <= _observedDate || _validDate > _observedDate.AddDays(31) ||
+            _observedDate > DateOnly.FromDateTime(DateTime.UtcNow) ||
+            _source == "DocumentConfirmed" && !Guid.TryParse(_upload, out _))
+        {
+            _message = L["Review the account details, evidence source and dates before saving."];
+            return;
+        }
+        var observed = new DateTimeOffset(_observedDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        var valid = new DateTimeOffset(_validDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        var facts = SubscriptionVerification.Fields.Select(field => new SubscriptionFactInput(field,
+            string.IsNullOrWhiteSpace(_values[field]) ? "Unknown" : _values[field].Trim(), observed, valid)).ToArray();
+        if (!SubscriptionVerification.TryNormalize(facts, DateTimeOffset.UtcNow, out var normalized))
+        {
+            _message = L["Check the details. Use YYYY-MM-DD dates, a positive amount with an explicit currency code, or Unknown."];
+            return;
+        }
+        var id = _selected.Id;
+        var request = new SubscriptionEvidenceRequest(Guid.NewGuid(), _selected.Revision, _source,
+            _source == "DocumentConfirmed" ? Guid.Parse(_upload) : null, normalized);
+        _busy = true; _message = null;
+        try
+        {
+            var result = await (await Module()).InvokeAsync<SubscriptionVerificationResult>("saveSubscriptionEvidence", id, request);
+            Validate(result, id);
+            _selected = result;
+            _reviewed = false;
+            _message = L["Your confirmation was saved. It is not a live merchant verification."];
+        }
+        catch
+        {
+            _uncertain = true;
+            _message = L["The save result is uncertain. Refresh this review before making another change. FullWorth will not repeat the write automatically."];
+        }
+        finally { _busy = false; }
+    }
+
+    private static void Validate(SubscriptionVerificationResult? result, Guid id)
+    {
+        if (result is null || result.Id != id || result.Revision == Guid.Empty ||
+            result.Facts is null || result.Facts.Count != SubscriptionVerification.Fields.Count ||
+            !result.Facts.Select(f => f.Field).Order().SequenceEqual(SubscriptionVerification.Fields.Order()) ||
+            result.Facts.Any(f => f.Evidence is null) || result.MerchantVerification != "Unavailable")
+            throw new InvalidDataException();
+    }
+
+    private string FieldLabel(string field) => field switch
+    {
+        "ServiceStatus" => L["Service access"], "Renewal" => L["Will it renew?"],
+        "BillingArrangement" => L["Billing arrangement"], "PaidThrough" => L["Paid through"],
+        "NextChargeDate" => L["Next charge date"], "NextChargeAmount" => L["Next charge amount"],
+        "CurrencyCode" => L["Currency code"], _ => L["Unknown"]
+    };
+    private string StateLabel(string state) => state switch
+    {
+        "Current" => L["Current evidence"], "Stale" => L["Stale evidence"],
+        "Conflict" => L["Conflicting evidence"], _ => L["Unverified"]
+    };
+    private string SourceLabel(string source) =>
+        source == "DocumentConfirmed" ? L["Document reviewed by you"] : L["Confirmed by you"];
+    private string FactValue(string field, string? value) => value switch
+    {
+        null or "Unknown" => L["Unknown"], "Active" => L["Active"], "Paused" => L["Paused"],
+        "Ended" => L["Ended"], "Yes" => L["Yes"], "No" => L["No"],
+        "Recurring" => L["Recurring"], "Prepaid" => L["Prepaid"], "FixedTerm" => L["Fixed term"],
+        "OneOff" => L["One-time purchase"], _ => value
+    };
+    private static string[]? Options(string field) => field switch
+    {
+        "ServiceStatus" => ["Unknown", "Active", "Paused", "Ended"],
+        "Renewal" => ["Unknown", "Yes", "No"],
+        "BillingArrangement" => ["Unknown", "Recurring", "Prepaid", "FixedTerm", "OneOff"], _ => null
+    };
+    private static string Date(DateTimeOffset date) =>
+        date.ToString("d MMM yyyy", System.Globalization.CultureInfo.CurrentUICulture);
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is not null)
+            try { await _module.DisposeAsync(); } catch (JSDisconnectedException) { }
+    }
+    public sealed class ReviewList
+    {
+        public List<ReviewItem> Reviews { get; set; } = [];
+        public bool HasMore { get; set; }
+    }
+    public sealed record ReviewItem(Guid Id, string MerchantName, string PlanLabel, string BillingParty);
+    public sealed class DocumentList { public List<DocumentOption> Statements { get; set; } = []; }
+    public sealed record DocumentOption(Guid? SourceUploadId, DateOnly PeriodEnd);
+}

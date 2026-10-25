@@ -88,4 +88,7 @@
   <data name="Verified changes" xml:space="preserve"><value>Cambios verificados</value></data>
   <data name="We could not confirm whether your choice was saved. Refresh this bill before trying again." xml:space="preserve"><value>No pudimos confirmar si se guardó tu elección. Actualiza esta factura antes de volver a intentarlo.</value></data>
   <data name="We could not refresh this bill. Showing the last loaded evidence; it may be out of date. Try Refresh bill again." xml:space="preserve"><value>No pudimos actualizar esta factura. Se muestra la última evidencia cargada; puede estar desactualizada. Vuelve a pulsar Actualizar factura.</value></data>
+  <data name="Subscription verification" xml:space="preserve"><value>Verificación de suscripciones</value></data>
+  <data name="Verify subscription" xml:space="preserve"><value>Verificar suscripción</value></data>
+  <data name="A posted charge does not confirm that this service will renew. Review access, renewal and supporting documents separately." xml:space="preserve"><value>Un cobro contabilizado no confirma que este servicio se renovará. Revisa por separado el acceso, la renovación y los documentos de respaldo.</value></data>
 </root>

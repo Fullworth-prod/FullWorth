@@ -16,6 +16,8 @@ controllers_root = os.path.join(
     "Controllers")
 
 owners = {
+    "SubscriptionReviews": "Bills",
+    "SubscriptionEvidence": "Bills",
     "BillStreams": "Bills",
     "BillAlerts": "Bills",
     "BankConnections": "Plaid",
@@ -39,6 +41,8 @@ owners = {
 }
 
 entity_owners = {
+    "SubscriptionReviewEntity": "Bills",
+    "SubscriptionEvidenceEntity": "Bills",
     "BillStreamEntity": "Bills",
     "BillAlertEntity": "Bills",
     "BankConnectionEntity": "Plaid",

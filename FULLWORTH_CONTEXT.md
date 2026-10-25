@@ -1,3 +1,33 @@
+## Verified production deployment and same-release protected recovery — 2026-10-25 UTC
+
+- current release candidate on `master`: `3fd3aa5e019d35f11418c526aeaca3d772bd37ea`.
+- Verified live production release: `3fd3aa5e019d35f11418c526aeaca3d772bd37ea`.
+- Tested/integrated runtime tree: `e10b6d35a0cea294fc9237960b475167781c4690`. Production Git HEAD, release marker, environment release ID and running service revisions match; checkout is clean.
+
+Normal guarded deployment is verified complete; this is not a claim that every external-beta acceptance gate is complete. No paid feature/creator activation, payout, outreach, branch deletion or hourly-automation restart occurred. Earlier deployment/billing/recovery failures below are dated history, superseded by this verified checkpoint.
+
+### Deployment and verification
+
+- [Deployment 40226147172](https://github.com/Fullworth-prod/FullWorth/actions/runs/40226147172) completed successfully through the guarded workflow after exact-master CI40225561325, all four CodeQL languages and governance40225561476 passed. Source #968 passed nine final-head checks at `7e1841dca0315f3225c42d27bdcd8f601597e77d`; #967's recovery correction passed nine at `40f69a4fec760116268f1713e729c996789afc40`. Original application integration #965 passed its 17 final-source checks; the later two fixes affect recovery/CI, not application financial logic.
+- Exact-master image artifact12610982715:365,650,204 bytes, archive SHA256 `58177c384f05bff1cc87c1183c2d12d1ad6ec1230a272a863105c09d30bbb059`. The deployment workflow actually verified image build/SBOM attestations before loading. Active ruleset24230011 retained mandatory PRs, strict protected checks, resolved threads and no bypass.
+- [Same-release auth smoke 40226442461](https://github.com/Fullworth-prod/FullWorth/actions/runs/40226442461) passed both non-destructive bearer-token and browser-cookie/logout boundaries at this exact release. Financial mutation probes were disabled.
+- Independent SSH verification passed production permissions, release/runtime integrity, exposure and public API/Web readiness; owner/role checks passed, subscription enforcement remains safely disabled, and backup/watchdog timers remain enabled. Expected migration `20261025020500_AddPlaidLinkCompletionAttempts` is applied.
+- Private before/after integrity verification found all36 tracked existing environment fields unchanged (excluding the intentional release-ID update) and all five core financial-table counts unchanged. Raw values/counts were not exported. Record: `/home/debian/fullworth-recovery-evidence/postdeployment-integrity-20261025.json`. Counts are evidence of row-count preservation, not a substitute for private expected-bill/provider truth.
+
+### Actual current-release recovery
+
+- A new encrypted backup of the deployed release completed at2026-10-25 19:39 UTC, with services restored and production readiness verified afterward. Completed snapshot `8067b8e455c187515a36ce7bec89002383021068874bf22144f5a5ced3bc24f6` was copied server-side under the enabled provider-locked prefix:405 encrypted objects /8,045,790 bytes, verified object-by-object; inventory SHA256 `369a2ad3921493d790d9b882690f543a55c36721b3284bdb9ef29e6a04d06c68`. Valid production credentials received409/ObjectLockedByBucketPolicy for synthetic overwrite and delete in that prefix. Live Restic capture/tagging/lock cleanup remain outside that prefix.
+- [Post-deployment independent recovery 40227647810](https://github.com/Fullworth-prod/FullWorth/actions/runs/40227647810) succeeded on a fresh GitHub-hosted runner. Source release, runner release and live release all equal `3fd3aa5e019d35f11418c526aeaca3d772bd37ea`; exact snapshot matches the protected point above. Actual separate read-only provider reads passed and write/delete returned explicit403/AccessDenied against an unlocked synthetic canary. The verifier restored PostgreSQL, checked encrypted bundle checksums/statement manifest and both API/Web key rings. Zero private recovery artifacts were uploaded.
+- Private evidence: `/home/debian/fullworth-recovery-evidence/protected-backup-8067b8e455c1.json` and `/home/deploy/fullworth-acceptance/recovery-results/run-40227647810.json`. Earlier pre-deployment proof40225705002 restored the older live release; it is distinct from this now-established same-release proof.
+- Owner-held recovery material was encrypted with Windows DPAPI CurrentUser and round-trip verified off the VPS. The newest owner-local kit is `.ssh/fullworth-recovery-transfer-20261025/fullworth-recovery-kit-live-3fd3.dpapi`, with a README in that directory. It excludes the temporary S3 key and requires the current Windows profile. Manual disaster bootstrap from that kit remains separate and unexercised.
+- The owner explicitly approved the24-hour single-bucket Object Read only acceptance key. It expires onOct26; do not assume future validity or widen/renew access without applicable approval. A temporary local key copy remains owner/SYSTEM-only because automatic approval review rejected deletion. No credential values were published.
+
+### Continuation boundaries
+
+This reconciliation retains the master runtime/CI/recovery safeguards in development; relative to master only the three additive handoff files change. Keep older #932 separate and preserve all branches. #912 controlled Plaid/network recovery, #762/#293 private expected truth/import/payroll/provider evidence, #251/#258 physical-device acceptance and the remaining #291/#669 nonempty-real-statement/two-owner/document/security/legal/disaster-bootstrap evidence stay open. The actual restore explicitly records nonempty-statement acceptance as not established. Broader #934 and selection among the three Overview concepts remain pending; do not choose or regenerate a concept. Creator terms remain proposed/default-off.
+
+---
+
 ## Independent recovery passed; reproducible Windows SDK correction — 2026-10-25 UTC
 
 - current release candidate on `master`: `1041bde352c2d30b01719c6d492c6ae284cd1bf1`.

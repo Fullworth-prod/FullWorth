@@ -1,3 +1,21 @@
+## Completed guarded deployment and current-release recovery — 2026-10-25 UTC
+
+- The `master` release branch at candidate `3fd3aa5e019d35f11418c526aeaca3d772bd37ea` is also the verified deployed release.
+Currently verified live production release: `3fd3aa5e019d35f11418c526aeaca3d772bd37ea`.
+
+Normal guarded deployment is verified complete; this is not a claim that every external-beta acceptance gate is complete. No paid feature/creator activation, payout, outreach, branch deletion or hourly-automation restart occurred. Earlier deployment/billing/recovery failures below are dated history, superseded by this verified checkpoint.
+
+- [x] #965 application release plus #967 guarded configuration-probe correction and #968 reproducible Windows SDK pin integrated through protected PRs. Exact-master CI/signing40225561325 passed; deployment40226147172 and same-release authentication40226442461 passed.
+- [x] Actual live Git/marker/environment/running revisions verified; expected migration applied; all36 tracked existing configuration fields and five core financial-table counts unchanged. Production readiness, owner/roles, disabled subscription enforcement and operational timers passed.
+- [x] New deployed-release encrypted snapshot `8067b8e455c187515a36ce7bec89002383021068874bf22144f5a5ced3bc24f6` protected and verified:405 objects/8,045,790 bytes, production overwrite/delete denied by provider policy. Independent fresh-runner recovery40227647810 passed with source=runner=live release and actual read-only-provider denials. Context contains exact artifact/hash/private evidence pointers.
+- [x] Owner-held Windows-profile-encrypted recovery kit created and round-trip verified; temporary S3 credential excluded. Actual disaster bootstrap remains unexercised.
+- [ ] Complete the still-separate nonempty-real-statement, two-owner/document/security/legal, controlled Plaid/network/private expected-truth and physical-device acceptance. Do not close #912/#762/#293/#251/#258/#291/#669 from synthetic fixtures or broaden the actual restore claim.
+- [ ] Continue #934 only with reproduced, independently actionable source defects. Three Overview concepts remain unselected; retain reduced-motion/performance/financial behavior and wait for a human selection before visual redesign.
+
+This development reconciliation retains the deployed master safeguards; no new application runtime changes are introduced. Preserve source branches and older #932. Hourly automation remains off; creator/paid activations stay off.
+
+---
+
 ## Independent recovery proven; Windows toolchain checkpoint — 2026-10-25 UTC
 
 - The `master` release branch at candidate `1041bde352c2d30b01719c6d492c6ae284cd1bf1` awaits corrected exact-master CI.

@@ -1,3 +1,27 @@
+## Operator checkpoint after verified guarded deployment — 2026-10-25 UTC
+
+Current release candidate on `master`:
+
+`3fd3aa5e019d35f11418c526aeaca3d772bd37ea`
+
+Current verified live production release marker:
+
+`3fd3aa5e019d35f11418c526aeaca3d772bd37ea`
+
+Normal guarded deployment is verified complete; this is not a claim that every external-beta acceptance gate is complete. No paid feature/creator activation, payout, outreach, branch deletion or hourly-automation restart occurred. Earlier deployment/billing/recovery failures below are dated history, superseded by this verified checkpoint.
+
+Deployment40226147172, exact-master CI/signing40225561325 and non-destructive auth smoke40226442461 all passed. Independent SSH verification confirmed the live revision, clean checkout, public readiness, owner/roles and disabled subscription enforcement. All36 tracked existing configuration values and five core financial-table counts were unchanged; the expected completion-attempt migration is applied.
+
+The deployed release's own encrypted snapshot `8067b8e455c187515a36ce7bec89002383021068874bf22144f5a5ced3bc24f6` is provider-protected and was restored successfully on a fresh GitHub-hosted runner in40227647810. Source=runner=live release; PostgreSQL/checksums/statement manifest/both key rings passed, with separate provider read-only denials verified. Private metadata is at `/home/deploy/fullworth-acceptance/recovery-results/run-40227647810.json`; full hashes/artifact/limits are in context. Nonempty real-statement acceptance is explicitly not established.
+
+Owner recovery kit: `.ssh/fullworth-recovery-transfer-20261025/fullworth-recovery-kit-live-3fd3.dpapi` plus README on the owner's PC. Windows DPAPI CurrentUser encryption/decryption round trip passed; the current Windows profile is needed. The kit excludes the expiring S3 key. Actual disaster bootstrap from that kit has not been exercised.
+
+The approved24-hour recovery key expires onOct26. A temporary local read-only key copy remains restricted to the owner and SYSTEM because automatic approval review rejected deletion; keep that distinction explicit and do not publish values. No further owner approval is pending for this completed deployment.
+
+Remaining owner-dependent work is separate: controlled real-provider/network/private expected truth, physical devices/VoiceOver, nonempty real statements, two-owner/document/security/legal and full disaster-bootstrap acceptance. Three mobile Overview designs remain unselected. No payout/outreach/paid activation or hourly automation restart is authorized by this checkpoint. Preserve branches and older #932.
+
+---
+
 ## Operator checkpoint after real independent recovery — 2026-10-25 UTC
 
 Current release candidate on `master`:

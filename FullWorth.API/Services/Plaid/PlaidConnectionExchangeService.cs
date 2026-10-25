@@ -104,7 +104,12 @@ public sealed class PlaidConnectionExchangeService
             completionAttempt.Stage != PlaidLinkCompletionStage.Exchanging ||
             !PlaidLinkCompletionAttemptStore.IsFresh(completionAttempt, hostedSession, _timeProvider.GetUtcNow()))
             throw new PlaidLinkRecoveryRequiredException();
-        _dbContext.PlaidLinkCompletionAttempts.Attach(completionAttempt);
+        // The durable attempt was materialized by a separate DbContext. Its
+        // Session navigation may point at that context's session instance;
+        // Attach() walks that graph and conflicts with the caller's tracked
+        // session. Track only this owner-validated permit, allowing EF fixup
+        // to use the existing session without overwriting caller edits.
+        _dbContext.Entry(completionAttempt).State = EntityState.Unchanged;
 
         return ExchangeAndSaveCoreAsync(
             userId, publicToken, hostedSession, completionAttempt, cancellationToken);

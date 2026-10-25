@@ -56,7 +56,7 @@ public sealed class HostedLinkRecoveryTests
     public static IEnumerable<object[]> Failures()
     {
         foreach (var mode in new[] { "new", "existing" })
-        foreach (var phase in new[] { "item", "save", "cancel" })
+        foreach (var phase in new[] { "item", "save", "provider-timeout" })
             yield return [mode, phase];
     }
 
@@ -78,17 +78,17 @@ public sealed class HostedLinkRecoveryTests
         provider.BeforeResponse = (path, token) =>
         {
             if (path == "/item/get" && phase == "item") throw new IOException("Synthetic provider response loss.");
-            if (path == "/item/get" && phase == "cancel")
+            if (path == "/item/get" && phase == "provider-timeout")
             {
-                cancel.Cancel();
-                token.ThrowIfCancellationRequested();
+                throw new OperationCanceledException("Synthetic provider deadline.",
+                    new CancellationToken(canceled: true));
             }
             return Task.CompletedTask;
         };
         var error = await Record.ExceptionAsync(() =>
             f.Service(db, http).CheckAndCompleteAsync(f.Owner, f.SessionId, cancel.Token));
         Assert.NotNull(error);
-        if (phase == "cancel") Assert.IsAssignableFrom<OperationCanceledException>(error);
+        if (phase == "provider-timeout") Assert.IsAssignableFrom<OperationCanceledException>(error);
         Assert.Equal(PlaidLinkSessionStatus.Pending, tracked.Status);
         Assert.Equal(originalCipher, tracked.ProtectedLinkToken);
         Assert.Equal(EntityState.Added, db.Entry(caller).State);
@@ -329,6 +329,95 @@ public sealed class HostedLinkRecoveryTests
         Assert.Equal(1, provider.Exchanges);
         Assert.Equal(1, provider.Items);
         await f.VerifyHistoryAsync();
+    }
+
+    [Fact]
+    public async Task BrowserCancellationBeforeFence_DoesNotExchangeOrSaveBank()
+    {
+        var f = await HostedRecoveryFixture.CreateAsync("new");
+        await using var db = f.Open();
+        using var browser = new CancellationTokenSource();
+        using var provider = new RecoveryProvider(f.ItemId);
+        using var http = new HttpClient(provider);
+        provider.BeforeResponse = (path, token) =>
+        {
+            if (path == "/link/token/get") browser.Cancel();
+            token.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        };
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            f.Service(db, http).CheckAndCompleteAsync(f.Owner, f.SessionId, browser.Token));
+        Assert.Equal(1, provider.Polls);
+        Assert.Equal(0, provider.Exchanges);
+        Assert.Equal(0, provider.Items);
+        await using var proof = f.OpenDirect();
+        Assert.False(await proof.PlaidLinkCompletionAttempts.AnyAsync(a => a.SessionId == f.SessionId));
+        Assert.False(await proof.BankConnections.AnyAsync(b => b.UserId == f.Owner && b.PlaidItemId == f.ItemId));
+        await f.VerifyHistoryAsync();
+    }
+
+    [Fact]
+    public async Task IndependentFinalizationDeadline_IsFiniteAndKeepsFailedExchangeFenced()
+    {
+        var f = await HostedRecoveryFixture.CreateAsync("new");
+        await using var db = f.Open();
+        var clock = new FinalizationDeadlineClock(f.Clock.Now);
+        using var provider = new RecoveryProvider(f.ItemId);
+        using var http = new HttpClient(provider);
+        var api = new FullWorth.API.Services.Plaid.PlaidApiClient(http,
+            Microsoft.Extensions.Options.Options.Create(new FullWorth.API.Services.Plaid.PlaidOptions
+            {
+                ClientId = "synthetic-client", Secret = "synthetic-secret",
+                Environment = FullWorth.API.Services.Plaid.PlaidOptions.SandboxEnvironment
+            }));
+        var service = new FullWorth.API.Services.Plaid.PlaidHostedLinkCompletionService(db, api, f.Protector,
+            new FullWorth.API.Services.Plaid.PlaidConnectionExchangeService(api, f.Protector, db, clock), clock);
+        provider.BeforeResponse = (path, token) =>
+        {
+            if (path == "/item/get")
+            {
+                Assert.Equal(TimeSpan.FromMinutes(4), clock.DueTime);
+                clock.Expire();
+                token.ThrowIfCancellationRequested();
+            }
+            return Task.CompletedTask;
+        };
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            service.CheckAndCompleteAsync(f.Owner, f.SessionId));
+        await using var proof = f.OpenDirect();
+        var session = await proof.PlaidLinkSessions.AsNoTracking().SingleAsync(s => s.Id == f.SessionId);
+        Assert.Equal(PlaidLinkSessionStatus.Pending, session.Status);
+        Assert.Equal(string.Empty, session.ProtectedLinkToken);
+        Assert.Equal(PlaidLinkCompletionStage.Interrupted,
+            (await proof.PlaidLinkCompletionAttempts.AsNoTracking().SingleAsync(a => a.SessionId == f.SessionId)).Stage);
+        Assert.False(await proof.BankConnections.AnyAsync(b => b.UserId == f.Owner && b.PlaidItemId == f.ItemId));
+        var replay = await service.CheckAndCompleteAsync(f.Owner, f.SessionId);
+        Assert.Equal("RecoveryRequired", replay.Status);
+        Assert.Null(replay.Connection);
+        Assert.Equal(1, provider.Exchanges);
+        Assert.Equal(1, provider.Items);
+        await f.VerifyHistoryAsync();
+    }
+
+    private sealed class FinalizationDeadlineClock(DateTimeOffset now) : TimeProvider
+    {
+        private TimerCallback? _callback;
+        private object? _state;
+        public TimeSpan DueTime { get; private set; }
+        public override DateTimeOffset GetUtcNow() => now;
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            Assert.Equal(Timeout.InfiniteTimeSpan, period);
+            _callback = callback; _state = state; DueTime = dueTime;
+            return new DeadlineTimer();
+        }
+        public void Expire() => (_callback ?? throw new InvalidOperationException("Deadline missing."))(_state);
+        private sealed class DeadlineTimer : ITimer
+        {
+            public bool Change(TimeSpan dueTime, TimeSpan period) => true;
+            public void Dispose() { }
+            public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        }
     }
 
     private sealed class CompletionFault : SaveChangesInterceptor

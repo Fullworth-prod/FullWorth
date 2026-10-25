@@ -74,7 +74,7 @@ foreach (var mode in new[] { "new", "existing" })
                 RAISE EXCEPTION 'Synthetic final completion rollback' USING ERRCODE = 'P0001';
               END IF;
               RETURN NEW;
-            END
+            END;
             $body$;
             CREATE TRIGGER {trigger} BEFORE UPDATE ON "PlaidLinkSessions"
             FOR EACH ROW EXECUTE FUNCTION {function}();

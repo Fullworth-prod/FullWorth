@@ -1382,9 +1382,9 @@ jobs:
         if: steps.visual_changes.outputs.required == 'true'
         run: npm --prefix FullWorth.VisualTests install --no-audit --no-fund
 
-      - name: Install Chromium for visual acceptance
+      - name: Install Chromium and WebKit for visual acceptance
         if: steps.visual_changes.outputs.required == 'true'
-        run: npm --prefix FullWorth.VisualTests exec playwright install --with-deps chromium
+        run: npm --prefix FullWorth.VisualTests exec -- playwright install --with-deps chromium webkit
 
       - name: Capture visual acceptance screenshots
         if: steps.visual_changes.outputs.required == 'true'

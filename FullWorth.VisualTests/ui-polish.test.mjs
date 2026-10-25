@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
 import path from "node:path";
+import { verifyResponsiveMatrix } from "./responsive-geometry.test.mjs";
+import { verifyNativeSelectLayout } from "./native-select-layout.test.mjs";
+import { webkit } from "playwright";
+import { mkdir } from "node:fs/promises";
 
 // Synthetic records exercise real authenticated components. No financial writes.
 export async function verifyUiPolish(page, outputDir) {
@@ -253,6 +257,34 @@ export async function verifyUiPolish(page, outputDir) {
         }
       }
     }
+
+    await verifyNativeSelectLayout(page.context().browser(), "chromium");
+    await verifyResponsiveMatrix(page, outputDir, setCulture);
+
+    // Reuse only the disposable test owner's authenticated cookies. Run actual
+    // rendered components in WebKit too, without another account or API writes.
+    const webkitBrowser = await webkit.launch({ headless: true });
+    try {
+      await verifyNativeSelectLayout(webkitBrowser, "webkit");
+      const origin = new URL(page.url()).origin;
+      const webkitContext = await webkitBrowser.newContext({
+        baseURL: origin, ignoreHTTPSErrors: true, serviceWorkers: "block",
+        storageState: await page.context().storageState(),
+        viewport: { width: 390, height: 1000 }
+      });
+      try {
+        const webkitPage = await webkitContext.newPage();
+        for (const pattern of patterns) await webkitPage.route(pattern, read);
+        await webkitPage.route(logoPattern, route => route.abort("failed"));
+        const webkitOutput = path.join(outputDir, "webkit-responsive");
+        await mkdir(webkitOutput, { recursive: true });
+        const setWebkitCulture = language => webkitContext.addCookies([{
+          name: ".AspNetCore.Culture", value: encodeURIComponent("c=en-US|uic=" + language),
+          url: origin, secure: true, sameSite: "Lax"
+        }]);
+        await verifyResponsiveMatrix(webkitPage, webkitOutput, setWebkitCulture);
+      } finally { await webkitContext.close(); }
+    } finally { await webkitBrowser.close(); }
 
     empty = true;
     await setCulture("en-US");

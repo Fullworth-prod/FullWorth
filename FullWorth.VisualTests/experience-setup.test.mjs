@@ -59,12 +59,14 @@ export async function verifyExperienceSetup(page, outputDir) {
     await culture("en-US");
     await open();
     await page.getByRole("button", { name: "Retry loading setup", exact: true }).waitFor();
+    assert.equal(await page.locator(".experience-setup-page").getAttribute("aria-busy"), "false");
     assert.equal(await page.locator(".setup-fields").count(), 0,
       "Read failure must not expose editable defaults or a save action.");
     assert.equal(puts, 0);
     getFails = false;
     await page.getByRole("button", { name: "Retry loading setup", exact: true }).click();
     await page.locator(".setup-fields").waitFor();
+    assert.equal(await page.locator(".experience-setup-page").getAttribute("aria-busy"), "false");
     assert.equal(await page.getByLabel("Theme", { exact: true }).inputValue(), "Dark");
 
     await page.getByLabel("Theme", { exact: true }).selectOption("Light");
@@ -82,6 +84,7 @@ export async function verifyExperienceSetup(page, outputDir) {
     saveMode = "hold-lost";
     await page.getByRole("button", { name: "Save setup", exact: true }).click();
     await waitHeld();
+    assert.equal(await page.locator(".experience-setup-page").getAttribute("aria-busy"), "true");
     await page.locator(".setup-fields[disabled]").waitFor();
     assert.equal(await page.locator(".setup-fields").evaluate(element => element.disabled), true);
     for (const button of await page.locator(".setup-fields button").all())
@@ -90,6 +93,7 @@ export async function verifyExperienceSetup(page, outputDir) {
       assert.equal(await button.isDisabled(), true);
     release();
     await page.getByRole("button", { name: "Check saved setup", exact: true }).waitFor();
+    assert.equal(await page.locator(".experience-setup-page").getAttribute("aria-busy"), "false");
     assert.equal(puts, 1);
     assert.equal(await page.locator(".settings-toast[role=alert]").evaluate(element =>
       getComputedStyle(element).position), "static", "Recovery feedback must stay beside the draft, not cover the mobile header.");

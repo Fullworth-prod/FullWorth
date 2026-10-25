@@ -191,7 +191,7 @@
                 <div class="activity-filters" role="group" aria-label="@L["Filter activity"]">
                     <button type="button"
                             class="@GetFilterClass(ActivityFilter.All)"
-                            aria-pressed="@(_filter == ActivityFilter.All)"
+                            aria-pressed="@(_filter == ActivityFilter.All ? "true" : "false")"
                             @onclick="() => SetFilter(ActivityFilter.All)">
                         @L["All"]
                         <span>@_alerts.Count</span>
@@ -199,7 +199,7 @@
 
                     <button type="button"
                             class="@GetFilterClass(ActivityFilter.Unread)"
-                            aria-pressed="@(_filter == ActivityFilter.Unread)"
+                            aria-pressed="@(_filter == ActivityFilter.Unread ? "true" : "false")"
                             @onclick="() => SetFilter(ActivityFilter.Unread)">
                         @L["Unread"]
                         <span>@unreadCount</span>
@@ -207,7 +207,7 @@
 
                     <button type="button"
                             class="@GetFilterClass(ActivityFilter.Attention)"
-                            aria-pressed="@(_filter == ActivityFilter.Attention)"
+                            aria-pressed="@(_filter == ActivityFilter.Attention ? "true" : "false")"
                             @onclick="() => SetFilter(ActivityFilter.Attention)">
                         @L["Attention"]
                         <span>@needsAttentionCount</span>
@@ -215,7 +215,7 @@
 
                     <button type="button"
                             class="@GetFilterClass(ActivityFilter.ConnectionIssues)"
-                            aria-pressed="@(_filter == ActivityFilter.ConnectionIssues)"
+                            aria-pressed="@(_filter == ActivityFilter.ConnectionIssues ? "true" : "false")"
                             @onclick="() => SetFilter(ActivityFilter.ConnectionIssues)">
                         @L["Connection issues"]
                         <span>@connectionIssuesCount</span>

@@ -110,8 +110,10 @@ jobs:
         run: |
           set -euo pipefail
           umask 077
+          [[ "$(stat -f -c %T /dev/shm)" == tmpfs ]]
+          export TMPDIR=/dev/shm
           export BILLWATCH_RECOVERY_PROOF_EVIDENCE_FILE="$RUNNER_TEMP/recovery-proof.env"
-          if ! sh deploy/run-clean-host-recovery-proof.sh "$RUNNER_TEMP/recovery-private/recovery.env" \
+          if ! "$RUNNER_TEMP/recovery-python/bin/python" deploy/prepare-recovery-runner.py --proof "$RUNNER_TEMP/recovery-private/recovery.env" \
             > "$RUNNER_TEMP/recovery-private.log" 2>&1; then
             echo "Independent recovery failed; private logs and restored data were not published." >&2
             exit 1

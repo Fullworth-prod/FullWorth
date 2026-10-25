@@ -175,21 +175,30 @@ if ! awk '
 fi
 
 restic_password=$(read_required_env_value RESTIC_PASSWORD "$env_file")
-database_password=$(read_required_env_value BILLWATCH_DATABASE_PASSWORD "$env_file")
+if [ -n "${BILLWATCH_RECOVERY_EPHEMERAL_DATABASE_PASSWORD:-}" ]; then
+    database_password=$BILLWATCH_RECOVERY_EPHEMERAL_DATABASE_PASSWORD
+    printf '%s\n' "$database_password" | grep -Eq '^[0-9a-f]{64}$' ||
+        fail "the ephemeral recovery database password must contain 64 lowercase hex characters."
+    unset BILLWATCH_RECOVERY_EPHEMERAL_DATABASE_PASSWORD
+else
+    database_password=$(read_required_env_value BILLWATCH_DATABASE_PASSWORD "$env_file")
+fi
 
 secret_dir=$(mktemp -d "${TMPDIR:-/tmp}/fullworth-recovery-secret.XXXXXX") || fail "a private temporary recovery-secret directory could not be created."
 chmod 700 "$secret_dir"
 restic_password_file="$secret_dir/restic_password"
 database_pgpass_file="$secret_dir/database_pgpass"
+database_password_file="$secret_dir/database_password"
 aws_credentials_secret_file="$secret_dir/aws_credentials"
 compose_env_file="$secret_dir/compose.env"
 printf '%s' "$restic_password" > "$restic_password_file"
 cat "$aws_credentials_file" > "$aws_credentials_secret_file"
 pgpass_password=$(printf '%s' "$database_password" | sed 's/\\/\\\\/g; s/:/\\:/g')
 printf 'restore-database:5432:*:billwatch:%s\n' "$pgpass_password" > "$database_pgpass_file"
+printf '%s' "$database_password" > "$database_password_file"
 unset restic_password database_password pgpass_password
-printf 'BILLWATCH_RECOVERY_RESTIC_PASSWORD_FILE=%s\nBILLWATCH_RECOVERY_DATABASE_PGPASS_FILE=%s\nBILLWATCH_RECOVERY_AWS_CREDENTIALS_FILE=%s\n' "$restic_password_file" "$database_pgpass_file" "$aws_credentials_secret_file" > "$compose_env_file"
-chmod 644 "$restic_password_file" "$database_pgpass_file" "$aws_credentials_secret_file"
+printf 'BILLWATCH_RECOVERY_RESTIC_PASSWORD_FILE=%s\nBILLWATCH_RECOVERY_DATABASE_PGPASS_FILE=%s\nBILLWATCH_RECOVERY_AWS_CREDENTIALS_FILE=%s\nBILLWATCH_RECOVERY_DATABASE_PASSWORD_FILE=%s\n' "$restic_password_file" "$database_pgpass_file" "$aws_credentials_secret_file" "$database_password_file" > "$compose_env_file"
+chmod 644 "$restic_password_file" "$database_pgpass_file" "$aws_credentials_secret_file" "$database_password_file"
 chmod 600 "$compose_env_file"
 
 command -v docker >/dev/null 2>&1 || fail "Docker is required on the clean recovery host."

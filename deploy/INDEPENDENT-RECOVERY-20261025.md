@@ -29,4 +29,6 @@ A real zero-statement restore verifies the state that actually exists; it does n
 
 ## Validation
 
-Thirteen Python boundary/provider-denial tests and shell recovery-lock boundaries passed in isolated source execution. A separate real Restic synthetic read-only filesystem regression demonstrates the underlying lock behavior; it is not production/provider recovery acceptance. Final-head protected CI is required after these source changes.
+Fourteen Python boundary/provider-denial tests and shell recovery-lock boundaries passed in isolated source execution. A separate real Restic synthetic read-only filesystem regression demonstrates the underlying lock behavior; it is not production/provider recovery acceptance. Final-head protected CI is required after these source changes.
+
+The isolated database password is generated only in the runner process and passed directly to the drill. It is absent from persisted recovery configuration and Docker container environment. The drill materializes the database password/passfile in its private temporary secret directory; the hosted workflow requires tmpfs and uses /dev/shm for that directory. PostgreSQL receives a mounted password file. Historical manual recovery environments remain supported.

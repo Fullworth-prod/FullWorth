@@ -41,6 +41,11 @@ if grep -Eq '^[[:space:]]+(api|web|edge|database):[[:space:]]*$' "$compose_file"
     fail "recovery drill topology must not define production application services."
 fi
 
+if grep -Eq '^[[:space:]]*POSTGRES_PASSWORD:' "$compose_file"; then
+    fail "isolated database must use a mounted password secret, never container environment."
+fi
+grep -Fq 'POSTGRES_PASSWORD_FILE: /run/secrets/database_password' "$compose_file" ||
+    fail "isolated database password-file mount is missing."
 grep -Fq 'internal: true' "$compose_file" || fail "recovery drill network must remain isolated from external ingress."
 grep -Fq 'BILLWATCH_ALLOW_LOCAL_BACKUP_REPOSITORY: "false"' "$compose_file" || fail "recovery verifier must force local repositories off."
 grep -Fq 'AWS_SHARED_CREDENTIALS_FILE: /run/secrets/aws_credentials' "$compose_file" || fail "recovery verifier must use a mounted AWS shared-credentials file."
@@ -96,6 +101,10 @@ done
     exit 1
 }
 
+database_password_file="$(sed -n 's/^BILLWATCH_RECOVERY_DATABASE_PASSWORD_FILE=//p' "$supplemental_env_file")"
+[ -f "$database_password_file" ] && [ ! -L "$database_password_file" ] || { echo "temporary database password secret is missing." >&2; exit 1; }
+[ "$(stat -c '%a' "$database_password_file")" = 644 ] || { echo "database password secret mode mismatch." >&2; exit 1; }
+[ "$(cat "$database_password_file")" = 'ci\path:isolated-restore-password' ] || { echo "database password secret content mismatch." >&2; exit 1; }
 secret_file="$(sed -n 's/^BILLWATCH_RECOVERY_RESTIC_PASSWORD_FILE=//p' "$supplemental_env_file")"
 [ -n "$secret_file" ] && [ -f "$secret_file" ] && [ ! -L "$secret_file" ] || { echo "temporary Restic secret file is missing or unsafe." >&2; exit 1; }
 secret_file_mode=$(stat -c '%a' "$secret_file")
@@ -115,7 +124,7 @@ aws_secret_file="$(sed -n 's/^BILLWATCH_RECOVERY_AWS_CREDENTIALS_FILE=//p' "$sup
 [ "$(stat -c '%a' "${aws_secret_file%/*}")" = 700 ] || { echo "temporary AWS credentials directory mode is not 700." >&2; exit 1; }
 [ "$(cat "$aws_secret_file")" = "$BILLWATCH_TEST_EXPECTED_AWS_CREDENTIALS" ] || { echo "temporary AWS credentials content mismatch." >&2; exit 1; }
 printf '%s\n' "$original_args" >> "$BILLWATCH_TEST_DOCKER_LOG"
-printf '%s\n' "$secret_file" "$database_secret_file" "$aws_secret_file" >> "$BILLWATCH_TEST_SECRET_FILE_LOG"
+printf '%s\n' "$secret_file" "$database_secret_file" "$aws_secret_file" "$database_password_file" >> "$BILLWATCH_TEST_SECRET_FILE_LOG"
 EOF
 chmod 755 "$fake_bin/docker"
 

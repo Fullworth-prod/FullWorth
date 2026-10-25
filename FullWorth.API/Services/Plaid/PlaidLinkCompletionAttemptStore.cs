@@ -155,7 +155,12 @@ internal sealed class PlaidLinkCompletionAttemptStore
             (requireUnexpiredSession && now >= session.ExpiresAtUtc))
             throw new PlaidLinkRecoveryRequiredException();
         if (db.Entry(attempt).State == EntityState.Detached)
-            db.PlaidLinkCompletionAttempts.Attach(attempt);
+        {
+            // A separately materialized permit can retain a Session navigation
+            // from another context. Never recursively attach that graph over
+            // the caller's already tracked, owner-validated session.
+            db.Entry(attempt).State = EntityState.Unchanged;
+        }
         attempt.Stage = PlaidLinkCompletionStage.Completed;
         attempt.UpdatedAtUtc = now;
     }

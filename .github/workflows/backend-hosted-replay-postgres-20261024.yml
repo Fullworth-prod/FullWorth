@@ -51,7 +51,7 @@ jobs:
     timeout-minutes: 15
     services:
       postgres:
-        image: postgres:17-bookworm@sha256:3645570cccdfa447589da9f57dd740faa29b30938e861289a5574b6c03826
+        image: postgres:17-bookworm@sha256:3645570cccdfa447589da9f57dd740faa29b30938e861289a5574b6ca6b03826
         env:
           POSTGRES_USER: fixture
           POSTGRES_PASSWORD: synthetic-ci-fixture-password

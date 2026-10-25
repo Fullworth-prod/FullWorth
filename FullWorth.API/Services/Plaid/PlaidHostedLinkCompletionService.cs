@@ -347,15 +347,23 @@ public sealed class PlaidHostedLinkCompletionService
             // the exchange service saves both the owner-scoped bank connection
             // and terminal Hosted Link session together. A separate save here
             // could leave the bank committed while the session stays Pending.
+            // Before the durable fence the browser may cancel freely. Once
+            // we commit permission to consume the one-time token, a disappearing
+            // tab/circuit must not strand the exchanged credential halfway through
+            // item lookup and atomic persistence. Continue only this authorized
+            // operation under a separate finite server deadline; never replay it.
+            cancellationToken.ThrowIfCancellationRequested();
+            using var finalization = new CancellationTokenSource(
+                TimeSpan.FromMinutes(4), _timeProvider);
             var exchangeClaim = await _attemptStore.BeginExchangeAsync(
-                claim, session, cancellationToken);
+                claim, session, finalization.Token);
             var connection =
                 await _exchangeService.ExchangeAndCompleteHostedLinkAsync(
                     userId,
                     plaidState.PublicToken,
                     session,
                     exchangeClaim,
-                    cancellationToken);
+                    finalization.Token);
 
             return new PlaidHostedLinkCompletionResult(
                 session.Id,

@@ -223,7 +223,13 @@
         {
             _list = await (await Module()).InvokeAsync<ReviewList>("getSubscriptionReviews");
             if (_list is null || _list.Reviews is null) throw new InvalidDataException();
-            if (_selected is { } current) await LoadSelected(current.Id);
+            if (_list.Reviews.Any(r => r.Id == _createId))
+            {
+                // A successful read resolves a lost create acknowledgement without replaying it.
+                await LoadSelected(_createId);
+                _createId = Guid.NewGuid();
+            }
+            else if (_selected is { } current) await LoadSelected(current.Id);
         }
         catch { _message = L["Reviews could not be refreshed. Previously loaded details may be out of date."]; }
         finally { _busy = false; _loading = false; }
@@ -284,8 +290,8 @@
     private async Task SaveAsync()
     {
         if (_busy || _uncertain || _selected is null) return;
-        if (!_reviewed || _validDate <= _observedDate || _validDate > _observedDate.AddDays(31) ||
-            _observedDate > DateOnly.FromDateTime(DateTime.UtcNow) ||
+        if (!_reviewed || _observedDate > DateOnly.FromDateTime(DateTime.UtcNow) ||
+            _validDate <= _observedDate || _validDate > _observedDate.AddDays(31) ||
             _source == "DocumentConfirmed" && !Guid.TryParse(_upload, out _))
         {
             _message = L["Review the account details, evidence source and dates before saving."];

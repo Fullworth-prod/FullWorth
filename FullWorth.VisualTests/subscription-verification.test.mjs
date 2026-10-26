@@ -42,6 +42,19 @@ export async function verifySubscriptionVerification(page, outputDir) {
       "A new review cannot imply merchant verification or recurrence.");
     expect(initial.facts.every(f => f.value === null), "Initial details remain unknown.");
     await target.getByRole("heading", { name: "Confirm subscription details", exact: true }).waitFor();
+    const observedInput = target.getByLabel("Evidence date", { exact: true });
+    const untilInput = target.getByLabel("Review again by", { exact: true });
+    const originalObserved = await observedInput.inputValue();
+    const originalUntil = await untilInput.inputValue();
+    await observedInput.fill("9999-12-01");
+    await untilInput.fill("9999-12-31");
+    await target.getByLabel("I reviewed these details for this exact account, plan and billing provider.", { exact: true }).check();
+    await target.getByRole("button", { name: "Save my confirmation", exact: true }).click();
+    await target.getByText("Review the account details, evidence source and dates before saving.", { exact: true }).waitFor();
+    expect(await target.getByRole("button", { name: "Save my confirmation", exact: true }).isEnabled(),
+      "Extreme future dates are rejected without breaking the review page.");
+    await observedInput.fill(originalObserved);
+    await untilInput.fill(originalUntil);
     await target.getByLabel("Service access", { exact: true }).selectOption("Active");
     await target.getByLabel("Will it renew?", { exact: true }).selectOption("No");
     await target.getByLabel("Billing arrangement", { exact: true }).selectOption("Prepaid");
@@ -128,6 +141,46 @@ export async function verifySubscriptionVerification(page, outputDir) {
           "subscription-verification-" + engine + "-" + language + "-" + width + ".png"), fullPage: true });
       }
     }
+    // The real server commits creation, but the browser sees an ambiguous response.
+    // Explicit readback must recover that exact review and release the ID for a new one.
+    await target.context().addCookies([{ name: ".AspNetCore.Culture",
+      value: encodeURIComponent("c=en-US|uic=en-US"), url: origin, secure: true, sameSite: "Lax" }]);
+    await target.goto(origin + "/app/subscription-checks");
+    await target.getByLabel("Merchant", { exact: true }).fill("Ambiguous creation " + engine);
+    await target.getByLabel("Account and plan label", { exact: true }).fill("Recovery fixture");
+    await target.getByLabel("Billed by", { exact: true }).fill("Synthetic direct billing");
+    let creationWrites = 0, committedId;
+    const createPattern = "**/bff/subscription-reviews";
+    const lostCreateAcknowledgement = async route => {
+      if (route.request().method() !== "POST") return route.continue();
+      creationWrites++;
+      const upstream = await route.fetch();
+      expect(upstream.ok(), "Real disposable create commits before acknowledgement loss.");
+      committedId = (await upstream.json()).id;
+      await route.fulfill({ status: 503, json: {} });
+    };
+    await target.route(createPattern, lostCreateAcknowledgement);
+    try {
+      await target.getByRole("button", { name: "Start review", exact: true }).click();
+      await target.getByText("The review could not be confirmed. Refresh the list before retrying. Repeating this request uses the same review ID.", { exact: true }).waitFor();
+      expect(creationWrites === 1 && !!committedId, "Ambiguous create is not automatically replayed.");
+    } finally {
+      await target.unroute(createPattern, lostCreateAcknowledgement);
+    }
+    const recovered = target.waitForResponse(r => new URL(r.url()).pathname ===
+      "/bff/subscription-reviews/" + committedId && r.request().method() === "GET");
+    await target.getByRole("button", { name: "Refresh reviews", exact: true }).click();
+    expect((await recovered).ok(), "Explicit list/detail readback recovers the committed review.");
+    await target.getByRole("heading", { name: "Ambiguous creation " + engine + " · Recovery fixture", exact: true }).waitFor();
+    await target.waitForFunction(() => document.querySelector("#review-source")?.matches(":disabled") === false);
+    await target.getByLabel("Merchant", { exact: true }).fill("Fresh after recovery " + engine);
+    const nextCreated = target.waitForResponse(r => new URL(r.url()).pathname ===
+      "/bff/subscription-reviews" && r.request().method() === "POST");
+    await target.getByRole("button", { name: "Start review", exact: true }).click();
+    const nextResponse = await nextCreated;
+    expect(nextResponse.ok(), "A new review is possible after confirmed recovery.");
+    expect((await nextResponse.json()).id !== committedId, "A new review uses a new ID after readback.");
+    await target.getByText("Review created. Renewal remains unverified until supporting details are recorded.", { exact: true }).waitFor();
     console.log("Subscription verification browser: " + checks + " assertions passed; " + engine +
       "; real disposable BFF/database plus intercepted synthetic failure/staleness.");
   };

@@ -131,3 +131,8 @@ Official destinations and supporting navigation were inspected on 2026-10-25:
 
 The Spotify and Google account pages require the user's own sign-in. Their authenticated content was
 not inspected. No account action, cancellation, payment, sign-in or merchant contact was performed.
+
+Creation acknowledgement recovery: an explicit successful list/detail readback of the pending creation
+ID confirms the persisted review and rotates the client ID. No write is replayed during refresh. Browser
+acceptance commits a real disposable review, withholds its acknowledgement, recovers by reads and then
+creates a different review to guard against trapping the user on the prior idempotency key.

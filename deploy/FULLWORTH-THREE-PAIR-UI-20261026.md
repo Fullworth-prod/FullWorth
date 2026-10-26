@@ -61,3 +61,5 @@ Edit target: the attached standalone illustrative statement paper. Change ONLY t
 
 - The audit now continues independent layout/contrast measurements, saves bounded issue captures and attempts both browser engines before rejecting the run if any check failed. No failed check is waived. Anonymous Home reference captures are isolated from signed-in navigation, at exact1487×1058/density1 with region metadata; this matches the selected target's authentication state. The matrix includes312 geometry cases per engine plus108 state cases; those remain intended counts until actual logs establish completion.
 - Mode controls remain disabled until their existing module initializes, avoiding lost first clicks. Public demo amounts stay on one line while labels reflow; long localized headings wrap without shrinking enlarged text.
+
+- Source f1c63aae CI40301745942: both engines showed the honest empty-account state because the fixture omitted the client's includeInactive query on the bill-list read. The fixture boundary is now query-aware and records safe read counts. No product-data change or all-pairs success is inferred. Actual final-source execution is still required.

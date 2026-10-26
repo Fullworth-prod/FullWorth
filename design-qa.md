@@ -37,3 +37,7 @@ P2 fixes prepared: automatic header height, earlier stacked comparison layout, f
 Selected Home targets depict anonymous visitors. The new capture pass therefore uses a separate signed-out browser context for exact1487×1058 frames, asserts sign-in/account-entry routes and writes region/density metadata. Signed-in Home/Overview navigation remains independently covered. This is necessary before claiming a like-for-like visual comparison.
 
 Independent geometry/contrast issues are now collected across cases and both engines; any issue still rejects acceptance. Reference and bounded issue images are preserved for a comprehensive repair pass. No broader acceptance result is claimed until the actual run completes. Current comparator utility rejects viewport/density/authentication-state mismatches.
+
+## Fixture-boundary correction — both engines
+
+Source f1c63aae, CI40301745942: both engines reached a genuine empty-account state instead of the synthetic populated fixture. The real client reads /bff/bill-streams?includeInactive=false; an exact-endpoint glob omitted the query and did not intercept it. This was a test fixture error, not proof of a product data failure. Artifact12641720772 SHA2567640165867c6f495345e61e4845a05277373d761ceac030f636b80f453f7142f verified; opened the Chromium failure capture showing an accurately qualified empty state. Corrected bounded query-aware patterns and safe read-count/partial-progress diagnostics. Full paired captures and visual acceptance remain pending.

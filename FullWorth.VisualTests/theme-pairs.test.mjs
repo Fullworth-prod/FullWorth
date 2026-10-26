@@ -36,6 +36,7 @@ export async function verifyThemePairs(page, outputDir) {
     let geometryCases = 0, stateCases = 0, assertions = 0;
     const unsafe = [], errors = [], financial = new Map(), intentionalFailures = new Set();
     const layoutIssues = [], issueCaptures = new Set();
+    const fixtureReads = { banks: 0, bills: 0 };
     const expect = (value, message) => { assert.ok(value, engine + ": " + message); assertions++; };
     const audit = (value, message) => {
       assertions++;
@@ -62,6 +63,7 @@ export async function verifyThemePairs(page, outputDir) {
         return route.fulfill({ status: 503, json: {} });
       }
       const isBank = new URL(route.request().url()).pathname === "/bff/bank-connections";
+      if (isBank) fixtureReads.banks++; else fixtureReads.bills++;
       let connections = [bank], charges = bills;
       if (snapshot === "disconnected") { connections = []; charges = []; }
       if (snapshot === "repair") { connections = [{ ...bank, status: 1 }]; charges = []; }
@@ -73,7 +75,7 @@ export async function verifyThemePairs(page, outputDir) {
       if (snapshot === "saved") connections = [];
       return route.fulfill({ json: isBank ? connections : charges });
     };
-    const patterns = ["**/bff/bank-connections", "**/bff/bill-streams"];
+    const patterns = [new RegExp("/bff/bank-connections(?:[?].*)?$"), new RegExp("/bff/bill-streams(?:[?].*)?$")];
     const logo = new RegExp("^https://www[.]google[.]com/s2/favicons");
     const blockLogo = route => route.abort("failed");
     const culture = async (language, surface = target) => surface.context().addCookies([{ name: ".AspNetCore.Culture",
@@ -455,6 +457,8 @@ export async function verifyThemePairs(page, outputDir) {
     } catch (error) {
       release?.();
       await target.screenshot({ path: path.join(outputDir, "theme-pair-failure-" + engine + ".png"), fullPage: true });
+      console.error("Three-pair audit progress", { engine, geometryCases, stateCases,
+        layoutIssues: layoutIssues.length, fixtureReads, browserErrors: errors.length });
       console.error("Three-pair failure state", await target.evaluate(() => ({
         pathname: location.pathname, design: document.documentElement.dataset.design,
         mode: document.documentElement.dataset.theme, language: document.documentElement.lang,

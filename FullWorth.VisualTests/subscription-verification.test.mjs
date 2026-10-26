@@ -237,27 +237,65 @@ export async function verifySubscriptionVerification(page, outputDir) {
     const runId = process.env.GITHUB_RUN_ID ?? String(Date.now());
     const email = "ci-subscription-" + runId + "-" + engine + "@fullworth.local";
     const password = "FullWorth!Evidence123";
-    await target.goto(origin + "/register");
-    await target.locator('input[name="email"]').fill(email);
-    await target.locator('input[name="password"]').fill(password);
-    await target.locator('input[name="confirmPassword"]').fill(password);
-    await target.locator('input[name="acceptedTermsAndPrivacy"]').check();
-    await Promise.all([
-      target.waitForURL(url => url.pathname === "/login" &&
-        url.searchParams.get("message") === "Registration request received. Sign in to continue."),
-      target.locator('button[type="submit"]').click()
-    ]);
-    await target.locator('input[name="email"]').fill(email);
-    await target.locator('input[name="password"]').fill(password);
-    await Promise.all([
-      target.waitForURL(url => url.pathname.startsWith("/app")),
-      target.locator('button[type="submit"]').click()
-    ]);
-    await target.goto(origin + "/app/setup");
-    const releaseNotes = target.locator(".whats-new-dialog");
-    await releaseNotes.waitFor({ state: "visible", timeout: 15000 });
-    await releaseNotes.getByRole("button", { name: "Explore FullWorth", exact: true }).click();
-    await releaseNotes.waitFor({ state: "detached", timeout: 15000 });
+    let phase = "registration", registrationStatus, loginStatus;
+    const recordAuthStatus = response => {
+      if (response.request().method() !== "POST") return;
+      const pathname = new URL(response.url()).pathname;
+      if (pathname === "/auth/register") registrationStatus = response.status();
+      if (pathname === "/auth/login") loginStatus = response.status();
+    };
+    target.on("response", recordAuthStatus);
+    try {
+      await target.context().addCookies([{ name: ".AspNetCore.Culture",
+        value: encodeURIComponent("c=en-US|uic=en-US"), url: origin, secure: true, sameSite: "Lax" }]);
+      await target.goto(origin + "/register", { waitUntil: "domcontentloaded" });
+      await target.locator(".auth-form").waitFor();
+      // Match the parent auth fixture's settling interval before filling native
+      // forms: InteractiveServer hydration can otherwise replace their inputs.
+      await target.waitForTimeout(900);
+      await target.locator('input[name="email"]').fill(email);
+      await target.locator('input[name="password"]').fill(password);
+      await target.locator('input[name="confirmPassword"]').fill(password);
+      await target.locator('input[name="acceptedTermsAndPrivacy"]').check();
+      await Promise.all([
+        target.waitForURL(url => url.pathname === "/login" &&
+          url.searchParams.get("message") === "Registration request received. Sign in to continue.",
+          { waitUntil: "domcontentloaded" }),
+        target.locator('button[type="submit"]').click()
+      ]);
+      assert.equal(registrationStatus, 302, "Disposable owner registration redirects successfully.");
+      phase = "login";
+      await target.locator(".auth-form").waitFor();
+      await target.waitForTimeout(900);
+      await target.locator('input[name="email"]').fill(email);
+      await target.locator('input[name="password"]').fill(password);
+      await Promise.all([
+        target.waitForURL(url => url.pathname.startsWith("/app"), { waitUntil: "domcontentloaded" }),
+        target.locator('button[type="submit"]').click()
+      ]);
+      assert.equal(loginStatus, 302, "Disposable owner login redirects successfully.");
+      phase = "release notes";
+      await target.goto(origin + "/app/setup", { waitUntil: "domcontentloaded" });
+      const releaseNotes = target.locator(".whats-new-dialog");
+      await releaseNotes.waitFor({ state: "visible", timeout: 15000 });
+      await releaseNotes.getByRole("button", { name: "Explore FullWorth", exact: true }).click();
+      await releaseNotes.waitFor({ state: "detached", timeout: 15000 });
+    } catch (error) {
+      // Never capture the sign-up form: it contains a disposable password.
+      // Log only public error text, pathname, status and validity flags.
+      console.error("Subscription owner setup failure", {
+        engine, phase, registrationStatus, loginStatus,
+        state: await target.evaluate(() => ({
+          pathname: location.pathname, language: document.documentElement.lang,
+          error: document.querySelector(".auth-error")?.textContent?.trim(),
+          fields: Array.from(document.querySelectorAll(".auth-form input"))
+            .filter(input => input.type !== "hidden")
+            .map(input => ({ name: input.name, valid: input.validity.valid,
+              missing: input.validity.valueMissing, typeMismatch: input.validity.typeMismatch }))
+        }))
+      });
+      throw error;
+    } finally { target.off("response", recordAuthStatus); }
   };
   await run(page, "chromium");
   const browser = await webkit.launch({ headless: true });

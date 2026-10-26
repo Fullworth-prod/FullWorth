@@ -111,6 +111,7 @@ export async function verifyAriaStates(page) {
       }
       await target.goto("/app/account/privacy", { waitUntil: "domcontentloaded", timeout: 20000 });
       await target.getByRole("button", { name: "Download data", exact: true }).waitFor();
+      await target.locator('.privacy-page[aria-busy="false"]').waitFor();
       const privacy = target.locator(".privacy-page");
       await attribute(privacy, "aria-busy", "false");
       await target.getByRole("button", { name: "Download data", exact: true }).click();

@@ -354,6 +354,7 @@ namespace FullWorth.API.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+                    b.HasAlternateKey("Id", "UserId");
 
                     b.HasIndex("BankAccountId");
 
@@ -1960,6 +1961,65 @@ namespace FullWorth.API.Data.Migrations
                 b.HasOne("FullWorth.API.Data.Entities.ApplicationUser", null)
                     .WithMany().HasForeignKey("UserId").OnDelete(DeleteBehavior.Cascade).IsRequired();
             });
+
+            modelBuilder.Entity("FullWorth.API.Data.Entities.SubscriptionReviewEntity", b =>
+            {
+                b.Property<Guid>("Id").HasColumnType("uuid");
+                b.Property<Guid>("UserId").HasColumnType("uuid");
+                b.Property<Guid>("Revision").IsConcurrencyToken().HasColumnType("uuid");
+                b.Property<string>("MerchantName").IsRequired().HasMaxLength(200).HasColumnType("character varying(200)");
+                b.Property<string>("PlanLabel").IsRequired().HasMaxLength(100).HasColumnType("character varying(100)");
+                b.Property<string>("BillingParty").IsRequired().HasMaxLength(100).HasColumnType("character varying(100)");
+                b.Property<Guid?>("SourceTransactionId").HasColumnType("uuid");
+                b.Property<Guid?>("BillStreamId").HasColumnType("uuid");
+                b.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("timestamp with time zone");
+                b.HasKey("Id");
+                b.HasAlternateKey("Id", "UserId");
+                b.HasIndex("BillStreamId", "UserId");
+                b.HasIndex("SourceTransactionId", "UserId");
+                b.HasIndex("UserId", "CreatedAtUtc");
+                b.ToTable("SubscriptionReviews");
+            });
+            modelBuilder.Entity("FullWorth.API.Data.Entities.SubscriptionEvidenceEntity", b =>
+            {
+                b.Property<Guid>("Id").HasColumnType("uuid");
+                b.Property<Guid>("UserId").HasColumnType("uuid");
+                b.Property<Guid>("ReviewId").HasColumnType("uuid");
+                b.Property<string>("Source").IsRequired().HasMaxLength(24).HasColumnType("character varying(24)");
+                b.Property<string>("FactsJson").IsRequired().HasMaxLength(8000).HasColumnType("character varying(8000)");
+                b.Property<Guid?>("SourceUploadId").HasColumnType("uuid");
+                b.Property<DateTimeOffset>("RecordedAtUtc").HasColumnType("timestamp with time zone");
+                b.HasKey("Id");
+                b.HasIndex("ReviewId", "UserId");
+                b.HasIndex("SourceUploadId", "UserId");
+                b.ToTable("SubscriptionEvidence");
+            });
+            modelBuilder.Entity("FullWorth.API.Data.Entities.SubscriptionReviewEntity", b =>
+            {
+                b.HasOne("FullWorth.API.Data.Entities.ApplicationUser", "User")
+                    .WithMany().HasForeignKey("UserId").OnDelete(DeleteBehavior.Cascade).IsRequired();
+                b.HasOne("FullWorth.API.Data.Entities.BillStreamEntity", "BillStream")
+                    .WithMany().HasForeignKey("BillStreamId", "UserId").HasPrincipalKey("Id", "UserId")
+                    .OnDelete(DeleteBehavior.Restrict).HasConstraintName("FK_SubscriptionReviews_Bill_Owner");
+                b.HasOne("FullWorth.API.Data.Entities.BankTransactionEntity", "SourceTransaction")
+                    .WithMany().HasForeignKey("SourceTransactionId", "UserId").HasPrincipalKey("Id", "UserId")
+                    .OnDelete(DeleteBehavior.Restrict).HasConstraintName("FK_SubscriptionReviews_Transaction_Owner");
+                b.Navigation("User");
+                b.Navigation("BillStream");
+                b.Navigation("SourceTransaction");
+            });
+            modelBuilder.Entity("FullWorth.API.Data.Entities.SubscriptionEvidenceEntity", b =>
+            {
+                b.HasOne("FullWorth.API.Data.Entities.SubscriptionReviewEntity", "Review")
+                    .WithMany().HasForeignKey("ReviewId", "UserId").HasPrincipalKey("Id", "UserId")
+                    .OnDelete(DeleteBehavior.Cascade).IsRequired();
+                b.HasOne("FullWorth.API.Data.Entities.BillStatementUploadEntity", "SourceUpload")
+                    .WithMany().HasForeignKey("SourceUploadId", "UserId").HasPrincipalKey("Id", "UserId")
+                    .OnDelete(DeleteBehavior.Restrict).HasConstraintName("FK_SubscriptionEvidence_Upload_Owner");
+                b.Navigation("Review");
+                b.Navigation("SourceUpload");
+            });
+
 #pragma warning restore 612, 618
         }
     }

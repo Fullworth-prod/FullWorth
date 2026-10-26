@@ -347,6 +347,13 @@
                                 }
                             </span>
 
+                        @if (!transaction.IsPending && transaction.Amount > 0m)
+                        {
+                            <a class="secondary-action" href="@($"/app/subscription-checks?transaction={transaction.Id:D}")">
+                                @L["Verify subscription"]
+                            </a>
+                        }
+
                             <small class="transaction-mobile-date">
                                 @(transaction.PostedDate.ToString("d MMM yyyy", System.Globalization.CultureInfo.CurrentUICulture))
                             </small>

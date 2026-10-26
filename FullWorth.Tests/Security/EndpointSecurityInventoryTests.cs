@@ -37,6 +37,8 @@ public sealed class EndpointSecurityInventoryTests
         "API|GET|/api/planning/pay-schedule|authenticated|global:300-per-minute",
         "API|GET|/api/planning/payday-plans/recent|authenticated|global:300-per-minute",
         "API|GET|/api/planning/upcoming-bill-changes|authenticated|global:300-per-minute",
+        "API|GET|/api/subscription-reviews/{reviewId:guid}|authenticated|global:300-per-minute",
+        "API|GET|/api/subscription-reviews|authenticated|global:300-per-minute",
         "API|GET|/api/subscription/plans|authenticated|global:300-per-minute",
         "API|GET|/api/subscription|authenticated|global:300-per-minute",
         "API|GET|/health/live|anonymous-explicit|global:300-per-minute",
@@ -96,6 +98,8 @@ public sealed class EndpointSecurityInventoryTests
         "API|POST|/api/plaid/link-session/{sessionId:guid}/complete|authenticated|named:financial-provider",
         "API|POST|/api/plaid/link-token|authenticated|named:financial-provider",
         "API|POST|/api/plaid/transactions/sync|authenticated|named:financial-refresh",
+        "API|POST|/api/subscription-reviews/{reviewId:guid}/evidence|authenticated|named:financial-refresh",
+        "API|POST|/api/subscription-reviews|authenticated|named:financial-refresh",
         "API|POST|/api/subscription/access-keys/redeem|authenticated|named:subscription-redemption",
         "API|POST|/api/subscription/billing-portal|authenticated|named:subscription-redemption",
         "API|POST|/api/subscription/checkout|authenticated|named:subscription-redemption",
@@ -124,6 +128,7 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|GET|/app/planning|authenticated|none",
         "WEB|GET|/app/profile|authenticated|none",
         "WEB|GET|/app/setup|authenticated|none",
+        "WEB|GET|/app/subscription-checks|authenticated|none",
         "WEB|GET|/app/subscription|authenticated|none",
         "WEB|GET|/app|authenticated|none",
         "WEB|GET|/auth/confirm-email|anonymous-implicit|none",
@@ -154,6 +159,8 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|GET|/bff/planning/pay-schedule|authenticated|none",
         "WEB|GET|/bff/planning/payday-plans/recent|authenticated|none",
         "WEB|GET|/bff/planning/upcoming-bill-changes|authenticated|none",
+        "WEB|GET|/bff/subscription-reviews/{reviewId:guid}|authenticated|none",
+        "WEB|GET|/bff/subscription-reviews|authenticated|none",
         "WEB|GET|/bff/subscription/plans|authenticated|none",
         "WEB|GET|/bff/subscription|authenticated|none",
         "WEB|GET|/forgot-password|anonymous-implicit|none",
@@ -177,6 +184,7 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|POST|/app/planning|authenticated|none",
         "WEB|POST|/app/profile|authenticated|none",
         "WEB|POST|/app/setup|authenticated|none",
+        "WEB|POST|/app/subscription-checks|authenticated|none",
         "WEB|POST|/app/subscription|authenticated|none",
         "WEB|POST|/app|authenticated|none",
         "WEB|POST|/auth/external/register/complete|anonymous-explicit|named:web-authentication",
@@ -221,6 +229,8 @@ public sealed class EndpointSecurityInventoryTests
         "WEB|POST|/bff/plaid/connections/{connectionId:guid}/update-link-session|authenticated|named:financial-provider",
         "WEB|POST|/bff/plaid/link-session/{sessionId:guid}/complete|authenticated|named:financial-provider",
         "WEB|POST|/bff/plaid/link-session|authenticated|named:financial-provider",
+        "WEB|POST|/bff/subscription-reviews/{reviewId:guid}/evidence|authenticated|named:financial-refresh",
+        "WEB|POST|/bff/subscription-reviews|authenticated|named:financial-refresh",
         "WEB|POST|/bff/subscription/access-keys/redeem|authenticated|none",
         "WEB|POST|/bff/subscription/billing-portal|authenticated|none",
         "WEB|POST|/bff/subscription/checkout|authenticated|none",
@@ -278,11 +288,11 @@ public sealed class EndpointSecurityInventoryTests
     public void Snapshot_CoversEveryReviewedAccessAndRateLimitClass()
     {
         Assert.Equal(
-            228,
+            238,
             ExpectedInventory.Length);
 
         Assert.Equal(
-            97,
+            101,
             ExpectedInventory.Count(
                 row =>
                     row.StartsWith(
@@ -290,7 +300,7 @@ public sealed class EndpointSecurityInventoryTests
                         StringComparison.Ordinal)));
 
         Assert.Equal(
-            131,
+            137,
             ExpectedInventory.Count(
                 row =>
                     row.StartsWith(
@@ -326,7 +336,7 @@ public sealed class EndpointSecurityInventoryTests
                     StringComparison.Ordinal));
 
         Assert.Equal(
-            62,
+            66,
             ExpectedInventory.Count(
                 row =>
                     row.Contains(
@@ -334,7 +344,7 @@ public sealed class EndpointSecurityInventoryTests
                         StringComparison.Ordinal)));
 
         Assert.Equal(
-            11,
+            15,
             ExpectedInventory.Count(
                 row =>
                     row.EndsWith(

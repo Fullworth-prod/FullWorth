@@ -518,6 +518,23 @@ export async function getExperiencePreferences() {
         "/bff/account/preferences");
 }
 
+
+export async function getSubscriptionReviews() {
+    return await getJson("/bff/subscription-reviews");
+}
+export async function getSubscriptionReview(reviewId) {
+    if (!reviewId) throw new Error("Review ID is required.");
+    return await getJson(`/bff/subscription-reviews/${encodeURIComponent(reviewId)}`);
+}
+export async function createSubscriptionReview(request) {
+    return await mutateJsonWithBody("/bff/subscription-reviews", "POST", request);
+}
+export async function saveSubscriptionEvidence(reviewId, request) {
+    if (!reviewId) throw new Error("Review ID is required.");
+    return await mutateJsonWithBody(
+        `/bff/subscription-reviews/${encodeURIComponent(reviewId)}/evidence`, "POST", request);
+}
+
 export async function getBillDiscoveryDiagnostics() {
     return await getJson(
         "/bff/bill-discovery/diagnostics");

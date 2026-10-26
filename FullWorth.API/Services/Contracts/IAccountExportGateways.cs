@@ -87,7 +87,17 @@ public sealed record AccountBillTransactionAssociationExportRecord(
 public sealed record AccountBillExportSnapshot(
     IReadOnlyList<AccountBillStreamExportRecord> BillStreams,
     IReadOnlyList<AccountBillAlertExportRecord> BillAlerts,
-    IReadOnlyList<AccountBillTransactionAssociationExportRecord> TransactionAssociations);
+    IReadOnlyList<AccountBillTransactionAssociationExportRecord> TransactionAssociations)
+{
+    public IReadOnlyList<SubscriptionReviewExportRecord> SubscriptionReviews { get; init; } = [];
+    public IReadOnlyList<SubscriptionEvidenceExportRecord> SubscriptionEvidence { get; init; } = [];
+}
+
+public sealed record SubscriptionReviewExportRecord(
+    Guid Id, Guid Revision, string MerchantName, string PlanLabel, string BillingParty,
+    Guid? SourceTransactionId, Guid? BillStreamId, DateTimeOffset CreatedAtUtc);
+public sealed record SubscriptionEvidenceExportRecord(
+    Guid Id, Guid ReviewId, string Source, Guid? SourceUploadId, string FactsJson, DateTimeOffset RecordedAtUtc);
 
 public interface IAccountBillExportGateway
 {

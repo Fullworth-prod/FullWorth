@@ -80,7 +80,8 @@ public sealed class AdminBffWriteProxyService(
                 Results.BadRequest());
         }
 
-        if (!IsAllowedApiPath(requestUri))
+        if (!IsAllowedApiPath(requestUri) ||
+            IsSubscriptionReviewPath(requestUri) && method != HttpMethod.Post)
         {
             return Task.FromResult<IResult>(
                 Results.BadRequest());
@@ -620,7 +621,10 @@ public sealed class AdminBffWriteProxyService(
                 StringComparison.Ordinal) ||
             IsPlanningBillFundingPreferencePath(requestUri);
 
+        var isSubscriptionReviewPath = IsSubscriptionReviewPath(requestUri);
+
         if (!isAdminPath &&
+            !isSubscriptionReviewPath &&
             !isSubscriptionCheckoutPath &&
             !isSubscriptionRedemptionPath &&
             !isAccountPreferencesPath &&
@@ -640,6 +644,19 @@ public sealed class AdminBffWriteProxyService(
                !requestUri.Contains(
                    '\\',
                    StringComparison.Ordinal);
+    }
+
+    private static bool IsSubscriptionReviewPath(string requestUri)
+    {
+        const string root = "/api/subscription-reviews";
+        const string prefix = root + "/";
+        const string suffix = "/evidence";
+        if (string.Equals(requestUri, root, StringComparison.Ordinal)) return true;
+        if (requestUri.Length != prefix.Length + 36 + suffix.Length ||
+            !requestUri.StartsWith(prefix, StringComparison.Ordinal) ||
+            !requestUri.EndsWith(suffix, StringComparison.Ordinal)) return false;
+        var identifier = requestUri[prefix.Length..^suffix.Length];
+        return Guid.TryParseExact(identifier, "D", out var id) && id != Guid.Empty;
     }
 
     private static bool IsPlanningBillFundingPreferencePath(

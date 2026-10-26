@@ -48,9 +48,10 @@ public sealed class AccountPrivacyLifecycleTests
             (T)(object)await module;
     }
 
-    private static AccountPrivacy Page(Module module, Navigation? navigation = null)
+    private static AccountPrivacy Page(Module module, Navigation? navigation = null, bool interactiveReady = true)
     {
         var page = new AccountPrivacy();
+        Set(page, "_interactiveReady", interactiveReady);
         Set(page, "_bffModule", module);
         Set(page, "_deleteModule", module);
         typeof(AccountPrivacy).GetProperty("L", Flags)!.SetValue(page, new Localizer());
@@ -83,6 +84,35 @@ public sealed class AccountPrivacyLifecycleTests
         foreach (var name in new[] { "_currentPassword", "_twoFactorCode", "_deleteConfirmation",
             "_exportCurrentPassword", "_exportTwoFactorCode" })
             Assert.Equal("", Get<string>(page, name));
+    }
+
+    [Fact]
+    public async Task InitialReadiness_BlocksSensitiveCommandsEvenWithProof()
+    {
+        var module = new Module();
+        var page = Page(module, interactiveReady: false);
+        Assert.True(Property<bool>(page, "IsBusy"));
+        Act(page, "ShowExportConfirmation");
+        Act(page, "ShowDeleteConfirmation");
+        Assert.False(Get<bool>(page, "_showExportConfirmation"));
+        Assert.False(Get<bool>(page, "_showDeleteConfirmation"));
+        Set(page, "_showExportConfirmation", true);
+        Set(page, "_showDeleteConfirmation", true);
+        Set(page, "_exportCurrentPassword", Password);
+        Set(page, "_currentPassword", Password);
+        Set(page, "_deleteConfirmation", "DELETE");
+        Assert.False(Property<bool>(page, "CanExport"));
+        Assert.False(Property<bool>(page, "CanDelete"));
+        await Run(page, "ExportDataAsync");
+        await Run(page, "DeleteAccountAsync");
+        Assert.Empty(module.Calls);
+        Set(page, "_interactiveReady", true);
+        Assert.False(Property<bool>(page, "IsBusy"));
+        Act(page, "ShowExportConfirmation");
+        Assert.True(Get<bool>(page, "_showExportConfirmation"));
+        Assert.False(Property<bool>(page, "CanExport"));
+        AssertNoProof(page);
+        await page.DisposeAsync();
     }
 
     [Fact]

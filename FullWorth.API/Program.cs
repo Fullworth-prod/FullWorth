@@ -830,6 +830,9 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     RecurringBillDiscoveryPersistenceService>();
 
+builder.Services.AddScoped<ISubscriptionTransactionEvidenceGateway, SubscriptionTransactionEvidenceGateway>();
+builder.Services.AddScoped<ISubscriptionDocumentEvidenceGateway, SubscriptionDocumentEvidenceGateway>();
+
 builder.Services.AddScoped<
     IBillStreamReadGateway,
     BillStreamReadGateway>();

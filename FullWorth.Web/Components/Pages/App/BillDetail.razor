@@ -257,6 +257,12 @@
             }
         </section>
 
+        <section class="app-panel">
+            <h2>@L["Subscription verification"]</h2>
+            <p>@L["A posted charge does not confirm that this service will renew. Review access, renewal and supporting documents separately."]</p>
+            <a class="secondary-action" href="@($"/app/subscription-checks?bill={BillStreamId:D}")">@L["Verify subscription"]</a>
+        </section>
+
         <StatementUploadPanel @key="BillStreamId" BillStreamId="@BillStreamId"
                               ProviderName="@_detail.ProviderName"
                               OnProcessed="@HandleStatementProcessedAsync" />

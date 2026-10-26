@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+    <data name="Subscription verification" xml:space="preserve"><value>Verificación de suscripciones</value></data>
+  <data name="Bills" xml:space="preserve"><value>Facturas</value></data>
+  <data name="A payment does not prove that another payment is scheduled. Check access and renewal separately." xml:space="preserve"><value>Un pago no demuestra que haya otro programado. Comprueba el acceso y la renovación por separado.</value></data>
+  <data name="Direct merchant verification is unavailable. Details here are confirmed by you or supported by a document you reviewed, not checked live with the merchant." xml:space="preserve"><value>La verificación directa con el comercio no está disponible. Tú confirmas estos datos o los respaldas con un documento revisado; no se consultan en tiempo real con el comercio.</value></data>
+  <data name="Loading subscription reviews…" xml:space="preserve"><value>Cargando revisiones de suscripciones…</value></data>
+  <data name="Refresh reviews" xml:space="preserve"><value>Actualizar revisiones</value></data>
+  <data name="Your subscription reviews" xml:space="preserve"><value>Tus revisiones de suscripciones</value></data>
+  <data name="These reviews do not change your bank history, monitored bills or financial totals." xml:space="preserve"><value>Estas revisiones no cambian tu historial bancario, las facturas supervisadas ni los totales financieros.</value></data>
+  <data name="No subscription reviews yet. You can start with just one posted payment." xml:space="preserve"><value>Aún no hay revisiones de suscripciones. Puedes empezar con un solo pago contabilizado.</value></data>
+  <data name="Showing the 100 most recent reviews." xml:space="preserve"><value>Se muestran las 100 revisiones más recientes.</value></data>
+  <data name="Start a subscription review" xml:space="preserve"><value>Iniciar una revisión de suscripción</value></data>
+  <data name="Use a label that identifies the exact account and plan. Do not enter passwords or full account numbers." xml:space="preserve"><value>Usa una etiqueta que identifique la cuenta y el plan exactos. No introduzcas contraseñas ni números de cuenta completos.</value></data>
+  <data name="This review will reference the selected posted payment. It does not establish recurrence." xml:space="preserve"><value>Esta revisión hará referencia al pago contabilizado seleccionado. No demuestra recurrencia.</value></data>
+  <data name="This review will reference the selected bill and can use its existing documents." xml:space="preserve"><value>Esta revisión hará referencia a la factura seleccionada y podrá usar sus documentos existentes.</value></data>
+  <data name="Merchant" xml:space="preserve"><value>Comercio</value></data>
+  <data name="Account and plan label" xml:space="preserve"><value>Etiqueta de cuenta y plan</value></data>
+  <data name="Billed by" xml:space="preserve"><value>Facturado por</value></data>
+  <data name="For example: directly by the merchant, Apple, Google Play or another billing provider. Use Unknown if you do not know." xml:space="preserve"><value>Por ejemplo: directamente por el comercio, Apple, Google Play u otro proveedor de facturación. Escribe Desconocido si no lo sabes.</value></data>
+  <data name="Start review" xml:space="preserve"><value>Iniciar revisión</value></data>
+  <data name="Needs review: renewal is unknown, evidence is stale or the details disagree." xml:space="preserve"><value>Requiere revisión: se desconoce la renovación, la evidencia está desactualizada o los datos no coinciden.</value></data>
+  <data name="Evidence history" xml:space="preserve"><value>Historial de evidencia</value></data>
+  <data name="Showing the 10 most recent entries for this detail. Dates describe the evidence, not a new merchant check." xml:space="preserve"><value>Se muestran las 10 entradas más recientes de este dato. Las fechas corresponden a la evidencia, no a una nueva consulta al comercio.</value></data>
+  <data name="As of" xml:space="preserve"><value>Fecha de la evidencia</value></data>
+  <data name="Review by" xml:space="preserve"><value>Revisar antes del</value></data>
+  <data name="View source document" xml:space="preserve"><value>Ver documento de origen</value></data>
+  <data name="Confirm subscription details" xml:space="preserve"><value>Confirmar datos de la suscripción</value></data>
+  <data name="Leave unsupported details as Unknown. Prepaid access can still renew later; cancellation can leave access until the paid-through date." xml:space="preserve"><value>Deja como Desconocido los datos sin respaldo. El acceso prepagado puede renovarse después; una cancelación puede mantener el acceso hasta el fin del período pagado.</value></data>
+  <data name="Evidence source" xml:space="preserve"><value>Origen de la evidencia</value></data>
+  <data name="Confirmed by you" xml:space="preserve"><value>Confirmado por ti</value></data>
+  <data name="Document reviewed by you" xml:space="preserve"><value>Documento revisado por ti</value></data>
+  <data name="Source document" xml:space="preserve"><value>Documento de origen</value></data>
+  <data name="Choose a document" xml:space="preserve"><value>Elegir un documento</value></data>
+  <data name="Evidence date" xml:space="preserve"><value>Fecha de la evidencia</value></data>
+  <data name="Review again by" xml:space="preserve"><value>Volver a revisar antes del</value></data>
+  <data name="Evidence stays current for at most 31 days from its evidence date. Old evidence can be saved, but will be marked stale." xml:space="preserve"><value>La evidencia se considera vigente durante un máximo de 31 días desde su fecha. Puedes guardar evidencia antigua, pero se marcará como desactualizada.</value></data>
+  <data name="I reviewed these details for this exact account, plan and billing provider." xml:space="preserve"><value>He revisado estos datos para esta cuenta, plan y proveedor de facturación exactos.</value></data>
+  <data name="Save my confirmation" xml:space="preserve"><value>Guardar mi confirmación</value></data>
+  <data name="The save result is uncertain. Refresh this review before making another change. FullWorth will not repeat the write automatically." xml:space="preserve"><value>No se pudo confirmar el resultado del guardado. Actualiza esta revisión antes de hacer otro cambio. FullWorth no repetirá el guardado automáticamente.</value></data>
+  <data name="Check saved result" xml:space="preserve"><value>Comprobar resultado guardado</value></data>
+  <data name="Open bill and upload supporting documents" xml:space="preserve"><value>Abrir factura y subir documentos de respaldo</value></data>
+  <data name="Reviews could not be refreshed. Previously loaded details may be out of date." xml:space="preserve"><value>No se pudieron actualizar las revisiones. Los datos cargados anteriormente pueden estar desactualizados.</value></data>
+  <data name="This review could not be refreshed. Previously loaded details may be out of date." xml:space="preserve"><value>No se pudo actualizar esta revisión. Los datos cargados anteriormente pueden estar desactualizados.</value></data>
+  <data name="Supporting documents could not be loaded. You can still record your own confirmation." xml:space="preserve"><value>No se pudieron cargar los documentos de respaldo. Aún puedes registrar tu propia confirmación.</value></data>
+  <data name="Review created. Renewal remains unverified until supporting details are recorded." xml:space="preserve"><value>Revisión creada. La renovación seguirá sin verificar hasta que se registren datos de respaldo.</value></data>
+  <data name="The review could not be confirmed. Refresh the list before retrying. Repeating this request uses the same review ID." xml:space="preserve"><value>No se pudo confirmar la revisión. Actualiza la lista antes de reintentar. Al repetir esta solicitud se usa el mismo identificador de revisión.</value></data>
+  <data name="Review the account details, evidence source and dates before saving." xml:space="preserve"><value>Revisa los datos de la cuenta, el origen de la evidencia y las fechas antes de guardar.</value></data>
+  <data name="Check the details. Use YYYY-MM-DD dates, a positive amount with an explicit currency code, or Unknown." xml:space="preserve"><value>Comprueba los datos. Usa fechas AAAA-MM-DD, un importe positivo con código de moneda explícito o Unknown para indicar que se desconoce.</value></data>
+  <data name="Your confirmation was saved. It is not a live merchant verification." xml:space="preserve"><value>Se guardó tu confirmación. No es una verificación en tiempo real con el comercio.</value></data>
+  <data name="Service access" xml:space="preserve"><value>Acceso al servicio</value></data>
+  <data name="Will it renew?" xml:space="preserve"><value>¿Se renovará?</value></data>
+  <data name="Billing arrangement" xml:space="preserve"><value>Modalidad de facturación</value></data>
+  <data name="Paid through" xml:space="preserve"><value>Pagado hasta</value></data>
+  <data name="Next charge date" xml:space="preserve"><value>Fecha del próximo cobro</value></data>
+  <data name="Next charge amount" xml:space="preserve"><value>Importe del próximo cobro</value></data>
+  <data name="Currency code" xml:space="preserve"><value>Código de moneda</value></data>
+  <data name="Unknown" xml:space="preserve"><value>Desconocido</value></data>
+  <data name="Current evidence" xml:space="preserve"><value>Evidencia vigente</value></data>
+  <data name="Stale evidence" xml:space="preserve"><value>Evidencia desactualizada</value></data>
+  <data name="Conflicting evidence" xml:space="preserve"><value>Evidencia contradictoria</value></data>
+  <data name="Unverified" xml:space="preserve"><value>Sin verificar</value></data>
+  <data name="Active" xml:space="preserve"><value>Activo</value></data>
+  <data name="Paused" xml:space="preserve"><value>En pausa</value></data>
+  <data name="Ended" xml:space="preserve"><value>Finalizado</value></data>
+  <data name="Yes" xml:space="preserve"><value>Sí</value></data>
+  <data name="No" xml:space="preserve"><value>No</value></data>
+  <data name="Recurring" xml:space="preserve"><value>Recurrente</value></data>
+  <data name="Prepaid" xml:space="preserve"><value>Prepagado</value></data>
+  <data name="Fixed term" xml:space="preserve"><value>Plazo fijo</value></data>
+  <data name="One-time purchase" xml:space="preserve"><value>Compra única</value></data>
+  <data name="Leave dates, amounts and currency blank if unknown." xml:space="preserve"><value>Deja en blanco las fechas, los importes y la moneda si se desconocen.</value></data>
+  <data name="Check the details. Use YYYY-MM-DD dates and a positive amount with an explicit currency code. Leave unsupported details blank." xml:space="preserve"><value>Comprueba los datos. Usa fechas AAAA-MM-DD y un importe positivo con código de moneda explícito. Deja en blanco los datos sin respaldo.</value></data>
+  <data name="Trial" xml:space="preserve"><value>Período de prueba</value></data>
+  <data name="Check your merchant or billing provider account" xml:space="preserve"><value>Consulta tu cuenta del comercio o proveedor de facturación</value></data>
+  <data name="Use the account and billing provider for this exact plan. Opening a link does not connect FullWorth or verify any subscription details. Record only what you can confirm." xml:space="preserve"><value>Usa la cuenta y el proveedor de facturación de este plan exacto. Abrir un enlace no conecta FullWorth ni verifica los datos de ninguna suscripción. Registra solo lo que puedas confirmar.</value></data>
+  <data name="Spotify account" xml:space="preserve"><value>Cuenta de Spotify</value></data>
+  <data name="Apple subscription help" xml:space="preserve"><value>Ayuda con suscripciones de Apple</value></data>
+  <data name="Google Play subscriptions" xml:space="preserve"><value>Suscripciones de Google Play</value></data>
+  <data name="PayPal automatic payment help" xml:space="preserve"><value>Ayuda con pagos automáticos de PayPal</value></data>
+  <data name="If another company bills you, use its official app or a trusted bookmark. FullWorth does not guess account links from merchant names." xml:space="preserve"><value>Si te factura otra empresa, usa su aplicación oficial o un marcador de confianza. FullWorth no adivina enlaces a cuentas a partir del nombre del comercio.</value></data>
+  <data name="Latest observation from each source" xml:space="preserve"><value>Observación más reciente de cada fuente</value></data>
+</root>

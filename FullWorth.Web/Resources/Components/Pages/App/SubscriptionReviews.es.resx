@@ -77,4 +77,11 @@
   <data name="Leave dates, amounts and currency blank if unknown." xml:space="preserve"><value>Deja en blanco las fechas, los importes y la moneda si se desconocen.</value></data>
   <data name="Check the details. Use YYYY-MM-DD dates and a positive amount with an explicit currency code. Leave unsupported details blank." xml:space="preserve"><value>Comprueba los datos. Usa fechas AAAA-MM-DD y un importe positivo con código de moneda explícito. Deja en blanco los datos sin respaldo.</value></data>
   <data name="Trial" xml:space="preserve"><value>Período de prueba</value></data>
+  <data name="Check your merchant or billing provider account" xml:space="preserve"><value>Consulta tu cuenta del comercio o proveedor de facturación</value></data>
+  <data name="Use the account and billing provider for this exact plan. Opening a link does not connect FullWorth or verify any subscription details. Record only what you can confirm." xml:space="preserve"><value>Usa la cuenta y el proveedor de facturación de este plan exacto. Abrir un enlace no conecta FullWorth ni verifica los datos de ninguna suscripción. Registra solo lo que puedas confirmar.</value></data>
+  <data name="Spotify account" xml:space="preserve"><value>Cuenta de Spotify</value></data>
+  <data name="Apple subscription help" xml:space="preserve"><value>Ayuda con suscripciones de Apple</value></data>
+  <data name="Google Play subscriptions" xml:space="preserve"><value>Suscripciones de Google Play</value></data>
+  <data name="PayPal automatic payment help" xml:space="preserve"><value>Ayuda con pagos automáticos de PayPal</value></data>
+  <data name="If another company bills you, use its official app or a trusted bookmark. FullWorth does not guess account links from merchant names." xml:space="preserve"><value>Si te factura otra empresa, usa su aplicación oficial o un marcador de confianza. FullWorth no adivina enlaces a cuentas a partir del nombre del comercio.</value></data>
 </root>

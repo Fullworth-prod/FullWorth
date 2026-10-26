@@ -14,6 +14,17 @@
         <p>@L["A payment does not prove that another payment is scheduled. Check access and renewal separately."]</p>
     </header>
     <p class="review-notice">@L["Direct merchant verification is unavailable. Details here are confirmed by you or supported by a document you reviewed, not checked live with the merchant."]</p>
+    <details class="review-provider-help">
+        <summary>@L["Check your merchant or billing provider account"]</summary>
+        <p>@L["Use the account and billing provider for this exact plan. Opening a link does not connect FullWorth or verify any subscription details. Record only what you can confirm."]</p>
+        <ul>
+            <li><a href="https://www.spotify.com/account" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">@L["Spotify account"]</a></li>
+            <li><a href="https://support.apple.com/billing" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">@L["Apple subscription help"]</a></li>
+            <li><a href="https://play.google.com/store/account/subscriptions" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">@L["Google Play subscriptions"]</a></li>
+            <li><a href="https://www.paypal.com/us/cshelp/article/what-is-an-automatic-payment-and-how-do-i-update-or-cancel-one-help240" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">@L["PayPal automatic payment help"]</a></li>
+        </ul>
+        <p>@L["If another company bills you, use its official app or a trusted bookmark. FullWorth does not guess account links from merchant names."]</p>
+    </details>
     @if (_loading)
     {
         <p role="status">@L["Loading subscription reviews…"]</p>

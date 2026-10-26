@@ -113,3 +113,21 @@ recorded real-provider acceptance. Do not create credentials or add paid service
 Written verification code is not evidence of execution. Record actual final-head results in the PR/handoff.
 No production/master promotion or deployment, paid activation, external account/secret changes,
 provider acceptance, physical-device or legal acceptance is claimed by these fixtures.
+
+## Official account-help fallback
+
+The review page offers a disclosure containing four fixed HTTPS destinations, opened only by the
+user: Spotify account, Apple billing support, Google Play subscriptions and PayPal automatic-payment
+help. They are account-navigation aids, not integrations. No labels, review IDs, transaction details,
+tokens or return URLs are appended. Links suppress referrers and opener access. Arbitrary merchant
+names never generate links; users of another billing company are directed to its official app or a
+trusted bookmark. Opening a link cannot alter evidence, mark verification current or grant access.
+
+Official destinations and supporting navigation were inspected on 2026-10-25:
+- https://support.spotify.com/uk/article/canceled-but-still-charged/ links to https://www.spotify.com/account
+- https://support.apple.com/billing
+- https://support.google.com/googleplay/answer/7018481 links to https://play.google.com/store/account/subscriptions
+- https://www.paypal.com/us/cshelp/article/what-is-an-automatic-payment-and-how-do-i-update-or-cancel-one-help240
+
+The Spotify and Google account pages require the user's own sign-in. Their authenticated content was
+not inspected. No account action, cancellation, payment, sign-in or merchant contact was performed.

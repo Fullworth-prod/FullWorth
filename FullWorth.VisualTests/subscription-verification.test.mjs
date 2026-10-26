@@ -14,6 +14,21 @@ export async function verifySubscriptionVerification(page, outputDir) {
       value: encodeURIComponent("c=en-US|uic=en-US"), url: origin, secure: true, sameSite: "Lax" }]);
     await target.goto(origin + "/app/subscription-checks");
     await target.getByRole("heading", { name: "Start a subscription review", exact: true }).waitFor();
+    await target.locator(".review-provider-help > summary").click();
+    const officialLinks = [
+      ["Spotify account", "https://www.spotify.com/account"],
+      ["Apple subscription help", "https://support.apple.com/billing"],
+      ["Google Play subscriptions", "https://play.google.com/store/account/subscriptions"],
+      ["PayPal automatic payment help", "https://www.paypal.com/us/cshelp/article/what-is-an-automatic-payment-and-how-do-i-update-or-cancel-one-help240"]
+    ];
+    for (const [label, href] of officialLinks) {
+      const link = target.getByRole("link", { name: label, exact: true });
+      expect(await link.getAttribute("href") === href, "Account help uses a fixed official destination.");
+      expect(await link.getAttribute("referrerpolicy") === "no-referrer" &&
+        (await link.getAttribute("rel")).includes("noreferrer"), "Account help does not send the review URL.");
+    }
+    expect(await target.getByText("Use the account and billing provider for this exact plan. Opening a link does not connect FullWorth or verify any subscription details. Record only what you can confirm.", { exact: true }).isVisible(),
+      "Opening account help must not imply a merchant connection.");
     await target.getByLabel("Merchant", { exact: true }).fill("Synthetic subscription " + engine);
     await target.getByLabel("Account and plan label", { exact: true }).fill("Personal monthly plan");
     await target.getByLabel("Billed by", { exact: true }).fill("Synthetic direct billing");
@@ -96,6 +111,7 @@ export async function verifySubscriptionVerification(page, outputDir) {
       const selected = target.getByRole("button", { name: new RegExp("Synthetic subscription " + engine) });
       await selected.click();
       await target.locator("#review-source").waitFor();
+      await target.locator(".review-provider-help > summary").click();
       expect(await target.getByRole("heading", { name: language === "es" ? "Confirmar datos de la suscripción" :
         "Confirm subscription details", exact: true }).isVisible(), "Localized confirmation is visible.");
       for (const width of [320, 390]) {

@@ -14,6 +14,14 @@ export async function verifyThemePairs(page, outputDir) {
     mode: document.documentElement.dataset.theme ?? "dark"
   }));
   const storageState = await page.context().storageState();
+  // Capture ancillary UI reads once from the real disposable account. Repeated
+  // layout navigation must not consume the server's production-shaped limiter.
+  const preferencesResponse = await page.request.get(origin + "/bff/account/preferences");
+  assert.equal(preferencesResponse.status(), 200, "Actual CI preference read succeeds.");
+  assert.ok((preferencesResponse.headers()["content-type"] ?? "").includes("application/json"));
+  const savedPreferences = await preferencesResponse.json();
+  const adminResponse = await page.request.get(origin + "/bff/admin/users?skip=0&take=1");
+  assert.equal(adminResponse.status(), 403, "Actual synthetic account has no admin access.");
   const styles = ["editorial", "workspace", "story"];
   const modes = ["light", "dark"];
   const languages = ["en-US", "es"];
@@ -36,7 +44,8 @@ export async function verifyThemePairs(page, outputDir) {
     let geometryCases = 0, stateCases = 0, menuCases = 0, assertions = 0;
     const unsafe = [], errors = [], financial = new Map(), intentionalFailures = new Set();
     const layoutIssues = [], issueCaptures = new Set();
-    const fixtureReads = { banks: 0, bills: 0 };
+    const fixtureReads = { banks: 0, bills: 0, preferences: 0, adminProbes: 0 };
+    const contrastSamples = [];
     const screenshotCsp = []; let capturing, captureCsp;
     const expect = (value, message) => { assert.ok(value, engine + ": " + message); assertions++; };
     const audit = (value, message) => {
@@ -88,6 +97,18 @@ export async function verifyThemePairs(page, outputDir) {
       return route.fulfill({ json: isBank ? connections : charges });
     };
     const patterns = [new RegExp("/bff/bank-connections(?:[?].*)?$"), new RegExp("/bff/bill-streams(?:[?].*)?$")];
+    const preferencesPattern = new RegExp("/bff/account/preferences(?:[?].*)?$");
+    const adminPattern = new RegExp("/bff/admin/users(?:[?].*)?$");
+    const auxiliary = async route => {
+      assert.equal(route.request().method(), "GET", "Appearance auxiliary fixture is read-only.");
+      if (new URL(route.request().url()).pathname === "/bff/account/preferences") {
+        fixtureReads.preferences++;
+        return route.fulfill({ json: savedPreferences });
+      }
+      fixtureReads.adminProbes++;
+      intentionalFailures.add(route.request().url());
+      return route.fulfill({ status: 403, json: {} });
+    };
     const logo = new RegExp("^https://www[.]google[.]com/s2/favicons");
     const blockLogo = route => route.abort("failed");
     const culture = async (language, surface = target) => surface.context().addCookies([{ name: ".AspNetCore.Culture",
@@ -186,15 +207,27 @@ export async function verifyThemePairs(page, outputDir) {
     const readable = async (selector, surface = target) => {
       const locator = typeof selector === "string" ? surface.locator(selector).first() : selector;
       const label = typeof selector === "string" ? selector : "mobile navigation item";
-      const ratio = await locator.evaluate(element => {
+      const sample = await locator.evaluate(element => {
         const rgba = value => {
-          const v = value.match(/[0-9.]+/g).map(Number);
-          return [v[0], v[1], v[2], v.length > 3 ? v[3] : 1];
+          if (value === "transparent") return [0, 0, 0, 0];
+          const srgb = value.match(/^color\(srgb\s+(.+)\)$/i);
+          const rgb = value.match(/^rgba?\((.+)\)$/i);
+          if (!srgb && !rgb) throw new Error("Unsupported computed color: " + value);
+          const parts = (srgb ?? rgb)[1].trim().split(/[,\s/]+/).filter(Boolean);
+          if (parts.length < 3 || parts.length > 4) throw new Error("Invalid computed color: " + value);
+          const alpha = parts[3] === undefined ? 1 : parseFloat(parts[3]) / (parts[3].endsWith("%") ? 100 : 1);
+          const channels = parts.slice(0, 3).map(part =>
+            parseFloat(part) * (part.endsWith("%") ? 2.55 : srgb ? 255 : 1));
+          if (![...channels, alpha].every(Number.isFinite)) throw new Error("Invalid color channels: " + value);
+          return channels.map(channel => Math.max(0, Math.min(255, channel))).concat(Math.max(0, Math.min(1, alpha)));
         };
-        const fg = rgba(getComputedStyle(element).color);
+        const foreground = getComputedStyle(element).color;
+        const fg = rgba(foreground), backgrounds = [];
         let bg = [0, 0, 0, 0];
         for (let node = element; node && bg[3] < .999; node = node.parentElement) {
-          const next = rgba(getComputedStyle(node).backgroundColor);
+          const raw = getComputedStyle(node).backgroundColor;
+          backgrounds.push(raw);
+          const next = rgba(raw);
           const alpha = bg[3] + next[3] * (1 - bg[3]);
           if (alpha > 0) bg = [0, 1, 2].map(i =>
             (bg[i] * bg[3] + next[i] * next[3] * (1 - bg[3])) / alpha).concat(alpha);
@@ -205,9 +238,12 @@ export async function verifyThemePairs(page, outputDir) {
           c /= 255; return c <= .04045 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4);
         }).reduce((sum, c, i) => sum + c * [.2126, .7152, .0722][i], 0);
         const a = luminance(text), b = luminance(bg);
-        return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+        return { ratio: (Math.max(a, b) + .05) / (Math.min(a, b) + .05),
+          foreground, backgrounds, design: document.documentElement.dataset.design,
+          mode: document.documentElement.dataset.theme, language: document.documentElement.lang };
       });
-      audit(ratio >= 4.5, "Core text retains readable contrast: " + label + ", ratio=" + ratio.toFixed(2));
+      contrastSamples.push({ label, ...sample });
+      audit(sample.ratio >= 4.5, "Core text retains readable contrast: " + label + ", " + JSON.stringify(sample));
     };
     const snapshot = () => target.locator(".fw-pulse-amount, .fw-pulse-stat strong, .fw-bill-value strong")
       .allTextContents().then(values => values.map(value => value.trim().replace(/\s+/g, " ")));
@@ -217,6 +253,8 @@ export async function verifyThemePairs(page, outputDir) {
     target.on("console", consoleError);
     for (const pattern of patterns) await target.route(pattern, read);
     await target.route(logo, blockLogo);
+    await target.route(preferencesPattern, auxiliary);
+    await target.route(adminPattern, auxiliary);
     try {
       await culture("en-US");
       await target.goto(origin + "/", { waitUntil: "domcontentloaded" });
@@ -482,7 +520,13 @@ export async function verifyThemePairs(page, outputDir) {
           bounds.bottom <= bounds.navTop + 2, "Menu remains above persistent navigation: " + JSON.stringify(bounds));
         const links = await sheet.locator(".app-nav-link").all();
         expect(links.length >= 4, "The account/settings navigation remains available.");
-        for (const link of links) await readable(link);
+        expect(await sheet.locator('a[href="/app/admin"]').count() === 0,
+          "The account with verified admin denial never receives admin navigation.");
+        for (const link of links) {
+          const label = link.locator(":scope > span:last-child");
+          expect(await label.count() === 1, "Each navigation destination exposes its actual text label.");
+          await readable(label);
+        }
         if (language === "en-US")
           await capture(target, { path: path.join(outputDir, "theme-pair-" + style + "-" + mode +
             "-menu-" + engine + "-en-320-large.png"), fullPage: false });
@@ -575,7 +619,7 @@ export async function verifyThemePairs(page, outputDir) {
       } finally { await blocked.close(); }
 
       await writeFile(path.join(outputDir, "theme-pair-audit-" + engine + ".json"),
-        JSON.stringify({ engine, geometryCases, stateCases, menuCases, layoutIssues, errors, fixtureReads, screenshotCsp }, null, 2));
+        JSON.stringify({ engine, geometryCases, stateCases, menuCases, layoutIssues, errors, fixtureReads, screenshotCsp, contrastSamples }, null, 2));
       console.log("Three-pair complete geometry diagnostics", JSON.stringify(layoutIssues));
       expect(unsafe.length === 0, "Appearance and public demo make no financial writes: " + JSON.stringify(unsafe));
       expect(errors.length === 0, "No uncaught browser errors: " + JSON.stringify(errors));
@@ -602,6 +646,8 @@ export async function verifyThemePairs(page, outputDir) {
       target.off("console", consoleError);
       for (const pattern of patterns) await target.unroute(pattern, read);
       await target.unroute(logo, blockLogo);
+      await target.unroute(preferencesPattern, auxiliary);
+      await target.unroute(adminPattern, auxiliary);
       await target.emulateMedia({ reducedMotion: "no-preference" });
     }
   };

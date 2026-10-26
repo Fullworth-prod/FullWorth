@@ -103,3 +103,10 @@ GitHub live logs exposed /etc/apt/apt-mirrors.txt as the active mirror-list indi
 13dc4f9 dedicated confirmation40371911639 passed all existing tests: dialog38, BFF74, Hosted-Link24. Actual log confirms1 mirror-list file changed and119MB downloaded in7seconds through Ubuntu's HTTPS archive. Backend2,870/Node127 zero failed/skipped/warnings and Android compilation passed.
 
 The main workflow has a separate browser install and was still waiting on its old source roughly15minutes into40371911364. Apply the identical bounded preparation before that install, conditional on visual changes. No main timeout, test command, action pin or permission changes. The expanded330/108/12 matrix remains unaccepted until it executes on this new source. This is an install-path repair, not a test bypass.
+
+
+### Correct computed-color measurement and isolate ancillary fixture traffic
+
+feefd5d main40374562638 reached all330 geometry/108 state/12 menu cases in both engines but failed acceptance. Actual menu screenshots in verified artifact12673589449 SHA25672fc36accc1d55607826b2fb87c50ae5183b46a9a14bfbc8f51035d8bb916d5c show legible dark labels. The diagnostic helper misread color(srgb...) normalized channels and tested the link container rather than its visible text span. Correct color parsing/label selection, retain4.5/44px/overflow criteria, record raw color chains. Four isolated normalization cases passed; this is not browser acceptance.
+
+The fast matrix also exhausted the real disposable server's ancillary read quota in WebKit. Capture and verify one real preference200 JSON response and non-admin403 once, then strictly fixture those same GET-only reads across the matrix. Production limiter, application behavior, CSRF and writes are unchanged. Existing full BFF/account/security suites still run independently after this matrix. Reject unexpected fixture writes and assert no admin destination is offered. The final trustworthy330/108/12 execution remains pending; do not claim combined success from this source.

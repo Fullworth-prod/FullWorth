@@ -46,3 +46,12 @@ Edit target: the attached standalone illustrative statement paper. Change ONLY t
 ## Verified so far
 
 21 isolated Node/VM appearance tests actually passed against prepared source, with source-read statements remapped in memory, without a checkout. This is not browser, .NET, protected final-head or design acceptance. Complete the page implementations, actual browser interactions, screenshot comparisons and required checks before integration.
+
+## Current execution checkpoint
+
+- Source e8bada80a45fa56a64a856b73f184494c91a8d58: CI40292167632 passed2870 .NET +127 Node tests, zero failures/skips; backend/offline/Android builds and existing container/browser checks passed. These results precede the dedicated all-pairs matrix.
+- Source b479cc0add8fc456e5b58ef69f06465e6f3bc061: new browser matrix correctly failed the first phone touch-target gate because the existing mode toggle was39×39px. Do not claim all-pairs acceptance from the earlier baseline pass.
+- Current corrections enlarge the toggle to44px, strengthen/localize its keyboard labels/focus, consolidate selected Overview and palette rules in the existing app-polish owner layer, remove inherited hero art/dark-only ink, preserve navigation resilience and add tablet coverage. The same touch/financial gates remain.
+- The dedicated matrix now covers300 geometry and108 state cases per engine, core contrast, keyboard/native demo behavior, storage denial, navigation/reload persistence, stale-read retention, motion/performance and console checks. These are intended case counts, not claimed executed passes.
+- Exact-reference captures use1487×1058 CSS pixels at density1. Source references are1487×1058. The new suite runs before the older visual suites to surface UI failures early; the older suites still run afterward and are not skipped.
+- Project-root design-qa.md is blocked until post-fix matched source/implementation boards and both-engine results establish no P0/P1/P2 findings. No deployment.

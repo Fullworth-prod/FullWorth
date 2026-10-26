@@ -27,10 +27,10 @@
 .paired-home .home-security { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; border-top: 1px solid var(--pair-line); padding-top: 40px; }
 .paired-home .home-security h2 { margin: 0; font-size: clamp(1.7rem, 3vw, 3rem); line-height: 1.15; letter-spacing: -.045em; }
 .paired-home .home-security p { color: var(--pair-muted); font-size: 1rem; line-height: 1.65; }
-html[data-design="workspace"] .paired-home { padding-top: 56px; }
+html[data-design="workspace"] .paired-home { padding: 64px 48px 56px; }
 html[data-design="workspace"] .paired-home .hero-copy { display: grid; grid-template-columns: 1fr auto; text-align: start; gap: 18px 30px; }
 html[data-design="workspace"] .paired-home .hero .home-kicker { display: block; grid-column: 1 / -1; margin: 0; }
-html[data-design="workspace"] .paired-home .hero h1 { grid-column: 1 / -1; font: 800 clamp(2.4rem, 3.9vw, 4.4rem)/1.03 Inter, system-ui, sans-serif; letter-spacing: -.055em; }
+html[data-design="workspace"] .paired-home .hero h1 { grid-column: 1 / -1; font: 800 clamp(2.4rem, 4.5vw, 4.4rem)/1.03 Inter, system-ui, sans-serif; letter-spacing: -.055em; }
 html[data-design="workspace"] .paired-home .hero-title-editorial { display: none; }
 html[data-design="workspace"] .paired-home .hero-title-workspace { display: block; }
 html[data-design="workspace"] .paired-home .hero-description { margin: 0; max-width: 60ch; font-size: 1.2rem; }
@@ -54,7 +54,7 @@ html[data-design="story"] .paired-home .home-process h2 { font-family: Inter, sy
     .paired-home .home-process ol { grid-template-columns: 1fr; gap: 24px; }
     .paired-home .home-process li + li { border-inline-start: 0; }
     .paired-home .home-security { grid-template-columns: 1fr; gap: 20px; }
-    html[data-design="workspace"] .paired-home { padding-top: 28px; }
+    html[data-design="workspace"] .paired-home { padding: 28px 20px 40px; }
     html[data-design="workspace"] .paired-home .hero-copy,
     html[data-design="story"] .paired-home .hero-copy { display: block; }
     html[data-design="workspace"] .paired-home .hero h1,
@@ -72,3 +72,10 @@ html[data-design="story"] .paired-home .home-process h2 { font-family: Inter, sy
 
 .paired-home .hero-title, .paired-home .hero-title > span { color: var(--pair-ink); background: none; }
 html[data-design="story"] .paired-home .story-accent { color: var(--pair-accent); }
+
+.landing-page.paired-home { background: var(--pair-canvas); }
+.paired-home .hero { width: 100%; }
+.paired-home .hero::before, .paired-home .hero::after { display: none; }
+
+html[data-design="workspace"] .paired-home .hero { padding-top: 40px; }
+@media(max-width:760px) { html[data-design="workspace"] .paired-home .hero { padding-top: 0; } }

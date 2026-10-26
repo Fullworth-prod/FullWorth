@@ -733,12 +733,12 @@ html[data-design="workspace"] .home-site-shell .header-action[href="/register"] 
 html[data-design] .home-site-shell .site-footer { background: var(--pair-canvas); border-top: 1px solid var(--pair-line); color: var(--pair-muted); }
 html[data-design] .home-site-shell .footer-inner { max-width: 1440px; margin-inline: auto; padding: 32px; gap: 24px; }
 html[data-design="workspace"] .home-site-shell .site-header {
-    position: fixed; inset: 0 auto 0 0; width: 240px; height: 100dvh;
+    position: fixed; inset: 0 auto 0 0; width: 276px; height: 100dvh; overflow-y: auto;
     background: #1455df; color: #ffffff; border: 0; z-index: 20;
     --bw-text: #ffffff; --bw-text-secondary: #e5eeff; --bw-surface: #1646ad; --bw-border-strong: #a8c5ff;
 }
 html[data-design="workspace"] .home-site-shell .header-inner {
-    height: 100%; width: 100%; min-height: 0; flex-direction: column; align-items: stretch;
+    height: auto; width: 100%; min-height: 100dvh; flex-direction: column; align-items: stretch;
     padding: 32px 20px; gap: 24px;
 }
 html[data-design="workspace"] .home-site-shell .brand { color: #ffffff; }
@@ -750,7 +750,7 @@ html[data-design="workspace"] .home-site-shell .desktop-nav a:hover { background
 html[data-design="workspace"] .home-site-shell .header-actions { margin-top: auto; gap: 10px; }
 html[data-design="workspace"] .home-site-shell .header-action { color: #ffffff; }
 html[data-design="workspace"] .home-site-shell main,
-html[data-design="workspace"] .home-site-shell .site-footer { margin-inline-start: 240px; }
+html[data-design="workspace"] .home-site-shell .site-footer { margin-inline-start: 276px; }
 html[data-design] .home-site-shell a:focus-visible,
 html[data-design] .home-site-shell button:focus-visible { outline: 3px solid currentColor; outline-offset: 4px; }
 @media(max-width: 1050px) {
@@ -762,7 +762,7 @@ html[data-design] .home-site-shell button:focus-visible { outline: 3px solid cur
     html[data-design] .home-site-shell .site-header { position: static; width: auto; height: auto; }
     html[data-design] .home-site-shell .header-inner {
         display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; padding: 16px 20px;
-        width: 100%; height: auto;
+        width: 100%; height: auto; min-height: 0;
     }
     html[data-design] .home-site-shell .brand-name { font-size: 1.4rem; }
     html[data-design] .home-site-shell .brand-mark { width: 34px; height: 34px; }
@@ -781,3 +781,18 @@ html[data-design="workspace"] .home-site-shell .product-nav { display: inline-fl
 .home-site-shell .footer-legal-links a { color: var(--pair-muted); min-height: 44px; display: inline-flex; align-items: center; }
 
 html[data-design] .home-site-shell .footer-inner { width: 100%; }
+
+html[data-design] .home-site-shell main { background: var(--pair-canvas); }
+html[data-design] .home-site-shell .desktop-nav { padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+html[data-design] .home-site-shell .header-action { border: 0; background: none; box-shadow: none; border-radius: 0; }
+html[data-design="story"] .home-site-shell .header-action[href="/register"] { background: #2854e8; color: #ffffff; border-radius: 12px; padding: 12px 22px; }
+
+html[data-design] .home-site-shell .brand { max-width: 100%; }
+html[data-design] .home-site-shell .brand-name { min-width: 0; overflow-wrap: anywhere; }
+html[data-design] .home-site-shell .desktop-nav a { white-space: normal; overflow-wrap: anywhere; }
+html[data-design="workspace"] .home-site-shell .brand-name { font-size: 2rem; }
+html[data-design="workspace"] .home-site-shell .desktop-nav a { font-size: 1.1rem; }
+@media(max-width:760px) {
+    html[data-design="workspace"] .home-site-shell .brand-name { font-size: 1.4rem; }
+    html[data-design="workspace"] .home-site-shell .desktop-nav a { font-size: .8rem; }
+}

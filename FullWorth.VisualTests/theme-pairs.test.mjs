@@ -87,6 +87,8 @@ export async function verifyThemePairs(page, outputDir) {
       if (await target.locator("html").getAttribute("data-theme") !== mode)
         await target.locator(".theme-toggle").click();
       await target.waitForFunction(value => document.documentElement.dataset.theme === value, mode);
+      // Let the existing220ms mode transition finish before measuring colors.
+      await target.waitForTimeout(250);
     };
     const geometry = async (label, width, large) => {
       await target.setViewportSize({ width, height: 1000 });
@@ -117,6 +119,30 @@ export async function verifyThemePairs(page, outputDir) {
           "Appearance/demo control remains usable: " + JSON.stringify(r));
       }
       geometryCases++;
+    };
+    const readable = async selector => {
+      const ratio = await target.locator(selector).first().evaluate(element => {
+        const rgba = value => {
+          const v = value.match(/[0-9.]+/g).map(Number);
+          return [v[0], v[1], v[2], v.length > 3 ? v[3] : 1];
+        };
+        const fg = rgba(getComputedStyle(element).color);
+        let bg = [0, 0, 0, 0];
+        for (let node = element; node && bg[3] < .999; node = node.parentElement) {
+          const next = rgba(getComputedStyle(node).backgroundColor);
+          const alpha = bg[3] + next[3] * (1 - bg[3]);
+          if (alpha > 0) bg = [0, 1, 2].map(i =>
+            (bg[i] * bg[3] + next[i] * next[3] * (1 - bg[3])) / alpha).concat(alpha);
+        }
+        if (bg[3] < 1) bg = bg.slice(0, 3).map(c => c * bg[3] + 255 * (1 - bg[3])).concat(1);
+        const text = fg.slice(0, 3).map((c, i) => c * fg[3] + bg[i] * (1 - fg[3]));
+        const luminance = v => v.slice(0, 3).map(c => {
+          c /= 255; return c <= .04045 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4);
+        }).reduce((sum, c, i) => sum + c * [.2126, .7152, .0722][i], 0);
+        const a = luminance(text), b = luminance(bg);
+        return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+      });
+      expect(ratio >= 4.5, "Core text retains readable contrast: " + selector + ", ratio=" + ratio.toFixed(2));
     };
     const snapshot = () => target.locator(".fw-pulse-amount, .fw-pulse-stat strong, .fw-bill-value strong")
       .allTextContents().then(values => values.map(value => value.trim().replace(/\s+/g, " ")));
@@ -160,7 +186,11 @@ export async function verifyThemePairs(page, outputDir) {
                 await target.locator(".overview-attention").count() === 1,
                 "One priority presentation replaces the duplicate per-bill spotlight.");
             }
-            for (const width of [320, 390, 1440]) for (const large of [false, true]) {
+            for (const selector of (label === "home"
+              ? [".hero-title:visible", ".hero-description", ".sample-qualification", ".home-primary-action"]
+              : [".fw-pulse-amount", ".fw-pulse-label", ".fw-coverage-note", ".fw-primary-action"]))
+              await readable(selector);
+            for (const width of [320, 390, 768, 1440]) for (const large of [false, true]) {
               await geometry(label + "/" + style + "/" + mode + "/" + language, width, large);
               if (engine === "webkit" && language === "es" && !large &&
                   width === (mode === "dark" ? 320 : 390))
@@ -326,6 +356,8 @@ export async function verifyThemePairs(page, outputDir) {
         });
         const isolated = await blocked.newPage();
         isolated.on("request", record);
+        isolated.on("pageerror", pageError);
+        isolated.on("console", consoleError);
         await isolated.goto(origin + "/", { waitUntil: "domcontentloaded" });
         await isolated.locator(".design-picker select:not([disabled])").waitFor();
         await isolated.locator(".design-picker select").selectOption("story");

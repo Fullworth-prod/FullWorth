@@ -280,4 +280,6 @@
   <data name="Legal information" xml:space="preserve"><value>Información legal</value></data>
   <data name="Privacy Notice" xml:space="preserve"><value>Aviso de Privacidad</value></data>
   <data name="Terms" xml:space="preserve"><value>Términos</value></data>
+  <data name="Switch to light mode" xml:space="preserve"><value>Cambiar al modo claro</value></data>
+  <data name="Switch to dark mode" xml:space="preserve"><value>Cambiar al modo oscuro</value></data>
 </root>

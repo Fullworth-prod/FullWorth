@@ -69,3 +69,6 @@ html[data-design="story"] .paired-home .home-process h2 { font-family: Inter, sy
     html:not([data-fullworth-reduce-motion="true"]):not([data-fullworth-performance="efficiency"]) .paired-home .hero-copy { animation: home-arrival 280ms ease-out both; }
 }
 @keyframes home-arrival { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.paired-home .hero-title, .paired-home .hero-title > span { color: var(--pair-ink); background: none; }
+html[data-design="story"] .paired-home .story-accent { color: var(--pair-accent); }

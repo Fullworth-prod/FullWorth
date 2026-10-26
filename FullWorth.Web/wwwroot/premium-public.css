@@ -717,7 +717,7 @@ html[data-design] .home-site-shell .site-header {
     box-shadow: none; backdrop-filter: none;
 }
 html[data-design] .home-site-shell .header-inner {
-    max-width: 1480px; min-height: 100px; margin-inline: auto; padding: 20px 32px;
+    width: 100%; max-width: 1480px; min-height: 100px; margin-inline: auto; padding: 20px 32px;
     display: flex; align-items: center; gap: 24px;
 }
 html[data-design] .home-site-shell .brand { gap: 14px; color: var(--pair-ink); }
@@ -779,3 +779,5 @@ html[data-design="workspace"] .home-site-shell .product-nav { display: inline-fl
 
 .home-site-shell .footer-legal-links { display: flex; flex-wrap: wrap; gap: 20px; }
 .home-site-shell .footer-legal-links a { color: var(--pair-muted); min-height: 44px; display: inline-flex; align-items: center; }
+
+html[data-design] .home-site-shell .footer-inner { width: 100%; }

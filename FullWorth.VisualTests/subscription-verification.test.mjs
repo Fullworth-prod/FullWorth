@@ -125,15 +125,16 @@ export async function verifySubscriptionVerification(page, outputDir) {
     try {
       await target.getByRole("button", { name: "Refresh reviews", exact: true }).click();
       const renewalPanel = target.locator(".review-facts > div").filter({
-        has: target.locator("dt").filter({ hasText: /^Will it renew\\?$/ })
+        has: target.locator("dt").filter({ hasText: "Will it renew?" })
       });
-      await renewalPanel.locator(".review-latest-evidence").getByText(/Confirmed by you: No\\./).waitFor();
+      await renewalPanel.locator("details > summary").filter({ hasText: "(13)" }).waitFor();
+      await renewalPanel.locator(".review-latest-evidence").getByText("Confirmed by you: No.", { exact: false }).waitFor();
       expect(await renewalPanel.locator(".review-latest-evidence p").count() === 1,
         "The latest source observation remains visible outside capped history.");
       await renewalPanel.locator("details > summary").click();
-      expect(await renewalPanel.locator("details p").filter({ hasText: /Confirmed by you: Yes\\./ }).count() === 10,
+      expect(await renewalPanel.locator("details p").filter({ hasText: "Confirmed by you: Yes." }).count() === 10,
         "History still has a bounded ten-entry list.");
-      expect(await renewalPanel.locator("details").getByText(/Confirmed by you: No\\./).count() === 0,
+      expect(await renewalPanel.locator("details").getByText("Confirmed by you: No.", { exact: false }).count() === 0,
         "Winning evidence remains visible even when absent from the ten newest uploads.");
     } finally { await target.unroute(detailPattern, crowdedRead); }
     const stale = structuredClone(saved);

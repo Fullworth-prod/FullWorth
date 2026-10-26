@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 import { webkit } from "playwright";
+import { writeFile } from "node:fs/promises";
 
 // Only disposable authenticated CI. Financial data below is explicitly synthetic.
 // This suite never creates accounts, changes financial records or contacts providers.
@@ -34,7 +35,12 @@ export async function verifyThemePairs(page, outputDir) {
     let state = "populated", failRefresh = false, hold, release;
     let geometryCases = 0, stateCases = 0, assertions = 0;
     const unsafe = [], errors = [], financial = new Map(), intentionalFailures = new Set();
+    const layoutIssues = [], issueCaptures = new Set();
     const expect = (value, message) => { assert.ok(value, engine + ": " + message); assertions++; };
+    const audit = (value, message) => {
+      assertions++;
+      if (!value) layoutIssues.push(engine + ": " + message);
+    };
     const record = request => {
       if (new URL(request.url()).pathname.startsWith("/bff/") &&
           !["GET", "HEAD", "OPTIONS"].includes(request.method()))
@@ -70,7 +76,7 @@ export async function verifyThemePairs(page, outputDir) {
     const patterns = ["**/bff/bank-connections", "**/bff/bill-streams"];
     const logo = new RegExp("^https://www[.]google[.]com/s2/favicons");
     const blockLogo = route => route.abort("failed");
-    const culture = async language => target.context().addCookies([{ name: ".AspNetCore.Culture",
+    const culture = async (language, surface = target) => surface.context().addCookies([{ name: ".AspNetCore.Culture",
       value: encodeURIComponent("c=en-US|uic=" + language), url: origin, secure: true, sameSite: "Lax" }]);
     const ready = async label => {
       await target.locator(".design-picker select:not([disabled])").waitFor();
@@ -78,27 +84,29 @@ export async function verifyThemePairs(page, outputDir) {
       else await target.locator(".home-bill-example").waitFor();
       await target.evaluate(async () => { await document.fonts.ready; });
     };
-    const appearance = async (style, mode) => {
-      const select = target.locator(".design-picker select");
+    const appearance = async (style, mode, surface = target) => {
+      const select = surface.locator(".design-picker select");
       await select.waitFor();
-      await target.waitForFunction(() => document.querySelector(".design-picker select")?.disabled === false);
+      await surface.waitForFunction(() => document.querySelector(".design-picker select")?.disabled === false);
       if (await select.inputValue() !== style) await select.selectOption(style);
-      await target.waitForFunction(value => document.documentElement.dataset.design === value, style);
-      if (await target.locator("html").getAttribute("data-theme") !== mode)
-        await target.locator(".theme-toggle").click();
-      await target.waitForFunction(value => document.documentElement.dataset.theme === value, mode);
+      await surface.waitForFunction(value => document.documentElement.dataset.design === value, style);
+      await surface.locator(".theme-toggle:not([disabled])").waitFor();
+      if (await surface.locator("html").getAttribute("data-theme") !== mode)
+        await surface.locator(".theme-toggle").click();
+      await surface.waitForFunction(value => document.documentElement.dataset.theme === value, mode);
       // Let the existing220ms mode transition finish before measuring colors.
-      await target.waitForTimeout(250);
+      await surface.waitForTimeout(250);
     };
-    const geometry = async (label, width, large) => {
-      await target.setViewportSize({ width, height: 1000 });
-      await target.evaluate(enlarged => {
+    const geometry = async (label, width, large, surface = target) => {
+      const priorIssues = layoutIssues.length;
+      await surface.setViewportSize({ width, height: 1000 });
+      await surface.evaluate(enlarged => {
         document.documentElement.style.fontSize = enlarged ? "200%" : "";
         document.documentElement.style.setProperty("overflow-x", "visible", "important");
         document.body.style.setProperty("overflow-x", "visible", "important");
       }, large);
-      await target.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-      const result = await target.evaluate(() => ({
+      await surface.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      const result = await surface.evaluate(() => ({
         viewport: document.documentElement.clientWidth,
         documentWidth: document.documentElement.scrollWidth, bodyWidth: document.body.scrollWidth,
         offenders: [...document.querySelectorAll("body *")].filter(element => {
@@ -107,18 +115,23 @@ export async function verifyThemePairs(page, outputDir) {
             r.width > 0 && (r.right > document.documentElement.clientWidth + 1 || element.scrollWidth > element.clientWidth + 1);
         }).slice(0, 8).map(element => ({ tag: element.tagName, classes: element.className?.toString().slice(0, 100) }))
       }));
-      expect(result.documentWidth <= result.viewport + 1 && result.bodyWidth <= result.viewport + 1,
+      audit(result.documentWidth <= result.viewport + 1 && result.bodyWidth <= result.viewport + 1,
         label + " fits " + width + "px, large=" + large + " without clipping: " + JSON.stringify(result));
-      for (const control of await target.locator(".design-picker select, .theme-toggle, .home-primary-action, .sample-option:visible, .sample-evidence-disclosure:visible > summary").all()) {
+      for (const control of await surface.locator(".design-picker select, .theme-toggle, .home-primary-action, .sample-option:visible, .sample-evidence-disclosure:visible > summary").all()) {
         if (!await control.isVisible()) continue;
         const r = await control.evaluate(element => {
           const rect = element.getBoundingClientRect();
           return { left: rect.left, right: rect.right, height: rect.height, viewport: innerWidth };
         });
-        expect(r.left >= -1 && r.right <= r.viewport + 1 && r.height >= 44,
+        audit(r.left >= -1 && r.right <= r.viewport + 1 && r.height >= 44,
           "Appearance/demo control remains usable: " + JSON.stringify(r));
       }
       geometryCases++;
+      if (layoutIssues.length > priorIssues && !issueCaptures.has(label) && issueCaptures.size < 12) {
+        issueCaptures.add(label);
+        await surface.screenshot({ path: path.join(outputDir, "theme-pair-issue-" + engine + "-" +
+          label.replaceAll("/", "-") + "-" + width + "-" + large + ".png"), fullPage: true });
+      }
     };
     const readable = async selector => {
       const ratio = await target.locator(selector).first().evaluate(element => {
@@ -142,7 +155,7 @@ export async function verifyThemePairs(page, outputDir) {
         const a = luminance(text), b = luminance(bg);
         return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
       });
-      expect(ratio >= 4.5, "Core text retains readable contrast: " + selector + ", ratio=" + ratio.toFixed(2));
+      audit(ratio >= 4.5, "Core text retains readable contrast: " + selector + ", ratio=" + ratio.toFixed(2));
     };
     const snapshot = () => target.locator(".fw-pulse-amount, .fw-pulse-stat strong, .fw-bill-value strong")
       .allTextContents().then(values => values.map(value => value.trim().replace(/\s+/g, " ")));
@@ -201,10 +214,17 @@ export async function verifyThemePairs(page, outputDir) {
             await target.setViewportSize({ width: 1487, height: 1058 });
             if (label === "home")
               await target.locator(".hero-copy").evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
-            if (engine === "chromium" && language === "en-US") {
+            if (engine === "chromium" && language === "en-US" && label === "overview") {
               await target.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
               await target.screenshot({ path: path.join(outputDir,
                 "theme-pair-" + style + "-" + mode + "-" + label + "-" + engine + "-reference.png"), fullPage: false });
+              await writeFile(path.join(outputDir, "theme-pair-" + style + "-" + mode + "-" + label + "-" + engine + "-regions.json"),
+                JSON.stringify(await target.evaluate(() => ({
+                  viewport: { width: innerWidth, height: innerHeight, density: devicePixelRatio },
+                  authenticated: true, route: location.pathname,
+                  regions: Object.fromEntries([".overview-heading", ".overview-attention", ".fw-pulse", ".fw-watchlist"].map(selector =>
+                    [selector, document.querySelector(selector)?.getBoundingClientRect().toJSON()]))
+                })), null, 2));
             }
             if (label === "overview") {
               const arrangement = await target.evaluate(() => ({
@@ -212,18 +232,73 @@ export async function verifyThemePairs(page, outputDir) {
                 summary: document.querySelector(".fw-pulse").getBoundingClientRect().toJSON(),
                 watchlist: document.querySelector(".fw-watchlist").getBoundingClientRect().toJSON()
               }));
-              if (style === "editorial") expect(arrangement.priority.bottom <= arrangement.summary.top + 2,
+              if (style === "editorial") audit(arrangement.priority.bottom <= arrangement.summary.top + 2,
                 "Editorial puts priority and ruled summary in an open vertical flow.");
-              if (style === "workspace") expect(arrangement.priority.left > arrangement.watchlist.left &&
+              if (style === "workspace") audit(arrangement.priority.left > arrangement.watchlist.left &&
                 arrangement.summary.top < arrangement.priority.top,
                 "Workspace places comparison detail beside the watchlist.");
-              if (style === "story") expect(arrangement.priority.left < arrangement.summary.left &&
+              if (style === "story") audit(arrangement.priority.left < arrangement.summary.left &&
                 arrangement.watchlist.top >= arrangement.priority.top,
                 "Story pairs priority and recognized charges above the watchlist.");
             }
           }
         }
       }
+
+      // Selected Home references show an anonymous visitor. Keep that state
+      // separate from authenticated navigation/persistence cases above.
+      const publicContext = await target.context().browser().newContext({
+        ignoreHTTPSErrors: true, serviceWorkers: "block",
+        viewport: { width: 1487, height: 1058 }
+      });
+      try {
+        const publicPage = await publicContext.newPage();
+        publicPage.on("request", record);
+        publicPage.on("pageerror", pageError);
+        publicPage.on("console", consoleError);
+        await culture("en-US", publicPage);
+        await publicPage.goto(origin + "/", { waitUntil: "domcontentloaded" });
+        await publicPage.locator(".design-picker select:not([disabled])").waitFor();
+        for (const style of styles) for (const mode of modes) {
+          await appearance(style, mode, publicPage);
+          await culture("en-US", publicPage);
+          await publicPage.reload({ waitUntil: "domcontentloaded" });
+          await publicPage.locator(".design-picker select:not([disabled])").waitFor();
+          await publicPage.evaluate(async () => { await document.fonts.ready; });
+          await publicPage.setViewportSize({ width: 1487, height: 1058 });
+          await publicPage.locator(".hero-copy").evaluate(element => Promise.all(element.getAnimations().map(a => a.finished)));
+          expect(await publicPage.locator('.header-actions a[href="/login"]').isVisible(),
+            "Anonymous visitors retain a sign-in route.");
+          expect(await publicPage.locator(".home-primary-action").getAttribute("href") === "/register",
+            "The anonymous primary action opens account creation.");
+          await publicPage.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
+          await publicPage.screenshot({ path: path.join(outputDir,
+            "theme-pair-" + style + "-" + mode + "-home-" + engine + "-reference.png"), fullPage: false });
+          await writeFile(path.join(outputDir, "theme-pair-" + style + "-" + mode + "-home-" + engine + "-regions.json"),
+            JSON.stringify(await publicPage.evaluate(() => ({
+              viewport: { width: innerWidth, height: innerHeight, density: devicePixelRatio },
+              authenticated: false, route: location.pathname,
+              regions: Object.fromEntries([".site-header", ".hero", ".home-bill-example", ".hero-actions"].map(selector =>
+                [selector, document.querySelector(selector)?.getBoundingClientRect().toJSON()]))
+            })), null, 2));
+          await geometry("anonymous/" + style + "/" + mode + "/en-US", 768, true, publicPage);
+          await culture("es", publicPage);
+          await publicPage.reload({ waitUntil: "domcontentloaded" });
+          await publicPage.locator(".design-picker select:not([disabled])").waitFor();
+          await geometry("anonymous/" + style + "/" + mode + "/es", 390, true, publicPage);
+          await publicPage.evaluate(() => { document.documentElement.style.fontSize = ""; });
+        }
+        await culture("en-US", publicPage);
+        await publicPage.goto(origin + "/", { waitUntil: "domcontentloaded" });
+        await publicPage.locator(".design-picker select:not([disabled])").waitFor();
+        await Promise.all([
+          publicPage.waitForURL(url => url.pathname === "/register", { waitUntil: "domcontentloaded" }),
+          publicPage.locator(".home-primary-action").click()
+        ]);
+        await publicPage.locator('.auth-form input[name="email"]').waitFor();
+        expect(await publicPage.locator('.auth-form input[name="email"]').isVisible(),
+          "The public account action reaches the actual registration screen without submitting it.");
+      } finally { await publicContext.close(); }
 
       // Real native keyboard and sample interactions, without financial writes.
       await culture("en-US");
@@ -371,6 +446,10 @@ export async function verifyThemePairs(page, outputDir) {
 
       expect(unsafe.length === 0, "Appearance and public demo make no financial writes: " + JSON.stringify(unsafe));
       expect(errors.length === 0, "No uncaught browser errors: " + JSON.stringify(errors));
+      console.log("Three-pair layout audit: engine=" + engine + "; geometry=" + geometryCases +
+        "; states=" + stateCases + "; issues=" + layoutIssues.length);
+      if (layoutIssues.length) throw new AggregateError(layoutIssues.slice(0, 24).map(message => new Error(message)),
+        engine + ": " + layoutIssues.length + " layout/contrast checks failed; all cases were audited.");
       console.log("Three-pair UI: " + assertions + " assertions; " + geometryCases + " geometry cases; " +
         stateCases + " state cases; engine=" + engine + "; synthetic financial reads only.");
     } catch (error) {
@@ -392,13 +471,15 @@ export async function verifyThemePairs(page, outputDir) {
     }
   };
 
-  await run(page, "chromium");
+  const engineFailures = [];
+  try { await run(page, "chromium"); } catch (error) { engineFailures.push(error); }
   const browser = await webkit.launch({ headless: true });
   try {
     const context = await browser.newContext({ storageState, ignoreHTTPSErrors: true,
       serviceWorkers: "block", viewport: { width: 1487, height: 1058 } });
-    try { await run(await context.newPage(), "webkit"); }
-    finally { await context.close(); }
+    try {
+      try { await run(await context.newPage(), "webkit"); } catch (error) { engineFailures.push(error); }
+    } finally { await context.close(); }
   } finally { await browser.close(); }
   await page.context().addCookies([{ name: ".AspNetCore.Culture",
     value: encodeURIComponent("c=en-US|uic=en-US"), url: origin, secure: true, sameSite: "Lax" }]);
@@ -407,4 +488,5 @@ export async function verifyThemePairs(page, outputDir) {
     localStorage.setItem("billwatch-theme", value.mode);
   }, original);
   if (originalViewport) await page.setViewportSize(originalViewport);
+  if (engineFailures.length) throw new AggregateError(engineFailures, "Three-pair UI acceptance failed.");
 }

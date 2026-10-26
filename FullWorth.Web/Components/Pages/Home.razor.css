@@ -89,3 +89,5 @@ html[data-design="workspace"] .paired-home .hero { padding-top: 40px; }
     html[data-design="workspace"] .paired-home .hero-actions,
     html[data-design="story"] .paired-home .hero-actions { justify-content: flex-start; margin-top: 24px; padding-inline-start: 0; }
 }
+
+.paired-home h2, .paired-home p { overflow-wrap: anywhere; }

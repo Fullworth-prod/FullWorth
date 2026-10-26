@@ -4,6 +4,7 @@
 
 <button class="theme-toggle"
         type="button"
+        disabled="@(_themeModule is null)"
         @onclick="ToggleThemeAsync"
         aria-label="@ButtonLabel"
         title="@ButtonLabel">

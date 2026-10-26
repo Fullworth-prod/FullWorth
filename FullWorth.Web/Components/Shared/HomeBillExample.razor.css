@@ -99,3 +99,5 @@ html[data-theme="light"] .home-bill-example { --sample-increase: #b1460b; --samp
 .sample-option-result.has-comparison,
 .sample-detail .sample-difference.has-comparison dd { color: var(--sample-unchanged); }
 .sample-table dt { overflow-wrap: anywhere; }
+
+.sample-table dd { white-space: nowrap; }

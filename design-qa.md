@@ -31,3 +31,9 @@ No full-view or focused-region matched comparison has passed yet. Produce combin
 Exact source ddfc12eb1618a8db55d4625ca762aada292ac4fa, CI40296968650:2870 .NET +127 Node passed with zero failures/skips; Android passed. The unchanged browser geometry gate then failed Home/editorial/light/en-US at768px/200%: document/body width803px. Verified artifact12639435422 SHA2565e36bd257879c23223df7ac0232f2298b5f7997a7d5efcf5cf76fa1c2c10e5ad; opened theme-pair-failure-chromium.png. The image showed a wrapped header overlapping the title and crowded table headings. The mode control had advanced beyond its previous39px failure.
 
 P2 fixes prepared: automatic header height, earlier stacked comparison layout, font-relative process/security/footer grids, clearer tablet composition and full-page diagnostics. Orange/green public comparison labels now follow the selected workspace target, with explicit status text retained. Post-fix matched screenshots and both-engine results are still pending. No viewport clipping was added. **final result: blocked** remains.
+
+## Authentication-state and audit coverage correction
+
+Selected Home targets depict anonymous visitors. The new capture pass therefore uses a separate signed-out browser context for exact1487×1058 frames, asserts sign-in/account-entry routes and writes region/density metadata. Signed-in Home/Overview navigation remains independently covered. This is necessary before claiming a like-for-like visual comparison.
+
+Independent geometry/contrast issues are now collected across cases and both engines; any issue still rejects acceptance. Reference and bounded issue images are preserved for a comprehensive repair pass. No broader acceptance result is claimed until the actual run completes. Current comparator utility rejects viewport/density/authentication-state mismatches.

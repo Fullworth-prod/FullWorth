@@ -1,3 +1,26 @@
+## Authorized bank-link hotfix release — 2026-10-25 UTC
+
+The owner explicitly approved deploying the tested bank-link fix in this chat. This supersedes
+the earlier pending-authorization note below. Promotion and deployment must still pass current
+protected checks, exact-master signed-image verification, fresh backup and guarded production
+health/authentication checks. Approval does not authorize real-bank token replay, automatic relink,
+paid activation, new credentials, secret changes or unrelated feature deployment.
+
+Scope: #973's bounded finalization after browser disconnect, its tests/runbook and verified handoff.
+The only application runtime change from the currently live release is the Hosted Link completion
+cancellation boundary. #971 merchant-subscription features and the requested homepage overhaul are
+excluded; continue those after this deployment. The owner requested a clean, professional homepage
+revamp, planned then implemented, with its precise public/Overview scope being clarified.
+
+The old interrupted Link attempt remains fenced. After verified deployment the owner must initiate
+a fresh secure Wells Fargo flow and verify bank visibility and initial sync. Keep #972 open until
+that actual provider acceptance is observed; fixture success alone is insufficient.
+
+- current release candidate on master: `3fd3aa5e019d35f11418c526aeaca3d772bd37ea`.
+- Verified live production release: `3fd3aa5e019d35f11418c526aeaca3d772bd37ea`.
+
+---
+
 ## Bank-link browser-disconnect fix verified in development — 2026-10-25 UTC
 
 Development runtime: `6f0b27a624da4c4e56d92493b8c1646907585950`.

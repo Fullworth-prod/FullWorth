@@ -96,6 +96,22 @@
                         <dd>@FactValue(fact.Field, fact.Value) · @StateLabel(fact.State)</dd>
                         @if (fact.Evidence.Count > 0)
                         {
+                            <dd class="review-latest-evidence">
+                                <strong>@L["Latest observation from each source"]</strong>
+                                @foreach (var observation in SubscriptionVerification.LatestEvidenceBySource(fact.Evidence))
+                                {
+                                    <p>
+                                        @SourceLabel(observation.Source): @FactValue(fact.Field, observation.Fact.Value).
+                                        @L["As of"] @Date(observation.Fact.ObservedAtUtc) ·
+                                        @L["Review by"] @Date(observation.Fact.ValidUntilUtc)
+                                        @if (observation.SourceUploadId is { } uploadId && selected.BillStreamId is { } billId)
+                                        {
+                                            <a href="@($"/bff/bill-streams/{billId:D}/statement-uploads/{uploadId:D}/file")"
+                                               target="_blank" rel="noopener">@L["View source document"]</a>
+                                        }
+                                    </p>
+                                }
+                            </dd>
                             <dd>
                                 <details>
                                     <summary>@L["Evidence history"] (@fact.Evidence.Count)</summary>

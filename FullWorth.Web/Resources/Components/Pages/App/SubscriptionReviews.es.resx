@@ -84,4 +84,5 @@
   <data name="Google Play subscriptions" xml:space="preserve"><value>Suscripciones de Google Play</value></data>
   <data name="PayPal automatic payment help" xml:space="preserve"><value>Ayuda con pagos automáticos de PayPal</value></data>
   <data name="If another company bills you, use its official app or a trusted bookmark. FullWorth does not guess account links from merchant names." xml:space="preserve"><value>Si te factura otra empresa, usa su aplicación oficial o un marcador de confianza. FullWorth no adivina enlaces a cuentas a partir del nombre del comercio.</value></data>
+  <data name="Latest observation from each source" xml:space="preserve"><value>Observación más reciente de cada fuente</value></data>
 </root>

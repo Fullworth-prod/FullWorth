@@ -106,6 +106,36 @@ export async function verifySubscriptionVerification(page, outputDir) {
     } finally { heldSave?.(); await target.unroute(evidencePattern, failSave); }
 
     const detailPattern = "**/bff/subscription-reviews/" + initial.id;
+    // Explicit synthetic read: twelve newly uploaded older observations must
+    // not conceal the newer dated evidence that determines the saved result.
+    const crowded = structuredClone(saved);
+    const renewal = crowded.facts.find(f => f.field === "Renewal");
+    const latest = structuredClone(renewal.evidence[0]);
+    const olderUploads = Array.from({ length: 12 }, (_, index) => {
+      const older = structuredClone(latest);
+      older.submissionId = "00000000-0000-0000-0000-" + String(index + 1).padStart(12, "0");
+      older.recordedAtUtc = new Date(Date.parse(latest.recordedAtUtc) + (index + 1) * 60000).toISOString();
+      older.fact.value = "Yes";
+      older.fact.observedAtUtc = new Date(Date.parse(latest.fact.observedAtUtc) - (index + 1) * 86400000).toISOString();
+      return older;
+    }).reverse();
+    renewal.evidence = [...olderUploads, latest];
+    const crowdedRead = route => route.fulfill({ json: crowded });
+    await target.route(detailPattern, crowdedRead);
+    try {
+      await target.getByRole("button", { name: "Refresh reviews", exact: true }).click();
+      const renewalPanel = target.locator(".review-facts > div").filter({
+        has: target.locator("dt").filter({ hasText: /^Will it renew\\?$/ })
+      });
+      await renewalPanel.locator(".review-latest-evidence").getByText(/Confirmed by you: No\\./).waitFor();
+      expect(await renewalPanel.locator(".review-latest-evidence p").count() === 1,
+        "The latest source observation remains visible outside capped history.");
+      await renewalPanel.locator("details > summary").click();
+      expect(await renewalPanel.locator("details p").filter({ hasText: /Confirmed by you: Yes\\./ }).count() === 10,
+        "History still has a bounded ten-entry list.");
+      expect(await renewalPanel.locator("details").getByText(/Confirmed by you: No\\./).count() === 0,
+        "Winning evidence remains visible even when absent from the ten newest uploads.");
+    } finally { await target.unroute(detailPattern, crowdedRead); }
     const stale = structuredClone(saved);
     stale.needsReview = true;
     const staleRenewal = stale.facts.find(f => f.field === "Renewal");
@@ -130,6 +160,9 @@ export async function verifySubscriptionVerification(page, outputDir) {
       await target.locator(".review-provider-help > summary").click();
       expect(await target.getByRole("heading", { name: language === "es" ? "Confirmar datos de la suscripción" :
         "Confirm subscription details", exact: true }).isVisible(), "Localized confirmation is visible.");
+      expect(await target.getByText(language === "es" ? "Observación más reciente de cada fuente" :
+        "Latest observation from each source", { exact: true }).count() > 0,
+        "Latest evidence provenance is localized and visible.");
       for (const width of [320, 390]) {
         await target.setViewportSize({ width, height: 844 });
         await target.evaluate(() => { document.documentElement.style.fontSize = "200%"; });

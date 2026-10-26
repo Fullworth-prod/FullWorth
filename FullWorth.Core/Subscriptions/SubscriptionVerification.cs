@@ -89,6 +89,18 @@ public static class SubscriptionVerification
         return true;
     }
 
+    /// <summary>
+    /// Returns the observations used to resolve each field, including stale and
+    /// conflicting sources. Upload order must not conceal newer observed evidence.
+    /// </summary>
+    public static IReadOnlyList<SubscriptionObservation> LatestEvidenceBySource(
+        IEnumerable<SubscriptionObservation> observations) =>
+        observations.GroupBy(o => (o.Fact.Field, o.Source))
+            .Select(g => g.OrderByDescending(o => o.Fact.ObservedAtUtc)
+                .ThenByDescending(o => o.RecordedAtUtc).ThenBy(o => o.SubmissionId).First())
+            .OrderBy(o => o.Fact.Field, StringComparer.Ordinal)
+            .ThenBy(o => o.Source, StringComparer.Ordinal).ToArray();
+
     public static IReadOnlyList<SubscriptionFactResult> Resolve(
         IEnumerable<SubscriptionObservation> observations, DateTimeOffset now)
     {
@@ -99,10 +111,7 @@ public static class SubscriptionVerification
                 .OrderByDescending(o => o.RecordedAtUtc).ThenBy(o => o.SubmissionId).ToArray();
             // A later user entry supersedes only that source, never a separate source.
             // An older document uploaded later must not replace a newer observation.
-            var latestBySource = evidence.GroupBy(o => o.Source)
-                .Select(g => g.OrderByDescending(o => o.Fact.ObservedAtUtc)
-                    .ThenByDescending(o => o.RecordedAtUtc).ThenBy(o => o.SubmissionId).First())
-                .ToArray();
+            var latestBySource = LatestEvidenceBySource(evidence);
             var fresh = latestBySource.Where(o =>
                 o.Fact.ObservedAtUtc <= now.AddMinutes(5) && o.Fact.ValidUntilUtc > now).ToArray();
             var values = fresh.Select(o => o.Fact.Value).Distinct(StringComparer.Ordinal).ToArray();

@@ -162,4 +162,54 @@ public sealed class SubscriptionVerificationTests
         Assert.False(SubscriptionVerification.TryNormalize([Fact("Renewal", "Yes", valid: 0)], Now, out _));
         Assert.False(SubscriptionVerification.TryNormalize([Fact("Renewal", "Yes") with { ObservedAtUtc = Now.AddDays(1) }], Now, out _));
     }
+    [Fact]
+    public void LaterUploadsCannotHideTheNewerObservationThatDeterminesTheResult()
+    {
+        var latest = Observation(Fact("Renewal", "No"), "DocumentConfirmed", -20);
+        var laterUploads = Enumerable.Range(1, 12)
+            .Select(age => Observation(Fact("Renewal", "Yes", age), "DocumentConfirmed", age));
+        var result = SubscriptionVerification.Resolve(laterUploads.Append(latest), Now)
+            .Single(f => f.Field == "Renewal");
+
+        Assert.Equal("Current", result.State);
+        Assert.Equal("No", result.Value);
+        Assert.DoesNotContain(latest, result.Evidence.Take(10));
+        Assert.Equal(latest, Assert.Single(
+            SubscriptionVerification.LatestEvidenceBySource(result.Evidence)));
+    }
+
+    [Fact]
+    public void VisibleLatestEvidencePreservesConflictingAndStaleSourcesForEveryField()
+    {
+        var userRenewal = Observation(Fact("Renewal", "No"));
+        var documentRenewal = Observation(Fact("Renewal", "Yes"), "DocumentConfirmed");
+        var staleAccess = Observation(Fact("ServiceStatus", "Active", 40, 30));
+        var result = SubscriptionVerification.Resolve(
+            [userRenewal, documentRenewal, staleAccess], Now);
+
+        Assert.Equal("Conflict", result.Single(f => f.Field == "Renewal").State);
+        Assert.Equal("Stale", result.Single(f => f.Field == "ServiceStatus").State);
+        var visible = SubscriptionVerification.LatestEvidenceBySource(
+            result.SelectMany(f => f.Evidence));
+        Assert.Equal(3, visible.Count);
+        Assert.Contains(userRenewal, visible);
+        Assert.Contains(documentRenewal, visible);
+        Assert.Contains(staleAccess, visible);
+    }
+
+    [Fact]
+    public void SameObservedTimeUsesRecordedTimeThenStableSubmissionId()
+    {
+        var olderRecord = Observation(Fact("Renewal", "Yes"), recordedMinutes: -1);
+        var higherId = Observation(Fact("Renewal", "Yes")) with
+            { SubmissionId = Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff") };
+        var lowerId = Observation(Fact("Renewal", "No")) with
+            { SubmissionId = Guid.Parse("00000000-0000-0000-0000-000000000001") };
+        var input = new[] { higherId, olderRecord, lowerId };
+        Assert.Equal(lowerId, Assert.Single(SubscriptionVerification.LatestEvidenceBySource(input)));
+        Assert.Equal(lowerId, Assert.Single(SubscriptionVerification.LatestEvidenceBySource(input.Reverse())));
+        Assert.Equal("No", SubscriptionVerification.Resolve(input, Now)
+            .Single(f => f.Field == "Renewal").Value);
+    }
+
 }

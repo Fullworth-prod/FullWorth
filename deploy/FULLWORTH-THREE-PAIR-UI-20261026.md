@@ -55,3 +55,6 @@ Edit target: the attached standalone illustrative statement paper. Change ONLY t
 - The dedicated matrix now covers300 geometry and108 state cases per engine, core contrast, keyboard/native demo behavior, storage denial, navigation/reload persistence, stale-read retention, motion/performance and console checks. These are intended case counts, not claimed executed passes.
 - Exact-reference captures use1487×1058 CSS pixels at density1. Source references are1487×1058. The new suite runs before the older visual suites to surface UI failures early; the older suites still run afterward and are not skipped.
 - Project-root design-qa.md is blocked until post-fix matched source/implementation boards and both-engine results establish no P0/P1/P2 findings. No deployment.
+
+- Source ddfc12eb, CI40296968650:2870 .NET +127 Node zero failures/skips and Android passed. The new early matrix exposed768px/200% Home overflow (803px document width) and header/content overlap. Artifact12639435422 digest5e36bd257879c23223df7ac0232f2298b5f7997a7d5efcf5cf76fa1c2c10e5ad was verified and its failure capture inspected.
+- Next correction keeps the no-clipping/touch gates: automatic header height, earlier stacked comparison, font-relative process/security/footer tracks and wider diagnostics. No combined all-pairs or final design acceptance is established yet.

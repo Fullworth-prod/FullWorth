@@ -13,7 +13,7 @@
 .paired-home a:focus-visible { outline: 3px solid currentColor; outline-offset: 5px; }
 .paired-home .home-primary-action:hover { background: #1743cc; }
 .paired-home .home-process { margin-block: 28px 48px; border-block: 1px solid var(--pair-line); padding: 28px 0; }
-.paired-home .home-process ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 30px; margin: 0; padding-inline-start: 28px; }
+.paired-home .home-process ol { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 30px; margin: 0; padding-inline-start: 28px; }
 .paired-home .home-process li { padding-inline: 10px 20px; min-width: 0; }
 .paired-home .home-process li + li { border-inline-start: 1px solid var(--pair-line); }
 .paired-home .home-process li::marker { color: var(--pair-accent); font-size: 1.2rem; font-weight: 700; }
@@ -24,7 +24,7 @@
 .paired-home .home-evidence h2 span { color: var(--pair-accent); }
 .paired-home .home-evidence > p:not(.home-kicker) { max-width: 75ch; color: var(--pair-muted); font-size: 1.05rem; line-height: 1.65; }
 .paired-home .home-text-action { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; color: var(--pair-accent); text-decoration: underline; text-underline-offset: 4px; font-weight: 650; }
-.paired-home .home-security { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; border-top: 1px solid var(--pair-line); padding-top: 40px; }
+.paired-home .home-security { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: 56px; border-top: 1px solid var(--pair-line); padding-top: 40px; }
 .paired-home .home-security h2 { margin: 0; font-size: clamp(1.7rem, 3vw, 3rem); line-height: 1.15; letter-spacing: -.045em; }
 .paired-home .home-security p { color: var(--pair-muted); font-size: 1rem; line-height: 1.65; }
 html[data-design="workspace"] .paired-home { padding: 64px 48px 56px; }
@@ -79,3 +79,13 @@ html[data-design="story"] .paired-home .story-accent { color: var(--pair-accent)
 
 html[data-design="workspace"] .paired-home .hero { padding-top: 40px; }
 @media(max-width:760px) { html[data-design="workspace"] .paired-home .hero { padding-top: 0; } }
+
+@media(max-width:1050px) {
+    html[data-design="workspace"] .paired-home { padding-inline: 24px; }
+    html[data-design="workspace"] .paired-home .hero-copy,
+    html[data-design="story"] .paired-home .hero-copy { display: block; }
+    html[data-design="workspace"] .paired-home .hero-description,
+    html[data-design="story"] .paired-home .hero-description { margin-top: 22px; padding-inline-start: 0; border: 0; }
+    html[data-design="workspace"] .paired-home .hero-actions,
+    html[data-design="story"] .paired-home .hero-actions { justify-content: flex-start; margin-top: 24px; padding-inline-start: 0; }
+}

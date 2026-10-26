@@ -31,7 +31,7 @@
                     <button type="button" class="sample-option" aria-pressed="@((_selected == index).ToString().ToLowerInvariant())" @onclick="() => SelectSample(index)">
                         <svg class="bw-sprite sample-service-icon" aria-hidden="true"><use href="@($"/assets/billwatch-sprites.svg#{sample.Icon}")"></use></svg>
                         <span><strong>@L[sample.Name]</strong><small>@L[sample.Description]</small></span>
-                        <span class="sample-option-result">@ResultLabel(sample)</span>
+                        <span class="sample-option-result @ResultClass(sample)">@ResultLabel(sample)</span>
                         <svg class="bw-sprite" aria-hidden="true"><use href="/assets/billwatch-sprites.svg#arrow-right"></use></svg>
                     </button>
                 }
@@ -44,7 +44,7 @@
                 <div><dt>@L["Latest charge"]</dt><dd>@Money(Selected.Latest)</dd></div>
                 @if (Selected.Prior is { } previous)
                 {
-                    <div class="sample-difference"><dt>@L["Monthly difference"]</dt><dd>@(Selected.Latest > previous ? "+" : "")@Money(Selected.Latest - previous)</dd></div>
+                    <div class="sample-difference @ResultClass(Selected)"><dt>@L["Monthly difference"]</dt><dd>@(Selected.Latest > previous ? "+" : "")@Money(Selected.Latest - previous)</dd></div>
                     <div><dt>@L["Annualized illustration"]</dt><dd>@(Selected.Latest > previous ? "+" + Money((Selected.Latest - previous) * 12m) : L["No increase to project"].Value)</dd></div>
                 }
             </dl>
@@ -81,6 +81,8 @@
         new("Phone", "phone", 45m, 45m, "No increase in compared charges", false)
     ];
     private Sample Selected => Samples[_selected];
+    private static string ResultClass(Sample sample) => sample.Prior is { } prior
+        ? sample.Latest > prior ? "has-increase" : "has-comparison" : "";
     private string ResultLabel(Sample sample) => sample.Prior is { } prior
         ? sample.Latest > prior ? "+" + Money(sample.Latest - prior) : L["No increase in compared charges"].Value
         : L["No comparable history"].Value;

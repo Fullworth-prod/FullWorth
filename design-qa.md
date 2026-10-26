@@ -25,3 +25,9 @@ Copy/content: fictional examples retain USD, twelve-month annualization qualific
 Both Chromium/WebKit: all three styles × both modes × EN/ES × Home/synthetic Overview;320/390/1440px and200% text, reachable44px controls, keyboard style selection, sample interactions, storage denial/reload/navigation, loading/disconnected/repair/first-sync/empty/sparse/mixed/saved/error states, failed-refresh retention, motion/performance profiles, console errors and no financial writes.
 
 No full-view or focused-region matched comparison has passed yet. Produce combined source/implementation boards at the same viewport after final capture; inspect all five surfaces, fix P0/P1/P2, capture again and record comparison history. Compilation and pre-existing regression success do not replace design QA. Do not merge or present this draft as complete. No deployment.
+
+## Subsequent execution — tablet enlarged-text failure
+
+Exact source ddfc12eb1618a8db55d4625ca762aada292ac4fa, CI40296968650:2870 .NET +127 Node passed with zero failures/skips; Android passed. The unchanged browser geometry gate then failed Home/editorial/light/en-US at768px/200%: document/body width803px. Verified artifact12639435422 SHA2565e36bd257879c23223df7ac0232f2298b5f7997a7d5efcf5cf76fa1c2c10e5ad; opened theme-pair-failure-chromium.png. The image showed a wrapped header overlapping the title and crowded table headings. The mode control had advanced beyond its previous39px failure.
+
+P2 fixes prepared: automatic header height, earlier stacked comparison layout, font-relative process/security/footer grids, clearer tablet composition and full-page diagnostics. Orange/green public comparison labels now follow the selected workspace target, with explicit status text retained. Post-fix matched screenshots and both-engine results are still pending. No viewport clipping was added. **final result: blocked** remains.

@@ -101,10 +101,10 @@ export async function verifyThemePairs(page, outputDir) {
       const result = await target.evaluate(() => ({
         viewport: document.documentElement.clientWidth,
         documentWidth: document.documentElement.scrollWidth, bodyWidth: document.body.scrollWidth,
-        offenders: [...document.querySelectorAll("main *")].filter(element => {
+        offenders: [...document.querySelectorAll("body *")].filter(element => {
           const r = element.getBoundingClientRect(), s = getComputedStyle(element);
           return s.display !== "none" && s.visibility !== "hidden" && s.position !== "fixed" &&
-            r.width > 0 && r.right > document.documentElement.clientWidth + 1;
+            r.width > 0 && (r.right > document.documentElement.clientWidth + 1 || element.scrollWidth > element.clientWidth + 1);
         }).slice(0, 8).map(element => ({ tag: element.tagName, classes: element.className?.toString().slice(0, 100) }))
       }));
       expect(result.documentWidth <= result.viewport + 1 && result.bodyWidth <= result.viewport + 1,

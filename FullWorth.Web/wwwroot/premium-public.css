@@ -717,7 +717,7 @@ html[data-design] .home-site-shell .site-header {
     box-shadow: none; backdrop-filter: none;
 }
 html[data-design] .home-site-shell .header-inner {
-    width: 100%; max-width: 1480px; min-height: 100px; margin-inline: auto; padding: 20px 32px;
+    width: 100%; max-width: 1480px; height: auto; min-height: 100px; margin-inline: auto; padding: 20px 32px;
     display: flex; align-items: center; gap: 24px;
 }
 html[data-design] .home-site-shell .brand { gap: 14px; color: var(--pair-ink); }
@@ -796,3 +796,8 @@ html[data-design="workspace"] .home-site-shell .desktop-nav a { font-size: 1.1re
     html[data-design="workspace"] .home-site-shell .brand-name { font-size: 1.4rem; }
     html[data-design="workspace"] .home-site-shell .desktop-nav a { font-size: .8rem; }
 }
+
+html[data-design] .home-site-shell .brand { flex-wrap: wrap; }
+html[data-design] .home-site-shell .footer-inner { grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); align-items: start; }
+html[data-design] .home-site-shell .footer-status,
+html[data-design] .home-site-shell .footer-copy { white-space: normal; overflow-wrap: anywhere; }

@@ -10,9 +10,11 @@ export async function verifySubscriptionVerification(page, outputDir) {
   const run = async (target, engine) => {
     let checks = 0, heldSave, attemptedWrites = 0;
     const expect = (value, message) => { assert.ok(value, engine + ": " + message); checks++; };
+    try {
     await target.context().addCookies([{ name: ".AspNetCore.Culture",
       value: encodeURIComponent("c=en-US|uic=en-US"), url: origin, secure: true, sameSite: "Lax" }]);
     await target.goto(origin + "/app/subscription-checks");
+    await target.locator('.subscription-reviews[aria-busy="false"]').waitFor();
     await target.getByRole("heading", { name: "Start a subscription review", exact: true }).waitFor();
     await target.locator(".review-provider-help > summary").click();
     const officialLinks = [
@@ -121,6 +123,7 @@ export async function verifySubscriptionVerification(page, outputDir) {
       await target.context().addCookies([{ name: ".AspNetCore.Culture",
         value: encodeURIComponent("c=en-US|uic=" + language), url: origin, secure: true, sameSite: "Lax" }]);
       await target.goto(origin + "/app/subscription-checks");
+    await target.locator('.subscription-reviews[aria-busy="false"]').waitFor();
       const selected = target.getByRole("button", { name: new RegExp("Synthetic subscription " + engine) });
       await selected.click();
       await target.locator("#review-source").waitFor();
@@ -146,6 +149,7 @@ export async function verifySubscriptionVerification(page, outputDir) {
     await target.context().addCookies([{ name: ".AspNetCore.Culture",
       value: encodeURIComponent("c=en-US|uic=en-US"), url: origin, secure: true, sameSite: "Lax" }]);
     await target.goto(origin + "/app/subscription-checks");
+    await target.locator('.subscription-reviews[aria-busy="false"]').waitFor();
     await target.getByLabel("Merchant", { exact: true }).fill("Ambiguous creation " + engine);
     await target.getByLabel("Account and plan label", { exact: true }).fill("Recovery fixture");
     await target.getByLabel("Billed by", { exact: true }).fill("Synthetic direct billing");
@@ -181,8 +185,50 @@ export async function verifySubscriptionVerification(page, outputDir) {
     expect(nextResponse.ok(), "A new review is possible after confirmed recovery.");
     expect((await nextResponse.json()).id !== committedId, "A new review uses a new ID after readback.");
     await target.getByText("Review created. Renewal remains unverified until supporting details are recorded.", { exact: true }).waitFor();
+    const retainedReviewCount = await target.locator(".review-list-item").count();
+    expect(retainedReviewCount > 0, "Recovery fixture has persisted reviews to preserve.");
+    const malformedListPattern = "**/bff/subscription-reviews";
+    for (const malformed of [{}, { reviews: null }, { reviews: [null], hasMore: false }]) {
+      const malformedRead = route => route.request().method() === "GET"
+        ? route.fulfill({ json: malformed }) : route.continue();
+      await target.route(malformedListPattern, malformedRead);
+      try {
+        const response = target.waitForResponse(r => new URL(r.url()).pathname ===
+          "/bff/subscription-reviews" && r.request().method() === "GET");
+        await target.getByRole("button", { name: "Refresh reviews", exact: true }).click();
+        await response;
+        await target.getByText("Reviews could not be refreshed. Previously loaded details may be out of date.", { exact: true }).waitFor();
+        await target.locator('.subscription-reviews[aria-busy="false"]').waitFor();
+        expect(await target.locator(".review-list-item").count() === retainedReviewCount,
+          "Malformed list responses preserve the last validated review list.");
+      } finally { await target.unroute(malformedListPattern, malformedRead); }
+    }
+    const unavailableInitialList = route => route.request().method() === "GET"
+      ? route.fulfill({ json: {} }) : route.continue();
+    await target.route(malformedListPattern, unavailableInitialList);
+    try {
+      await target.goto(origin + "/app/subscription-checks");
+      await target.locator('.subscription-reviews[aria-busy="false"]').waitFor();
+      await target.getByText("Reviews could not be refreshed. Previously loaded details may be out of date.", { exact: true }).waitFor();
+      expect(await target.getByText("No subscription reviews yet. You can start with just one posted payment.", { exact: true }).count() === 0,
+        "An unavailable initial read must not claim the owner has no reviews.");
+    } finally { await target.unroute(malformedListPattern, unavailableInitialList); }
+    await target.getByRole("button", { name: "Refresh reviews", exact: true }).click();
+    await target.locator(".review-list-item").first().waitFor();
+    expect(await target.locator(".review-list-item").count() === retainedReviewCount,
+      "A valid retry restores the real list without a write.");
     console.log("Subscription verification browser: " + checks + " assertions passed; " + engine +
       "; real disposable BFF/database plus intercepted synthetic failure/staleness.");
+    } catch (error) {
+      await target.screenshot({ path: path.join(outputDir, "subscription-verification-failure-" + engine + ".png"), fullPage: true });
+      console.error("Subscription fixture failure state", await target.evaluate(() => ({
+        language: document.documentElement.lang,
+        busy: document.querySelector(".subscription-reviews")?.getAttribute("aria-busy"),
+        helpOpen: document.querySelector(".review-provider-help")?.open,
+        helpLabels: Array.from(document.querySelectorAll(".review-provider-help a")).map(a => a.textContent?.trim())
+      })));
+      throw error;
+    }
   };
   await run(page, "chromium");
   const browser = await webkit.launch({ headless: true });

@@ -7,7 +7,7 @@
 @inject Microsoft.Extensions.Localization.IStringLocalizer<SubscriptionReviews> L
 
 <PageTitle>@L["Subscription verification"] · FullWorth</PageTitle>
-<div class="app-page subscription-reviews">
+<div class="app-page subscription-reviews" aria-busy="@((_loading || _busy).ToString().ToLowerInvariant())">
     <a class="fw-back-link" href="/app/bills">@L["Bills"]</a>
     <header>
         <h1>@L["Subscription verification"]</h1>
@@ -33,17 +33,17 @@
     {
         <p role="status" class="review-notice">@_message</p>
     }
-    <button type="button" class="secondary-action" disabled="@_busy" @onclick="ReloadAsync">@L["Refresh reviews"]</button>
+    <button type="button" class="secondary-action" disabled="@(_loading || _busy)" @onclick="ReloadAsync">@L["Refresh reviews"]</button>
     <section class="app-panel">
         <h2>@L["Your subscription reviews"]</h2>
         <p>@L["These reviews do not change your bank history, monitored bills or financial totals."]</p>
-        @if (_list.Reviews.Count == 0 && !_loading)
+        @if (_hasLoadedReviews && _list.Reviews.Count == 0 && !_loading)
         {
             <p>@L["No subscription reviews yet. You can start with just one posted payment."]</p>
         }
         @foreach (var review in _list.Reviews)
         {
-            <button type="button" class="secondary-action review-list-item" disabled="@_busy"
+            <button type="button" class="secondary-action review-list-item" disabled="@(_loading || _busy)"
                     aria-pressed="@((_selected?.Id == review.Id).ToString().ToLowerInvariant())"
                     @onclick="() => SelectAsync(review.Id)">
                 @review.MerchantName · @review.PlanLabel · @review.BillingParty
@@ -66,7 +66,7 @@
             <p>@L["This review will reference the selected bill and can use its existing documents."]</p>
         }
         <form @onsubmit="CreateAsync" @onsubmit:preventDefault>
-            <fieldset disabled="@_busy">
+            <fieldset disabled="@(_loading || _busy)">
                 <label for="review-merchant">@L["Merchant"]</label>
                 <input id="review-merchant" maxlength="200" required @bind="_merchant" />
                 <label for="review-plan">@L["Account and plan label"]</label>
@@ -193,11 +193,11 @@
     [SupplyParameterFromQuery(Name = "transaction")] public Guid? SourceTransactionId { get; set; }
     [SupplyParameterFromQuery(Name = "bill")] public Guid? BillStreamId { get; set; }
     private IJSObjectReference? _module;
-    private ReviewList _list = new();
+    private ReviewList _list = new() { Reviews = [] };
     private SubscriptionVerificationResult? _selected;
     private List<DocumentOption> _documents = [];
     private Dictionary<string, string> _values = SubscriptionVerification.Fields.ToDictionary(f => f, _ => "Unknown");
-    private bool _loading = true, _busy, _uncertain, _reviewed;
+    private bool _loading = true, _busy, _uncertain, _reviewed, _hasLoadedReviews;
     private string? _message;
     private string _merchant = "", _plan = "", _billingParty = "", _source = "UserConfirmed", _upload = "";
     private Guid _createId = Guid.NewGuid();
@@ -221,8 +221,9 @@
         _message = null;
         try
         {
-            _list = await (await Module()).InvokeAsync<ReviewList>("getSubscriptionReviews");
-            if (_list is null || _list.Reviews is null) throw new InvalidDataException();
+            var list = await (await Module()).InvokeAsync<ReviewList>("getSubscriptionReviews");
+            _list = ValidateList(list);
+            _hasLoadedReviews = true;
             if (_list.Reviews.Any(r => r.Id == _createId))
             {
                 // A successful read resolves a lost create acknowledgement without replaying it.
@@ -231,13 +232,13 @@
             }
             else if (_selected is { } current) await LoadSelected(current.Id);
         }
-        catch { _message = L["Reviews could not be refreshed. Previously loaded details may be out of date."]; }
+        catch { _hasLoadedReviews = false; _message = L["Reviews could not be refreshed. Previously loaded details may be out of date."]; }
         finally { _busy = false; _loading = false; }
     }
 
     private async Task SelectAsync(Guid id)
     {
-        if (_busy) return;
+        if (_loading || _busy) return;
         _busy = true;
         _message = null;
         try { await LoadSelected(id); }
@@ -269,7 +270,7 @@
 
     private async Task CreateAsync()
     {
-        if (_busy) return;
+        if (_loading || _busy) return;
         _busy = true; _message = null;
         try
         {
@@ -278,12 +279,13 @@
             var result = await (await Module()).InvokeAsync<SubscriptionVerificationResult>("createSubscriptionReview", request);
             Validate(result, _createId);
             _selected = result;
-            _list = await (await Module()).InvokeAsync<ReviewList>("getSubscriptionReviews");
+            _list = ValidateList(await (await Module()).InvokeAsync<ReviewList>("getSubscriptionReviews"));
+            _hasLoadedReviews = true;
             await LoadSelected(result.Id);
             _createId = Guid.NewGuid();
             _message = L["Review created. Renewal remains unverified until supporting details are recorded."];
         }
-        catch { _message = L["The review could not be confirmed. Refresh the list before retrying. Repeating this request uses the same review ID."]; }
+        catch { _hasLoadedReviews = false; _message = L["The review could not be confirmed. Refresh the list before retrying. Repeating this request uses the same review ID."]; }
         finally { _busy = false; }
     }
 
@@ -324,6 +326,17 @@
             _message = L["The save result is uncertain. Refresh this review before making another change. FullWorth will not repeat the write automatically."];
         }
         finally { _busy = false; }
+    }
+
+    private static ReviewList ValidateList(ReviewList? list)
+    {
+        if (list is null || list.Reviews is null || list.Reviews.Count > 100 ||
+            list.Reviews.Any(r => r is null || r.Id == Guid.Empty ||
+                string.IsNullOrWhiteSpace(r.MerchantName) || string.IsNullOrWhiteSpace(r.PlanLabel) ||
+                string.IsNullOrWhiteSpace(r.BillingParty)) ||
+            list.Reviews.Select(r => r.Id).Distinct().Count() != list.Reviews.Count)
+            throw new InvalidDataException();
+        return list;
     }
 
     private static void Validate(SubscriptionVerificationResult? result, Guid id)
@@ -376,7 +389,7 @@
     }
     public sealed class ReviewList
     {
-        public List<ReviewItem> Reviews { get; set; } = [];
+        public List<ReviewItem> Reviews { get; set; } = null!;
         public bool HasMore { get; set; }
     }
     public sealed record ReviewItem(Guid Id, string MerchantName, string PlanLabel, string BillingParty);

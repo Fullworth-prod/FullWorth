@@ -32,9 +32,9 @@
         </div>
     </section>
 
-    <HomeBillExample />
+    <div id="inside"><HomeBillExample /></div>
 
-    <section class="home-process" id="inside" aria-label="@L["How it works"]">
+    <section class="home-process" aria-label="@L["How it works"]">
         <ol>
             <li><h2>@L["Connect read-only activity"]</h2><p>@L["Review activity from your connected accounts. Available history and coverage can vary."]</p></li>
             <li><h2>@L["Review supported changes"]</h2><p>@L["Compare recognized bill charges when the amount, currency and history support it."]</p></li>
@@ -46,7 +46,7 @@
         <p class="home-kicker">@L["Evidence before explanations"]</p>
         <h2>@L["A transaction shows what you paid."] <span>@L["Available evidence can explain what changed."]</span></h2>
         <p>@L["An increase over past charges does not establish a merchant rate change or its cause. A payment or active access alone does not prove that a subscription will renew. FullWorth keeps these distinctions visible."]</p>
-        <a class="home-text-action" href="/register">@L["Start with your own records"]<svg class="bw-sprite" aria-hidden="true"><use href="/assets/billwatch-sprites.svg#arrow-right"></use></svg></a>
+        <AuthorizeView><Authorized><a class="home-text-action" href="/app/bills">@L["Review bills"]<svg class="bw-sprite" aria-hidden="true"><use href="/assets/billwatch-sprites.svg#arrow-right"></use></svg></a></Authorized><NotAuthorized><a class="home-text-action" href="/register">@L["Start with your own records"]<svg class="bw-sprite" aria-hidden="true"><use href="/assets/billwatch-sprites.svg#arrow-right"></use></svg></a></NotAuthorized></AuthorizeView>
     </section>
 
     <section class="home-security" id="security">

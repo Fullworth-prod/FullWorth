@@ -114,3 +114,7 @@ html[data-theme="light"] .home-bill-example { --sample-increase: #b1460b; --samp
     .sample-evidence-disclosure summary { font-size: 1.1rem; }
     .sample-story-difference { font-size: clamp(3rem, 6.2vw, 5.8rem); }
 }
+
+@media(min-width:1051px) {
+    .sample-editorial h2 { font-size: 2.3rem; }
+}

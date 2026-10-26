@@ -63,3 +63,18 @@ Edit target: the attached standalone illustrative statement paper. Change ONLY t
 - Mode controls remain disabled until their existing module initializes, avoiding lost first clicks. Public demo amounts stay on one line while labels reflow; long localized headings wrap without shrinking enlarged text.
 
 - Source f1c63aae CI40301745942: both engines showed the honest empty-account state because the fixture omitted the client's includeInactive query on the bill-list read. The fixture boundary is now query-aware and records safe read counts. No product-data change or all-pairs success is inferred. Actual final-source execution is still required.
+
+
+## Verified second browser pass and final fidelity corrections
+
+Source a3172bd987b2d499b57b6e769b09b91fd3dea18d, CI40360544623: backend2,870 and Node127 zero failed/skipped, backend/offline builds zero warnings/errors. Production-container job and complete existing visual suite passed. Theme assertions1,760 Chromium/1,778 WebKit,312 geometry/108 state cases each; zero unexpected browser errors or layout/contrast issues. Existing responsive672/native-select126/ARIA37/subscription54 cases per engine also passed. Disposable recovery fixtures remain synthetic. Android wrapper success skipped compilation for this web-only revision; earlier UI source ran Android. Separate confirmation workflow must pass at final head.
+
+Verified visual artifact12670085499 SHA256dc7251f3d282491eae97e4b67e0883931415a0ea94b82bddfa668c1f02c01de3. Strict1487×1058,density1,anonymous comparisons still found Story fallback-font wrapping/repeated process flow, Editorial heading scale and Workspace rail track alignment. design-qa remains blocked pending post-fix capture.
+
+### Self-hosted display font
+
+The selected Workspace/Story heading styles now use a real local Inter face rather than depending on an unprovided Inter installation. Source: https://github.com/google/fonts/tree/main/ofl/inter ; upstream Inter Project Authors/https://github.com/rsms/inter, SIL Open Font License1.1. Original Inter[opsz,wght].ttf Git blob047c92f6e2212473dc436020afed689527076d44 verified after download. Full license/copyright included at assets/fullworth/fonts/OFL-Inter.txt.
+
+The bundled asset is a modified Latin/extended-Latin, combining marks, punctuation and currency subset, converted toWOFF2 with fontTools4.67.0 and brotli1.2.1. All100–900 weights and optical-size axis retained.189612bytes; SHA2565d63ac7c7b8b2e1438f8e511b95bed3681aad03b6df82ce2bf3c7e27e4f5825f. Font-family alias FullWorth Display; swap loading. Applied only to the selected public display headings, preserving the rest of the application's existing typography. Served from the same origin, style/font CSP unchanged; no Google Fonts request or new service/account. Roboto Condensed was evaluated locally but is not bundled.
+
+Story removes the repeated process panel, retaining visible payment→comparison→evidence and evidence conclusion. SharedHow-it-works anchor moves to the comparison wrapper. Authenticated evidence entry opens /app/bills; anonymous entry retains /register. Browser assertions cover these entry states, actual local font loading, and the three English display lines at the selected viewport. Final verification is pending, not implied by this preparation.

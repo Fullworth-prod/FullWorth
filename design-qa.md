@@ -72,3 +72,19 @@ Investigation read the pinned Playwright1.55.1 source at microsoft/playwright/pa
 Artifact12643086981 metadata records SHA2560a967616114fa5958de3c668cebd7ab5c240a30e100901393999dec0fe0cd68d, but download connector returned internal errors twice, so this artifact has not been downloaded or visually accepted. Preserve honest blockedQA until a later capture can be retrieved and inspected.
 
 Further P2 fixes from the earlier matched captures: restore Workspace public rail icons/alignment using supplied sprites, brighten its account/menu ink on cobalt, and use Story's chosen accent for the selected navigation state. No new art approximation or financial change. Re-capture required.
+
+
+## Full browser acceptance and second matched comparison —a3172bd
+
+CI40360544623 Linux production container passed, including the complete existing visual suite, security boundaries and disposable encrypted recovery fixtures. Actual theme results: Chromium1,760 assertions and WebKit1,778;312 geometry+108 state cases each; zero layout/contrast findings or unexpected browser errors.18 WebKit screenshot denials were each matched1:1 to the observed Playwright body {} insertion; production CSP unchanged. Root font>=31.9px proves200% cases applied. Existing responsive672 cases per engine, native selects126 per engine, ARIA37 per engine and subscription54 per engine passed. Backend2,870/Node127 zero failed/skipped; backend/offline builds zero warnings/errors. Separate confirmation regression run remains independent and pending.
+
+Artifact12670085499 SHA256dc7251f3d282491eae97e4b67e0883931415a0ea94b82bddfa668c1f02c01de3 successfully downloaded/checksum-verified at fullworth-theme-a3172bd. Earlier artifact download failure was not permanent. Strict comparator produced all24 boards at exact1487×1058,density1,anonymousHome. Opened Editorial light, Workspace light and both Story combined full boards; source/implementation are visibly aligned/auth-normalized.
+
+Remaining P2:
+- Story's third display phrase wraps to a fourth line, shifting the comparison and evidence conclusion below the intended fold. The intended Inter face had no actual supplied font file and fell back to a wider system face. Supply a licensed, same-origin Inter display asset rather than distorting/scaling text, and re-capture. Source type analysis compared actual official Inter/Roboto glyph lengths; Inter optical32 matches the chosen geometric display direction. Self-host/subset only; no font service or external requests.
+- Story repeats the general process panel after its own payment/comparison/evidence sequence. Hide that duplicate only forStory and bring the existing evidence conclusion directly after the sequence. Put the shared How-it-works anchor on the visible comparison wrapper so navigation remains functional.
+- Editorial comparison heading remains smaller than reference; increase desktop2rem→2.3rem.
+- Workspace public rail's intrinsic grid track still prevents full-row alignment; use an explicit flexible track/justify stretch.
+- Authenticated evidence-entry link incorrectly targets registration. Render the existing bills-workspace link for authenticated visitors; retain registration for anonymous visitors. Add actual browser entry-state assertions.
+
+Next captures must verify all corrections. The earlier phone/tablet/summary/amount/contrast blockers are resolved by actual both-engine execution. Current result stays blocked until these remaining P2 fixes receive a matched post-fix visual review.

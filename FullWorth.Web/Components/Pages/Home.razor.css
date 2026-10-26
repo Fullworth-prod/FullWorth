@@ -30,7 +30,7 @@
 html[data-design="workspace"] .paired-home { padding: 64px 48px 56px; }
 html[data-design="workspace"] .paired-home .hero-copy { display: grid; grid-template-columns: 1fr auto; text-align: start; gap: 18px 30px; }
 html[data-design="workspace"] .paired-home .hero .home-kicker { display: block; grid-column: 1 / -1; margin: 0; }
-html[data-design="workspace"] .paired-home .hero h1 { grid-column: 1 / -1; font: 800 clamp(2.4rem, 4.05vw, 3.9rem)/1.03 Inter, system-ui, sans-serif; letter-spacing: -.055em; }
+html[data-design="workspace"] .paired-home .hero h1 { grid-column: 1 / -1; font: 800 clamp(2.4rem, 4.7vw, 4.5rem)/1.03 "FullWorth Display", Inter, system-ui, sans-serif; letter-spacing: -.055em; }
 html[data-design="workspace"] .paired-home .hero-title-editorial { display: none; }
 html[data-design="workspace"] .paired-home .hero-title-workspace { display: block; }
 html[data-design="workspace"] .paired-home .hero-description { margin: 0; max-width: 60ch; font-size: 1.2rem; }
@@ -97,3 +97,10 @@ html[data-design="workspace"] .paired-home .hero { padding-top: 40px; }
     html[data-design="story"] .paired-home .hero-copy { grid-template-columns: minmax(0, 2.4fr) minmax(0, 1fr); gap: 20px 40px; }
     html[data-design="story"] .paired-home .hero h1 { letter-spacing: -.065em; }
 }
+
+/* Self-hosted display face fixes fallback-dependent headline wrapping. */
+html[data-design="workspace"] .paired-home .hero h1,
+html[data-design="story"] .paired-home .hero h1 { font-family: "FullWorth Display", Inter, system-ui, sans-serif; font-optical-sizing: auto; }
+html[data-design="story"] .paired-home .home-process { display: none; }
+html[data-design="story"] .paired-home .home-evidence { border-top: 1px solid var(--pair-line); padding-top: 28px; }
+html[data-design="story"] .paired-home .home-evidence > .home-kicker { display: none; }

@@ -1,3 +1,10 @@
+@font-face {
+    font-family: "FullWorth Display";
+    src: url("/assets/fullworth/fonts/fullworth-display.woff2") format("woff2");
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
 /* FullWorth premium public/authentication UI layer.
    Loaded by MainLayout after the existing isolated layout styles. */
 
@@ -807,4 +814,8 @@ html[data-design] .home-site-shell .footer-copy { white-space: normal; overflow-
     html[data-design="workspace"] .home-site-shell .desktop-nav { width: 100%; margin-inline: 0; align-self: stretch; }
     html[data-design="workspace"] .home-site-shell .desktop-nav a { width: 100%; gap: 22px; font-weight: 500; }
     html[data-design="workspace"] .home-site-shell .home-nav-icon { display: block; width: 26px; height: 26px; flex: 0 0 auto; }
+}
+
+@media(min-width:761px) {
+    html[data-design="workspace"] .home-site-shell .desktop-nav { grid-template-columns: minmax(0, 1fr); justify-content: stretch; justify-items: stretch; }
 }

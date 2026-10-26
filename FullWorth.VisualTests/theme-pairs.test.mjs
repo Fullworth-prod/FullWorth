@@ -229,6 +229,8 @@ export async function verifyThemePairs(page, outputDir) {
               "The visible selector agrees with the restored style.");
             if (label === "home") {
               expect(await target.locator(".hero-title:visible").count() === 1, "One chosen headline is visible.");
+              expect(await target.locator('.home-evidence a[href="/app/bills"]').isVisible(),
+                "Authenticated evidence entry opens the existing bills workspace.");
               expect(await target.locator(".sample-" + style).isVisible(), "The matching composition is visible.");
               expect(await target.locator(".sample-qualification").isVisible() &&
                 (await target.locator(".sample-qualification").innerText()).includes("12"),
@@ -312,6 +314,24 @@ export async function verifyThemePairs(page, outputDir) {
           await publicPage.evaluate(async () => { await document.fonts.ready; });
           await publicPage.setViewportSize({ width: 1487, height: 1058 });
           await publicPage.locator(".hero-copy").evaluate(element => Promise.all(element.getAnimations().map(a => a.finished)));
+          if (style === "story" || style === "workspace") {
+            expect(await publicPage.evaluate(() => [...document.fonts].some(font =>
+              font.family.replaceAll('"', "") === "FullWorth Display" && font.status === "loaded")),
+              "The self-hosted display face is loaded before reference capture.");
+          }
+          if (style === "story") {
+            const lines = await publicPage.locator(".hero-title-story > span").evaluateAll(elements =>
+              elements.map(element => ({
+                height: element.getBoundingClientRect().height,
+                lineHeight: parseFloat(getComputedStyle(element).lineHeight)
+              })));
+            expect(lines.length === 3 && lines.every(line => line.height <= line.lineHeight + 1),
+              "The English Story reference retains three display lines: " + JSON.stringify(lines));
+            expect(!await publicPage.locator(".home-process").isVisible(),
+              "Story follows payment, comparison and evidence without a repeated process panel.");
+          }
+          expect(await publicPage.locator('.home-evidence a[href="/register"]').isVisible(),
+            "Anonymous evidence entry retains account creation.");
           expect(await publicPage.locator('.header-actions a[href="/login"]').isVisible(),
             "Anonymous visitors retain a sign-in route.");
           expect(await publicPage.locator(".home-primary-action").getAttribute("href") === "/register",

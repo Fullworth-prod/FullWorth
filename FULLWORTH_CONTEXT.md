@@ -1,3 +1,101 @@
+## Authorized bank-link hotfix release — 2026-10-25 UTC
+
+The owner explicitly approved deploying the tested bank-link fix in this chat. This supersedes
+the earlier pending-authorization note below. Promotion and deployment must still pass current
+protected checks, exact-master signed-image verification, fresh backup and guarded production
+health/authentication checks. Approval does not authorize real-bank token replay, automatic relink,
+paid activation, new credentials, secret changes or unrelated feature deployment.
+
+Scope: #973's bounded finalization after browser disconnect, its tests/runbook and verified handoff.
+The only application runtime change from the currently live release is the Hosted Link completion
+cancellation boundary. #971 merchant-subscription features and the requested homepage overhaul are
+excluded; continue those after this deployment. The owner requested a clean, professional homepage
+revamp, planned then implemented, with its precise public/Overview scope being clarified.
+
+The old interrupted Link attempt remains fenced. After verified deployment the owner must initiate
+a fresh secure Wells Fargo flow and verify bank visibility and initial sync. Keep #972 open until
+that actual provider acceptance is observed; fixture success alone is insufficient.
+
+- current release candidate on master: `3fd3aa5e019d35f11418c526aeaca3d772bd37ea`.
+- Verified live production release: `3fd3aa5e019d35f11418c526aeaca3d772bd37ea`.
+
+---
+
+## Bank-link browser-disconnect fix verified in development — 2026-10-25 UTC
+
+Development runtime: `6f0b27a624da4c4e56d92493b8c1646907585950`.
+Master and verified live production remain `3fd3aa5e019d35f11418c526aeaca3d772bd37ea`; no new deployment occurred.
+
+The owner reported Wells Fargo showed success in Plaid but was absent from FullWorth.
+Read-only host evidence found an interrupted initial Hosted Link finalization with no saved bank;
+token exchange succeeded, item lookup began and browser Account.DisposeAsync disconnect events
+immediately followed. No private financial values, tokens or session IDs were published.
+
+[#973](https://github.com/Fullworth-prod/FullWorth/pull/973) fixes the reproduced cancellation path.
+Before the durable one-time exchange fence, browser cancellation is honored. The fence, single
+exchange, item lookup and atomic persistence then run under a separate four-minute server deadline,
+awaited by the handler. Ownership, consent/session expiry, nonce/concurrency and no-reexchange guards
+remain. Real provider/database failures, independent timeout and process termination remain fail-closed.
+
+All four new disconnect cases failed on old source `9685da0c10f70ed7c3c7d5b8a25c2d3e5cb57643`
+in PostgreSQL run40246135156 (16 prior scenarios passed). Corrected source
+`796e1c0dbeedf707cb044fb4b30b48aef50906ae` passed all nine checks before merge.
+Tested candidate and integrated tree: `68a848b9f1a9f05f8cab800089f0a8b16b0d819f`.
+Main40246345177 passed2,792 .NET/106 Node, zero failed/skipped; Android/container/dependency passed.
+Hosted40246345197 passed22 actual PostgreSQL recovery and53 durable-replay tests plus12 actual
+network/relational fault scenarios; bank-lifecycle/monitoring/confirmation suites passed.
+These use synthetic providers and do not establish real Wells Fargo acceptance.
+
+**Next required release decision:** the current merchant goal explicitly reserves master promotion/
+production deployment for separate authorization. Obtain that authorization before guarded release.
+Do not reset the interrupted permit, replay its consumed token, delete an existing account or initiate
+a real relink automatically. After authorized deployment, the owner must start a fresh secure Link
+session and verify bank visibility and initial sync. Keep [#972](https://github.com/Fullworth-prod/FullWorth/issues/972)
+open for that live acceptance. Detailed source/release handoff: deploy/BANK-LINK-BROWSER-DISCONNECT-972.md.
+
+The original merchant-subscription goal/#970 remains active. Preserve separate open #971 at initial
+head65ade1d: its17 new PostgreSQL checks passed, but the workflow's test filter needs shell quoting
+and three explicit security endpoint/resource-coverage inventories need registration. Initial main CI
+passed2,826 tests and failed those three inventory/coverage guards; no #971 integration is established.
+Additional source refinements were prepared in conversation scratch only, not committed. Read actual
+GitHub source and failures before resuming; do not duplicate the PR or treat scratch as tested source.
+
+Hourly automation remains off. No production, real-bank, credential/account-setting, paid/creator,
+outreach/payout or destructive action occurred. Existing UI concept selection and broader external
+provider/device/legal/recovery gates remain unchanged.
+
+---
+
+## Verified production deployment and same-release protected recovery — 2026-10-25 UTC
+
+- current release candidate on `master`: `3fd3aa5e019d35f11418c526aeaca3d772bd37ea`.
+- Verified live production release: `3fd3aa5e019d35f11418c526aeaca3d772bd37ea`.
+- Tested/integrated runtime tree: `e10b6d35a0cea294fc9237960b475167781c4690`. Production Git HEAD, release marker, environment release ID and running service revisions match; checkout is clean.
+
+Normal guarded deployment is verified complete; this is not a claim that every external-beta acceptance gate is complete. No paid feature/creator activation, payout, outreach, branch deletion or hourly-automation restart occurred. Earlier deployment/billing/recovery failures below are dated history, superseded by this verified checkpoint.
+
+### Deployment and verification
+
+- [Deployment 40226147172](https://github.com/Fullworth-prod/FullWorth/actions/runs/40226147172) completed successfully through the guarded workflow after exact-master CI40225561325, all four CodeQL languages and governance40225561476 passed. Source #968 passed nine final-head checks at `7e1841dca0315f3225c42d27bdcd8f601597e77d`; #967's recovery correction passed nine at `40f69a4fec760116268f1713e729c996789afc40`. Original application integration #965 passed its 17 final-source checks; the later two fixes affect recovery/CI, not application financial logic.
+- Exact-master image artifact12610982715:365,650,204 bytes, archive SHA256 `58177c384f05bff1cc87c1183c2d12d1ad6ec1230a272a863105c09d30bbb059`. The deployment workflow actually verified image build/SBOM attestations before loading. Active ruleset24230011 retained mandatory PRs, strict protected checks, resolved threads and no bypass.
+- [Same-release auth smoke 40226442461](https://github.com/Fullworth-prod/FullWorth/actions/runs/40226442461) passed both non-destructive bearer-token and browser-cookie/logout boundaries at this exact release. Financial mutation probes were disabled.
+- Independent SSH verification passed production permissions, release/runtime integrity, exposure and public API/Web readiness; owner/role checks passed, subscription enforcement remains safely disabled, and backup/watchdog timers remain enabled. Expected migration `20261025020500_AddPlaidLinkCompletionAttempts` is applied.
+- Private before/after integrity verification found all36 tracked existing environment fields unchanged (excluding the intentional release-ID update) and all five core financial-table counts unchanged. Raw values/counts were not exported. Record: `/home/debian/fullworth-recovery-evidence/postdeployment-integrity-20261025.json`. Counts are evidence of row-count preservation, not a substitute for private expected-bill/provider truth.
+
+### Actual current-release recovery
+
+- A new encrypted backup of the deployed release completed at2026-10-25 19:39 UTC, with services restored and production readiness verified afterward. Completed snapshot `8067b8e455c187515a36ce7bec89002383021068874bf22144f5a5ced3bc24f6` was copied server-side under the enabled provider-locked prefix:405 encrypted objects /8,045,790 bytes, verified object-by-object; inventory SHA256 `369a2ad3921493d790d9b882690f543a55c36721b3284bdb9ef29e6a04d06c68`. Valid production credentials received409/ObjectLockedByBucketPolicy for synthetic overwrite and delete in that prefix. Live Restic capture/tagging/lock cleanup remain outside that prefix.
+- [Post-deployment independent recovery 40227647810](https://github.com/Fullworth-prod/FullWorth/actions/runs/40227647810) succeeded on a fresh GitHub-hosted runner. Source release, runner release and live release all equal `3fd3aa5e019d35f11418c526aeaca3d772bd37ea`; exact snapshot matches the protected point above. Actual separate read-only provider reads passed and write/delete returned explicit403/AccessDenied against an unlocked synthetic canary. The verifier restored PostgreSQL, checked encrypted bundle checksums/statement manifest and both API/Web key rings. Zero private recovery artifacts were uploaded.
+- Private evidence: `/home/debian/fullworth-recovery-evidence/protected-backup-8067b8e455c1.json` and `/home/deploy/fullworth-acceptance/recovery-results/run-40227647810.json`. Earlier pre-deployment proof40225705002 restored the older live release; it is distinct from this now-established same-release proof.
+- Owner-held recovery material was encrypted with Windows DPAPI CurrentUser and round-trip verified off the VPS. The newest owner-local kit is `.ssh/fullworth-recovery-transfer-20261025/fullworth-recovery-kit-live-3fd3.dpapi`, with a README in that directory. It excludes the temporary S3 key and requires the current Windows profile. Manual disaster bootstrap from that kit remains separate and unexercised.
+- The owner explicitly approved the24-hour single-bucket Object Read only acceptance key. It expires onOct26; do not assume future validity or widen/renew access without applicable approval. A temporary local key copy remains owner/SYSTEM-only because automatic approval review rejected deletion. No credential values were published.
+
+### Continuation boundaries
+
+This reconciliation retains the master runtime/CI/recovery safeguards in development; relative to master only the three additive handoff files change. Keep older #932 separate and preserve all branches. #912 controlled Plaid/network recovery, #762/#293 private expected truth/import/payroll/provider evidence, #251/#258 physical-device acceptance and the remaining #291/#669 nonempty-real-statement/two-owner/document/security/legal/disaster-bootstrap evidence stay open. The actual restore explicitly records nonempty-statement acceptance as not established. Broader #934 and selection among the three Overview concepts remain pending; do not choose or regenerate a concept. Creator terms remain proposed/default-off.
+
+---
+
 ## Independent recovery passed; reproducible Windows SDK correction — 2026-10-25 UTC
 
 - current release candidate on `master`: `1041bde352c2d30b01719c6d492c6ae284cd1bf1`.

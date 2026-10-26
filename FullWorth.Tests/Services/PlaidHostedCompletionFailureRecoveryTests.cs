@@ -93,7 +93,7 @@ public sealed class PlaidHostedCompletionFailureRecoveryTests
 
         var error = await Record.ExceptionAsync(() =>
             service.CheckAndCompleteAsync(owner, session.Id, cancellation.Token));
-        if (cancel) Assert.IsAssignableFrom<OperationCanceledException>(error);
+        if (cancel && mode != "new") Assert.IsAssignableFrom<OperationCanceledException>(error);
         else Assert.IsType<DbUpdateException>(error);
         Assert.Equal(1, failure.Failures);
         Assert.Equal(PlaidLinkSessionStatus.Pending, session.Status);

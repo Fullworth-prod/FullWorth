@@ -523,3 +523,18 @@ html[data-design="workspace"]:not([data-fullworth-high-contrast="true"]) .app-sh
 html[data-design="story"]:not([data-fullworth-high-contrast="true"]) .app-shell.app-shell .app-sidebar .app-nav-link.active {
     color: var(--pair-ink); background: var(--fw-accent-soft); border-color: var(--pair-line);
 }
+
+/* A navigation sheet uses the page palette, independently of its cobalt rail. */
+html[data-design="workspace"] .app-shell.app-shell .app-sidebar .mobile-menu-sheet {
+    --bw-text: var(--pair-ink); --bw-text-secondary: var(--pair-muted);
+    --bw-text-muted: var(--pair-muted); --bw-text-subtle: var(--pair-muted);
+    --bw-surface: var(--pair-panel); --bw-surface-soft: var(--pair-canvas);
+    --fw-ink: var(--pair-ink); --fw-ink-soft: var(--pair-muted);
+    --fw-muted: var(--pair-muted); --fw-faint: var(--pair-muted);
+    --fw-accent: var(--pair-accent); --fw-line: var(--pair-line); --fw-line-strong: var(--pair-line);
+    background: var(--pair-panel); color: var(--pair-ink);
+}
+html[data-design="workspace"] .app-shell.app-shell .app-sidebar .mobile-menu-sheet .app-nav-link { color: var(--pair-ink); }
+html[data-design="workspace"] .app-shell.app-shell .app-sidebar .mobile-menu-sheet .app-nav-link.active {
+    background: var(--fw-accent-soft); color: var(--pair-ink);
+}

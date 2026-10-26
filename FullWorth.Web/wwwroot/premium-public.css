@@ -819,3 +819,8 @@ html[data-design] .home-site-shell .footer-copy { white-space: normal; overflow-
 @media(min-width:761px) {
     html[data-design="workspace"] .home-site-shell .desktop-nav { grid-template-columns: minmax(0, 1fr); justify-content: stretch; justify-items: stretch; }
 }
+
+/* Keep the mode glyph readable on the Workspace rail in both modes. */
+html[data-design="workspace"] .home-site-shell .site-header {
+    --bw-surface-soft: #1646ad; --bw-surface-hover: #0d3a92;
+}

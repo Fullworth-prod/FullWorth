@@ -33,7 +33,7 @@ export async function verifyThemePairs(page, outputDir) {
 
   const run = async (target, engine) => {
     let state = "populated", failRefresh = false, hold, release;
-    let geometryCases = 0, stateCases = 0, assertions = 0;
+    let geometryCases = 0, stateCases = 0, menuCases = 0, assertions = 0;
     const unsafe = [], errors = [], financial = new Map(), intentionalFailures = new Set();
     const layoutIssues = [], issueCaptures = new Set();
     const fixtureReads = { banks: 0, bills: 0 };
@@ -162,15 +162,20 @@ export async function verifyThemePairs(page, outputDir) {
       if (large) audit(result.rootFontSize >= 31.9, "200% text zoom actually applies: " + result.rootFontSize);
       audit(result.documentWidth <= result.viewport + 1 && result.bodyWidth <= result.viewport + 1,
         label + " fits " + width + "px, large=" + large + " without clipping: " + JSON.stringify(result));
-      for (const control of await surface.locator(".design-picker select, .theme-toggle, .home-primary-action, .sample-option:visible, .sample-evidence-disclosure:visible > summary").all()) {
-        if (!await control.isVisible()) continue;
-        const r = await control.evaluate(element => {
-          const rect = element.getBoundingClientRect();
-          return { left: rect.left, right: rect.right, height: rect.height, viewport: innerWidth };
-        });
+      // Measure visibility and size atomically: hydration must not replace a
+      // locator between an asynchronous isVisible() and bounding-box read.
+      const controls = await surface.evaluate(() =>
+        [...document.querySelectorAll(".design-picker select, .theme-toggle, .home-primary-action, .sample-option, .sample-evidence-disclosure > summary")]
+          .filter(element => element.getClientRects().length > 0 &&
+            getComputedStyle(element).visibility !== "hidden")
+          .map(element => {
+            const r = element.getBoundingClientRect();
+            return { control: element.tagName + "." + element.className,
+              left: r.left, right: r.right, height: r.height, viewport: innerWidth };
+          }));
+      for (const r of controls)
         audit(r.left >= -1 && r.right <= r.viewport + 1 && r.height >= 44,
-          "Appearance/demo control remains usable: " + JSON.stringify(r));
-      }
+          label + ": appearance/demo control remains usable: " + JSON.stringify(r));
       geometryCases++;
       if (layoutIssues.length > priorIssues && !issueCaptures.has(label) && issueCaptures.size < 12) {
         issueCaptures.add(label);
@@ -178,8 +183,10 @@ export async function verifyThemePairs(page, outputDir) {
           label.replaceAll("/", "-") + "-" + width + "-" + large + ".png"), fullPage: true });
       }
     };
-    const readable = async selector => {
-      const ratio = await target.locator(selector).first().evaluate(element => {
+    const readable = async (selector, surface = target) => {
+      const locator = typeof selector === "string" ? surface.locator(selector).first() : selector;
+      const label = typeof selector === "string" ? selector : "mobile navigation item";
+      const ratio = await locator.evaluate(element => {
         const rgba = value => {
           const v = value.match(/[0-9.]+/g).map(Number);
           return [v[0], v[1], v[2], v.length > 3 ? v[3] : 1];
@@ -200,7 +207,7 @@ export async function verifyThemePairs(page, outputDir) {
         const a = luminance(text), b = luminance(bg);
         return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
       });
-      audit(ratio >= 4.5, "Core text retains readable contrast: " + selector + ", ratio=" + ratio.toFixed(2));
+      audit(ratio >= 4.5, "Core text retains readable contrast: " + label + ", ratio=" + ratio.toFixed(2));
     };
     const snapshot = () => target.locator(".fw-pulse-amount, .fw-pulse-stat strong, .fw-bill-value strong")
       .allTextContents().then(values => values.map(value => value.trim().replace(/\s+/g, " ")));
@@ -247,8 +254,8 @@ export async function verifyThemePairs(page, outputDir) {
                 "One priority presentation replaces the duplicate per-bill spotlight.");
             }
             for (const selector of (label === "home"
-              ? [".hero-title:visible", ".hero-description", ".sample-qualification", ".home-primary-action"]
-              : [".fw-pulse-amount", ".fw-pulse-label", ".fw-coverage-note", ".fw-primary-action"]))
+              ? [".hero-title:visible", ".hero-description", ".sample-qualification", ".home-primary-action", ".theme-toggle"]
+              : [".fw-pulse-amount", ".fw-pulse-label", ".fw-coverage-note", ".fw-primary-action", ".theme-toggle"]))
               await readable(selector);
             for (const width of [320, 390, 768, 1440]) for (const large of [false, true]) {
               await geometry(label + "/" + style + "/" + mode + "/" + language, width, large);
@@ -314,6 +321,7 @@ export async function verifyThemePairs(page, outputDir) {
           await publicPage.evaluate(async () => { await document.fonts.ready; });
           await publicPage.setViewportSize({ width: 1487, height: 1058 });
           await publicPage.locator(".hero-copy").evaluate(element => Promise.all(element.getAnimations().map(a => a.finished)));
+          await readable(".theme-toggle", publicPage);
           if (style === "story" || style === "workspace") {
             expect(await publicPage.evaluate(() => [...document.fonts].some(font =>
               font.family.replaceAll('"', "") === "FullWorth Display" && font.status === "loaded")),
@@ -430,6 +438,9 @@ export async function verifyThemePairs(page, outputDir) {
             try {
               await target.goto(origin + "/app", { waitUntil: "domcontentloaded" });
               await target.locator(selector).first().waitFor();
+              await target.locator(".design-picker select:not([disabled])").waitFor();
+              await target.locator(".theme-toggle:not([disabled])").waitFor();
+              await target.evaluate(async () => { await document.fonts.ready; });
               await geometry("state/" + name + "/" + style + "/" + mode + "/" + language, 320, true);
               if (name === "sparse") expect(!(await target.locator(".overview-attention").innerText()).includes("$0.00"),
                 "Sparse history is not false zero-change certainty.");
@@ -443,6 +454,52 @@ export async function verifyThemePairs(page, outputDir) {
             if (name === "loading") await target.locator(".fw-pulse").waitFor();
           }
         }
+      }
+
+      // The mobile sheet must stay readable/reachable even inside Workspace's
+      // cobalt sidebar. Exercise the actual menu and Escape focus in every pair.
+      state = "populated";
+      for (const style of styles) for (const mode of modes) for (const language of languages) {
+        await culture(language);
+        await target.goto(origin + "/app", { waitUntil: "domcontentloaded" });
+        await ready("overview");
+        await appearance(style, mode);
+        await target.setViewportSize({ width: 320, height: 1000 });
+        await target.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
+        await target.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        const trigger = target.locator(".mobile-menu-trigger");
+        await trigger.click();
+        const sheet = target.locator(".mobile-menu-sheet");
+        await sheet.waitFor();
+        expect(await trigger.getAttribute("aria-expanded") === "true", "The real menu reports its open state.");
+        await geometry("menu/" + style + "/" + mode + "/" + language, 320, true);
+        await readable(".mobile-menu-sheet");
+        const bounds = await sheet.evaluate(element => {
+          const r = element.getBoundingClientRect(), nav = document.querySelector(".app-sidebar").getBoundingClientRect();
+          return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, viewport: innerWidth, navTop: nav.top };
+        });
+        audit(bounds.left >= -1 && bounds.right <= bounds.viewport + 1 && bounds.top >= -1 &&
+          bounds.bottom <= bounds.navTop + 2, "Menu remains above persistent navigation: " + JSON.stringify(bounds));
+        const links = await sheet.locator(".app-nav-link").all();
+        expect(links.length >= 4, "The account/settings navigation remains available.");
+        for (const link of links) await readable(link);
+        if (language === "en-US")
+          await capture(target, { path: path.join(outputDir, "theme-pair-" + style + "-" + mode +
+            "-menu-" + engine + "-en-320-large.png"), fullPage: false });
+        for (const link of links) {
+          await link.focus();
+          await link.scrollIntoViewIfNeeded();
+          const visible = await link.evaluate(element => {
+            const item = element.getBoundingClientRect(), menu = element.closest(".mobile-menu-sheet").getBoundingClientRect();
+            return item.top >= menu.top - 1 && item.bottom <= menu.bottom + 1;
+          });
+          audit(visible, "Each menu destination is reachable within its scrolling sheet.");
+        }
+        await target.keyboard.press("Escape");
+        await sheet.waitFor({ state: "hidden" });
+        await target.waitForFunction(() => document.activeElement?.classList.contains("mobile-menu-trigger"));
+        expect(await trigger.getAttribute("aria-expanded") === "false", "Escape closes the menu and restores focus.");
+        menuCases++;
       }
 
       state = "populated";
@@ -518,20 +575,20 @@ export async function verifyThemePairs(page, outputDir) {
       } finally { await blocked.close(); }
 
       await writeFile(path.join(outputDir, "theme-pair-audit-" + engine + ".json"),
-        JSON.stringify({ engine, geometryCases, stateCases, layoutIssues, errors, fixtureReads, screenshotCsp }, null, 2));
+        JSON.stringify({ engine, geometryCases, stateCases, menuCases, layoutIssues, errors, fixtureReads, screenshotCsp }, null, 2));
       console.log("Three-pair complete geometry diagnostics", JSON.stringify(layoutIssues));
       expect(unsafe.length === 0, "Appearance and public demo make no financial writes: " + JSON.stringify(unsafe));
       expect(errors.length === 0, "No uncaught browser errors: " + JSON.stringify(errors));
       console.log("Three-pair layout audit: engine=" + engine + "; geometry=" + geometryCases +
-        "; states=" + stateCases + "; issues=" + layoutIssues.length + "; verified capture CSP denials=" + screenshotCsp.reduce((sum, item) => sum + item.denied, 0));
+        "; states=" + stateCases + "; menus=" + menuCases + "; issues=" + layoutIssues.length + "; verified capture CSP denials=" + screenshotCsp.reduce((sum, item) => sum + item.denied, 0));
       if (layoutIssues.length) throw new AggregateError(layoutIssues.slice(0, 24).map(message => new Error(message)),
         engine + ": " + layoutIssues.length + " layout/contrast checks failed; all cases were audited.");
       console.log("Three-pair UI: " + assertions + " assertions; " + geometryCases + " geometry cases; " +
-        stateCases + " state cases; engine=" + engine + "; synthetic financial reads only.");
+        stateCases + " state cases; " + menuCases + " menu cases; engine=" + engine + "; synthetic financial reads only.");
     } catch (error) {
       release?.();
       await capture(target, { path: path.join(outputDir, "theme-pair-failure-" + engine + ".png"), fullPage: true });
-      console.error("Three-pair audit progress", { engine, geometryCases, stateCases,
+      console.error("Three-pair audit progress", { engine, geometryCases, stateCases, menuCases,
         layoutIssues: layoutIssues.length, fixtureReads, browserErrors: errors.length });
       console.error("Three-pair failure state", await target.evaluate(() => ({
         pathname: location.pathname, design: document.documentElement.dataset.design,

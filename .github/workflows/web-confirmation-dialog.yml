@@ -35,7 +35,7 @@ jobs:
           sudo python3 - <<'PY'
           from pathlib import Path
           import re
-          candidates = [Path("/etc/apt/sources.list")]
+          candidates = [Path("/etc/apt/sources.list"), Path("/etc/apt/apt-mirrors.txt")]
           sources = Path("/etc/apt/sources.list.d")
           candidates += sorted(sources.glob("*.list"))
           candidates += sorted(sources.glob("*.sources"))

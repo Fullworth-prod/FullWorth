@@ -511,3 +511,15 @@ html[data-design="story"] .app-shell.app-shell .overview-dashboard .fw-pulse { p
     html[data-design] .app-shell.app-shell .app-topbar .design-picker { flex: 1 1 auto; }
     html[data-design] .app-shell.app-shell .app-topbar .design-picker select { max-width: min(100%, 12rem); }
 }
+
+/* Keep account/menu ink on the selected sidebar surface. */
+html[data-design]:not([data-fullworth-high-contrast="true"]) .app-shell.app-shell {
+    --fw-accent-soft: color-mix(in srgb, var(--pair-accent) 12%, transparent);
+}
+html[data-design="workspace"]:not([data-fullworth-high-contrast="true"]) .app-shell.app-shell .app-sidebar {
+    --bw-text: #ffffff; --bw-text-secondary: #e5eeff; --bw-text-muted: #e5eeff; --bw-text-subtle: #e5eeff;
+}
+html[data-design="workspace"]:not([data-fullworth-high-contrast="true"]) .app-shell.app-shell .app-sidebar :is(.account-copy strong, .account-copy span, .logout-button) { color: #e5eeff; }
+html[data-design="story"]:not([data-fullworth-high-contrast="true"]) .app-shell.app-shell .app-sidebar .app-nav-link.active {
+    color: var(--pair-ink); background: var(--fw-accent-soft); border-color: var(--pair-line);
+}

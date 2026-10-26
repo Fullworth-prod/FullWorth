@@ -801,3 +801,10 @@ html[data-design] .home-site-shell .brand { flex-wrap: wrap; }
 html[data-design] .home-site-shell .footer-inner { grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); align-items: start; }
 html[data-design] .home-site-shell .footer-status,
 html[data-design] .home-site-shell .footer-copy { white-space: normal; overflow-wrap: anywhere; }
+
+.home-site-shell .home-nav-icon { display: none; }
+@media(min-width: 761px) {
+    html[data-design="workspace"] .home-site-shell .desktop-nav { width: 100%; margin-inline: 0; align-self: stretch; }
+    html[data-design="workspace"] .home-site-shell .desktop-nav a { width: 100%; gap: 22px; font-weight: 500; }
+    html[data-design="workspace"] .home-site-shell .home-nav-icon { display: block; width: 26px; height: 26px; flex: 0 0 auto; }
+}

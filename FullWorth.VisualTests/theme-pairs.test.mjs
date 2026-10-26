@@ -37,6 +37,7 @@ export async function verifyThemePairs(page, outputDir) {
     const unsafe = [], errors = [], financial = new Map(), intentionalFailures = new Set();
     const layoutIssues = [], issueCaptures = new Set();
     const fixtureReads = { banks: 0, bills: 0 };
+    const screenshotCsp = []; let capturing, captureCsp;
     const expect = (value, message) => { assert.ok(value, engine + ": " + message); assertions++; };
     const audit = (value, message) => {
       assertions++;
@@ -51,6 +52,13 @@ export async function verifyThemePairs(page, outputDir) {
     const consoleError = message => {
       if (message.type() !== "error") return;
       const url = message.location().url;
+      // Playwright1.55.1 screenshotter.ts injects exactly "body {}" for WebKit
+      // animation synchronization. Production style-src self correctly rejects it.
+      // Count only this message during a verified capture, never application CSP.
+      if (engine === "webkit" && capturing && url === capturing.url &&
+          message.text() === "Refused to apply a stylesheet because its hash, its nonce, or 'unsafe-inline' does not appear in the style-src directive of the Content Security Policy.") {
+        captureCsp.push(message.text()); return;
+      }
       if (intentionalFailures.has(url) || url?.startsWith("https://www.google.com/s2/favicons")) return;
       // AdminNavLink deliberately probes GET /bff/admin/users for a non-admin.
       // Keep the real denial and all other errors; this exact403 is expected.
@@ -103,6 +111,36 @@ export async function verifyThemePairs(page, outputDir) {
       // Let the existing220ms mode transition finish before measuring colors.
       await surface.waitForTimeout(250);
     };
+    const capture = async (surface, options) => {
+      if (engine !== "webkit") return surface.screenshot(options);
+      await surface.evaluate(() => {
+        window.__themeCaptureStyles = [];
+        window.__themeCaptureObserver = new MutationObserver(records => {
+          for (const record of records) for (const node of record.addedNodes)
+            if (node.nodeType === Node.ELEMENT_NODE && node.tagName === "STYLE")
+              window.__themeCaptureStyles.push(node.textContent);
+        });
+        window.__themeCaptureObserver.observe(document.head, { childList: true });
+      });
+      capturing = { url: surface.url() }; captureCsp = [];
+      try { await surface.screenshot(options); }
+      finally {
+        const inserted = await surface.evaluate(() => {
+          window.__themeCaptureObserver.disconnect();
+          const value = window.__themeCaptureStyles;
+          delete window.__themeCaptureObserver; delete window.__themeCaptureStyles;
+          return value;
+        });
+        const denied = captureCsp.length;
+        capturing = undefined; captureCsp = undefined;
+        const known = inserted.filter(text => text === "body {}").length;
+        expect(denied <= known && inserted.every(text => text === "body {}"),
+          "Only verified Playwright empty-rule capture styles may explain screenshot CSP messages: " +
+          JSON.stringify({ denied, known, inserted }));
+        screenshotCsp.push({ file: path.basename(options.path), denied, known });
+      }
+    };
+
     const geometry = async (label, width, large, surface = target) => {
       const priorIssues = layoutIssues.length;
       await surface.setViewportSize({ width, height: 1000 });
@@ -113,7 +151,7 @@ export async function verifyThemePairs(page, outputDir) {
       }, large);
       await surface.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       const result = await surface.evaluate(() => ({
-        viewport: document.documentElement.clientWidth,
+        viewport: document.documentElement.clientWidth, rootFontSize: parseFloat(getComputedStyle(document.documentElement).fontSize),
         documentWidth: document.documentElement.scrollWidth, bodyWidth: document.body.scrollWidth,
         offenders: [...document.querySelectorAll("body *")].filter(element => {
           const r = element.getBoundingClientRect(), s = getComputedStyle(element);
@@ -121,6 +159,7 @@ export async function verifyThemePairs(page, outputDir) {
             r.width > 0 && (r.right > document.documentElement.clientWidth + 1 || element.scrollWidth > element.clientWidth + 1);
         }).slice(0, 8).map(element => ({ tag: element.tagName, classes: element.className?.toString().slice(0, 100) }))
       }));
+      if (large) audit(result.rootFontSize >= 31.9, "200% text zoom actually applies: " + result.rootFontSize);
       audit(result.documentWidth <= result.viewport + 1 && result.bodyWidth <= result.viewport + 1,
         label + " fits " + width + "px, large=" + large + " without clipping: " + JSON.stringify(result));
       for (const control of await surface.locator(".design-picker select, .theme-toggle, .home-primary-action, .sample-option:visible, .sample-evidence-disclosure:visible > summary").all()) {
@@ -135,7 +174,7 @@ export async function verifyThemePairs(page, outputDir) {
       geometryCases++;
       if (layoutIssues.length > priorIssues && !issueCaptures.has(label) && issueCaptures.size < 12) {
         issueCaptures.add(label);
-        await surface.screenshot({ path: path.join(outputDir, "theme-pair-issue-" + engine + "-" +
+        await capture(surface, { path: path.join(outputDir, "theme-pair-issue-" + engine + "-" +
           label.replaceAll("/", "-") + "-" + width + "-" + large + ".png"), fullPage: true });
       }
     };
@@ -213,7 +252,7 @@ export async function verifyThemePairs(page, outputDir) {
               await geometry(label + "/" + style + "/" + mode + "/" + language, width, large);
               if (engine === "webkit" && language === "es" && !large &&
                   width === (mode === "dark" ? 320 : 390))
-                await target.screenshot({ path: path.join(outputDir,
+                await capture(target, { path: path.join(outputDir,
                   "theme-pair-" + style + "-" + mode + "-" + label + "-" + engine + "-es-" + width + ".png"), fullPage: true });
             }
             await target.evaluate(() => { document.documentElement.style.fontSize = ""; });
@@ -222,7 +261,7 @@ export async function verifyThemePairs(page, outputDir) {
               await target.locator(".hero-copy").evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
             if (engine === "chromium" && language === "en-US" && label === "overview") {
               await target.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
-              await target.screenshot({ path: path.join(outputDir,
+              await capture(target, { path: path.join(outputDir,
                 "theme-pair-" + style + "-" + mode + "-" + label + "-" + engine + "-reference.png"), fullPage: false });
               await writeFile(path.join(outputDir, "theme-pair-" + style + "-" + mode + "-" + label + "-" + engine + "-regions.json"),
                 JSON.stringify(await target.evaluate(() => ({
@@ -278,7 +317,7 @@ export async function verifyThemePairs(page, outputDir) {
           expect(await publicPage.locator(".home-primary-action").getAttribute("href") === "/register",
             "The anonymous primary action opens account creation.");
           await publicPage.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
-          await publicPage.screenshot({ path: path.join(outputDir,
+          await capture(publicPage, { path: path.join(outputDir,
             "theme-pair-" + style + "-" + mode + "-home-" + engine + "-reference.png"), fullPage: false });
           await writeFile(path.join(outputDir, "theme-pair-" + style + "-" + mode + "-home-" + engine + "-regions.json"),
             JSON.stringify(await publicPage.evaluate(() => ({
@@ -451,19 +490,19 @@ export async function verifyThemePairs(page, outputDir) {
       } finally { await blocked.close(); }
 
       await writeFile(path.join(outputDir, "theme-pair-audit-" + engine + ".json"),
-        JSON.stringify({ engine, geometryCases, stateCases, layoutIssues, errors, fixtureReads }, null, 2));
+        JSON.stringify({ engine, geometryCases, stateCases, layoutIssues, errors, fixtureReads, screenshotCsp }, null, 2));
       console.log("Three-pair complete geometry diagnostics", JSON.stringify(layoutIssues));
       expect(unsafe.length === 0, "Appearance and public demo make no financial writes: " + JSON.stringify(unsafe));
       expect(errors.length === 0, "No uncaught browser errors: " + JSON.stringify(errors));
       console.log("Three-pair layout audit: engine=" + engine + "; geometry=" + geometryCases +
-        "; states=" + stateCases + "; issues=" + layoutIssues.length);
+        "; states=" + stateCases + "; issues=" + layoutIssues.length + "; verified capture CSP denials=" + screenshotCsp.reduce((sum, item) => sum + item.denied, 0));
       if (layoutIssues.length) throw new AggregateError(layoutIssues.slice(0, 24).map(message => new Error(message)),
         engine + ": " + layoutIssues.length + " layout/contrast checks failed; all cases were audited.");
       console.log("Three-pair UI: " + assertions + " assertions; " + geometryCases + " geometry cases; " +
         stateCases + " state cases; engine=" + engine + "; synthetic financial reads only.");
     } catch (error) {
       release?.();
-      await target.screenshot({ path: path.join(outputDir, "theme-pair-failure-" + engine + ".png"), fullPage: true });
+      await capture(target, { path: path.join(outputDir, "theme-pair-failure-" + engine + ".png"), fullPage: true });
       console.error("Three-pair audit progress", { engine, geometryCases, stateCases,
         layoutIssues: layoutIssues.length, fixtureReads, browserErrors: errors.length });
       console.error("Three-pair failure state", await target.evaluate(() => ({

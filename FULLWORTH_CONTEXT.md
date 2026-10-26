@@ -1,3 +1,17 @@
+# Verified checkpoint — 2026-10-26: subscription review software integrated; three theme pairs selected
+
+PR #971 merged into development as `7c01abf61034b10d0288ee8efe1eb61361b9d913` after all 18 checks passed on exact source `a0e48340f2fd3b781a457282d7ad61e055e72d37`. Tested merge-candidate `a0e577225a57d064c8a32d52d24d4c3e631e1d0d` and integrated tree both equal `2d011031eab6edea96431b80c8db3f50fe9bdb4e`.
+
+- Independent access/renewal/arrangement/paid-through/next-charge facts, owner-scoped immutable dated evidence, revision/idempotency safeguards, single-payment review links, export/erasure integration and EN/ES review UI are integrated. Financial totals, bank history and recurrence gates remain unchanged.
+- Latest observed evidence from each source stays visible outside capped upload history; newer uploads of old receipts cannot replace or hide newer observations. Unknown/stale/conflicting facts remain explicit. Ambiguous writes recover by explicit reads, without automatic replay.
+- Official merchant capability research is in `deploy/MERCHANT-SUBSCRIPTION-VERIFICATION-970.md`. No supported authorized consumer-wide renewal connector was established. Merchant verification remains Unavailable. Manual/document confirmation is not a live merchant check. Document evidence currently means an existing exact-owned statement upload on a linked bill, not a new standalone receipt/cancellation-upload system.
+- Actual CI 40280400491: 2870 .NET +106 Node, zero failures/skips; backend/offline/Android builds zero warnings/errors. PostgreSQL subscription17+focused51, bank26+focused12, Hosted53+22+12 fault, monitoring124, confirmation118 passed. Chromium/WebKit subscription54 each and ARIA37 each; existing dialog38/BFF74/Hosted browser24 passed. Synthetic fixtures do not establish real merchant/device/private-financial/recovery/legal acceptance.
+- Artifact12631209929 SHA256 `c2a22a0786bad2baf94c268bc715c94d6b78650d6b5ca938c0e10504f187a904` verified; four subscription screenshots inspected across engines/themes/languages/widths. Both themes/EN-ES/320-390px/200% geometry and notice contrast>=4.5:1 passed.
+- Human explicitly chose **all three light/dark pairs as selectable themes** for **both public Home and signed-in Overview**. This supersedes older pending-selection notes. Use the six existing paired references; do not regenerate or choose only one. Plan actual differentiated layouts/type as well as color, preserve financial qualifications, reduced motion and performance.
+- Master/live remains bank hotfix `9540b2616841e9794d8f8c07616edcd1e339982c`. No merchant/UI promotion or deployment occurred. No new grants/secrets/spending/outreach/payments/cancellations; hourly automation remains off. #970 remains open for separately recorded real acceptance; #972 Wells Fargo real connection visibility remains open. Preserve historical PR#932 separately.
+
+---
+
 ## Bank-link hotfix deployed and independently verified — 2026-10-25 America/Denver
 
 The owner explicitly approved this guarded deployment. Verified live release and master are

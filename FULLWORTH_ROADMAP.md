@@ -1,3 +1,15 @@
+# Current roadmap checkpoint — 2026-10-26
+
+PR #971 merged into development as `7c01abf61034b10d0288ee8efe1eb61361b9d913` after all 18 checks passed on exact source `a0e48340f2fd3b781a457282d7ad61e055e72d37`. Tested merge-candidate `a0e577225a57d064c8a32d52d24d4c3e631e1d0d` and integrated tree both equal `2d011031eab6edea96431b80c8db3f50fe9bdb4e`.
+
+Completed software: owner-private subscription evidence review with independent renewal/access, honest unavailable merchant integration, dated per-field evidence, EN/ES, safe BFF/recovery, privacy ownership, relational/browser coverage. CI 40280400491 passed 2,870 .NET +106 Node and all 18 checks; browser 54 subscription cases per engine. See current context/runbook for exact evidence and limits. #970 remains open for real acceptance; do not close private/device/provider/recovery/legal gates using fixtures.
+
+**Next authorized product work:** implement **all three existing design pairs as selectable themes**, each with light/dark, across public Home and signed-in Overview. The human selection is now explicit; old “pick1/2/3” blockers are obsolete. Reuse existing FullWorth mark/icons, resolve all six exact reference images, plan tokens/layout/accessibility/persistence, implement in the existing repository through connected tools, verify responsive EN/ES/financial-state/motion/keyboard behavior and visual fidelity, then integrate only after protected final-head checks. No production promotion/deployment authorization accompanies this choice.
+
+No deployment occurred; master/live remains9540b2616841e9794d8f8c07616edcd1e339982c. Hourly automation stays off; source branches preserved.
+
+---
+
 ## Bank-link hotfix deployed and independently verified — 2026-10-25 America/Denver
 
 The owner explicitly approved this guarded deployment. Verified live release and master are

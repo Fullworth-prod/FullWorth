@@ -1,3 +1,11 @@
+# Current owner checkpoint — 2026-10-26
+
+Subscription review software merged through #971 into development `7c01abf61034b10d0288ee8efe1eb61361b9d913` after all 18 final-head checks passed. No merchant/UI deployment occurred. Direct merchant renewal verification is unavailable; user confirmation and existing linked-bill documents are explicitly labeled. Real acceptance and historical provider/device/recovery/legal requirements remain open.
+
+The owner has now chosen **all three light/dark pairs as selectable themes** for both public Home and signed-in Overview. No further pair-selection approval is needed; older pending-selection notes below are historical. Implement and verify the six existing references, with production promotion/deployment still separate. Hourly automation remains off.
+
+---
+
 ## Bank-link hotfix deployed and independently verified — 2026-10-25 America/Denver
 
 The owner explicitly approved this guarded deployment. Verified live release and master are

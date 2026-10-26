@@ -153,21 +153,23 @@ export async function verifySubscriptionVerification(page, outputDir) {
     await target.getByLabel("Merchant", { exact: true }).fill("Ambiguous creation " + engine);
     await target.getByLabel("Account and plan label", { exact: true }).fill("Recovery fixture");
     await target.getByLabel("Billed by", { exact: true }).fill("Synthetic direct billing");
-    let creationWrites = 0, committedId;
+    let creationWrites = 0, committedId, creationStatus;
     const createPattern = "**/bff/subscription-reviews";
     const lostCreateAcknowledgement = async route => {
       if (route.request().method() !== "POST") return route.continue();
       creationWrites++;
       const upstream = await route.fetch();
-      expect(upstream.ok(), "Real disposable create commits before acknowledgement loss.");
-      committedId = (await upstream.json()).id;
+      creationStatus = upstream.status();
+      if (upstream.ok()) committedId = (await upstream.json()).id;
       await route.fulfill({ status: 503, json: {} });
     };
     await target.route(createPattern, lostCreateAcknowledgement);
     try {
       await target.getByRole("button", { name: "Start review", exact: true }).click();
       await target.getByText("The review could not be confirmed. Refresh the list before retrying. Repeating this request uses the same review ID.", { exact: true }).waitFor();
-      expect(creationWrites === 1 && !!committedId, "Ambiguous create is not automatically replayed.");
+      expect(creationStatus >= 200 && creationStatus < 300 && !!committedId,
+        "Real disposable create commits before acknowledgement loss (HTTP " + creationStatus + ").");
+      expect(creationWrites === 1, "Ambiguous create is not automatically replayed.");
     } finally {
       await target.unroute(createPattern, lostCreateAcknowledgement);
     }
@@ -230,13 +232,44 @@ export async function verifySubscriptionVerification(page, outputDir) {
       throw error;
     }
   };
+  const prepareIndependentOwner = async (target, engine) => {
+    // Preserve production quotas: each engine exercises its own disposable owner.
+    const runId = process.env.GITHUB_RUN_ID ?? String(Date.now());
+    const email = "ci-subscription-" + runId + "-" + engine + "@fullworth.local";
+    const password = "FullWorth!Evidence123";
+    await target.goto(origin + "/register");
+    await target.locator('input[name="email"]').fill(email);
+    await target.locator('input[name="password"]').fill(password);
+    await target.locator('input[name="confirmPassword"]').fill(password);
+    await target.locator('input[name="acceptedTermsAndPrivacy"]').check();
+    await Promise.all([
+      target.waitForURL(url => url.pathname === "/login" &&
+        url.searchParams.get("message") === "Registration request received. Sign in to continue."),
+      target.locator('button[type="submit"]').click()
+    ]);
+    await target.locator('input[name="email"]').fill(email);
+    await target.locator('input[name="password"]').fill(password);
+    await Promise.all([
+      target.waitForURL(url => url.pathname.startsWith("/app")),
+      target.locator('button[type="submit"]').click()
+    ]);
+    await target.goto(origin + "/app/setup");
+    const releaseNotes = target.locator(".whats-new-dialog");
+    await releaseNotes.waitFor({ state: "visible", timeout: 15000 });
+    await releaseNotes.getByRole("button", { name: "Explore FullWorth", exact: true }).click();
+    await releaseNotes.waitFor({ state: "detached", timeout: 15000 });
+  };
   await run(page, "chromium");
   const browser = await webkit.launch({ headless: true });
   try {
     const context = await browser.newContext({ baseURL: origin, ignoreHTTPSErrors: true,
-      serviceWorkers: "block", storageState: await page.context().storageState(),
+      serviceWorkers: "block",
       viewport: { width: 390, height: 844 } });
-    try { await run(await context.newPage(), "webkit"); }
+    try {
+      const webkitPage = await context.newPage();
+      await prepareIndependentOwner(webkitPage, "webkit");
+      await run(webkitPage, "webkit");
+    }
     finally { await context.close(); }
   } finally { await browser.close(); }
   await page.context().addCookies([{ name: ".AspNetCore.Culture",

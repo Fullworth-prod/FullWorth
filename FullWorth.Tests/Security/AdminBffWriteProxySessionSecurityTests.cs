@@ -114,6 +114,53 @@ public sealed class AdminBffWriteProxySessionSecurityTests
             authentication.SignOutCount);
     }
 
+    [Theory]
+    [InlineData("/api/subscription-reviews", 200)]
+    [InlineData("/api/subscription-reviews/11111111-1111-1111-1111-111111111111/evidence", 200)]
+    [InlineData("/api/subscription-reviews", 409)]
+    [InlineData("/api/subscription-reviews/11111111-1111-1111-1111-111111111111/evidence", 503)]
+    public async Task SubscriptionWrites_ForwardOnlyTheExpectedPost_WithoutReplayingFailures(
+        string path, int status)
+    {
+        var authentication = new RecordingAuthenticationService();
+        var handler = new StaticResponseHandler((HttpStatusCode)status);
+        var proxy = CreateProxy((HttpStatusCode)status, handler);
+        var result = await proxy.ForwardJsonAsync(
+            CreateHttpContext(authentication), HttpMethod.Post, path, new { synthetic = true });
+        Assert.Equal(status, Assert.IsAssignableFrom<IStatusCodeHttpResult>(result).StatusCode);
+        Assert.Equal(1, handler.RequestCount);
+        Assert.Equal(HttpMethod.Post, handler.LastMethod);
+        Assert.Equal(path, handler.LastPath);
+        Assert.Equal("Bearer", handler.LastAuthorizationScheme);
+        Assert.Equal(0, authentication.SignOutCount);
+    }
+
+    [Theory]
+    [InlineData("PUT", "/api/subscription-reviews")]
+    [InlineData("PUT", "/api/subscription-reviews/11111111-1111-1111-1111-111111111111/evidence")]
+    [InlineData("DELETE", "/api/subscription-reviews")]
+    [InlineData("POST", "/api/subscription-reviews/00000000-0000-0000-0000-000000000000/evidence")]
+    [InlineData("POST", "/api/subscription-reviews/not-a-guid/evidence")]
+    [InlineData("POST", "/api/subscription-reviews/evidence")]
+    [InlineData("POST", "/api/subscription-reviews//evidence")]
+    [InlineData("POST", "/api/subscription-reviews/11111111-1111-1111-1111-111111111111")]
+    [InlineData("POST", "/api/subscription-reviews/11111111-1111-1111-1111-111111111111/evidence/extra")]
+    [InlineData("POST", "/api/subscription-reviews/../account")]
+    [InlineData("POST", "/api/subscription-reviews?next=/api/admin/users")]
+    [InlineData("POST", "https://example.invalid/api/subscription-reviews")]
+    [InlineData("POST", "//example.invalid/api/subscription-reviews")]
+    public async Task SubscriptionWriteLookalikes_AreRejectedBeforeForwarding(
+        string method, string path)
+    {
+        var handler = new StaticResponseHandler(HttpStatusCode.OK);
+        var proxy = CreateProxy(HttpStatusCode.OK, handler);
+        var result = await proxy.ForwardJsonAsync(
+            CreateHttpContext(new RecordingAuthenticationService()), new HttpMethod(method), path, new { });
+        Assert.Equal(StatusCodes.Status400BadRequest,
+            Assert.IsAssignableFrom<IStatusCodeHttpResult>(result).StatusCode);
+        Assert.Equal(0, handler.RequestCount);
+    }
+
     private static DefaultHttpContext
         CreateHttpContext(
             RecordingAuthenticationService
@@ -135,11 +182,12 @@ public sealed class AdminBffWriteProxySessionSecurityTests
 
     private static AdminBffWriteProxyService
         CreateProxy(
-            HttpStatusCode responseStatusCode)
+            HttpStatusCode responseStatusCode,
+            StaticResponseHandler? handler = null)
     {
         var client =
             new HttpClient(
-                new StaticResponseHandler(
+                handler ?? new StaticResponseHandler(
                     responseStatusCode))
             {
                 BaseAddress =
@@ -286,11 +334,20 @@ public sealed class AdminBffWriteProxySessionSecurityTests
         HttpStatusCode responseStatusCode)
         : HttpMessageHandler
     {
+        public int RequestCount { get; private set; }
+        public HttpMethod? LastMethod { get; private set; }
+        public string? LastPath { get; private set; }
+        public string? LastAuthorizationScheme { get; private set; }
+
         protected override Task<HttpResponseMessage>
             SendAsync(
                 HttpRequestMessage request,
                 CancellationToken cancellationToken)
         {
+            RequestCount++;
+            LastMethod = request.Method;
+            LastPath = request.RequestUri?.AbsolutePath;
+            LastAuthorizationScheme = request.Headers.Authorization?.Scheme;
             return Task.FromResult(
                 new HttpResponseMessage(
                     responseStatusCode));

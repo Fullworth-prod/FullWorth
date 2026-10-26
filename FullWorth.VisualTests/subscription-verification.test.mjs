@@ -36,7 +36,7 @@ export async function verifySubscriptionVerification(page, outputDir) {
       r.request().method() === "POST");
     await target.getByRole("button", { name: "Start review", exact: true }).click();
     const createdResponse = await createResponse;
-    expect(createdResponse.ok(), "Real BFF create must succeed.");
+    expect(createdResponse.ok(), "Real BFF create must succeed (HTTP " + createdResponse.status() + ").");
     const initial = await createdResponse.json();
     expect(initial.merchantVerification === "Unavailable" && initial.needsReview === true,
       "A new review cannot imply merchant verification or recurrence.");
@@ -63,7 +63,7 @@ export async function verifySubscriptionVerification(page, outputDir) {
       r.url().endsWith("/evidence") && r.request().method() === "POST");
     await target.getByRole("button", { name: "Save my confirmation", exact: true }).click();
     const savedResponse = await saveResponse;
-    expect(savedResponse.ok(), "Real BFF save must succeed.");
+    expect(savedResponse.ok(), "Real BFF save must succeed (HTTP " + savedResponse.status() + ").");
     const saved = await savedResponse.json();
     expect(saved.facts.find(f => f.field === "ServiceStatus").value === "Active" &&
       saved.facts.find(f => f.field === "Renewal").value === "No", "Active access and no renewal remain independent.");

@@ -41,3 +41,23 @@ Independent geometry/contrast issues are now collected across cases and both eng
 ## Fixture-boundary correction — both engines
 
 Source f1c63aae, CI40301745942: both engines reached a genuine empty-account state instead of the synthetic populated fixture. The real client reads /bff/bill-streams?includeInactive=false; an exact-endpoint glob omitted the query and did not intercept it. This was a test fixture error, not proof of a product data failure. Artifact12641720772 SHA2567640165867c6f495345e61e4845a05277373d761ceac030f636b80f453f7142f verified; opened the Chromium failure capture showing an accurately qualified empty state. Corrected bounded query-aware patterns and safe read-count/partial-progress diagnostics. Full paired captures and visual acceptance remain pending.
+
+
+## First matched six-pair comparison — d4981c9
+
+CI40303579702 completed all312 geometry and108 state cases per engine, but failed acceptance: Chromium recorded16 and WebKit48 layout/contrast findings plus console resource errors. These are not passing results. The bill/bank fixtures each received110 reads per engine, confirming the earlier query mismatch is fixed. Both engines reached all functional sample, loading, evidence, failed-refresh, storage-denial and motion checks before final audit rejection.
+
+Artifact12642605466 SHA2560ac3337fcb8860b331a77d1622fb36f233e4a31a9f49feeeeed28d5352c252c3 verified and expanded to owner-local fullworth-theme-d4981c9. Strict comparison utility produced24 boards at1487×1058, density1, anonymousHome. Opened all six combined full views plus editorial/light example, workspace/light example, story/light hero and story/dark example focused boards. These are now matched visual evidence, not a fidelity pass.
+
+P2 findings:
+- Story phone200% comparison amount spills horizontally. The numeric text was an anonymous flex item. Wrap the full amount in a min-width-zero, breakable text span; preserve the number and text enlargement.
+- Workspace phone200% still carries a desktop two-column summary into narrow space. Release summary tracks at1000px and rail tracks at600px; preserve all financial qualifiers. Recheck Spanish and WebKit.
+- Workspace heading wraps across two lines where the selected target has one; Story display hierarchy is materially smaller. Adjust family-specific desktop type sizes/grid proportions and inspect recapture.
+- Workspace detail labels and editorial table headers are smaller than the selected target. Increase those UI text sizes; retain honest no-history/annualized-illustration wording.
+- Appearance controls crowd the enlarged topbar. Give the mobile brand its own row and allow the picker full remaining width; check no overlap/overflow.
+
+Console diagnosis: existing AdminNavLink deliberately performs a real non-admin GET /bff/admin/users, which receives403 and setsAccessDenied. This existing access probe is not an uncaught application failure. Narrow console classification to exactendpoint+403 only, retain the live response and all other errors. Record actual URL on remaining console errors. Write full geometry/error auditJSON before final assertions so independent failures remain reviewable; no assertion is removed.
+
+Build warning: MSBuild treats resource keys case-insensitively. Annualized illustration/annualized illustration collide despite exact-case XML uniqueness. Use the existing capitalized key everywhere and remove its duplicate. Backend2870 and Node127 passed, zero failed/skipped, but one resource warning existed; do not claim zero warnings on this source. Android wrapper succeeded with its build steps skipped for this test-only revision; earlier UI source did execute Android.
+
+Intentional deviations: source mockup copy implying recurring discovery or explanation is replaced by qualified illustrative/supported-history language; USD cents and annualization qualification remain explicit. The newly required style/mode controls are additional product controls. Supplied brand/sprite assets replace invented art. Workspace document evidence uses the generated paper asset already inspected; no fake customer statement or merchant verification. Flat accessible palettes preserve six family/mode identities. A new capture is required after fixes before classifying remaining visual differences.

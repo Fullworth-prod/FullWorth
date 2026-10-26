@@ -267,7 +267,6 @@
   <data name="Illustrative monthly charge" xml:space="preserve"><value>Cargo mensual de ejemplo</value></data>
   <data name="The comparison" xml:space="preserve"><value>La comparación</value></data>
   <data name="per month" xml:space="preserve"><value>al mes</value></data>
-  <data name="annualized illustration" xml:space="preserve"><value>ejemplo anualizado</value></data>
   <data name="The evidence" xml:space="preserve"><value>La evidencia</value></data>
   <data name="Illustrative USD amounts. The annualized illustration assumes the monthly difference continues for 12 months; it is not a forecast for your accounts." xml:space="preserve"><value>Importes de ejemplo en USD. El ejemplo anualizado supone que la diferencia mensual continúa durante 12 meses; no es una previsión para tus cuentas.</value></data>
   <data name="Read-only activity. No money movement. Details depend on available evidence." xml:space="preserve"><value>Actividad de solo lectura. Sin movimiento de dinero. Los detalles dependen de la evidencia disponible.</value></data>

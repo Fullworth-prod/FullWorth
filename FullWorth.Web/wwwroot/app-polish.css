@@ -497,3 +497,17 @@ html[data-design="editorial"] .app-shell.app-shell .overview-dashboard .fw-pulse
 html[data-design="editorial"] .app-shell.app-shell .overview-dashboard .fw-pulse-stat { grid-column: auto; padding: 0; border: 0; border-radius: 0; background: transparent; }
 html[data-design="editorial"] .app-shell.app-shell .overview-attention .fw-signal-action { padding-inline: 0; border: 0; background: none; color: var(--pair-accent); }
 html[data-design="story"] .app-shell.app-shell .overview-dashboard .fw-pulse { padding: 0; }
+
+/* Selected families must release desktop summary tracks at enlarged phone sizes. */
+@media(max-width: 1000px) {
+    html[data-design] .app-shell.app-shell .overview-dashboard .fw-pulse { grid-template-columns: minmax(0, 1fr); }
+}
+@media(max-width: 600px) {
+    html[data-design] .app-shell.app-shell .overview-dashboard .fw-pulse-rail { grid-template-columns: minmax(0, 1fr); }
+    html[data-design] .app-shell.app-shell .overview-dashboard .fw-pulse-stat { grid-column: auto; }
+    html[data-design] .app-shell.app-shell .app-topbar { padding: 12px; align-items: center; }
+    html[data-design] .app-shell.app-shell .app-topbar .mobile-brand { flex: 1 1 100%; }
+    html[data-design] .app-shell.app-shell .app-topbar .topbar-spacer { display: none; }
+    html[data-design] .app-shell.app-shell .app-topbar .design-picker { flex: 1 1 auto; }
+    html[data-design] .app-shell.app-shell .app-topbar .design-picker select { max-width: min(100%, 12rem); }
+}

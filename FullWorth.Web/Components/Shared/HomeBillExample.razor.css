@@ -101,3 +101,16 @@ html[data-theme="light"] .home-bill-example { --sample-increase: #b1460b; --samp
 .sample-table dt { overflow-wrap: anywhere; }
 
 .sample-table dd { white-space: nowrap; }
+
+/* Comparison amounts remain complete when text is enlarged, rather than clipping. */
+.sample-story-difference .sample-amount { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.sample-story-difference { column-gap: .2em; }
+.sample-selection > p:not(.sample-kicker), .sample-option small { font-size: 1rem; }
+.sample-detail dl { font-size: 1.15rem; }
+.sample-detail dd { font-size: 1.2rem; }
+.sample-detail .sample-paper img { max-height: 240px; }
+@media(min-width:1051px) {
+    .sample-table dt { font-size: .85rem; }
+    .sample-evidence-disclosure summary { font-size: 1.1rem; }
+    .sample-story-difference { font-size: clamp(3rem, 6.2vw, 5.8rem); }
+}

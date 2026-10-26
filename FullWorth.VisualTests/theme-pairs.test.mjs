@@ -52,7 +52,11 @@ export async function verifyThemePairs(page, outputDir) {
       if (message.type() !== "error") return;
       const url = message.location().url;
       if (intentionalFailures.has(url) || url?.startsWith("https://www.google.com/s2/favicons")) return;
-      errors.push("console: " + message.text().slice(0, 160));
+      // AdminNavLink deliberately probes GET /bff/admin/users for a non-admin.
+      // Keep the real denial and all other errors; this exact403 is expected.
+      if (url && new URL(url, origin).pathname === "/bff/admin/users" &&
+          message.text().includes("403")) return;
+      errors.push("console: " + message.text().slice(0, 160) + " at " + url);
     };
     const read = async route => {
       assert.equal(route.request().method(), "GET", "Appearance fixture is read-only.");
@@ -446,6 +450,9 @@ export async function verifyThemePairs(page, outputDir) {
           "Blocked storage reload uses an honest safe default.");
       } finally { await blocked.close(); }
 
+      await writeFile(path.join(outputDir, "theme-pair-audit-" + engine + ".json"),
+        JSON.stringify({ engine, geometryCases, stateCases, layoutIssues, errors, fixtureReads }, null, 2));
+      console.log("Three-pair complete geometry diagnostics", JSON.stringify(layoutIssues));
       expect(unsafe.length === 0, "Appearance and public demo make no financial writes: " + JSON.stringify(unsafe));
       expect(errors.length === 0, "No uncaught browser errors: " + JSON.stringify(errors));
       console.log("Three-pair layout audit: engine=" + engine + "; geometry=" + geometryCases +

@@ -15,7 +15,8 @@
 .review-facts dt { font-weight: 700; }
 .review-facts dd { margin: .5rem 0 0; }
 .review-facts summary { cursor: pointer; min-height: 44px; padding-block: .5rem; }
-.review-notice { border-inline-start: .25rem solid currentColor; padding: .75rem; }
+.review-notice { border-inline-start: .25rem solid currentColor; padding: .75rem;
+    color: var(--fw-ink, var(--bw-text)); background: var(--fw-panel-solid, var(--bw-surface)); }
 
 .review-provider-help { margin-block: 1rem; min-width: 0; }
 .review-provider-help summary { cursor: pointer; min-height: 44px; padding-block: .65rem; overflow-wrap: anywhere; }

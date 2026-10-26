@@ -164,18 +164,40 @@ export async function verifySubscriptionVerification(page, outputDir) {
       expect(await target.getByText(language === "es" ? "Observación más reciente de cada fuente" :
         "Latest observation from each source", { exact: true }).count() > 0,
         "Latest evidence provenance is localized and visible.");
-      for (const width of [320, 390]) {
-        await target.setViewportSize({ width, height: 844 });
-        await target.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
-        const geometry = await target.evaluate(() => ({
-          viewport: document.documentElement.clientWidth, documentWidth: document.documentElement.scrollWidth,
-          bodyWidth: document.body.scrollWidth
-        }));
-        expect(geometry.documentWidth <= geometry.viewport + 1 && geometry.bodyWidth <= geometry.viewport + 1,
-          "No horizontal overflow at " + width + "px, 200% text, " + language);
-        await target.evaluate(() => { document.documentElement.style.fontSize = ""; });
-        await target.screenshot({ path: path.join(outputDir,
-          "subscription-verification-" + engine + "-" + language + "-" + width + ".png"), fullPage: true });
+      for (const theme of ["light", "dark"]) {
+        if (await target.locator("html").getAttribute("data-theme") !== theme)
+          await target.locator(".theme-toggle").click();
+        await target.waitForFunction(value => document.documentElement.dataset.theme === value, theme);
+        // The existing theme transition lasts 220ms.
+        await target.waitForTimeout(250);
+        const contrast = await target.locator(".review-notice").first().evaluate(notice => {
+          const style = getComputedStyle(notice);
+          const rgb = value => value.match(/[0-9.]+/g).map(Number);
+          const foreground = rgb(style.color), background = rgb(style.backgroundColor);
+          const luminance = values => values.slice(0, 3).map(value => {
+            const channel = value / 255;
+            return channel <= .04045 ? channel / 12.92 : Math.pow((channel + .055) / 1.055, 2.4);
+          }).reduce((sum, value, index) => sum + value * [.2126, .7152, .0722][index], 0);
+          const light = Math.max(luminance(foreground), luminance(background));
+          const dark = Math.min(luminance(foreground), luminance(background));
+          return { ratio: (light + .05) / (dark + .05),
+            opaque: background.length < 4 || background[3] === 1 };
+        });
+        expect(contrast.opaque && contrast.ratio >= 4.5,
+          "The merchant-verification limitation is readable in " + theme + ", " + language);
+        for (const width of [320, 390]) {
+          await target.setViewportSize({ width, height: 844 });
+          await target.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
+          const geometry = await target.evaluate(() => ({
+            viewport: document.documentElement.clientWidth, documentWidth: document.documentElement.scrollWidth,
+            bodyWidth: document.body.scrollWidth
+          }));
+          expect(geometry.documentWidth <= geometry.viewport + 1 && geometry.bodyWidth <= geometry.viewport + 1,
+            "No horizontal overflow at " + width + "px, 200% text, " + language + ", " + theme);
+          await target.evaluate(() => { document.documentElement.style.fontSize = ""; });
+          await target.screenshot({ path: path.join(outputDir,
+            "subscription-verification-" + engine + "-" + language + "-" + theme + "-" + width + ".png"), fullPage: true });
+        }
       }
     }
     // The real server commits creation, but the browser sees an ambiguous response.

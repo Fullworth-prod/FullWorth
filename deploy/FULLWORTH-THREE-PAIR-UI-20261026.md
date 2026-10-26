@@ -96,3 +96,10 @@ Add six anonymous English normal-text phone checks per engine (intended318 geome
 Verified artifact12671592646 SHA256e8ae8d6d30318a07352ba7058a5d81205df4ae464bead8716eef787c9522cca6 contains actual English phone previews and matched6-pair desktop frames. Post-fix typography/Story composition is visible. A faint Workspace/light mode glyph needs its rail soft-surface token corrected. Mobile Workspace sheets must reset inherited sidebar ink/surfaces to the page palette; new both-engine, both-language menu checks measure contrast, scrolling, position and Escape focus. Intended330 geometry/108 state/12 menu cases per engine must actually pass.
 
 GitHub live logs exposed /etc/apt/apt-mirrors.txt as the active mirror-list indirection; the first URI repair changed0 files and confirmation40368663313 still exhausted15minutes before tests. Next source includes that exact file, keeping signature verification,15-minute limit and all test commands/permissions unchanged. No production or user-machine package configuration is modified.
+
+
+### Use the verified mirror preparation in both browser jobs
+
+13dc4f9 dedicated confirmation40371911639 passed all existing tests: dialog38, BFF74, Hosted-Link24. Actual log confirms1 mirror-list file changed and119MB downloaded in7seconds through Ubuntu's HTTPS archive. Backend2,870/Node127 zero failed/skipped/warnings and Android compilation passed.
+
+The main workflow has a separate browser install and was still waiting on its old source roughly15minutes into40371911364. Apply the identical bounded preparation before that install, conditional on visual changes. No main timeout, test command, action pin or permission changes. The expanded330/108/12 matrix remains unaccepted until it executes on this new source. This is an install-path repair, not a test bypass.

@@ -1384,6 +1384,28 @@ jobs:
         if: steps.visual_changes.outputs.required == 'true'
         run: npm --prefix FullWorth.VisualTests install --no-audit --no-fund
 
+      - name: Use signed Ubuntu archive for visual acceptance dependencies
+        if: steps.visual_changes.outputs.required == 'true'
+        run: |
+          sudo python3 - <<'PY'
+          from pathlib import Path
+          import re
+          candidates = [Path("/etc/apt/sources.list"), Path("/etc/apt/apt-mirrors.txt")]
+          sources = Path("/etc/apt/sources.list.d")
+          candidates += sorted(sources.glob("*.list"))
+          candidates += sorted(sources.glob("*.sources"))
+          changed = 0
+          for mirror_file in candidates:
+              if not mirror_file.is_file():
+                  continue
+              original = mirror_file.read_text()
+              updated = re.sub(r"https?://azure[.]archive[.]ubuntu[.]com/ubuntu",
+                               "https://archive.ubuntu.com/ubuntu", original)
+              if updated != original:
+                  mirror_file.write_text(updated)
+                  changed += 1
+          print(f"Updated {changed} ephemeral runner Ubuntu mirror files; signing configuration preserved.")
+          PY
       - name: Install Chromium and WebKit for visual acceptance
         if: steps.visual_changes.outputs.required == 'true'
         run: npm --prefix FullWorth.VisualTests exec -- playwright install --with-deps chromium webkit

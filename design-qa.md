@@ -114,3 +114,10 @@ P2 confirmed visually: Workspace/light mode glyph is nearly white on a white but
 Potential palette leak found in direct source review: Workspace's white sidebar ink/hard-coded nav-link rule also reaches the nested light mobile sheet. Reset that sheet to page surface/ink and give its links the page palette. Verify actual open menus across all3styles×2modes×EN/ES at320px/200%, every destination's contrast/scroll reachability, sheet bounds above measured navigation and Escape/focus restoration. Capture six menu examples per engine. New intended total330 geometry/108 financial states/12 menu cases per engine; not a passed claim.
 
 Runner repair correction: live GitHub UI logs confirmed the prior step changed0 files. GitHub's Ubuntu runner uses mirror+file indirection through /etc/apt/apt-mirrors.txt, which still selected the slow Azure URI. Include that exact observed file in the narrowly scoped replacement. Current40368663313 again expired before tests. The signing settings, timeout, all test commands and permissions remain unchanged; validate the real next job.
+
+
+## Shared main-runner installation path
+
+13dc4f9 dedicated confirmation40371911639 passed after the mirror-list correction. Log evidence: exactly1 runner file updated; apt used https://archive.ubuntu.com/ubuntu forNoble and fetched119MB in7seconds. Actual dialog38/BFF74/Hosted-Link24 browser cases passed. Backend40371911364 passed2,870/127 zero failed/skipped/warnings; Android passed with compilation executed.
+
+The main container job121744569749 was still installing browsers about15minutes into the run, so the new menu/contrast matrix had not executed and is not claimed. Its separate install step had not received the confirmed URI repair. Apply the identical bounded mirror-list preparation immediately before main visual dependency installation, only when visual checks are required. Existing30-minute main timeout, test commands, action pins and permissions stay unchanged. No unchanged rerun or passing UI claim; a new source/checkpoint is required.

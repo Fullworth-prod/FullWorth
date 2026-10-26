@@ -41,8 +41,11 @@ export async function verifySubscriptionVerification(page, outputDir) {
       saved.facts.find(f => f.field === "Renewal").value === "No", "Active access and no renewal remain independent.");
     expect(saved.facts.every(f => f.evidence.every(e => e.source === "UserConfirmed")), "Manual evidence cannot become merchant proof.");
     await target.getByText("Your confirmation was saved. It is not a live merchant verification.", { exact: true }).waitFor();
+    const readback = target.waitForResponse(r => new URL(r.url()).pathname ===
+      "/bff/subscription-reviews/" + initial.id && r.request().method() === "GET");
     await target.getByRole("button", { name: "Refresh reviews", exact: true }).click();
-    await target.getByLabel("Will it renew?", { exact: true }).waitFor();
+    expect((await readback).ok(), "Real persisted readback succeeds.");
+    await target.waitForFunction(() => document.querySelector("#review-source")?.matches(":disabled") === false);
     expect(await target.getByLabel("Will it renew?", { exact: true }).inputValue() === "No", "Confirmation survives a real readback.");
 
     const evidencePattern = "**/bff/subscription-reviews/*/evidence";

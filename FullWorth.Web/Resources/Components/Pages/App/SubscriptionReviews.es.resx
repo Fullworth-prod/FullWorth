@@ -74,4 +74,7 @@
   <data name="Prepaid" xml:space="preserve"><value>Prepagado</value></data>
   <data name="Fixed term" xml:space="preserve"><value>Plazo fijo</value></data>
   <data name="One-time purchase" xml:space="preserve"><value>Compra única</value></data>
+  <data name="Leave dates, amounts and currency blank if unknown." xml:space="preserve"><value>Deja en blanco las fechas, los importes y la moneda si se desconocen.</value></data>
+  <data name="Check the details. Use YYYY-MM-DD dates and a positive amount with an explicit currency code. Leave unsupported details blank." xml:space="preserve"><value>Comprueba los datos. Usa fechas AAAA-MM-DD y un importe positivo con código de moneda explícito. Deja en blanco los datos sin respaldo.</value></data>
+  <data name="Trial" xml:space="preserve"><value>Período de prueba</value></data>
 </root>

@@ -46,21 +46,29 @@ public sealed class SubscriptionReviewAuthorizationTests
         using var owner = await Login(factory);
         using var other = await Login(factory);
         var review = await Create(owner, NewReview());
+        var saved = await Save(owner, review.Id, Evidence(review));
         Assert.Equal(HttpStatusCode.NotFound,
             (await other.GetAsync($"/api/subscription-reviews/{review.Id}")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound,
             (await other.PostAsJsonAsync($"/api/subscription-reviews/{review.Id}/evidence", Evidence(review))).StatusCode);
         var list = await other.GetFromJsonAsync<ListResult>("/api/subscription-reviews");
         Assert.Empty(list!.Reviews);
+        var unchanged = await owner.GetFromJsonAsync<SubscriptionVerificationResult>($"/api/subscription-reviews/{review.Id}");
+        Assert.Equal(saved.Revision, unchanged!.Revision);
+        Assert.Equal("Yes", unchanged.Facts.Single(f => f.Field == "Renewal").Value);
+        Assert.Single(unchanged.Facts.Single(f => f.Field == "Renewal").Evidence);
     }
 
-    [Fact]
-    public async Task MerchantVerificationCannotBeSpoofedByUserPayload()
+    [Theory]
+    [InlineData("MerchantVerified")]
+    [InlineData("RevokedConnection")]
+    [InlineData("SpotifyProfile")]
+    public async Task MerchantVerificationCannotBeSpoofedByUserPayload(string unsupportedSource)
     {
         await using var factory = new FullWorthApiFactory();
         using var client = await Login(factory);
         var review = await Create(client, NewReview());
-        var request = Evidence(review) with { Source = "MerchantVerified" };
+        var request = Evidence(review) with { Source = unsupportedSource };
         Assert.Equal(HttpStatusCode.BadRequest,
             (await client.PostAsJsonAsync($"/api/subscription-reviews/{review.Id}/evidence", request)).StatusCode);
         var unchanged = await client.GetFromJsonAsync<SubscriptionVerificationResult>($"/api/subscription-reviews/{review.Id}");
@@ -170,7 +178,15 @@ public sealed class SubscriptionReviewAuthorizationTests
             Id = Guid.NewGuid(), UserId = Guid.NewGuid(), Revision = Guid.NewGuid(),
             MerchantName = "Foreign", PlanLabel = "Private", BillingParty = "Private"
         };
-        db.SubscriptionReviews.Add(other); await db.SaveChangesAsync();
+        db.SubscriptionReviews.Add(other);
+        var foreignEvidence = new SubscriptionEvidenceEntity
+        {
+            Id = Guid.NewGuid(), UserId = other.UserId, ReviewId = other.Id,
+            Source = "UserConfirmed", RecordedAtUtc = DateTimeOffset.UtcNow,
+            FactsJson = System.Text.Json.JsonSerializer.Serialize(Evidence(review).Facts)
+        };
+        db.SubscriptionEvidence.Add(foreignEvidence);
+        await db.SaveChangesAsync();
         var export = await new AccountBillExportGateway(db).GetAsync(userId);
         Assert.Equal(review.Id, Assert.Single(export.SubscriptionReviews).Id);
         Assert.Equal(review.Id, Assert.Single(export.SubscriptionEvidence).ReviewId);
@@ -178,6 +194,7 @@ public sealed class SubscriptionReviewAuthorizationTests
         Assert.DoesNotContain(await db.SubscriptionReviews.ToListAsync(), r => r.UserId == userId);
         Assert.Empty(await db.SubscriptionEvidence.Where(e => e.UserId == userId).ToListAsync());
         Assert.True(await db.SubscriptionReviews.AnyAsync(r => r.Id == other.Id));
+        Assert.True(await db.SubscriptionEvidence.AnyAsync(e => e.Id == foreignEvidence.Id && e.UserId == other.UserId));
     }
 
     private static CreateSubscriptionReviewRequest NewReview() =>

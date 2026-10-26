@@ -145,10 +145,13 @@
                         }
                         else
                         {
-                            <input id="@($"review-{field}")" maxlength="40" @bind="_values[field]"
-                                   placeholder="@(field is "PaidThrough" or "NextChargeDate" ? "YYYY-MM-DD" : "")" />
+                            <input id="@($"review-{field}")" maxlength="40"
+                                   value="@(_values[field] == "Unknown" ? "" : _values[field])"
+                                   @onchange="e => SetValue(field, e.Value?.ToString())"
+                                   placeholder="@(field is "PaidThrough" or "NextChargeDate" ? "YYYY-MM-DD" : L["Unknown"].Value)" />
                         }
                     }
+                    <p>@L["Leave dates, amounts and currency blank if unknown."]</p>
                     <label for="review-observed">@L["Evidence date"]</label>
                     <input id="review-observed" type="date" required @bind="_observedDate" />
                     <label for="review-until">@L["Review again by"]</label>
@@ -283,7 +286,7 @@
             string.IsNullOrWhiteSpace(_values[field]) ? "Unknown" : _values[field].Trim(), observed, valid)).ToArray();
         if (!SubscriptionVerification.TryNormalize(facts, DateTimeOffset.UtcNow, out var normalized))
         {
-            _message = L["Check the details. Use YYYY-MM-DD dates, a positive amount with an explicit currency code, or Unknown."];
+            _message = L["Check the details. Use YYYY-MM-DD dates and a positive amount with an explicit currency code. Leave unsupported details blank."];
             return;
         }
         var id = _selected.Id;
@@ -315,6 +318,10 @@
             throw new InvalidDataException();
     }
 
+    private void SetValue(string field, string? value) =>
+        _values[field] = string.IsNullOrWhiteSpace(value) ? "Unknown" :
+            field == "CurrencyCode" ? value.Trim().ToUpperInvariant() : value.Trim();
+
     private string FieldLabel(string field) => field switch
     {
         "ServiceStatus" => L["Service access"], "Renewal" => L["Will it renew?"],
@@ -334,13 +341,13 @@
         null or "Unknown" => L["Unknown"], "Active" => L["Active"], "Paused" => L["Paused"],
         "Ended" => L["Ended"], "Yes" => L["Yes"], "No" => L["No"],
         "Recurring" => L["Recurring"], "Prepaid" => L["Prepaid"], "FixedTerm" => L["Fixed term"],
-        "OneOff" => L["One-time purchase"], _ => value
+        "OneOff" => L["One-time purchase"], "Trial" => L["Trial"], _ => value
     };
     private static string[]? Options(string field) => field switch
     {
         "ServiceStatus" => ["Unknown", "Active", "Paused", "Ended"],
         "Renewal" => ["Unknown", "Yes", "No"],
-        "BillingArrangement" => ["Unknown", "Recurring", "Prepaid", "FixedTerm", "OneOff"], _ => null
+        "BillingArrangement" => ["Unknown", "Recurring", "Prepaid", "FixedTerm", "OneOff", "Trial"], _ => null
     };
     private static string Date(DateTimeOffset date) =>
         date.ToString("d MMM yyyy", System.Globalization.CultureInfo.CurrentUICulture);

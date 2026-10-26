@@ -24,6 +24,12 @@ public sealed class CrossUserIdentifierCoverageTests
                         nameof(
                             PlanningAuthorizationTests
                                 .BillPreference_CrossUserIdManipulation_ReturnsNotFoundWithoutMutation)),
+                ["GET|/api/subscription-reviews/{reviewId:guid}"] =
+                    new(typeof(SubscriptionReviewAuthorizationTests),
+                        nameof(SubscriptionReviewAuthorizationTests.ForeignReview_ReadWriteAndListAreOwnerScoped)),
+                ["POST|/api/subscription-reviews/{reviewId:guid}/evidence"] =
+                    new(typeof(SubscriptionReviewAuthorizationTests),
+                        nameof(SubscriptionReviewAuthorizationTests.ForeignReview_ReadWriteAndListAreOwnerScoped)),
                 ["GET|/api/bill-streams/{billStreamId:guid}"] =
                     new(
                         typeof(BillStreamOwnershipTests),

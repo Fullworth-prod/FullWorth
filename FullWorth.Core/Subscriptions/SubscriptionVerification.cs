@@ -53,7 +53,7 @@ public static class SubscriptionVerification
             {
                 "ServiceStatus" => value is "Active" or "Paused" or "Ended" or "Unknown",
                 "Renewal" => value is "Yes" or "No" or "Unknown",
-                "BillingArrangement" => value is "Recurring" or "Prepaid" or "FixedTerm" or "OneOff" or "Unknown",
+                "BillingArrangement" => value is "Recurring" or "Prepaid" or "FixedTerm" or "OneOff" or "Trial" or "Unknown",
                 "PaidThrough" or "NextChargeDate" => value == "Unknown" ||
                     DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture,
                         DateTimeStyles.None, out _),
@@ -93,7 +93,7 @@ public static class SubscriptionVerification
         IEnumerable<SubscriptionObservation> observations, DateTimeOffset now)
     {
         var materialized = observations.ToArray();
-        return Fields.Select(field =>
+        var resolved = Fields.Select(field =>
         {
             var evidence = materialized.Where(o => o.Fact.Field == field)
                 .OrderByDescending(o => o.RecordedAtUtc).ThenBy(o => o.SubmissionId).ToArray();
@@ -120,6 +120,14 @@ public static class SubscriptionVerification
             }
             return new SubscriptionFactResult(field, value, state, evidence);
         }).ToArray();
+        var amountIndex = Array.FindIndex(resolved, f => f.Field == "NextChargeAmount");
+        var currency = resolved.Single(f => f.Field == "CurrencyCode");
+        if (resolved[amountIndex].State == "Current" && currency.State != "Current")
+            resolved[amountIndex] = resolved[amountIndex] with
+            {
+                Value = null, State = currency.State == "Conflict" ? "Conflict" : "Unknown"
+            };
+        return resolved;
     }
 
     public static bool HasInconsistentClaims(IReadOnlyList<SubscriptionFactResult> facts)

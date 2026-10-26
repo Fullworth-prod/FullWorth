@@ -45,4 +45,4 @@ jobs:
           FULLWORTH_DISPOSABLE_POSTGRES: Host=127.0.0.1;Port=5432;Database=fullworth_subscription_verification_fixture;Username=fixture;Password=synthetic-ci-fixture-password;Include Error Detail=false
         run: dotnet run --configuration Release --project FullWorth.Tests/RelationalSubscriptionVerification/FullWorth.SubscriptionVerificationChecks.csproj
       - name: Verify subscription evidence and owner boundaries
-        run: dotnet test FullWorth.Tests/FullWorth.Tests.csproj --configuration Release --filter FullyQualifiedName~SubscriptionVerificationTests|FullyQualifiedName~SubscriptionReviewAuthorizationTests
+        run: dotnet test FullWorth.Tests/FullWorth.Tests.csproj --configuration Release --filter "FullyQualifiedName~SubscriptionVerificationTests|FullyQualifiedName~SubscriptionReviewAuthorizationTests"

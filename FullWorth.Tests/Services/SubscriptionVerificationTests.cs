@@ -93,6 +93,8 @@ public sealed class SubscriptionVerificationTests
     [InlineData("Prepaid", "No", false)]
     [InlineData("FixedTerm", "Unknown", false)]
     [InlineData("OneOff", "No", false)]
+    [InlineData("Trial", "Yes", false)]
+    [InlineData("Trial", "No", false)]
     [InlineData("OneOff", "Yes", true)]
     public void PrepaidAndAccess_DoNotImplyRenewal(string arrangement, string renewal, bool conflict)
     {
@@ -132,6 +134,22 @@ public sealed class SubscriptionVerificationTests
         Assert.True(SubscriptionVerification.TryNormalize([
             Fact("NextChargeAmount", "10.5000"), Fact("CurrencyCode", "USD")], Now, out var normalized));
         Assert.Equal("10.5", normalized.Single(f => f.Field == "NextChargeAmount").Value);
+    }
+
+    [Fact]
+    public void AmountCannotRemainCurrentWhenDenominationConflicts()
+    {
+        var evidence = new[]
+        {
+            Observation(Fact("NextChargeAmount", "10")),
+            Observation(Fact("CurrencyCode", "USD")),
+            Observation(Fact("NextChargeAmount", "10"), "DocumentConfirmed"),
+            Observation(Fact("CurrencyCode", "EUR"), "DocumentConfirmed")
+        };
+        var result = SubscriptionVerification.Resolve(evidence, Now);
+        Assert.Equal("Conflict", result.Single(f => f.Field == "CurrencyCode").State);
+        Assert.Equal("Conflict", result.Single(f => f.Field == "NextChargeAmount").State);
+        Assert.Null(result.Single(f => f.Field == "NextChargeAmount").Value);
     }
 
     [Fact]

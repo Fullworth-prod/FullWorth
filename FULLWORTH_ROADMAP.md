@@ -1,3 +1,130 @@
+## Bank-link hotfix deployed and independently verified — 2026-10-25 America/Denver
+
+The owner explicitly approved this guarded deployment. Verified live release and master are
+`9540b2616841e9794d8f8c07616edcd1e339982c`; integrated release tree
+`4a60de3eac68f891887ee017af4b2100ea94649d`. Production checkout is clean and its
+Git HEAD, release marker, environment release ID and running API/Web identities agree.
+
+[#975](https://github.com/Fullworth-prod/FullWorth/pull/975) promoted only #973's bank-link
+cancellation fix, tests and handoff after14 final-source checks passed on6764e155.
+Exact-master CI40257284360, all four CodeQL languages40257284548 and governance40257284186 passed.
+Image artifact12623132717 is nonexpired,365,661,542 bytes, SHA256
+`32595d2e0dd8d942a64ebbe2e81e36efb9a3b33d1564df7dfbc3c8c76fae16b7`.
+Guarded deployment40257893875 actually verified image/SBOM attestations, took fresh encrypted
+backup snapshot63c7835ac56597724bbccdee77a096ed4c4ab98ebc47fccaf1b103dbfbd94037
+before runtime replacement, and passed host/beta/public readiness. Postdeployment auth40258169056
+passed both non-destructive bearer-token and browser-cookie/logout boundaries.
+
+Independent SSH verification passed permissions, release integrity, exposure, runtime and API/Web
+readiness. Private before/after verification found all36 existing tracked environment fields unchanged
+(excluding intended release ID), all five core financial-table counts unchanged, and the same
+latest migration20261025020500_AddPlaidLinkCompletionAttempts. No merchant-verification schema was
+deployed. Private evidence: /home/debian/fullworth-recovery-evidence/predeployment-integrity-bank972-20261025.json
+and postdeployment-integrity-bank972-20261025.json. Counts do not prove private expected-bill truth.
+
+Fresh-host recovery40257392831 succeeded with runner/tools9540b261, restoring the protected
+pre-hotfix source release3fd3aa5 snapshot8067b8e455c187515a36ce7bec89002383021068874bf22144f5a5ced3bc24f6.
+Read-only provider denials were verified; no private recovery artifacts were uploaded.
+This is a current-tooling restore of the prior live release, not a claim of a restored9540 backup,
+nonempty-real-statement acceptance or disaster-bootstrap acceptance.
+
+**Real bank acceptance remains open:** #972's old consumed token stays fenced. The owner has been
+told to start a fresh secure Wells Fargo connection and confirm bank visibility and initial sync.
+Do not replay the old token, reset permits, remove accounts or manufacture a connected result.
+The code fix's passing fixtures and deployment do not prove the owner's actual bank is connected.
+
+**Active goal continues:** complete merchant subscription verification #970/#971 and the newly
+requested full UI overhaul of BOTH the public homepage and signed-in Overview. The owner explicitly
+selected both surfaces and requested a clean, professional system, planned then implemented after
+this deployment. Treat that as the latest design brief; earlier colorful concepts were not selected.
+Audit current screens, document the concrete design, implement and verify responsive/accessibility/
+reduced-motion/performance states while preserving financial behavior. Do not deploy these new
+features or redesign without separate authorization.
+
+Preserve #971 at its actual GitHub head; initial source65ade1d is NOT integrated.
+Its17 PostgreSQL checks passed; its filter quoting and three explicit security inventories/coverage
+registrations still need correction. Additional UI/evidence refinements are conversation scratch,
+not committed or tested. Read current source/failures before resuming, and merge this release
+ancestry into that branch rather than duplicating work.
+
+Hourly automation stays off. Paid/creator activation, new credentials/account grants, secret changes,
+spending/outreach/payouts and private financial exports remain unauthorized. Existing temporary
+read-only recovery access retains its original expiry and scope. Broader provider/device/legal/
+nonempty-statement/two-owner/disaster-bootstrap gates stay open.
+
+- The master release branch at candidate `9540b2616841e9794d8f8c07616edcd1e339982c` is the verified deployed release.
+Currently verified live production release: `9540b2616841e9794d8f8c07616edcd1e339982c`.
+
+---
+
+## Authorized bank-link hotfix release — 2026-10-25 UTC
+
+The owner explicitly approved deploying the tested bank-link fix in this chat. This supersedes
+the earlier pending-authorization note below. Promotion and deployment must still pass current
+protected checks, exact-master signed-image verification, fresh backup and guarded production
+health/authentication checks. Approval does not authorize real-bank token replay, automatic relink,
+paid activation, new credentials, secret changes or unrelated feature deployment.
+
+Scope: #973's bounded finalization after browser disconnect, its tests/runbook and verified handoff.
+The only application runtime change from the currently live release is the Hosted Link completion
+cancellation boundary. #971 merchant-subscription features and the requested homepage overhaul are
+excluded; continue those after this deployment. The owner requested a clean, professional homepage
+revamp, planned then implemented, with its precise public/Overview scope being clarified.
+
+The old interrupted Link attempt remains fenced. After verified deployment the owner must initiate
+a fresh secure Wells Fargo flow and verify bank visibility and initial sync. Keep #972 open until
+that actual provider acceptance is observed; fixture success alone is insufficient.
+
+- The master release branch at candidate `3fd3aa5e019d35f11418c526aeaca3d772bd37ea` is the verified pre-promotion master.
+Currently verified live production release: `3fd3aa5e019d35f11418c526aeaca3d772bd37ea`.
+
+---
+
+## Bank-link browser-disconnect fix verified in development — 2026-10-25 UTC
+
+Development runtime: `6f0b27a624da4c4e56d92493b8c1646907585950`.
+Master and verified live production remain `3fd3aa5e019d35f11418c526aeaca3d772bd37ea`; no new deployment occurred.
+
+The owner reported Wells Fargo showed success in Plaid but was absent from FullWorth.
+Read-only host evidence found an interrupted initial Hosted Link finalization with no saved bank;
+token exchange succeeded, item lookup began and browser Account.DisposeAsync disconnect events
+immediately followed. No private financial values, tokens or session IDs were published.
+
+[#973](https://github.com/Fullworth-prod/FullWorth/pull/973) fixes the reproduced cancellation path.
+Before the durable one-time exchange fence, browser cancellation is honored. The fence, single
+exchange, item lookup and atomic persistence then run under a separate four-minute server deadline,
+awaited by the handler. Ownership, consent/session expiry, nonce/concurrency and no-reexchange guards
+remain. Real provider/database failures, independent timeout and process termination remain fail-closed.
+
+All four new disconnect cases failed on old source `9685da0c10f70ed7c3c7d5b8a25c2d3e5cb57643`
+in PostgreSQL run40246135156 (16 prior scenarios passed). Corrected source
+`796e1c0dbeedf707cb044fb4b30b48aef50906ae` passed all nine checks before merge.
+Tested candidate and integrated tree: `68a848b9f1a9f05f8cab800089f0a8b16b0d819f`.
+Main40246345177 passed2,792 .NET/106 Node, zero failed/skipped; Android/container/dependency passed.
+Hosted40246345197 passed22 actual PostgreSQL recovery and53 durable-replay tests plus12 actual
+network/relational fault scenarios; bank-lifecycle/monitoring/confirmation suites passed.
+These use synthetic providers and do not establish real Wells Fargo acceptance.
+
+**Next required release decision:** the current merchant goal explicitly reserves master promotion/
+production deployment for separate authorization. Obtain that authorization before guarded release.
+Do not reset the interrupted permit, replay its consumed token, delete an existing account or initiate
+a real relink automatically. After authorized deployment, the owner must start a fresh secure Link
+session and verify bank visibility and initial sync. Keep [#972](https://github.com/Fullworth-prod/FullWorth/issues/972)
+open for that live acceptance. Detailed source/release handoff: deploy/BANK-LINK-BROWSER-DISCONNECT-972.md.
+
+The original merchant-subscription goal/#970 remains active. Preserve separate open #971 at initial
+head65ade1d: its17 new PostgreSQL checks passed, but the workflow's test filter needs shell quoting
+and three explicit security endpoint/resource-coverage inventories need registration. Initial main CI
+passed2,826 tests and failed those three inventory/coverage guards; no #971 integration is established.
+Additional source refinements were prepared in conversation scratch only, not committed. Read actual
+GitHub source and failures before resuming; do not duplicate the PR or treat scratch as tested source.
+
+Hourly automation remains off. No production, real-bank, credential/account-setting, paid/creator,
+outreach/payout or destructive action occurred. Existing UI concept selection and broader external
+provider/device/legal/recovery gates remain unchanged.
+
+---
+
 ## Completed guarded deployment and current-release recovery — 2026-10-25 UTC
 
 - The `master` release branch at candidate `3fd3aa5e019d35f11418c526aeaca3d772bd37ea` is also the verified deployed release.

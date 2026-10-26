@@ -217,4 +217,67 @@
   <data name="Style controls unavailable. Reload to try again." xml:space="preserve"><value>Los controles de estilo no están disponibles. Recarga para volver a intentarlo.</value></data>
   <data name="Evidence" xml:space="preserve"><value>Evidencia</value></data>
   <data name="The product" xml:space="preserve"><value>El producto</value></data>
+  <data name="FullWorth — Understand your bill changes" xml:space="preserve"><value>FullWorth — Comprende los cambios en tus facturas</value></data>
+  <data name="A clearer view of recurring bills" xml:space="preserve"><value>Una visión más clara de las facturas recurrentes</value></data>
+  <data name="Your bills change." xml:space="preserve"><value>Tus facturas cambian.</value></data>
+  <data name="Your understanding should too." xml:space="preserve"><value>Tu comprensión también debería.</value></data>
+  <data name="Spot a change. Follow the evidence." xml:space="preserve"><value>Detecta un cambio. Sigue la evidencia.</value></data>
+  <data name="From a charge." xml:space="preserve"><value>De un cargo.</value></data>
+  <data name="To a change." xml:space="preserve"><value>A un cambio.</value></data>
+  <data name="To a clearer picture." xml:space="preserve"><value>A una visión más clara.</value></data>
+  <data name="Review recurring charges and the evidence behind meaningful changes." xml:space="preserve"><value>Revisa los cargos recurrentes y la evidencia de los cambios importantes.</value></data>
+  <data name="Open FullWorth" xml:space="preserve"><value>Abrir FullWorth</value></data>
+  <data name="Connect read-only activity" xml:space="preserve"><value>Conecta actividad de solo lectura</value></data>
+  <data name="Review activity from your connected accounts. Available history and coverage can vary." xml:space="preserve"><value>Revisa la actividad de tus cuentas conectadas. El historial y la cobertura disponibles pueden variar.</value></data>
+  <data name="Review supported changes" xml:space="preserve"><value>Revisa cambios respaldados</value></data>
+  <data name="Compare recognized bill charges when the amount, currency and history support it." xml:space="preserve"><value>Compara los cargos de facturas reconocidas cuando el importe, la moneda y el historial lo permitan.</value></data>
+  <data name="Inspect the evidence" xml:space="preserve"><value>Examina la evidencia</value></data>
+  <data name="Open available documents and keep unsupported explanations or renewal details unknown." xml:space="preserve"><value>Abre los documentos disponibles y conserva como desconocidas las explicaciones o renovaciones sin respaldo.</value></data>
+  <data name="Evidence before explanations" xml:space="preserve"><value>La evidencia antes de las explicaciones</value></data>
+  <data name="A transaction shows what you paid." xml:space="preserve"><value>Una transacción muestra lo que pagaste.</value></data>
+  <data name="Available evidence can explain what changed." xml:space="preserve"><value>La evidencia disponible puede explicar qué cambió.</value></data>
+  <data name="An increase over past charges does not establish a merchant rate change or its cause. A payment or active access alone does not prove that a subscription will renew. FullWorth keeps these distinctions visible." xml:space="preserve"><value>Un aumento respecto a cargos anteriores no demuestra un cambio de tarifa del comercio ni su causa. Un pago o acceso activo por sí solos no prueban que una suscripción se renovará. FullWorth mantiene visibles estas diferencias.</value></data>
+  <data name="Start with your own records" xml:space="preserve"><value>Empieza con tus propios registros</value></data>
+  <data name="Designed for financial data" xml:space="preserve"><value>Diseñado para datos financieros</value></data>
+  <data name="Visibility without control of your money." xml:space="preserve"><value>Visibilidad sin controlar tu dinero.</value></data>
+  <data name="FullWorth is designed to monitor and explain financial activity, not move money. Private financial records remain behind authenticated, user-scoped access." xml:space="preserve"><value>FullWorth está diseñado para supervisar y explicar la actividad financiera, no para mover dinero. Los registros financieros privados requieren autenticación y acceso limitado a su propietario.</value></data>
+  <data name="Your bank credentials are handled by Plaid, not entered into FullWorth." xml:space="preserve"><value>Plaid gestiona tus credenciales bancarias; no se introducen en FullWorth.</value></data>
+  <data name="Read the Privacy Notice" xml:space="preserve"><value>Lee el Aviso de Privacidad</value></data>
+  <data name="Illustrative bill comparison" xml:space="preserve"><value>Comparación de facturas de ejemplo</value></data>
+  <data name="Service" xml:space="preserve"><value>Servicio</value></data>
+  <data name="Prior monthly" xml:space="preserve"><value>Mensual anterior</value></data>
+  <data name="Latest monthly" xml:space="preserve"><value>Mensual más reciente</value></data>
+  <data name="Monthly difference" xml:space="preserve"><value>Diferencia mensual</value></data>
+  <data name="Annualized illustration" xml:space="preserve"><value>Ejemplo anualizado</value></data>
+  <data name="Example statement: promotional rate ended" xml:space="preserve"><value>Estado de cuenta de ejemplo: terminó la tarifa promocional</value></data>
+  <data name="Review example evidence" xml:space="preserve"><value>Revisar la evidencia de ejemplo</value></data>
+  <data name="Illustrative statement showing a promotional rate ending." xml:space="preserve"><value>Estado de cuenta de ejemplo que muestra el fin de una tarifa promocional.</value></data>
+  <data name="Illustrative example. Not a customer record or a live merchant check." xml:space="preserve"><value>Ejemplo ilustrativo. No es un registro de cliente ni una consulta en vivo al comercio.</value></data>
+  <data name="Illustrative example" xml:space="preserve"><value>Ejemplo ilustrativo</value></data>
+  <data name="Changes to review" xml:space="preserve"><value>Cambios por revisar</value></data>
+  <data name="Explore three sample charges and what their evidence can establish." xml:space="preserve"><value>Explora tres cargos de ejemplo y lo que su evidencia permite establecer.</value></data>
+  <data name="Choose a sample charge" xml:space="preserve"><value>Elige un cargo de ejemplo</value></data>
+  <data name="Previous charge" xml:space="preserve"><value>Cargo anterior</value></data>
+  <data name="No comparable history" xml:space="preserve"><value>Sin historial comparable</value></data>
+  <data name="Latest charge" xml:space="preserve"><value>Cargo más reciente</value></data>
+  <data name="No increase to project" xml:space="preserve"><value>Sin aumento que proyectar</value></data>
+  <data name="The fictional statement says a promotional rate ended. A bank charge alone would not establish that explanation." xml:space="preserve"><value>El estado de cuenta ficticio indica que terminó una tarifa promocional. Un cargo bancario por sí solo no permitiría establecer esa explicación.</value></data>
+  <data name="No supporting statement is supplied for this sample. A payment alone does not establish recurrence, renewal or a reason for a change." xml:space="preserve"><value>Este ejemplo no incluye un estado de cuenta de respaldo. Un pago por sí solo no establece recurrencia, renovación ni la causa de un cambio.</value></data>
+  <data name="The payment" xml:space="preserve"><value>El pago</value></data>
+  <data name="Illustrative monthly charge" xml:space="preserve"><value>Cargo mensual de ejemplo</value></data>
+  <data name="The comparison" xml:space="preserve"><value>La comparación</value></data>
+  <data name="per month" xml:space="preserve"><value>al mes</value></data>
+  <data name="annualized illustration" xml:space="preserve"><value>ejemplo anualizado</value></data>
+  <data name="The evidence" xml:space="preserve"><value>La evidencia</value></data>
+  <data name="Illustrative USD amounts. The annualized illustration assumes the monthly difference continues for 12 months; it is not a forecast for your accounts." xml:space="preserve"><value>Importes de ejemplo en USD. El ejemplo anualizado supone que la diferencia mensual continúa durante 12 meses; no es una previsión para tus cuentas.</value></data>
+  <data name="Read-only activity. No money movement. Details depend on available evidence." xml:space="preserve"><value>Actividad de solo lectura. Sin movimiento de dinero. Los detalles dependen de la evidencia disponible.</value></data>
+  <data name="No increase in compared charges" xml:space="preserve"><value>Sin aumento en los cargos comparados</value></data>
+  <data name="Music" xml:space="preserve"><value>Música</value></data>
+  <data name="Phone" xml:space="preserve"><value>Teléfono</value></data>
+  <data name="Monthly charge increased" xml:space="preserve"><value>El cargo mensual aumentó</value></data>
+  <data name="One illustrative payment" xml:space="preserve"><value>Un pago de ejemplo</value></data>
+  <data name="Review bill changes and available evidence." xml:space="preserve"><value>Revisa los cambios en las facturas y la evidencia disponible.</value></data>
+  <data name="Legal information" xml:space="preserve"><value>Información legal</value></data>
+  <data name="Privacy Notice" xml:space="preserve"><value>Aviso de Privacidad</value></data>
+  <data name="Terms" xml:space="preserve"><value>Términos</value></data>
 </root>

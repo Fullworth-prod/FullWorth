@@ -1,0 +1,92 @@
+@using FullWorth.Core.Formatting
+@using System.Globalization
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FullWorth.Web.Components.App> L
+
+<section class="home-bill-example" aria-label="@L["Illustrative bill comparison"]">
+    <div class="sample-editorial">
+        <h2>@L["Illustrative bill comparison"]</h2>
+        <dl class="sample-table">
+            <div><dt>@L["Service"]</dt><dd>@L["Internet"]</dd></div>
+            <div><dt>@L["Prior monthly"]</dt><dd>@Money(79.99m)</dd></div>
+            <div><dt>@L["Latest monthly"]</dt><dd>@Money(104.99m)</dd></div>
+            <div><dt>@L["Monthly difference"]</dt><dd><strong>+@Money(25m)</strong></dd></div>
+            <div><dt>@L["Annualized illustration"]</dt><dd><strong>+@Money(300m)</strong></dd></div>
+        </dl>
+        <details class="sample-evidence-disclosure">
+            <summary><span><svg class="bw-sprite" aria-hidden="true"><use href="/assets/billwatch-sprites.svg#document"></use></svg>@L["Example statement: promotional rate ended"]</span><span>@L["Review example evidence"]<svg class="bw-sprite" aria-hidden="true"><use href="/assets/billwatch-sprites.svg#arrow-right"></use></svg></span></summary>
+            <figure class="sample-paper"><img src="@StatementImage" width="960" height="580" loading="lazy" decoding="async" alt="@L["Illustrative statement showing a promotional rate ending."]" /><figcaption>@L["Illustrative example. Not a customer record or a live merchant check."]</figcaption></figure>
+        </details>
+    </div>
+
+    <div class="sample-workspace">
+        <div class="sample-selection">
+            <p class="sample-kicker">@L["Illustrative example"]</p>
+            <h2>@L["Changes to review"]</h2>
+            <p>@L["Explore three sample charges and what their evidence can establish."]</p>
+            <div class="sample-options" aria-label="@L["Choose a sample charge"]">
+                @for (var i = 0; i < Samples.Count; i++)
+                {
+                    var index = i;
+                    var sample = Samples[index];
+                    <button type="button" class="sample-option" aria-pressed="@((_selected == index).ToString().ToLowerInvariant())" @onclick="() => SelectSample(index)">
+                        <svg class="bw-sprite sample-service-icon" aria-hidden="true"><use href="@($"/assets/billwatch-sprites.svg#{sample.Icon}")"></use></svg>
+                        <span><strong>@L[sample.Name]</strong><small>@L[sample.Description]</small></span>
+                        <span class="sample-option-result">@ResultLabel(sample)</span>
+                        <svg class="bw-sprite" aria-hidden="true"><use href="/assets/billwatch-sprites.svg#arrow-right"></use></svg>
+                    </button>
+                }
+            </div>
+        </div>
+        <div class="sample-detail" aria-live="polite" aria-atomic="true">
+            <div class="sample-detail-heading"><svg class="bw-sprite sample-service-icon" aria-hidden="true"><use href="@($"/assets/billwatch-sprites.svg#{Selected.Icon}")"></use></svg><div><h3>@L[Selected.Name]</h3><p>@L[Selected.Description]</p></div></div>
+            <dl>
+                <div><dt>@L["Previous charge"]</dt><dd>@(Selected.Prior is { } prior ? Money(prior) : L["No comparable history"].Value)</dd></div>
+                <div><dt>@L["Latest charge"]</dt><dd>@Money(Selected.Latest)</dd></div>
+                @if (Selected.Prior is { } previous)
+                {
+                    <div class="sample-difference"><dt>@L["Monthly difference"]</dt><dd>@(Selected.Latest > previous ? "+" : "")@Money(Selected.Latest - previous)</dd></div>
+                    <div><dt>@L["Annualized illustration"]</dt><dd>@(Selected.Latest > previous ? "+" + Money((Selected.Latest - previous) * 12m) : L["No increase to project"].Value)</dd></div>
+                }
+            </dl>
+            @if (Selected.HasStatement)
+            {
+                <p class="sample-statement-heading">@L["Example statement: promotional rate ended"]</p>
+                <figure class="sample-paper"><img src="@StatementImage" width="960" height="580" loading="lazy" decoding="async" alt="@L["Illustrative statement showing a promotional rate ending."]" /></figure>
+                <details class="sample-evidence-disclosure"><summary>@L["Review example evidence"]<svg class="bw-sprite" aria-hidden="true"><use href="/assets/billwatch-sprites.svg#arrow-right"></use></svg></summary><p>@L["The fictional statement says a promotional rate ended. A bank charge alone would not establish that explanation."]</p></details>
+            }
+            else
+            {
+                <p class="sample-unknown">@L["No supporting statement is supplied for this sample. A payment alone does not establish recurrence, renewal or a reason for a change."]</p>
+            }
+        </div>
+    </div>
+
+    <div class="sample-story">
+        <ol class="sample-story-steps">
+            <li><span class="sample-kicker">@L["The payment"]</span><div class="sample-payment"><svg class="bw-sprite sample-service-icon" aria-hidden="true"><use href="/assets/billwatch-sprites.svg#internet"></use></svg><div><strong>@L["Internet"]</strong><small>@L["Illustrative monthly charge"]</small></div><strong>@Money(104.99m)</strong></div></li>
+            <li><span class="sample-kicker">@L["The comparison"]</span><strong class="sample-story-difference">+@Money(25m)<small>@L["per month"]</small></strong><p>@L["Previous charge"] @Money(79.99m) <svg class="bw-sprite" aria-hidden="true"><use href="/assets/billwatch-sprites.svg#arrow-right"></use></svg> @L["Latest charge"] @Money(104.99m)</p><strong class="sample-story-annual">+@Money(300m) @L["annualized illustration"]</strong></li>
+            <li><span class="sample-kicker">@L["The evidence"]</span><figure class="sample-paper"><img src="@StatementImage" width="960" height="580" loading="lazy" decoding="async" alt="@L["Illustrative statement showing a promotional rate ending."]" /></figure><details class="sample-evidence-disclosure"><summary>@L["Review example evidence"]<svg class="bw-sprite" aria-hidden="true"><use href="/assets/billwatch-sprites.svg#arrow-right"></use></svg></summary><p>@L["The fictional statement says a promotional rate ended. A bank charge alone would not establish that explanation."]</p></details></li>
+        </ol>
+    </div>
+    <p class="sample-qualification">@L["Illustrative USD amounts. The annualized illustration assumes the monthly difference continues for 12 months; it is not a forecast for your accounts."]</p>
+    <p class="sample-read-only">@L["Read-only activity. No money movement. Details depend on available evidence."]</p>
+</section>
+
+@code {
+    private int _selected;
+    private static readonly IReadOnlyList<Sample> Samples =
+    [
+        new("Internet", "internet", 79.99m, 104.99m, "Monthly charge increased", true),
+        new("Music", "other-bill", null, 12.99m, "One illustrative payment", false),
+        new("Phone", "phone", 45m, 45m, "No increase in compared charges", false)
+    ];
+    private Sample Selected => Samples[_selected];
+    private string ResultLabel(Sample sample) => sample.Prior is { } prior
+        ? sample.Latest > prior ? "+" + Money(sample.Latest - prior) : L["No increase in compared charges"].Value
+        : L["No comparable history"].Value;
+    private void SelectSample(int index) { if (index >= 0 && index < Samples.Count) _selected = index; }
+    private static string Money(decimal amount) => FinancialAmountFormatter.FormatOrUnspecified(amount, "USD");
+    private static string StatementImage => "/assets/fullworth/sample-statement-" +
+        (CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "es" ? "es" : "en") + ".webp";
+    private sealed record Sample(string Name, string Icon, decimal? Prior, decimal Latest, string Description, bool HasStatement);
+}

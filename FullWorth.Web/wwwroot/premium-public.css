@@ -776,3 +776,6 @@ html[data-design] .home-site-shell button:focus-visible { outline: 3px solid cur
 
 .home-site-shell .product-nav { display: none !important; }
 html[data-design="workspace"] .home-site-shell .product-nav { display: inline-flex !important; background: #2b6ae9; }
+
+.home-site-shell .footer-legal-links { display: flex; flex-wrap: wrap; gap: 20px; }
+.home-site-shell .footer-legal-links a { color: var(--pair-muted); min-height: 44px; display: inline-flex; align-items: center; }

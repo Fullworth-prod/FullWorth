@@ -332,28 +332,7 @@
             </div>
 
             <div class="scan-visual">
-                <div class="scan-rings">
-                    <div class="scan-ring-middle">
-                        <div class="scan-ring-inner">
-                            <svg viewBox="0 0 24 24"
-                                 fill="none"
-                                 stroke="currentColor"
-                                 stroke-width="1.7"
-                                 stroke-linecap="round"
-                                 stroke-linejoin="round"
-                                 aria-hidden="true">
-
-                                <path d="M3 10h18" />
-                                <path d="M5 10v8" />
-                                <path d="M9 10v8" />
-                                <path d="M15 10v8" />
-                                <path d="M19 10v8" />
-                                <path d="M2 21h20" />
-                                <path d="M12 3L2 8h20z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
+                <svg class="bw-sprite" aria-hidden="true"><use href="/assets/billwatch-sprites.svg#bank"></use></svg>
 
                 <strong>
                     @L["Connected"]
@@ -408,19 +387,7 @@
 
             <div class="history-visual">
                 <div class="history-symbol">
-                    <svg viewBox="0 0 24 24"
-                         fill="none"
-                         stroke="currentColor"
-                         stroke-width="1.7"
-                         stroke-linecap="round"
-                         stroke-linejoin="round"
-                         aria-hidden="true">
-
-                        <path d="M12 8v4l3 2" />
-                        <circle cx="12"
-                                cy="12"
-                                r="9" />
-                    </svg>
+                    <svg class="bw-sprite" aria-hidden="true"><use href="/assets/billwatch-sprites.svg#activity"></use></svg>
                 </div>
 
                 <strong>
@@ -460,7 +427,12 @@
             </div>
         }
 
-        <OverviewBillSummary Summary="_summary" LatestSuccessfulSync="LatestSuccessfulSync"
+        <div class="overview-dashboard">
+        <aside class="overview-attention fw-signal-card" aria-label="@L["Comparison status"]">
+            <OverviewBillSummary Summary="_summary" StatusOnly="true" />
+        </aside>
+
+        <OverviewBillSummary ShowSpotlight="false" Summary="_summary" LatestSuccessfulSync="LatestSuccessfulSync"
                             ActiveConnectionCount="_connectionCoverage.ActiveCount"
                             SyncedConnectionCount="_connectionCoverage.SyncedCount" />
 
@@ -539,9 +511,7 @@
                 </div>
             </article>
 
-            <aside class="fw-signal-card">
-                <OverviewBillSummary Summary="_summary" StatusOnly="true" />
-            </aside>
+
         </section>
 
         <section class="fw-destination-row" aria-label="@L["Quick links"]">
@@ -596,6 +566,7 @@
                 }
             }
         </section>
+        </div>
     }
 </div>
 

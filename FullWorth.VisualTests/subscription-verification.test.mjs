@@ -6,6 +6,7 @@ import { webkit } from "playwright";
 // Subsequent stale/error cases intercept synthetic reads/writes explicitly.
 export async function verifySubscriptionVerification(page, outputDir) {
   const origin = new URL(page.url()).origin;
+  const originalViewport = page.viewportSize();
   assert.ok(new URL(origin).hostname.endsWith(".localhost"), "Disposable CI origin required.");
   const run = async (target, engine) => {
     let checks = 0, heldSave, attemptedWrites = 0;
@@ -366,6 +367,7 @@ export async function verifySubscriptionVerification(page, outputDir) {
     }
     finally { await context.close(); }
   } finally { await browser.close(); }
+  if (originalViewport) await page.setViewportSize(originalViewport);
   await page.context().addCookies([{ name: ".AspNetCore.Culture",
     value: encodeURIComponent("c=en-US|uic=en-US"), url: origin, secure: true, sameSite: "Lax" }]);
 }

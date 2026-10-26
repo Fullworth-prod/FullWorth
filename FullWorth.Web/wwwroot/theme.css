@@ -524,3 +524,45 @@ html[data-fullworth-reduce-motion="true"] *::after {
     border-radius: inherit;
     padding: 8px;
 }
+
+/* Three selected appearance pairs. Mode and style are independent preferences. */
+html {
+    --pair-canvas: #10151d; --pair-panel: #17202b; --pair-ink: #f7f5f0;
+    --pair-muted: #b9c4d7; --pair-line: #526073; --pair-accent: #6d9fff;
+}
+html[data-theme="light"] {
+    --pair-canvas: #fafaf8; --pair-panel: #ffffff; --pair-ink: #101529;
+    --pair-muted: #505b73; --pair-line: #cbd1db; --pair-accent: #2854e8;
+}
+html[data-design="workspace"] {
+    --pair-canvas: #0b1728; --pair-panel: #12233a; --pair-ink: #f6f8ff;
+    --pair-muted: #b1c8ee; --pair-line: #49617e; --pair-accent: #7cabff;
+}
+html[data-design="workspace"][data-theme="light"] {
+    --pair-canvas: #f7faff; --pair-panel: #ffffff; --pair-ink: #0c1428;
+    --pair-muted: #50617e; --pair-line: #c6d4eb; --pair-accent: #1555dd;
+}
+html[data-design="story"] {
+    --pair-canvas: #141210; --pair-panel: #211e1b; --pair-ink: #faf6eb;
+    --pair-muted: #c7beb0; --pair-line: #746455; --pair-accent: #ffa46c;
+}
+html[data-design="story"][data-theme="light"] {
+    --pair-canvas: #faf7f0; --pair-panel: #fffdf9; --pair-ink: #171922;
+    --pair-muted: #625c57; --pair-line: #d2bbaa; --pair-accent: #b63e16;
+}
+html[data-design] {
+    --bw-bg: var(--pair-canvas); --bw-bg-elevated: var(--pair-panel);
+    --bw-surface: var(--pair-panel); --bw-surface-soft: var(--pair-panel);
+    --bw-surface-hover: var(--pair-panel); --bw-text: var(--pair-ink);
+    --bw-text-secondary: var(--pair-muted); --bw-text-muted: var(--pair-muted);
+    --bw-text-subtle: var(--pair-muted); --bw-border: var(--pair-line);
+    --bw-border-strong: var(--pair-line);
+}
+html[data-fullworth-high-contrast="true"] {
+    --pair-canvas: #000000; --pair-panel: #000000; --pair-ink: #ffffff;
+    --pair-muted: #ffffff; --pair-line: #ffffff; --pair-accent: #aac7ff;
+}
+html[data-fullworth-high-contrast="true"][data-theme="light"] {
+    --pair-canvas: #ffffff; --pair-panel: #ffffff; --pair-ink: #000000;
+    --pair-muted: #000000; --pair-line: #000000; --pair-accent: #003399;
+}

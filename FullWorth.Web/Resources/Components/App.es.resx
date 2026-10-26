@@ -208,4 +208,13 @@
   <data name="Use a recovery code instead" xml:space="preserve"><value>Usar un código de recuperación</value></data>
   <data name="Your sign-in expired. Enter your email and password again." xml:space="preserve"><value>Tu inicio de sesión caducó. Vuelve a introducir tu correo y contraseña.</value></data>
   <data name="Verification failed. Try another method or code." xml:space="preserve"><value>La verificación falló. Prueba otro método o código.</value></data>
+  <data name="Style" xml:space="preserve"><value>Estilo</value></data>
+  <data name="Appearance style" xml:space="preserve"><value>Estilo visual</value></data>
+  <data name="Editorial" xml:space="preserve"><value>Editorial</value></data>
+  <data name="Workspace" xml:space="preserve"><value>Espacio de trabajo</value></data>
+  <data name="Story" xml:space="preserve"><value>Historia</value></data>
+  <data name="Saved on this browser" xml:space="preserve"><value>Guardado en este navegador</value></data>
+  <data name="Style controls unavailable. Reload to try again." xml:space="preserve"><value>Los controles de estilo no están disponibles. Recarga para volver a intentarlo.</value></data>
+  <data name="Evidence" xml:space="preserve"><value>Evidencia</value></data>
+  <data name="The product" xml:space="preserve"><value>El producto</value></data>
 </root>

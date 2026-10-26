@@ -74,7 +74,8 @@ function applyThemePreference(preference, force = false) {
     const theme = resolveTheme(preference);
     document.documentElement.dataset.theme = theme;
     document.querySelector('meta[name="theme-color"]')?.setAttribute(
-        "content", theme === "light" ? "#F4F6FB" : "#060910");
+        "content", window.getComputedStyle?.(document.documentElement)
+            .getPropertyValue("--pair-canvas").trim() || (theme === "light" ? "#F4F6FB" : "#060910"));
     const remembered = writeStorage(themeStorageKey, theme);
     const initialized = writeStorage(experienceThemeInitializedKey, "1");
     return remembered && initialized;

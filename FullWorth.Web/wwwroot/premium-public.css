@@ -709,3 +709,70 @@ html[data-theme="dark"] .site-shell .auth-card {
         border-radius: 28px;
     }
 }
+
+/* Home composition follows the selected reference; auth/legal layouts remain separate. */
+html[data-design] .home-site-shell { background: var(--pair-canvas); color: var(--pair-ink); }
+html[data-design] .home-site-shell .site-header {
+    position: static; background: var(--pair-canvas); border-bottom: 1px solid var(--pair-line);
+    box-shadow: none; backdrop-filter: none;
+}
+html[data-design] .home-site-shell .header-inner {
+    max-width: 1480px; min-height: 100px; margin-inline: auto; padding: 20px 32px;
+    display: flex; align-items: center; gap: 24px;
+}
+html[data-design] .home-site-shell .brand { gap: 14px; color: var(--pair-ink); }
+html[data-design] .home-site-shell .brand-name { color: inherit; font-size: 1.8rem; letter-spacing: -.05em; }
+html[data-design] .home-site-shell .brand-mark { width: 44px; height: 44px; display: block; background: none; box-shadow: none; }
+html[data-design] .home-site-shell .brand-mark-small { width: 32px; height: 32px; }
+html[data-design] .home-site-shell .desktop-nav { display: flex; flex-wrap: wrap; gap: 30px; margin-inline: auto; }
+html[data-design] .home-site-shell .desktop-nav a { color: var(--pair-muted); font-size: .95rem; min-height: 44px; display: inline-flex; align-items: center; }
+html[data-design] .home-site-shell .header-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+html[data-design] .home-site-shell .header-action { color: var(--pair-ink); min-height: 44px; }
+html[data-design="editorial"] .home-site-shell .header-action[href="/register"],
+html[data-design="workspace"] .home-site-shell .header-action[href="/register"] { display: none; }
+html[data-design] .home-site-shell .site-footer { background: var(--pair-canvas); border-top: 1px solid var(--pair-line); color: var(--pair-muted); }
+html[data-design] .home-site-shell .footer-inner { max-width: 1440px; margin-inline: auto; padding: 32px; gap: 24px; }
+html[data-design="workspace"] .home-site-shell .site-header {
+    position: fixed; inset: 0 auto 0 0; width: 240px; height: 100dvh;
+    background: #1455df; color: #ffffff; border: 0; z-index: 20;
+    --bw-text: #ffffff; --bw-text-secondary: #e5eeff; --bw-surface: #1646ad; --bw-border-strong: #a8c5ff;
+}
+html[data-design="workspace"] .home-site-shell .header-inner {
+    height: 100%; width: 100%; min-height: 0; flex-direction: column; align-items: stretch;
+    padding: 32px 20px; gap: 24px;
+}
+html[data-design="workspace"] .home-site-shell .brand { color: #ffffff; }
+html[data-design="workspace"] .home-site-shell .desktop-nav { display: grid; margin: 18px 0 0; gap: 14px; }
+html[data-design="workspace"] .home-site-shell .desktop-nav a {
+    color: #ffffff; min-height: 52px; padding: 8px 14px; border-radius: 10px;
+}
+html[data-design="workspace"] .home-site-shell .desktop-nav a:hover { background: #2b6ae9; }
+html[data-design="workspace"] .home-site-shell .header-actions { margin-top: auto; gap: 10px; }
+html[data-design="workspace"] .home-site-shell .header-action { color: #ffffff; }
+html[data-design="workspace"] .home-site-shell main,
+html[data-design="workspace"] .home-site-shell .site-footer { margin-inline-start: 240px; }
+html[data-design] .home-site-shell a:focus-visible,
+html[data-design] .home-site-shell button:focus-visible { outline: 3px solid currentColor; outline-offset: 4px; }
+@media(max-width: 1050px) {
+    html[data-design] .home-site-shell .header-inner { flex-wrap: wrap; gap: 12px; padding-inline: 24px; }
+    html[data-design] .home-site-shell .desktop-nav { gap: 18px; }
+    html[data-design="workspace"] .home-site-shell .header-inner { padding-inline: 20px; }
+}
+@media(max-width: 760px) {
+    html[data-design] .home-site-shell .site-header { position: static; width: auto; height: auto; }
+    html[data-design] .home-site-shell .header-inner {
+        display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; padding: 16px 20px;
+        width: 100%; height: auto;
+    }
+    html[data-design] .home-site-shell .brand-name { font-size: 1.4rem; }
+    html[data-design] .home-site-shell .brand-mark { width: 34px; height: 34px; }
+    html[data-design] .home-site-shell .header-actions { grid-column: 1 / -1; margin: 0; justify-content: space-between; }
+    html[data-design] .home-site-shell .desktop-nav { grid-column: 1 / -1; display: flex; justify-content: space-between; margin: 0; gap: 8px; }
+    html[data-design] .home-site-shell .desktop-nav a { font-size: .8rem; padding: 4px 0; min-height: 44px; }
+    html[data-design="workspace"] .home-site-shell main,
+    html[data-design="workspace"] .home-site-shell .site-footer { margin-inline-start: 0; }
+    html[data-design] .home-site-shell .footer-inner { padding: 28px 20px; }
+}
+
+.home-site-shell .product-nav { display: none !important; }
+html[data-design="workspace"] .home-site-shell .product-nav { display: inline-flex !important; background: #2b6ae9; }

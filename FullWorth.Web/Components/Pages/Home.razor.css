@@ -104,3 +104,7 @@ html[data-design="story"] .paired-home .hero h1 { font-family: "FullWorth Displa
 html[data-design="story"] .paired-home .home-process { display: none; }
 html[data-design="story"] .paired-home .home-evidence { border-top: 1px solid var(--pair-line); padding-top: 28px; }
 html[data-design="story"] .paired-home .home-evidence > .home-kicker { display: none; }
+
+/* Restore readable word separation with the actual display face. */
+html[data-design="story"] .paired-home .hero h1 { letter-spacing: -.035em; }
+html[data-design="workspace"] .paired-home .hero h1 { font-size: clamp(2.4rem, 4.5vw, 4.3rem); letter-spacing: -.025em; }

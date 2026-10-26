@@ -30,6 +30,27 @@ jobs:
       - name: Install pinned browser test dependencies
         working-directory: FullWorth.VisualTests
         run: npm install --ignore-scripts --no-package-lock
+      - name: Use signed Ubuntu archive for isolated browser dependencies
+        run: |
+          sudo python3 - <<'PY'
+          from pathlib import Path
+          import re
+          candidates = [Path("/etc/apt/sources.list")]
+          sources = Path("/etc/apt/sources.list.d")
+          candidates += sorted(sources.glob("*.list"))
+          candidates += sorted(sources.glob("*.sources"))
+          changed = 0
+          for mirror_file in candidates:
+              if not mirror_file.is_file():
+                  continue
+              original = mirror_file.read_text()
+              updated = re.sub(r"https?://azure[.]archive[.]ubuntu[.]com/ubuntu",
+                               "https://archive.ubuntu.com/ubuntu", original)
+              if updated != original:
+                  mirror_file.write_text(updated)
+                  changed += 1
+          print(f"Updated {changed} ephemeral runner Ubuntu mirror files; signing configuration preserved.")
+          PY
       - name: Install browser engines
         working-directory: FullWorth.VisualTests
         run: npx playwright install --with-deps chromium webkit

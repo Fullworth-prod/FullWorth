@@ -118,3 +118,8 @@ html[data-theme="light"] .home-bill-example { --sample-increase: #b1460b; --samp
 @media(min-width:1051px) {
     .sample-editorial h2 { font-size: 2.3rem; }
 }
+
+/* Remove excess image-box spacing while keeping every qualification visible. */
+html[data-design="story"] .sample-story .sample-paper { margin: 0; }
+html[data-design="story"] .sample-story-steps { margin-bottom: 16px; }
+html[data-design="story"] :is(.sample-qualification, .sample-read-only) { margin-top: 8px; }

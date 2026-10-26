@@ -346,6 +346,14 @@ export async function verifyThemePairs(page, outputDir) {
               regions: Object.fromEntries([".site-header", ".hero", ".home-bill-example", ".hero-actions"].map(selector =>
                 [selector, document.querySelector(selector)?.getBoundingClientRect().toJSON()]))
             })), null, 2));
+          const phoneWidth = mode === "dark" ? 320 : 390;
+          await geometry("anonymous/" + style + "/" + mode + "/en-US", phoneWidth, false, publicPage);
+          if (engine === "chromium") {
+            await publicPage.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
+            await capture(publicPage, { path: path.join(outputDir,
+              "theme-pair-" + style + "-" + mode + "-home-" + engine + "-en-" + phoneWidth + "-phone.png"),
+              fullPage: false });
+          }
           await geometry("anonymous/" + style + "/" + mode + "/en-US", 768, true, publicPage);
           await culture("es", publicPage);
           await publicPage.reload({ waitUntil: "domcontentloaded" });

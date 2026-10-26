@@ -88,3 +88,16 @@ Remaining P2:
 - Authenticated evidence-entry link incorrectly targets registration. Render the existing bills-workspace link for authenticated visitors; retain registration for anonymous visitors. Add actual browser entry-state assertions.
 
 Next captures must verify all corrections. The earlier phone/tablet/summary/amount/contrast blockers are resolved by actual both-engine execution. Current result stays blocked until these remaining P2 fixes receive a matched post-fix visual review.
+
+
+## Third matched comparison —10f7daf
+
+CI40364203186 full main CI passed. Actual dedicated matrix: Chromium1,786/WebKit1,804 assertions,312 geometry+108 state cases each, zero layout/contrast findings or unexpected browser errors. Backend2,870/Node127 passed, zero failed/skipped/warnings; existing responsive672/native-select126/ARIA37/subscription54 per engine passed. Artifact12671400099 SHA256839b79a07d57d907af236635e7a9ae31a7daf038a5fbec4da21a2678aaf91976 verified, local fullworth-theme-10f7daf/fullworth-qa-10f7daf. Opened combined Story light/dark, Workspace light, Editorial light full views and Story light/Workspace light/Editorial dark hero plus Workspace dark evidence regions.
+
+Resolved: Story is back to three lines, the repeated process is removed, evidence conclusion follows it, local face loading/anonymous/authenticated entry assertions pass; rail track alignment is full-width and Editorial heading scale improved. FontTools/PIL comparison confirmed original and WOFF2-subset advances identical, including the20px space at104px/850/optical32.
+
+Remaining P2: the old negative tracking is too tight with the now-real Inter face; word separation looks crowded compared with the selected target. Open Story tracking -.065em→-.035em and Workspace -.055em→-.025em, using slightly smaller Workspace display size to retain its single line. Story's extra transparent image-box/paragraph spacing pushes the conclusion to the lower edge; remove figure margins, reduce list-bottom28→16 and qualification top margins14→8 while preserving text/image dimensions. Re-capture required. Current QA remains blocked.
+
+Independent CI failure: dedicated confirmation run40364205273 was cancelled at its15-minute job limit, before tests, while the Azure Ubuntu mirror slowly downloaded OS packages. The earlier40360544086 showed the same installation behavior. Main CI was independently green; the standalone dialog/BFF/recovery suites are not claimed on this head. Next workflow uses Ubuntu's existing signed archive via HTTPS on the disposable runner only; signing configuration, action pins, read-only permissions,15-minute limit and all three test commands remain unchanged. Official archive Noble InRelease returnedHTTP200; source https://archive.ubuntu.com/ubuntu/dists/noble/InRelease and https://ubuntu.com/server/docs/how-to/software/package-management/ .
+
+Prepared phone previews: add six anonymous normal-text English phone cases per engine and six viewport captures for private owner review. This adds actual coverage (intended318 geometry per engine); it is not yet an executed passing count. Runtime pages remain the same except the spacing corrections above.

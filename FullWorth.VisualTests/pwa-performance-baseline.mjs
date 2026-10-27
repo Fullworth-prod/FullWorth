@@ -10,7 +10,7 @@ import { requireDisposableOrigin, summarizeStaticResources, maximumLayoutShiftWi
 function installProbe() {
   try { localStorage.setItem("fullworth.performance-profile", "balanced"); } catch {}
   const supported = new Set(globalThis.PerformanceObserver?.supportedEntryTypes ?? []);
-  const state = { shifts: [], lcp: null, longTasks: [], profileCalls: {} };
+  const state = { shifts: [], lcp: null, longTasks: [], profileCalls: {}, shiftsDropped: 0, longTasksDropped: 0 };
   const token = Math.random();
   let profile;
   Object.defineProperty(window, "FullWorthPerformance", {
@@ -28,21 +28,29 @@ function installProbe() {
     }
   });
   if (supported.has("layout-shift")) new PerformanceObserver(list => {
-    state.shifts.push(...list.getEntries().slice(0, 500).map(entry =>
+    const entries = list.getEntries();
+    state.shiftsDropped += Math.max(0, entries.length - 500);
+    state.shifts.push(...entries.slice(-500).map(entry =>
       ({ value: entry.value, startTime: entry.startTime, hadRecentInput: entry.hadRecentInput })));
+    state.shiftsDropped += Math.max(0, state.shifts.length - 500);
     state.shifts = state.shifts.slice(-500);
   }).observe({ type: "layout-shift", buffered: true });
   if (supported.has("largest-contentful-paint")) new PerformanceObserver(list => {
     for (const entry of list.getEntries()) state.lcp = entry.startTime;
   }).observe({ type: "largest-contentful-paint", buffered: true });
   if (supported.has("longtask")) new PerformanceObserver(list => {
-    state.longTasks.push(...list.getEntries().map(entry => ({ duration: entry.duration, startTime: entry.startTime })));
+    const entries = list.getEntries();
+    state.longTasksDropped += Math.max(0, entries.length - 500);
+    state.longTasks.push(...entries.slice(-500).map(entry =>
+      ({ duration: entry.duration, startTime: entry.startTime })));
+    state.longTasksDropped += Math.max(0, state.longTasks.length - 500);
     state.longTasks = state.longTasks.slice(-500);
   }).observe({ type: "longtask", buffered: true });
   window.__fullworthCiPerformance = {
     token,
     reset() {
       state.shifts = []; state.lcp = null; state.longTasks = []; state.profileCalls = {};
+      state.shiftsDropped = 0; state.longTasksDropped = 0;
       performance.clearResourceTimings();
       return { token, start: performance.now() };
     },
@@ -54,6 +62,7 @@ function installProbe() {
         navigation: performance.getEntriesByType("navigation")[0]?.toJSON() ?? null,
         fcp: performance.getEntriesByName("first-contentful-paint")[0]?.startTime ?? null,
         lcp: state.lcp, shifts: state.shifts, longTasks: state.longTasks,
+        shiftsDropped: state.shiftsDropped, longTasksDropped: state.longTasksDropped,
         supportsLayoutShift: supported.has("layout-shift"),
         supportsLcp: supported.has("largest-contentful-paint"),
         supportsLongTasks: supported.has("longtask"),
@@ -72,6 +81,7 @@ function installProbe() {
         profileCalls: state.profileCalls,
         effectiveProfile: document.documentElement.dataset.fullworthPerformance ?? null,
         appError: !!document.querySelector("main .app-error-state"),
+        workerSupported: "serviceWorker" in navigator,
         workerControlled: navigator.serviceWorker?.controller !== null &&
           navigator.serviceWorker?.controller !== undefined
       };
@@ -94,7 +104,8 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
     limitations: [
       "CI laboratory samples, not physical installed-device or production acceptance.",
       "Cold/warm refer to the browser cache; the shared server is already warm.",
-      "Service workers blocked to isolate HTTP caching; no request routing or payload fixtures in these contexts.",
+      "Worker-blocked HTTP-cache controls and worker-allowed startup samples are separate; no request routing in either.",
+      "At most500 observer records are retained per window; overflow makes affected metrics unknown.",
       "Heading readability includes automation observation overhead, not financial-data readiness.",
       "Paint/LCP/layout observations are bounded windows, not final field Core Web Vitals or percentile SLAs.",
       "Profile API counters cover four public methods; resource entries are not import or total JS-interop counts.",
@@ -113,9 +124,9 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
     { name: "bill-detail-unavailable", route: "/app/bills/11111111-1111-4111-8111-111111111111",
       selector: "main .app-error-state h2", unavailable: true }
   ];
-  const run = async (browser, engine, selectedCases, network) => {
+  const run = async (browser, engine, selectedCases, network, workerPolicy = "block") => {
     const context = await browser.newContext({
-      baseURL: origin, ignoreHTTPSErrors: true, serviceWorkers: "block", locale: "en-US",
+      baseURL: origin, ignoreHTTPSErrors: true, serviceWorkers: workerPolicy, locale: "en-US",
       storageState, viewport: network === "emulated-slow" ? { width: 390, height: 844 } : { width: 1440, height: 1000 }
     });
     let session;
@@ -151,6 +162,9 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
       });
       page.on("pageerror", () => pageErrors++);
       for (const item of selectedCases) {
+        if (workerPolicy === "allow" && engine === "chromium" && item.mode === "reload")
+          await page.waitForFunction(() => navigator.serviceWorker?.controller != null,
+            null, { timeout: 10000 });
         pending = new Set(); counts = {}; failures = 0; unsafe = 0; pageErrors = 0; lastActivity = Date.now();
         const before = await page.evaluate(() => window.__fullworthCiPerformance?.reset() ?? null);
         let requestedMode = "document";
@@ -197,7 +211,7 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
         assert.ok(observation.stylesheetLinks >= 20, "Actual styles must be present, not an unstyled success.");
         const round = value => Number.isFinite(value) ? Number(value.toFixed(2)) : null;
         report.samples.push({
-          engine, browserVersion: browser.version(), case: item.name, network,
+          engine, browserVersion: browser.version(), case: item.name, network, serviceWorkerPolicy: workerPolicy,
           viewport: page.viewportSize(), navigationKind: enhanced ? "enhanced-link" : item.mode === "reload" ? "reload" : "document",
           headingObservedMs: round(headingObservation.now - start),
           observationEndedMs: round(observation.now - start),
@@ -205,13 +219,15 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
           domContentLoadedMs: enhanced ? null : round(observation.navigation?.domContentLoadedEventEnd),
           fcpMs: enhanced ? null : round(observation.fcp),
           lcpAtObservationMs: enhanced ? null : round(observation.lcp),
-          layoutShiftWindowScore: observation.supportsLayoutShift ? maximumLayoutShiftWindow(observation.shifts.filter(entry => entry.startTime >= start)) : null,
-          longTasksObserved: observation.supportsLongTasks ? longTasks.length : null,
-          maxLongTaskMs: observation.supportsLongTasks ? round(Math.max(0, ...longTasks.map(entry => entry.duration))) : null,
+          layoutShiftWindowScore: observation.supportsLayoutShift && observation.shiftsDropped === 0 ? maximumLayoutShiftWindow(observation.shifts.filter(entry => entry.startTime >= start)) : null,
+          longTasksObserved: observation.supportsLongTasks && observation.longTasksDropped === 0 ? longTasks.length : null,
+          maxLongTaskMs: observation.supportsLongTasks && observation.longTasksDropped === 0 ? round(Math.max(0, ...longTasks.map(entry => entry.duration))) : null,
           stylesheetLinks: observation.stylesheetLinks, duplicateStylesheetHrefs: observation.duplicateStylesheetHrefs,
           externalScriptElements: observation.externalScriptElements, resources,
           profileApiCalls: observation.profileCalls, bffReadResponseCounts: counts,
-          expectedUnavailable: !!item.unavailable, workerControlled: observation.workerControlled
+          expectedUnavailable: !!item.unavailable, workerSupported: observation.workerSupported,
+          workerControlled: observation.workerControlled,
+          observerRecordsDropped: { layoutShift: observation.shiftsDropped, longTask: observation.longTasksDropped }
         });
       }
     } finally {
@@ -221,8 +237,12 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
   };
   try {
     await run(originalBrowser, "chromium", cases, "unthrottled");
+    await run(originalBrowser, "chromium", cases.slice(0, 2), "unthrottled", "allow");
     const webkitBrowser = await webkit.launch({ headless: true });
-    try { await run(webkitBrowser, "webkit", cases, "unthrottled"); }
+    try {
+      await run(webkitBrowser, "webkit", cases, "unthrottled");
+      await run(webkitBrowser, "webkit", cases.slice(0, 2), "unthrottled", "allow");
+    }
     finally { await webkitBrowser.close(); }
     await run(originalBrowser, "chromium", [cases[0]], "emulated-slow");
     report.completed = true;

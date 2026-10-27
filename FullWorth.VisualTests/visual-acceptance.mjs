@@ -1367,6 +1367,8 @@ try {
 
   await verifyPlanningWorkspace(page, outputDir);
 
+  await (await import("./pwa-performance-baseline.mjs")).verifyPwaPerformance(page, outputDir);
+
   await context.clearCookies();
 
   await page.evaluate(() => {

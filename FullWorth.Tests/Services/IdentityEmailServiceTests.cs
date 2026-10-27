@@ -258,6 +258,65 @@ public sealed class IdentityEmailServiceTests
         Assert.Null(handler.Request);
     }
 
+
+    [Theory]
+    [InlineData("https://other.invalid/reset-password?code=private-code")]
+    [InlineData("https://billbeacon.net.other.invalid/reset-password?code=private-code")]
+    [InlineData("https://accounts.billbeacon.net/reset-password?code=private-code")]
+    [InlineData("https://billbeacon.net:8443/reset-password?code=private-code")]
+    [InlineData("http://billbeacon.net/reset-password?code=private-code")]
+    [InlineData("https://user:password@billbeacon.net/reset-password?code=private-code")]
+    [InlineData("/reset-password?code=private-code")]
+    public async Task DirectResetLink_RejectsUntrustedOriginBeforeNetwork(string link)
+    {
+        var handler = new RecordingHandler();
+        using var client = CreateClient(handler);
+        var sender = new ResendIdentityEmailSender(client, Options.Create(CreateEnabledOptions()));
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            sender.SendPasswordResetLinkAsync(new ApplicationUser(), "person@example.com", link));
+        Assert.Null(handler.Request);
+        Assert.DoesNotContain("private-code", error.ToString(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("https://billbeacon.net/reset-password?code=code%2Bvalue")]
+    [InlineData("https://BILLBEACON.NET:443/reset-password?code=code%2Bvalue")]
+    public async Task DirectResetLink_AcceptsEquivalentConfiguredOrigin(string link)
+    {
+        var handler = new RecordingHandler();
+        using var client = CreateClient(handler);
+        var sender = new ResendIdentityEmailSender(client, Options.Create(CreateEnabledOptions()));
+        await sender.SendPasswordResetLinkAsync(new ApplicationUser(), "person@example.com", link);
+        AssertProviderRequest(handler);
+        Assert.Contains("code=code%2Bvalue", ReadHtml(handler.Body), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task DirectResetLink_DisabledSenderRemainsNoOp()
+    {
+        var handler = new RecordingHandler();
+        using var client = CreateClient(handler);
+        var sender = new ResendIdentityEmailSender(client,
+            Options.Create(new IdentityEmailOptions { Enabled = false }));
+        await sender.SendPasswordResetLinkAsync(new ApplicationUser(),
+            "person@example.com", "https://other.invalid/reset-password");
+        Assert.Null(handler.Request);
+    }
+
+    [Fact]
+    public async Task ConfiguredNonDefaultOriginAndBasePath_RetainsResetCodeFlow()
+    {
+        var handler = new RecordingHandler();
+        using var client = CreateClient(handler);
+        var options = CreateEnabledOptions();
+        options.PublicWebBaseUrl = "https://billbeacon.net:8443/fullworth";
+        var sender = new ResendIdentityEmailSender(client, Options.Create(options));
+        await sender.SendPasswordResetCodeAsync(new ApplicationUser(), "person@example.com", "code+/=");
+        AssertProviderRequest(handler);
+        Assert.Contains("https://billbeacon.net:8443/fullworth/reset-password?",
+            ReadHtml(handler.Body), StringComparison.Ordinal);
+    }
+
     private static HttpClient CreateClient(
         HttpMessageHandler handler)
     {

@@ -117,8 +117,10 @@ public sealed class BillStatementEvidenceAlertService
                 previousItem?.Amount
                 ?? 0m;
 
-            if (previousAmount >
-                0m)
+            // Unknown or conflicting categories cannot prove a fee is newly present.
+            if (previousItem is { Category: null } ||
+                previousAmount >
+                    0m)
             {
                 continue;
             }
@@ -164,8 +166,10 @@ public sealed class BillStatementEvidenceAlertService
                 currentItem?.Amount
                 ?? 0m;
 
-            if (currentAmount <
-                0m)
+            // An offsetting mixed-category total does not prove a discount disappeared.
+            if (currentItem is { Category: null } ||
+                currentAmount <
+                    0m)
             {
                 continue;
             }
@@ -232,8 +236,12 @@ public sealed class BillStatementEvidenceAlertService
                                 MidpointRounding.AwayFromZero),
 
                         Category =
-                            existing.Category ??
-                            item.Category
+                            string.Equals(
+                                existing.Category,
+                                NormalizeCategory(item.Category),
+                                StringComparison.OrdinalIgnoreCase)
+                                ? existing.Category
+                                : null
                     };
 
                 continue;
@@ -244,11 +252,14 @@ public sealed class BillStatementEvidenceAlertService
                 new AggregatedLineItem(
                     description,
                     item.Amount,
-                    item.Category));
+                    NormalizeCategory(item.Category)));
         }
 
         return results;
     }
+
+    private static string? NormalizeCategory(string? category) =>
+        string.IsNullOrWhiteSpace(category) ? null : category.Trim();
 
     private static void ValidateLineItemOwnership(
         Guid userId,

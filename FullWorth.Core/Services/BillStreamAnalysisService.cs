@@ -28,6 +28,17 @@ public sealed class BillStreamAnalysisService
         var currentStatement =
             billStream.Statements[^1];
 
+        // No supported comparison is an ordinary nullable outcome, not a
+        // fabricated monthly change or a mixed-currency exception.
+        if (!string.Equals(previousStatement.CurrencyCode, currentStatement.CurrencyCode,
+                StringComparison.Ordinal) ||
+            !MonthlyStatementPeriodPolicy.CanCompare(
+                previousStatement.BillingPeriodStart, previousStatement.BillingPeriodEnd,
+                currentStatement.BillingPeriodStart, currentStatement.BillingPeriodEnd))
+        {
+            return null;
+        }
+
         var matchingTransaction =
             FindBestMatchingTransaction(
                 billStream,

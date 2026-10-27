@@ -66,8 +66,8 @@ subscription extraction. Users can still record clearly labeled personal confirm
 No mailbox access, password collection, session scraping, merchant outreach or subscription actions.
 
 English/Spanish labels, native controls, keyboard use, explicit busy/pressed states and responsive
-320/390px enlarged-text checks preserve the existing visual direction. New Overview concepts remain unselected.
-No animations or stylistic redesign are claimed.
+320/390px enlarged-text checks preserved the visual direction during the merchant implementation.
+Subsequently, the owner selected all three light/dark pairs and #978 integrated the Home/Overview redesign into development. See design-qa.md and deploy/FULLWORTH-THREE-PAIR-UI-20261026.md for verified UI evidence. These merchant tests are not proof of animation or production deployment.
 
 ## Official capability matrix — researched 2026-10-25
 

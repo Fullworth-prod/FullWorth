@@ -74,3 +74,5 @@
     .onboarding-progress-actions { flex-direction: column; }
     .onboarding-progress-actions > :is(button, a) { width: 100%; }
 }
+
+/* Selected-pair composition is owned by app-polish.css alongside shared layout resilience. */

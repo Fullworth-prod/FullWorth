@@ -110,6 +110,16 @@ public sealed class ResendIdentityEmailSender(
                 "Identity email action URLs must use HTTPS without embedded credentials.");
         }
 
+        var publicWebUri = new Uri(_options.PublicWebBaseUrl, UriKind.Absolute);
+        if (!string.Equals(actionUri.IdnHost, publicWebUri.IdnHost,
+                StringComparison.OrdinalIgnoreCase) ||
+            actionUri.Port != publicWebUri.Port)
+        {
+            // Do not include the action URL: it can contain a recovery token.
+            throw new InvalidOperationException(
+                "Identity email action URLs must use the configured public Web origin.");
+        }
+
         var encodedMessage =
             HtmlEncoder.Default.Encode(
                 message);

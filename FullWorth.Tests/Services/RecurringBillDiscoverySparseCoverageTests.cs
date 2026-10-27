@@ -105,7 +105,7 @@ public sealed class RecurringBillDiscoverySparseCoverageTests
     {
         Id = Guid.NewGuid(),
         UserId = owner,
-        BankAccountId = Guid.NewGuid(),
+        BankAccountId = owner,
         PlaidTransactionId = Guid.NewGuid().ToString("N"),
         Name = merchant,
         MerchantName = merchant,

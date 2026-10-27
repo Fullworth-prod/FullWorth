@@ -969,7 +969,7 @@ public sealed class RecurringBillDiscoveryPersistenceServiceTests
                     userId,
 
                 BankAccountId =
-                    Guid.NewGuid(),
+                    userId,
 
                 PlaidTransactionId =
                     Guid.NewGuid()

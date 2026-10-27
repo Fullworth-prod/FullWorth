@@ -14,7 +14,8 @@ function applyTheme(theme) {
     if (themeColor) {
         themeColor.setAttribute(
             "content",
-            themeColors[theme]);
+            window.getComputedStyle?.(document.documentElement)
+                .getPropertyValue("--pair-canvas").trim() || themeColors[theme]);
     }
 }
 

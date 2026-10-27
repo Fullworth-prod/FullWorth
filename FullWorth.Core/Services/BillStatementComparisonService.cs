@@ -28,6 +28,16 @@ public sealed class BillStatementComparisonService
             throw new ArgumentException("Statements in different currencies cannot be compared.");
         }
 
+        // This result names its delta MonthlyChange and annualizes by twelve.
+        // Every caller must supply complete, consecutive monthly coverage.
+        if (!MonthlyStatementPeriodPolicy.CanCompare(
+                previousStatement.BillingPeriodStart, previousStatement.BillingPeriodEnd,
+                currentStatement.BillingPeriodStart, currentStatement.BillingPeriodEnd))
+        {
+            throw new ArgumentException(
+                "Monthly statement analysis requires complete, consecutive monthly periods.");
+        }
+
         var totalComparison = _billComparisonService.Compare(
             previousStatement.TotalAmount,
             currentStatement.TotalAmount);

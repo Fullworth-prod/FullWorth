@@ -25,6 +25,7 @@ public sealed class DiscoverySourceAccountAmbiguityTests
         var diagnostics = await service.GetDiagnosticsAsync(fixture.Owner);
         Assert.Equal(1, diagnostics.DetectedMonthlyCandidates);
         Assert.Equal(0, diagnostics.AcceptedCandidates);
+        Assert.Equal(1, diagnostics.RejectedSourceAccountAmbiguity);
         Assert.Empty(fixture.Db.ChangeTracker.Entries());
         var result = await service.DiscoverAndSaveAsync(fixture.Owner);
         Assert.Equal(0, result.BillsDiscovered);
@@ -50,6 +51,7 @@ public sealed class DiscoverySourceAccountAmbiguityTests
         var service = fixture.Service();
         var diagnostics = await service.GetDiagnosticsAsync(fixture.Owner);
         Assert.Equal(1, diagnostics.AcceptedCandidates);
+        Assert.Equal(0, diagnostics.RejectedSourceAccountAmbiguity);
         var result = await service.DiscoverAndSaveAsync(fixture.Owner);
         Assert.Equal(1, result.BillStreamsCreated);
         Assert.Equal(2, result.TransactionsLinked);

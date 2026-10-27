@@ -120,7 +120,7 @@ public sealed class BillDiscoveryEvidenceProtectionTests
         string provider = "Synthetic Subscription")
     {
         for (var month = 1; month <= 3; month++)
-            db.BankTransactions.Add(new BankTransactionEntity { UserId = owner, BankAccountId = Guid.NewGuid(),
+            db.BankTransactions.Add(new BankTransactionEntity { UserId = owner, BankAccountId = owner,
                 PlaidTransactionId = Guid.NewGuid().ToString("N"), Name = provider, MerchantName = provider,
                 Amount = 20m, IsoCurrencyCode = month == 1 ? first : second,
                 PostedDate = new DateOnly(2026, month, 5), CategoryPrimary = "RENT_AND_UTILITIES",

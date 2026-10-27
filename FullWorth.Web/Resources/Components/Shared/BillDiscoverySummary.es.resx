@@ -26,4 +26,6 @@
   <data name="Unavailable" xml:space="preserve"><value>No disponible</value></data>
   <data name="Candidates with mixed or partially missing currencies" xml:space="preserve"><value>Candidatos con monedas diferentes o parcialmente ausentes</value></data>
   <data name="Candidates excluded by category" xml:space="preserve"><value>Candidatos excluidos por categoría</value></data>
+  <data name="Candidates spanning different or partially unknown source accounts" xml:space="preserve"><value>Candidatos con cuentas de origen distintas o parcialmente desconocidas</value></data>
+  <data name="Matching merchant names do not prove that payments from different source accounts belong to one obligation. These candidates need private review." xml:space="preserve"><value>La coincidencia del comercio no demuestra que los pagos de cuentas de origen distintas correspondan a una sola obligación. Estos candidatos necesitan una revisión privada.</value></data>
 </root>

@@ -19,6 +19,7 @@ public sealed class BillDiscoverySummaryTests
         var data = new BillDiscoverySummary.Snapshot
         {
             RejectedCurrencyAmbiguity = 2,
+            RejectedSourceAccountAmbiguity = 3,
             ImportedTransactions = 125,
             EligiblePostedTransactions = 111,
             FirstEligiblePostedDate = new DateOnly(2026, 1, 5),
@@ -34,6 +35,9 @@ public sealed class BillDiscoverySummaryTests
         var html = WebUtility.HtmlDecode(await RenderAsync(culture, data));
         Assert.Contains(imported, html);
         Assert.Contains(accepted, html);
+        Assert.Contains(culture == "es" ? "cuentas de origen distintas" :
+            "different or partially unknown source accounts", html);
+        Assert.Matches("<dd[^>]*>3</dd>", html);
         Assert.Matches("<dd[^>]*>125</dd>", html);
         Assert.Matches("<dd[^>]*>2</dd>", html);
         Assert.Matches("<dd[^>]*>111</dd>", html);

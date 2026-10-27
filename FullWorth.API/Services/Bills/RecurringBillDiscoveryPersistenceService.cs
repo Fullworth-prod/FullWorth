@@ -346,7 +346,7 @@ public sealed class RecurringBillDiscoveryPersistenceService
                     existingStream.ProviderName);
 
             if (ambiguousProviders.Contains(normalizedExistingProvider) ||
-                analysis.AmbiguousSourceProviders.Contains(normalizedExistingProvider)) continue;
+                analysis.AmbiguousEvidenceProviders.Contains(normalizedExistingProvider)) continue;
 
             if (discoveredProviderNames.Contains(
                     normalizedExistingProvider))
@@ -736,7 +736,7 @@ public sealed class RecurringBillDiscoveryPersistenceService
         var rejectedOtherWeakEvidence = 0;
         var rejectedCurrencyAmbiguity = 0;
         var rejectedSourceAccountAmbiguity = 0;
-        var ambiguousSourceProviders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var ambiguousEvidenceProviders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var detectedStream in
                  detectedStreams)
@@ -755,6 +755,7 @@ public sealed class RecurringBillDiscoveryPersistenceService
             if (currencyUnits > 1)
             {
                 rejectedCurrencyAmbiguity++;
+                ambiguousEvidenceProviders.Add(detectedStream.ProviderName);
                 continue;
             }
 
@@ -767,7 +768,7 @@ public sealed class RecurringBillDiscoveryPersistenceService
             if (sourceAccounts > 1)
             {
                 rejectedSourceAccountAmbiguity++;
-                ambiguousSourceProviders.Add(detectedStream.ProviderName);
+                ambiguousEvidenceProviders.Add(detectedStream.ProviderName);
                 continue;
             }
 
@@ -886,7 +887,7 @@ public sealed class RecurringBillDiscoveryPersistenceService
             detectedStreams.Count,
             acceptedDiscoveries,
             diagnostics,
-            ambiguousSourceProviders);
+            ambiguousEvidenceProviders);
     }
 
     private sealed record DiscoveryAnalysis(
@@ -894,7 +895,7 @@ public sealed class RecurringBillDiscoveryPersistenceService
         int DetectedMonthlyCandidates,
         IReadOnlyList<AcceptedRecurringDiscovery> AcceptedDiscoveries,
         RecurringBillDiscoveryDiagnostics Diagnostics,
-        IReadOnlySet<string> AmbiguousSourceProviders);
+        IReadOnlySet<string> AmbiguousEvidenceProviders);
 
     private BillCategory ResolveBillCategory(
         IReadOnlyCollection<DiscoveryTransaction>

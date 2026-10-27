@@ -47,7 +47,7 @@ export function maximumLayoutShiftWindow(entries) {
     .sort((a, b) => a.startTime - b.startTime);
   let best = 0, score = 0, start = -Infinity, last = -Infinity;
   for (const entry of eligible) {
-    if (entry.startTime - last >= 1000 || entry.startTime - start > 5000) {
+    if (entry.startTime - last >= 1000 || entry.startTime - start >= 5000) {
       score = 0;
       start = entry.startTime;
     }

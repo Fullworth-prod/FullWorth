@@ -166,3 +166,9 @@ test("later admin body disposal does not extend the already completed logical re
   assert.equal(reads.snapshot().idleMs, 900);
   assert.equal(reads.snapshot().expectedAdminBodyCancellations, 1);
 });
+
+test("a shift at the exact five-second boundary starts a new session", () => {
+  const entries = [0, 900, 1800, 2700, 3600, 4500, 5000]
+    .map(startTime => ({ startTime, value: .1 }));
+  assert.equal(maximumLayoutShiftWindow(entries), .6);
+});

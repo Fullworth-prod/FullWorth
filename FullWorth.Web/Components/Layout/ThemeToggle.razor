@@ -1,8 +1,10 @@
 ﻿@using Microsoft.JSInterop
 @inject IJSRuntime JS
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FullWorth.Web.Components.App> L
 
 <button class="theme-toggle"
         type="button"
+        disabled="@(_themeModule is null)"
         @onclick="ToggleThemeAsync"
         aria-label="@ButtonLabel"
         title="@ButtonLabel">
@@ -19,8 +21,8 @@
 
     private string ButtonLabel =>
         _isDark
-            ? "Switch to light mode"
-            : "Switch to dark mode";
+            ? L["Switch to light mode"].Value
+            : L["Switch to dark mode"].Value;
 
     private string ThemeSpriteHref =>
         _isDark

@@ -215,6 +215,10 @@ try {
   await page.goto("/app", { waitUntil: "domcontentloaded" });
   await settle(".app-shell");
 
+  await (await import("./theme-pairs.test.mjs")).verifyThemePairs(page, outputDir);
+  await page.goto("/app", { waitUntil: "domcontentloaded" });
+  await settle(".app-shell");
+
   await (await import("./ui-polish.test.mjs")).verifyUiPolish(page, outputDir);
   await (await import("./aria-states.test.mjs")).verifyAriaStates(page);
   await (await import("./subscription-verification.test.mjs")).verifySubscriptionVerification(page, outputDir);

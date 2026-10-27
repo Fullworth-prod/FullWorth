@@ -24,16 +24,14 @@ else
     <link rel="stylesheet"
           href="/premium-public.css" />
 
-    <div class="site-shell">
+    <div class="site-shell @(IsHomePage ? "home-site-shell" : "")">
         <header class="site-header">
             <div class="header-inner">
                 <a class="brand"
                    href="/"
                    aria-label="@L["FullWorth home"]">
 
-                    <span class="brand-mark">
-                        <span class="brand-mark-inner"></span>
-                    </span>
+                    <img class="brand-mark" src="/assets/fullworth/fullworth-mark.svg" width="44" height="44" alt="" />
 
                     <span class="brand-name">
                         FullWorth
@@ -42,21 +40,23 @@ else
 
                 <nav class="desktop-nav"
                      aria-label="@L["Primary navigation"]">
+                    <a class="product-nav" href="/#product"><svg class="bw-sprite home-nav-icon" aria-hidden="true"><use href="/assets/billwatch-sprites.svg#overview"></use></svg>@L["The product"]</a>
 
-                    <a href="/#inside">
-                        @L["What's inside"]
+                    <a href="/#inside"><svg class="bw-sprite home-nav-icon" aria-hidden="true"><use href="/assets/billwatch-sprites.svg#settings"></use></svg>
+                        @L["How it works"]
                     </a>
 
-                    <a href="/#intelligence">
-                        @L["Bill intelligence"]
+                    <a href="/#intelligence"><svg class="bw-sprite home-nav-icon" aria-hidden="true"><use href="/assets/billwatch-sprites.svg#document"></use></svg>
+                        @L["Evidence"]
                     </a>
 
-                    <a href="/#security">
+                    <a href="/#security"><svg class="bw-sprite home-nav-icon" aria-hidden="true"><use href="/assets/billwatch-sprites.svg#shield"></use></svg>
                         @L["Security"]
                     </a>
                 </nav>
 
                 <div class="header-actions">
+                    <DesignStylePicker />
                     <ThemeToggle />
 
                     <AuthorizeView>
@@ -94,9 +94,7 @@ else
                        href="/"
                        aria-label="@L["FullWorth home"]">
 
-                        <span class="brand-mark brand-mark-small">
-                            <span class="brand-mark-inner"></span>
-                        </span>
+                        <img class="brand-mark brand-mark-small" src="/assets/fullworth/fullworth-mark.svg" width="32" height="32" alt="" />
 
                         <span class="brand-name">
                             FullWorth
@@ -104,17 +102,19 @@ else
                     </a>
 
                     <p>
-                        @L["Know when your bills change — and why."]
+                        @L["Review bill changes and available evidence."]
                     </p>
                 </div>
 
                 <div class="footer-status">
-                    <span class="status-dot"></span>
+
 
                     <span>
                         @L["Built around privacy, clarity, and evidence."]
                     </span>
                 </div>
+
+                <nav class="footer-legal-links" aria-label="@L["Legal information"]"><a href="/terms">@L["Terms"]</a><a href="/privacy">@L["Privacy Notice"]</a></nav>
 
                 <div class="footer-copy">
                     © @DateTime.UtcNow.Year FullWorth
@@ -125,6 +125,7 @@ else
 }
 
 @code {
+    private bool IsHomePage => new Uri(Navigation.Uri).AbsolutePath == "/";
     private bool UseStandaloneLegalLayout
     {
         get

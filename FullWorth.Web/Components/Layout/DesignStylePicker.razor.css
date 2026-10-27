@@ -1,0 +1,8 @@
+.design-picker { display: inline-flex; align-items: center; gap: .4rem; min-width: 0; flex-wrap: wrap; max-width: 100%;
+    color: var(--bw-text-secondary); font: inherit; font-size: .75rem; }
+.design-picker select { min-width: 0; max-width: min(8.5rem, 100%); min-height: 44px; border: 1px solid var(--bw-border-strong);
+    border-radius: .5rem; padding: .45rem .6rem; color: var(--bw-text); background: var(--bw-surface);
+    font: inherit; font-size: .8rem; }
+.design-picker select:focus-visible { outline: 3px solid var(--bw-text); outline-offset: 3px; }
+.design-picker-error { max-width: 12rem; color: var(--bw-text); font-size: .75rem; }
+@media(max-width: 480px) { .design-picker > span { display: none; } .design-picker select { max-width: 7rem; } }

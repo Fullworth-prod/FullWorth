@@ -376,3 +376,165 @@
         overflow-wrap: anywhere;
     }
 }
+
+/* Map the selected pair into the existing app tokens, keeping all financial states. */
+html[data-design]:not([data-fullworth-high-contrast="true"]) .app-shell.app-shell {
+    --fw-canvas: var(--pair-canvas); --fw-panel: var(--pair-panel);
+    --fw-panel-solid: var(--pair-panel); --fw-panel-muted: var(--pair-canvas);
+    --fw-ink: var(--pair-ink); --fw-ink-soft: var(--pair-muted);
+    --fw-muted: var(--pair-muted); --fw-faint: var(--pair-muted);
+    --fw-line: var(--pair-line); --fw-line-strong: var(--pair-line);
+    --fw-accent: var(--pair-accent); --fw-accent-strong: var(--pair-accent);
+    --bw-bg: var(--pair-canvas); --bw-surface: var(--pair-panel);
+    --bw-surface-soft: var(--pair-panel); --bw-surface-hover: var(--pair-panel);
+    --bw-text: var(--pair-ink); --bw-text-secondary: var(--pair-muted);
+    --bw-text-muted: var(--pair-muted); --bw-text-subtle: var(--pair-muted);
+    --bw-border: var(--pair-line); --bw-border-strong: var(--pair-line);
+    background: var(--pair-canvas); color: var(--pair-ink);
+}
+html[data-design="editorial"] .app-shell.app-shell .app-sidebar {
+    background: var(--pair-canvas); border-inline-end: 1px solid var(--pair-line);
+    border-radius: 0; box-shadow: none;
+}
+html[data-design="workspace"]:not([data-fullworth-high-contrast="true"]) .app-shell.app-shell .app-sidebar {
+    --fw-ink: #ffffff; --fw-ink-soft: #e5eeff; --fw-muted: #e5eeff; --fw-faint: #e5eeff;
+    --fw-line: #91b4ff; --fw-line-strong: #91b4ff; --fw-accent: #ffffff;
+    background: #1455df; border-radius: 0; box-shadow: none;
+}
+html[data-design="workspace"]:not([data-fullworth-high-contrast="true"]) .app-shell.app-shell .app-sidebar .app-nav-link {
+    color: #ffffff;
+}
+html[data-design="workspace"]:not([data-fullworth-high-contrast="true"]) .app-shell.app-shell .app-sidebar .app-nav-link.active {
+    background: #2b6ae9; color: #ffffff;
+}
+html[data-design="story"] .app-shell.app-shell .app-sidebar {
+    background: var(--pair-panel); border-color: var(--pair-line); box-shadow: none;
+}
+html[data-design] .app-shell.app-shell .app-topbar { background: var(--pair-canvas); gap: .65rem; }
+html[data-design] .app-shell.app-shell .overview-page { color: var(--pair-ink); }
+html[data-design] .app-shell.app-shell .overview-page .page-heading h1 { color: var(--pair-ink); }
+html[data-design="editorial"] .app-shell.app-shell .overview-page .page-heading h1 { font-family: Georgia, "Times New Roman", serif; }
+html[data-design="story"] .app-shell.app-shell .overview-page .page-heading h1 { font-size: clamp(2.2rem, 4vw, 3.4rem); letter-spacing: -.055em; }
+
+html[data-design] .app-shell.app-shell .app-topbar { height: auto; min-height: 64px; flex-wrap: wrap; }
+html[data-design] .app-shell.app-shell .app-topbar .design-picker select { max-width: min(38vw, 8rem); }
+
+/* One data composition, three selected visual arrangements. */
+.app-shell.app-shell .overview-dashboard { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; min-width: 0; }
+.app-shell.app-shell .overview-dashboard > .fw-overview-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; min-width: 0; }
+.app-shell.app-shell .overview-dashboard > .fw-destination-row { min-width: 0; }
+.app-shell.app-shell .overview-attention { min-width: 0; color: var(--pair-ink); background: var(--pair-panel); border: 1px solid var(--pair-line); }
+.app-shell.app-shell .overview-attention p { font-size: .95rem; line-height: 1.55; }
+.app-shell.app-shell .overview-attention h2 { overflow-wrap: anywhere; color: var(--pair-ink); }
+.app-shell.app-shell .overview-attention .fw-signal-action { min-height: 44px; display: inline-flex; align-items: center; }
+.app-shell.app-shell .overview-dashboard .fw-pulse { min-width: 0; overflow: visible; background: var(--pair-panel); }
+.app-shell.app-shell .overview-dashboard .fw-pulse-amount { overflow-wrap: anywhere; }
+.app-shell.app-shell .overview-dashboard .fw-pulse-summary,
+.app-shell.app-shell .overview-dashboard .fw-coverage-note { color: var(--pair-muted); line-height: 1.55; }
+.app-shell.app-shell .overview-dashboard .fw-pulse-summary { font-size: .95rem; }
+.app-shell.app-shell .overview-dashboard .fw-coverage-note { font-size: .85rem; }
+html[data-design="editorial"] .app-shell.app-shell .overview-attention { border: 0; border-block: 1px solid var(--pair-line); border-radius: 0; background: transparent; box-shadow: none; padding: 24px 0; }
+html[data-design="editorial"] .app-shell.app-shell .overview-attention h2 { font: 700 clamp(1.8rem, 3vw, 2.8rem)/1.1 Georgia, "Times New Roman", serif; letter-spacing: -.04em; }
+html[data-design="editorial"] .app-shell.app-shell .overview-dashboard .fw-pulse { grid-template-columns: minmax(0, 1fr); border: 0; border-block: 1px solid var(--pair-line); border-radius: 0; background: transparent; box-shadow: none; }
+html[data-design="editorial"] .app-shell.app-shell .overview-dashboard .fw-pulse-main { padding: 24px 0; }
+html[data-design="editorial"] .app-shell.app-shell .overview-dashboard .fw-pulse-amount { font-family: Georgia, "Times New Roman", serif; font-weight: 700; letter-spacing: -.045em; }
+html[data-design="editorial"] .app-shell.app-shell .overview-dashboard .fw-pulse-rail { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; padding: 24px 0; border-inline-start: 0; border-top: 1px solid var(--pair-line); background: transparent; }
+html[data-design="editorial"] .app-shell.app-shell .overview-dashboard .fw-sync-line,
+html[data-design="editorial"] .app-shell.app-shell .overview-dashboard .fw-pulse-rail > .fw-coverage-note { grid-column: 1 / -1; }
+html[data-design="editorial"] .app-shell.app-shell .overview-dashboard .fw-watchlist { border: 0; border-block: 1px solid var(--pair-line); border-radius: 0; background: transparent; box-shadow: none; padding-inline: 0; }
+html[data-design="editorial"] .app-shell.app-shell .overview-dashboard .fw-section-heading h2 { font-family: Georgia, "Times New Roman", serif; }
+html[data-design="workspace"] .app-shell.app-shell .overview-dashboard { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: start; }
+html[data-design="workspace"] .app-shell.app-shell .overview-dashboard .fw-pulse { grid-column: 1 / -1; grid-row: 1; border-radius: 14px; }
+html[data-design="workspace"] .app-shell.app-shell .overview-dashboard > .fw-overview-grid { grid-column: 1; grid-row: 2; }
+html[data-design="workspace"] .app-shell.app-shell .overview-dashboard > .overview-attention { grid-column: 2; grid-row: 2; border-radius: 14px; }
+html[data-design="workspace"] .app-shell.app-shell .overview-dashboard > .fw-destination-row { grid-column: 1 / -1; grid-row: 3; }
+html[data-design="workspace"] .app-shell.app-shell .overview-dashboard .fw-watchlist { border-radius: 14px; background: var(--pair-panel); box-shadow: none; }
+html[data-design="story"] .app-shell.app-shell .overview-dashboard { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); align-items: start; column-gap: 30px; }
+html[data-design="story"] .app-shell.app-shell .overview-dashboard > .overview-attention { grid-column: 1; grid-row: 1; background: transparent; border: 0; border-top: 2px solid var(--pair-accent); border-radius: 0; padding: 28px 0; box-shadow: none; }
+html[data-design="story"] .app-shell.app-shell .overview-attention h2 { font-size: clamp(2rem, 3vw, 3.3rem); line-height: 1.03; letter-spacing: -.055em; }
+html[data-design="story"] .app-shell.app-shell .overview-attention .fw-signal-change { color: var(--pair-accent); font-size: clamp(2.6rem, 5vw, 4.4rem); }
+html[data-design="story"] .app-shell.app-shell .overview-dashboard .fw-pulse { grid-column: 2; grid-row: 1; grid-template-columns: minmax(0, 1fr); border: 0; border-inline-start: 1px solid var(--pair-line); border-radius: 0; background: transparent; box-shadow: none; }
+html[data-design="story"] .app-shell.app-shell .overview-dashboard .fw-pulse-main { padding: 20px 0 20px 24px; }
+html[data-design="story"] .app-shell.app-shell .overview-dashboard .fw-pulse-amount { font-size: clamp(1.7rem, 3vw, 2.6rem); }
+html[data-design="story"] .app-shell.app-shell .overview-dashboard .fw-pulse-rail { border: 0; border-top: 1px solid var(--pair-line); padding: 20px 0 20px 24px; background: transparent; }
+html[data-design="story"] .app-shell.app-shell .overview-dashboard > .fw-overview-grid { grid-column: 1 / -1; grid-row: 2; }
+html[data-design="story"] .app-shell.app-shell .overview-dashboard > .fw-destination-row { grid-column: 1 / -1; grid-row: 3; }
+html[data-design="story"] .app-shell.app-shell .overview-dashboard .fw-watchlist { background: var(--pair-panel); box-shadow: none; border-color: var(--pair-line); border-radius: 12px; }
+.app-shell.app-shell .overview-page .scan-visual > .bw-sprite { width: 64px; height: 64px; color: var(--pair-accent); }
+@media(max-width: 1000px) {
+    html[data-design="workspace"] .app-shell.app-shell .overview-dashboard,
+    html[data-design="story"] .app-shell.app-shell .overview-dashboard { display: flex; flex-direction: column; align-items: stretch; }
+    html[data-design="story"] .app-shell.app-shell .overview-dashboard .fw-pulse { border-inline-start: 0; border-top: 1px solid var(--pair-line); }
+    html[data-design="story"] .app-shell.app-shell .overview-dashboard .fw-pulse-main,
+    html[data-design="story"] .app-shell.app-shell .overview-dashboard .fw-pulse-rail { padding-inline-start: 0; }
+}
+@media(max-width: 760px) {
+    html[data-design="editorial"] .app-shell.app-shell .overview-dashboard .fw-pulse-rail { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+    .app-shell.app-shell .overview-dashboard { gap: 20px; }
+    .app-shell.app-shell .overview-attention { padding: 20px; }
+}
+
+/* Remove legacy hero art and inherited dark-only ink from the selected compositions. */
+.app-shell.app-shell .overview-dashboard .fw-pulse { min-height: 0; color: var(--pair-ink); }
+.app-shell.app-shell .overview-dashboard .fw-pulse::before,
+.app-shell.app-shell .overview-dashboard .fw-pulse::after,
+.app-shell.app-shell .overview-attention::before,
+.app-shell.app-shell .overview-attention::after { display: none; }
+.app-shell.app-shell .overview-attention { min-height: 0; height: auto; align-self: start; gap: 8px; overflow: visible; }
+.app-shell.app-shell .overview-attention p { margin: 0; }
+.app-shell.app-shell .overview-attention h2 { margin: 8px 0; }
+.app-shell.app-shell .overview-attention .fw-signal-change { margin: 8px 0; line-height: 1.1; }
+.app-shell.app-shell .overview-attention .fw-signal-action { width: fit-content; margin-top: 8px; gap: 20px; }
+.app-shell.app-shell .overview-dashboard .fw-pulse-amount,
+.app-shell.app-shell .overview-dashboard .fw-pulse-stat strong { color: var(--pair-ink); }
+.app-shell.app-shell .overview-dashboard .fw-pulse-label,
+.app-shell.app-shell .overview-dashboard .fw-pulse-stat :is(span, small),
+.app-shell.app-shell .overview-dashboard .fw-sync-line :is(span, strong) { color: var(--pair-muted); }
+.app-shell.app-shell .overview-dashboard .fw-pulse-stat.is-alert strong { color: var(--fw-negative); }
+.app-shell.app-shell .overview-dashboard .fw-primary-action { background: #2854e8; color: #ffffff; }
+.app-shell.app-shell .overview-dashboard .fw-quiet-action { color: var(--pair-ink); }
+html[data-design="editorial"] .app-shell.app-shell .overview-dashboard .fw-pulse { padding: 0; gap: 0; }
+html[data-design="editorial"] .app-shell.app-shell .overview-dashboard .fw-pulse-stat { grid-column: auto; padding: 0; border: 0; border-radius: 0; background: transparent; }
+html[data-design="editorial"] .app-shell.app-shell .overview-attention .fw-signal-action { padding-inline: 0; border: 0; background: none; color: var(--pair-accent); }
+html[data-design="story"] .app-shell.app-shell .overview-dashboard .fw-pulse { padding: 0; }
+
+/* Selected families must release desktop summary tracks at enlarged phone sizes. */
+@media(max-width: 1000px) {
+    html[data-design] .app-shell.app-shell .overview-dashboard .fw-pulse { grid-template-columns: minmax(0, 1fr); }
+}
+@media(max-width: 600px) {
+    html[data-design] .app-shell.app-shell .overview-dashboard .fw-pulse-rail { grid-template-columns: minmax(0, 1fr); }
+    html[data-design] .app-shell.app-shell .overview-dashboard .fw-pulse-stat { grid-column: auto; }
+    html[data-design] .app-shell.app-shell .app-topbar { padding: 12px; align-items: center; }
+    html[data-design] .app-shell.app-shell .app-topbar .mobile-brand { flex: 1 1 100%; }
+    html[data-design] .app-shell.app-shell .app-topbar .topbar-spacer { display: none; }
+    html[data-design] .app-shell.app-shell .app-topbar .design-picker { flex: 1 1 auto; }
+    html[data-design] .app-shell.app-shell .app-topbar .design-picker select { max-width: min(100%, 12rem); }
+}
+
+/* Keep account/menu ink on the selected sidebar surface. */
+html[data-design]:not([data-fullworth-high-contrast="true"]) .app-shell.app-shell {
+    --fw-accent-soft: color-mix(in srgb, var(--pair-accent) 12%, transparent);
+}
+html[data-design="workspace"]:not([data-fullworth-high-contrast="true"]) .app-shell.app-shell .app-sidebar {
+    --bw-text: #ffffff; --bw-text-secondary: #e5eeff; --bw-text-muted: #e5eeff; --bw-text-subtle: #e5eeff;
+}
+html[data-design="workspace"]:not([data-fullworth-high-contrast="true"]) .app-shell.app-shell .app-sidebar :is(.account-copy strong, .account-copy span, .logout-button) { color: #e5eeff; }
+html[data-design="story"]:not([data-fullworth-high-contrast="true"]) .app-shell.app-shell .app-sidebar .app-nav-link.active {
+    color: var(--pair-ink); background: var(--fw-accent-soft); border-color: var(--pair-line);
+}
+
+/* A navigation sheet uses the page palette, independently of its cobalt rail. */
+html[data-design="workspace"] .app-shell.app-shell .app-sidebar .mobile-menu-sheet {
+    --bw-text: var(--pair-ink); --bw-text-secondary: var(--pair-muted);
+    --bw-text-muted: var(--pair-muted); --bw-text-subtle: var(--pair-muted);
+    --bw-surface: var(--pair-panel); --bw-surface-soft: var(--pair-canvas);
+    --fw-ink: var(--pair-ink); --fw-ink-soft: var(--pair-muted);
+    --fw-muted: var(--pair-muted); --fw-faint: var(--pair-muted);
+    --fw-accent: var(--pair-accent); --fw-line: var(--pair-line); --fw-line-strong: var(--pair-line);
+    background: var(--pair-panel); color: var(--pair-ink);
+}
+html[data-design="workspace"] .app-shell.app-shell .app-sidebar .mobile-menu-sheet .app-nav-link { color: var(--pair-ink); }
+html[data-design="workspace"] .app-shell.app-shell .app-sidebar .mobile-menu-sheet .app-nav-link.active {
+    background: var(--fw-accent-soft); color: var(--pair-ink);
+}

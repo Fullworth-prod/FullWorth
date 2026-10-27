@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { requireDisposableOrigin, summarizeStaticResources, maximumLayoutShiftWindow }
+import { requireDisposableOrigin, summarizeStaticResources, maximumLayoutShiftWindow, createReadTracker }
   from "../FullWorth.VisualTests/performance-metrics.mjs";
 
 test("performance probe rejects production, insecure, misleading and credentialed origins", () => {
@@ -53,4 +53,70 @@ test("a shift session cannot grow beyond five seconds even with short gaps", () 
   assert.equal(maximumLayoutShiftWindow([
     { startTime: 0, value: .2 }, { startTime: 1000, value: .3 }
   ]), .3);
+});
+
+const request = (url, method = "GET") => ({ url: () => url, method: () => method, failure: () => null });
+
+test("denied admin body failure remains a strict failure and keeps sanitized evidence", () => {
+  const reads = createReadTracker("https://web.localhost");
+  const req = request("https://web.localhost/bff/admin/users?skip=0&take=1");
+  reads.started(req); reads.responded(req, 403); reads.failed(req, "net::ERR_ABORTED");
+  const state = reads.snapshot();
+  assert.equal(state.failures, 1);
+  assert.equal(state.pending, 0);
+  assert.deepEqual(state.records, [{ method: "GET", group: "admin-probe", status: 403, failureCode: "ERR_ABORTED" }]);
+  assert.deepEqual(state.responseCounts, { 403: 1 });
+});
+
+test("read diagnostics never serialize private paths, queries or raw error strings", () => {
+  const reads = createReadTracker("https://web.localhost");
+  const req = request("https://web.localhost/bff/bill-streams/private-owner-id?token=secret");
+  reads.started(req); reads.failed(req, "private token=secret");
+  assert.equal(reads.snapshot().failures, 1);
+  assert.equal(reads.snapshot().records[0].failureCode, "OTHER");
+  assert.doesNotMatch(JSON.stringify(reads.snapshot()), /private|secret|token|https/);
+});
+
+test("late responses and failures from an older sample cannot contaminate a new sample", () => {
+  let clock = 0;
+  const reads = createReadTracker("https://web.localhost", () => clock);
+  const old = request("https://web.localhost/bff/bill-streams");
+  reads.started(old); reads.begin();
+  const current = request("https://web.localhost/bff/alerts");
+  reads.started(current);
+  reads.responded(old, 503); reads.failed(old, "net::ERR_ABORTED");
+  assert.equal(reads.snapshot().failures, 0);
+  assert.deepEqual(reads.snapshot().responseCounts, {});
+  assert.equal(reads.snapshot().pending, 1);
+  reads.responded(current, 200); reads.finished(current);
+  clock = 900;
+  assert.equal(reads.snapshot().idleMs, 900);
+  assert.equal(reads.snapshot().pending, 0);
+  assert.deepEqual(reads.snapshot().responseCounts, { 200: 1 });
+});
+
+test("mutation counters and unknown transport failures are never treated as successful reads", () => {
+  const reads = createReadTracker("https://web.localhost");
+  const req = request("https://web.localhost/bff/account/preferences", "PUT");
+  reads.started(req); reads.failed(req, "connection reset");
+  const state = reads.snapshot();
+  assert.equal(state.unsafe, 1);
+  assert.equal(state.failures, 1);
+  assert.equal(state.records[0].status, null);
+  assert.equal(state.records[0].failureCode, "OTHER");
+});
+
+test("bounded diagnostic records cannot hide failures beyond the retained window", () => {
+  const reads = createReadTracker("https://web.localhost");
+  for (let i = 0; i < 101; i++) {
+    const req = request("https://web.localhost/bff/bill-streams");
+    reads.started(req);
+    if (i === 100) reads.failed(req, "net::ERR_ABORTED");
+    else { reads.responded(req, 200); reads.finished(req); }
+  }
+  const state = reads.snapshot();
+  assert.equal(state.records.length, 100);
+  assert.equal(state.recordsTruncated, true);
+  assert.equal(state.requests, 101);
+  assert.equal(state.failures, 1);
 });

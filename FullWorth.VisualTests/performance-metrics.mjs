@@ -57,3 +57,70 @@ export function maximumLayoutShiftWindow(entries) {
   }
   return Number(best.toFixed(6));
 }
+
+export function createReadTracker(origin, now = () => performance.now()) {
+  let lease = 0, state;
+  const entries = new WeakMap();
+  function begin() {
+    lease++;
+    state = { pending: new Set(), counts: {}, failures: 0, unsafe: 0,
+      records: [], total: 0, lastActivity: now() };
+  }
+  function current(request) {
+    const entry = entries.get(request);
+    return entry?.lease === lease ? entry : null;
+  }
+  function started(request) {
+    let url;
+    try { url = new URL(request.url()); } catch { return; }
+    if (url.origin !== origin || !url.pathname.startsWith("/bff/")) return;
+    const rawMethod = request.method();
+    const method = ["GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH", "DELETE"].includes(rawMethod)
+      ? rawMethod : "OTHER";
+    const group = url.pathname === "/bff/admin/users" ? "admin-probe"
+      : url.pathname === "/bff/account/preferences" ? "preferences"
+      : url.pathname === "/bff/bank-connections" ? "bank-connections"
+      : url.pathname === "/bff/bank-accounts" ? "bank-accounts"
+      : url.pathname === "/bff/bill-streams" ? "bill-streams"
+      : url.pathname.startsWith("/bff/bill-streams/") ? "bill-detail"
+      : url.pathname === "/bff/alerts" ? "alerts" : "other-bff";
+    const entry = { lease, method, group, status: null, failureCode: null };
+    entries.set(request, entry);
+    state.pending.add(request);
+    state.total++;
+    if (state.records.length < 100) state.records.push(entry);
+    if (!["GET", "HEAD", "OPTIONS"].includes(method)) state.unsafe++;
+    state.lastActivity = now();
+  }
+  function responded(request, status) {
+    const entry = current(request);
+    if (!entry) return;
+    entry.status = status;
+    state.counts[status] = (state.counts[status] ?? 0) + 1;
+    state.lastActivity = now();
+  }
+  function finished(request) {
+    if (current(request) && state.pending.delete(request)) state.lastActivity = now();
+  }
+  function failed(request, reason = request.failure()?.errorText ?? "") {
+    const entry = current(request);
+    if (!entry || !state.pending.delete(request)) return;
+    // Only an error-code token is retained, never the raw failure URL/message.
+    entry.failureCode = String(reason).match(/\b(?:ERR_[A-Z_]+|NS_[A-Z_]+)\b/)?.[0]
+      ?? (/cancel/i.test(String(reason)) ? "CANCELLED" : "OTHER");
+    state.failures++;
+    state.lastActivity = now();
+  }
+  function snapshot() {
+    return {
+      pending: state.pending.size, responseCounts: { ...state.counts },
+      failures: state.failures, unsafe: state.unsafe, requests: state.total,
+      idleMs: Math.max(0, now() - state.lastActivity),
+      recordsTruncated: state.total > state.records.length,
+      records: state.records.map(({ method, group, status, failureCode }) =>
+        ({ method, group, status, failureCode }))
+    };
+  }
+  begin();
+  return { begin, started, responded, finished, failed, snapshot };
+}

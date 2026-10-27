@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { webkit } from "playwright";
-import { requireDisposableOrigin, summarizeStaticResources, maximumLayoutShiftWindow }
+import { requireDisposableOrigin, summarizeStaticResources, maximumLayoutShiftWindow, createReadTracker }
   from "./performance-metrics.mjs";
 
-// Installs only in newly-created disposable browser contexts. No application,
-// framework internals, request payloads or production instrumentation are changed.
+// Test-local public profile wrappers and PerformanceObservers only. Production
+// application files, framework internals and request payloads are not changed.
 function installProbe() {
   try { localStorage.setItem("fullworth.performance-profile", "balanced"); } catch {}
   const supported = new Set(globalThis.PerformanceObserver?.supportedEntryTypes ?? []);
@@ -129,10 +129,10 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
       baseURL: origin, ignoreHTTPSErrors: true, serviceWorkers: workerPolicy, locale: "en-US",
       storageState, viewport: network === "emulated-slow" ? { width: 390, height: 844 } : { width: 1440, height: 1000 }
     });
-    let session;
+    let session, reads, page;
     try {
       await context.addInitScript(installProbe);
-      const page = await context.newPage();
+      page = await context.newPage();
       if (network === "emulated-slow") {
         session = await context.newCDPSession(page);
         await session.send("Network.enable");
@@ -141,31 +141,19 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
           connectionType: "cellular3g"
         });
       }
-      let pending = new Set(), counts = {}, failures = 0, unsafe = 0, pageErrors = 0, lastActivity = 0;
-      const bff = request => new URL(request.url()).origin === origin &&
-        new URL(request.url()).pathname.startsWith("/bff/");
-      page.on("request", request => {
-        if (!bff(request)) return;
-        if (!["GET", "HEAD", "OPTIONS"].includes(request.method())) unsafe++;
-        pending.add(request); lastActivity = Date.now();
-      });
-      page.on("requestfinished", request => {
-        if (pending.delete(request)) lastActivity = Date.now();
-      });
-      page.on("requestfailed", request => {
-        if (pending.delete(request)) { failures++; lastActivity = Date.now(); }
-      });
-      page.on("response", response => {
-        if (!bff(response.request())) return;
-        const status = response.status();
-        counts[status] = (counts[status] ?? 0) + 1;
-      });
+      reads = createReadTracker(origin);
+      let pageErrors = 0;
+      page.on("request", request => reads.started(request));
+      page.on("requestfinished", request => reads.finished(request));
+      page.on("requestfailed", request => reads.failed(request));
+      page.on("response", response => reads.responded(response.request(), response.status()));
       page.on("pageerror", () => pageErrors++);
       for (const item of selectedCases) {
         if (workerPolicy === "allow" && engine === "chromium" && item.mode === "reload")
           await page.waitForFunction(() => navigator.serviceWorker?.controller != null,
             null, { timeout: 10000 });
-        pending = new Set(); counts = {}; failures = 0; unsafe = 0; pageErrors = 0; lastActivity = Date.now();
+        reads.begin(); pageErrors = 0;
+        report.attempt = { engine, case: item.name, network, serviceWorkerPolicy: workerPolicy, phase: "navigating" };
         const before = await page.evaluate(() => window.__fullworthCiPerformance?.reset() ?? null);
         let requestedMode = "document";
         if (item.mode === "reload") await page.reload({ waitUntil: "domcontentloaded" });
@@ -179,6 +167,7 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
             ]);
           } else await page.goto(item.route, { waitUntil: "domcontentloaded" });
         }
+        assert.equal(new URL(page.url()).origin, origin, "Benchmark must remain inside the disposable origin.");
         assert.equal(new URL(page.url()).pathname, item.route, engine + ": benchmark must stay authenticated.");
         const heading = item.selector ? page.locator(item.selector).first()
           : page.getByRole("heading", { name: item.heading, exact: true }).first();
@@ -186,15 +175,23 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
         const headingObservation = await page.evaluate(() => ({
           token: window.__fullworthCiPerformance.token, now: performance.now()
         }));
+        report.attempt.phase = "observing";
         const deadline = Date.now() + 20000;
-        // Require actual observed BFF reads and a quiet bounded observation window.
-        while ((Object.keys(counts).length === 0 || pending.size || Date.now() - lastActivity < 900) &&
-               Date.now() < deadline) await page.waitForTimeout(50);
-        assert.ok(Object.keys(counts).length > 0 && pending.size === 0, engine + ": incomplete read observation.");
-        assert.equal(unsafe, 0, "Performance measurement must not issue BFF mutations.");
-        assert.equal(failures, 0, engine + ": failed reads invalidate the measurement.");
-        assert.ok(!Object.keys(counts).some(status => Number(status) === 401 || Number(status) === 429 ||
-          Number(status) >= 500), engine + ": auth/rate/provider failures invalidate the measurement.");
+        let readState = reads.snapshot();
+        while ((Object.keys(readState.responseCounts).length === 0 || readState.pending ||
+                readState.idleMs < 900) && Date.now() < deadline) {
+          await page.waitForTimeout(50);
+          readState = reads.snapshot();
+        }
+        report.attempt.reads = readState;
+        report.attempt.pageErrors = pageErrors;
+        assert.ok(Object.keys(readState.responseCounts).length > 0 && readState.pending === 0,
+          engine + ": incomplete read observation.");
+        assert.equal(readState.unsafe, 0, "Performance measurement must not issue BFF mutations.");
+        assert.equal(readState.failures, 0, engine + ": failed reads invalidate the measurement.");
+        assert.ok(!Object.keys(readState.responseCounts).some(status => Number(status) === 401 ||
+          Number(status) === 429 || Number(status) >= 500),
+          engine + ": auth/rate/provider failures invalidate the measurement.");
         assert.equal(pageErrors, 0, engine + ": unhandled page errors invalidate the measurement.");
         const observation = await page.evaluate(() => window.__fullworthCiPerformance.read());
         const enhanced = requestedMode === "link" && before?.token === observation.token;
@@ -205,6 +202,7 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
           assert.ok(resources.css.knownSizeEntries > 0 && resources.js.knownSizeEntries > 0,
             "Chromium cold baseline must expose actual static transfer/body sizes.");
         }
+        assert.equal(new URL(page.url()).origin, origin, "No late redirect outside the disposable origin.");
         assert.equal(new URL(page.url()).pathname, item.route, "No late authenticated redirect during measurement.");
         assert.equal(observation.effectiveProfile, "balanced");
         assert.equal(observation.appError, !!item.unavailable);
@@ -224,13 +222,32 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
           maxLongTaskMs: observation.supportsLongTasks && observation.longTasksDropped === 0 ? round(Math.max(0, ...longTasks.map(entry => entry.duration))) : null,
           stylesheetLinks: observation.stylesheetLinks, duplicateStylesheetHrefs: observation.duplicateStylesheetHrefs,
           externalScriptElements: observation.externalScriptElements, resources,
-          profileApiCalls: observation.profileCalls, bffReadResponseCounts: counts,
+          profileApiCalls: observation.profileCalls, bffReadResponseCounts: readState.responseCounts,
           expectedUnavailable: !!item.unavailable, workerSupported: observation.workerSupported,
           workerControlled: observation.workerControlled,
           observerRecordsDropped: { layoutShift: observation.shiftsDropped, longTask: observation.longTasksDropped }
         });
+        report.attempt.phase = "completed";
       }
     } finally {
+      if (reads && report.attempt?.phase !== "completed") {
+        report.attempt = { ...report.attempt, phase: "failed", reads: reads.snapshot() };
+        if (page && !page.isClosed()) {
+          const location = new URL(page.url());
+          const aliases = {
+            "/app": "overview", "/app/setup": "setup", "/login": "login",
+            "/app/bills": "bills", "/app/activity": "activity", "/app/account": "account",
+            "/app/account/transactions": "transactions", "/app/account/settings": "settings"
+          };
+          report.attempt.location = {
+            sameOrigin: location.origin === origin,
+            route: aliases[location.pathname] ?? (location.pathname.startsWith("/app/bills/") ? "bill-detail" : "other")
+          };
+          report.attempt.language = await page.evaluate(() =>
+            ["en-US", "es"].includes(document.documentElement.lang)
+              ? document.documentElement.lang : "other").catch(() => "unavailable");
+        }
+      }
       if (session) await session.detach().catch(() => {});
       await context.close();
     }

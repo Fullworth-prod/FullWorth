@@ -231,4 +231,112 @@ public sealed class BillStatementEvidenceAlertServiceTests
                     [],
                     [foreignLineItem]));
     }
+
+    [Theory]
+    [InlineData("Tax", false)]
+    [InlineData("Tax", true)]
+    [InlineData(null, false)]
+    [InlineData(null, true)]
+    [InlineData("", false)]
+    [InlineData(" ", true)]
+    public void MixedCategoryDescription_DoesNotInventTypedAlerts(string? otherCategory, bool reverse)
+    {
+        var owner = Guid.NewGuid();
+        var stream = Guid.NewGuid();
+        var previousId = Guid.NewGuid();
+        var currentId = Guid.NewGuid();
+        var change = OwnedChange(owner, stream, previousId, currentId);
+        var service = new BillStatementEvidenceAlertService();
+        BillLineItemEntity[] fees =
+        [
+            Line(owner, currentId, " Shared charge ", 5m, "Fee"),
+            Line(owner, currentId, "shared charge", 3m, otherCategory),
+            Line(owner, currentId, "SHARED CHARGE", 2m, "Fee")
+        ];
+        BillLineItemEntity[] discounts =
+        [
+            Line(owner, previousId, " Shared credit ", -5m, "Discount"),
+            Line(owner, previousId, "shared credit", -3m, otherCategory),
+            Line(owner, previousId, "SHARED CREDIT", -2m, "Discount")
+        ];
+        if (reverse)
+        {
+            Array.Reverse(fees);
+            Array.Reverse(discounts);
+        }
+
+        Assert.Empty(service.BuildDesiredAlerts(owner, stream, "Provider", change, [], fees));
+        Assert.Empty(service.BuildDesiredAlerts(owner, stream, "Provider", change, discounts, []));
+    }
+
+    [Fact]
+    public void OffsetMixedCategories_DoNotProveFeeIsNewOrDiscountAbsent()
+    {
+        var owner = Guid.NewGuid();
+        var stream = Guid.NewGuid();
+        var previousId = Guid.NewGuid();
+        var currentId = Guid.NewGuid();
+        var change = OwnedChange(owner, stream, previousId, currentId);
+        var service = new BillStatementEvidenceAlertService();
+        BillLineItemEntity[] previous =
+        [
+            Line(owner, previousId, "Account adjustment", 5m, "Fee"),
+            Line(owner, previousId, "Account adjustment", -5m, "Discount"),
+            Line(owner, previousId, "Loyalty adjustment", -5m, "Discount")
+        ];
+        BillLineItemEntity[] current =
+        [
+            Line(owner, currentId, "Account adjustment", 5m, "Fee"),
+            Line(owner, currentId, "Loyalty adjustment", -5m, "Discount"),
+            Line(owner, currentId, "Loyalty adjustment", 5m, "Fee")
+        ];
+
+        Assert.Empty(service.BuildDesiredAlerts(owner, stream, "Provider", change, previous, current));
+    }
+
+    [Fact]
+    public void HomogeneousCategories_KeepAccurateFeeAndRemovedDiscountTotals()
+    {
+        var owner = Guid.NewGuid();
+        var stream = Guid.NewGuid();
+        var previousId = Guid.NewGuid();
+        var currentId = Guid.NewGuid();
+        var change = OwnedChange(owner, stream, previousId, currentId);
+        var alerts = new BillStatementEvidenceAlertService().BuildDesiredAlerts(
+            owner, stream, "Provider", change,
+            [
+                Line(owner, previousId, " Loyalty ", -3m, " Discount "),
+                Line(owner, previousId, "loyalty", -2m, "discount")
+            ],
+            [
+                Line(owner, currentId, " Account fee ", 3m, " Fee "),
+                Line(owner, currentId, "account fee", 2m, "fee")
+            ]);
+        Assert.Equal(2, alerts.Count);
+        Assert.Contains(alerts, alert => alert.AlertType == BillAlertContractType.NewFee
+            && alert.Message.Contains("$5.00", StringComparison.Ordinal));
+        Assert.Contains(alerts, alert => alert.AlertType == BillAlertContractType.RemovedDiscount
+            && alert.Message.Contains("$5.00", StringComparison.Ordinal));
+    }
+
+    private static BillChangeEntity OwnedChange(Guid owner, Guid stream, Guid previous, Guid current) =>
+        new()
+        {
+            UserId = owner,
+            BillStreamId = stream,
+            PreviousStatementId = previous,
+            CurrentStatementId = current,
+            ChangeType = BillChangeType.TotalIncrease
+        };
+
+    private static BillLineItemEntity Line(Guid owner, Guid statement, string description, decimal amount, string? category) =>
+        new()
+        {
+            UserId = owner,
+            BillStatementId = statement,
+            Description = description,
+            Amount = amount,
+            Category = category
+        };
+
 }

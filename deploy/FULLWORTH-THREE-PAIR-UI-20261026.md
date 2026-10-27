@@ -1,6 +1,12 @@
 # Three selectable FullWorth theme pairs
 
-Status: implementation in progress; no visual acceptance, protected CI, development integration or deployment yet. Human selected all three pairs on 2026-10-26. Reference gallery: https://docs.google.com/document/d/1saHL9hvcqRpG1NQvAQ0Xe5hywWPfM7BuMS5Gmo8iWUA/edit?tab=t.7oxhmcd6lnlu
+Status: implementation visually accepted on c66e534; final documentation-head checks and development integration pending. No deployment. Human selected all three pairs on 2026-10-26. Reference gallery: https://docs.google.com/document/d/1saHL9hvcqRpG1NQvAQ0Xe5hywWPfM7BuMS5Gmo8iWUA/edit?tab=t.7oxhmcd6lnlu
+
+## Accepted implementation checkpoint — 2026-10-26
+
+Source c66e534d60304303730740333c3bed3b090a4f48: main CI40377964637, dedicated confirmation40377964643 and dependency review passed. Theme matrix Chromium2188/WebKit2212 assertions;330 geometry INCLUDING108 financial-state and12 menu cases per engine; zero layout/contrast/unexpected errors. Backend2870/Node127 zero failed/skipped, backend/offline zero warnings/errors, Android compiled. Existing responsive672/native-select126/ARIA37/subscription54 per engine and confirmation38/BFF74/Hosted24 passed.
+
+Visual artifact12678346695 SHA2568bee057556e1a00532840526b860262c2e82715ff4ae80fa6e9c135d6fa35d75 downloaded/verified. All6 combined full boards plus focused views,6 Overview frames,6 English phone frames and enlarged Chromium/WebKit menus inspected. Root design-qa.md records passed fidelity, intentional differences, P3-only follow-ups and preserved iteration history. Documentation-only final head still requires exact-head checks/review before development integration; this is not deployment.
 
 SELECTED: ALL THREE PAIRS — 26 OCTOBER 2026
 

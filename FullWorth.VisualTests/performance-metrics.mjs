@@ -58,14 +58,18 @@ export function maximumLayoutShiftWindow(entries) {
   return Number(best.toFixed(6));
 }
 
+export const unavailableBillFixtureId = "11111111-1111-4111-8111-111111111111";
+
 export function createReadTracker(origin, now = () => performance.now()) {
   let lease = 0, state;
   const entries = new WeakMap();
-  function begin() {
+  function begin(options = {}) {
     lease++;
     state = { pending: new Set(), counts: {}, failures: 0, unsafe: 0,
       records: [], total: 0, adminHeaderDenials: 0, expectedAdminBodyCancellations: 0,
-      unexpectedAdminStatuses: 0, lastActivity: now() };
+      unexpectedAdminStatuses: 0, expectedUnavailableResponses: 0,
+      expectedUnavailableBodyCancellations: 0,
+      expectUnavailableBill: options.expectUnavailableBill === true, lastActivity: now() };
   }
   function current(request) {
     const entry = entries.get(request);
@@ -86,7 +90,9 @@ export function createReadTracker(origin, now = () => performance.now()) {
       : url.pathname.startsWith("/bff/bill-streams/") ? "bill-detail"
       : url.pathname === "/bff/alerts" ? "alerts" : "other-bff";
     const entry = { lease, method, group, status: null, failureCode: null,
-      wireComplete: false, deniedAdminHeaders: false };
+      wireComplete: false, deniedAdminHeaders: false, unavailableHeaders: false,
+      unavailableFixture: state.expectUnavailableBill && method === "GET" &&
+        url.pathname === "/bff/bill-streams/" + unavailableBillFixtureId };
     entries.set(request, entry);
     state.pending.add(request);
     state.total++;
@@ -108,6 +114,13 @@ export function createReadTracker(origin, now = () => performance.now()) {
         state.pending.delete(request);
       } else state.unexpectedAdminStatuses++;
     }
+    // Only the explicitly selected, fixed nonexistent fixture can complete as404.
+    // The browser probe still requires its visible error screen, never financial success.
+    if (entry.unavailableFixture && status === 404) {
+      entry.unavailableHeaders = true;
+      state.expectedUnavailableResponses++;
+      state.pending.delete(request);
+    }
     state.lastActivity = now();
   }
   function finished(request) {
@@ -125,9 +138,11 @@ export function createReadTracker(origin, now = () => performance.now()) {
     entry.failureCode = raw.match(/^(?:net::)?(ERR_[A-Z_]+|NS_[A-Z_]+)$/)?.[1]
       ?? (["cancelled", "canceled", "request cancelled", "request canceled"].includes(raw.toLowerCase())
         ? "CANCELLED" : "OTHER");
-    if (entry.deniedAdminHeaders &&
-        ["ERR_ABORTED", "NS_BINDING_ABORTED", "CANCELLED"].includes(entry.failureCode)) {
+    const knownDisposal = ["ERR_ABORTED", "NS_BINDING_ABORTED", "CANCELLED"].includes(entry.failureCode);
+    if (entry.deniedAdminHeaders && knownDisposal) {
       state.expectedAdminBodyCancellations++;
+    } else if (entry.unavailableHeaders && knownDisposal) {
+      state.expectedUnavailableBodyCancellations++;
     } else {
       state.failures++;
       state.lastActivity = now();
@@ -140,6 +155,8 @@ export function createReadTracker(origin, now = () => performance.now()) {
       adminHeaderDenials: state.adminHeaderDenials,
       expectedAdminBodyCancellations: state.expectedAdminBodyCancellations,
       unexpectedAdminStatuses: state.unexpectedAdminStatuses,
+      expectedUnavailableResponses: state.expectedUnavailableResponses,
+      expectedUnavailableBodyCancellations: state.expectedUnavailableBodyCancellations,
       idleMs: Math.max(0, now() - state.lastActivity),
       recordsTruncated: state.total > state.records.length,
       records: state.records.map(({ method, group, status, failureCode }) =>

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { webkit } from "playwright";
-import { requireDisposableOrigin, summarizeStaticResources, maximumLayoutShiftWindow, createReadTracker }
+import { requireDisposableOrigin, summarizeStaticResources, maximumLayoutShiftWindow, createReadTracker, unavailableBillFixtureId }
   from "./performance-metrics.mjs";
 
 // Test-local public profile wrappers and PerformanceObservers only. Production
@@ -120,7 +120,7 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
       "Heading readability includes automation observation overhead, not financial-data readiness.",
       "Paint/LCP/layout observations are bounded windows, not final field Core Web Vitals or percentile SLAs.",
       "Profile API counters cover four public methods; resource entries are not import or total JS-interop counts.",
-      "Bill detail is the truthful unavailable state; populated/private histories and CPU/device throttling are not claimed."
+      "Only the fixed nonexistent Bill Detail fixture permits404-header completion; its visible error screen is required. Populated/private histories and CPU/device throttling are not claimed."
     ],
     samples: []
   };
@@ -132,7 +132,7 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
     { name: "account", route: "/app/account", heading: "Account hub" },
     { name: "transactions", route: "/app/account/transactions", heading: "Transactions" },
     { name: "settings", route: "/app/account/settings", selector: ".settings-page h1" },
-    { name: "bill-detail-unavailable", route: "/app/bills/11111111-1111-4111-8111-111111111111",
+    { name: "bill-detail-unavailable", route: "/app/bills/" + unavailableBillFixtureId,
       selector: "main .app-error-state h2", unavailable: true }
   ];
   const run = async (browser, engine, selectedCases, network, workerPolicy = "block") => {
@@ -163,7 +163,7 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
         if (workerPolicy === "allow" && engine === "chromium" && item.mode === "reload")
           await page.waitForFunction(() => navigator.serviceWorker?.controller != null,
             null, { timeout: 10000 });
-        reads.begin(); pageErrors = 0;
+        reads.begin({ expectUnavailableBill: !!item.unavailable }); pageErrors = 0;
         report.attempt = { engine, case: item.name, network, serviceWorkerPolicy: workerPolicy, phase: "navigating" };
         const before = await page.evaluate(() => window.__fullworthCiPerformance?.reset() ?? null);
         let requestedMode = "document";
@@ -201,6 +201,10 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
         assert.equal(readState.unsafe, 0, "Performance measurement must not issue BFF mutations.");
         assert.equal(readState.failures, 0, engine + ": failed reads invalidate the measurement.");
         assert.equal(readState.unexpectedAdminStatuses, 0, engine + ": unexpected admin access invalidates the fixture.");
+        assert.equal(readState.expectedUnavailableResponses, item.unavailable ? 1 : 0,
+          "Only the selected nonexistent bill fixture may have one expected404.");
+        assert.equal(readState.responseCounts[404] ?? 0, readState.expectedUnavailableResponses,
+          "Any other missing read invalidates the sample.");
         assert.equal(readState.recordsTruncated, false, "Every fixture read must remain inspectable.");
         assert.ok(readState.records.every(read =>
           (read.status >= 200 && read.status < 300) ||
@@ -244,6 +248,8 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
           effectiveProfile: observation.effectiveProfile, bffReadResponseCounts: readState.responseCounts,
           adminHeaderDenials: readState.adminHeaderDenials,
           expectedAdminBodyCancellations: readState.expectedAdminBodyCancellations,
+          expectedUnavailableResponses: readState.expectedUnavailableResponses,
+          expectedUnavailableBodyCancellations: readState.expectedUnavailableBodyCancellations,
           expectedUnavailable: !!item.unavailable, workerSupported: observation.workerSupported,
           workerControlled: observation.workerControlled,
           observerRecordsDropped: { layoutShift: observation.shiftsDropped, longTask: observation.longTasksDropped }

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { requireDisposableOrigin, summarizeStaticResources, maximumLayoutShiftWindow, createReadTracker }
+import { requireDisposableOrigin, summarizeStaticResources, maximumLayoutShiftWindow, createReadTracker, unavailableBillFixtureId }
   from "../FullWorth.VisualTests/performance-metrics.mjs";
 
 test("performance probe rejects production, insecure, misleading and credentialed origins", () => {
@@ -171,4 +171,56 @@ test("a shift at the exact five-second boundary starts a new session", () => {
   const entries = [0, 900, 1800, 2700, 3600, 4500, 5000]
     .map(startTime => ({ startTime, value: .1 }));
   assert.equal(maximumLayoutShiftWindow(entries), .6);
+});
+
+test("only the selected fixed unavailable bill completes at404 headers and records disposal", () => {
+  const reads = createReadTracker("https://web.localhost");
+  reads.begin({ expectUnavailableBill: true });
+  const req = request("https://web.localhost/bff/bill-streams/" + unavailableBillFixtureId);
+  reads.started(req); reads.responded(req, 404);
+  assert.equal(reads.snapshot().pending, 0);
+  assert.equal(reads.snapshot().expectedUnavailableResponses, 1);
+  reads.failed(req, "net::ERR_ABORTED");
+  assert.equal(reads.snapshot().failures, 0);
+  assert.equal(reads.snapshot().expectedUnavailableBodyCancellations, 1);
+  assert.deepEqual(reads.snapshot().responseCounts, { 404: 1 });
+  assert.doesNotMatch(JSON.stringify(reads.snapshot()), /11111111|https|bill-streams/);
+});
+
+test("other bills, modes, methods and statuses cannot inherit the unavailable-fixture rule", () => {
+  for (const entry of [
+    { selected: false, id: unavailableBillFixtureId, method: "GET", status: 404 },
+    { selected: true, id: "22222222-2222-4222-8222-222222222222", method: "GET", status: 404 },
+    { selected: true, id: unavailableBillFixtureId, method: "GET", status: 200 },
+    { selected: true, id: unavailableBillFixtureId, method: "GET", status: 403 },
+    { selected: true, id: unavailableBillFixtureId, method: "PUT", status: 404 }
+  ]) {
+    const reads = createReadTracker("https://web.localhost");
+    reads.begin({ expectUnavailableBill: entry.selected });
+    const req = request("https://web.localhost/bff/bill-streams/" + entry.id, entry.method);
+    reads.started(req); reads.responded(req, entry.status);
+    assert.equal(reads.snapshot().pending, 1);
+    reads.failed(req, "net::ERR_ABORTED");
+    assert.equal(reads.snapshot().failures, 1);
+    assert.equal(reads.snapshot().expectedUnavailableResponses, 0);
+    assert.equal(reads.snapshot().expectedUnavailableBodyCancellations, 0);
+  }
+});
+
+test("an unknown transport failure after the expected404 remains a failure", () => {
+  const reads = createReadTracker("https://web.localhost");
+  reads.begin({ expectUnavailableBill: true });
+  const req = request("https://web.localhost/bff/bill-streams/" + unavailableBillFixtureId);
+  reads.started(req); reads.responded(req, 404); reads.failed(req, "net::ERR_CONNECTION_RESET");
+  assert.equal(reads.snapshot().failures, 1);
+  assert.equal(reads.snapshot().expectedUnavailableBodyCancellations, 0);
+});
+
+test("unavailable-fixture opt-in cannot leak into a later normal sample", () => {
+  const reads = createReadTracker("https://web.localhost");
+  reads.begin({ expectUnavailableBill: true }); reads.begin();
+  const req = request("https://web.localhost/bff/bill-streams/" + unavailableBillFixtureId);
+  reads.started(req); reads.responded(req, 404);
+  assert.equal(reads.snapshot().pending, 1);
+  assert.equal(reads.snapshot().expectedUnavailableResponses, 0);
 });

@@ -28,8 +28,13 @@ public sealed class StatementAnalysisCoverageGuardTests
         Assert.Throws<ArgumentException>(() => new BillAnalysisService().Analyze(previous, current));
     }
 
+    // BillStream intentionally sorts supplied statements chronologically; reverse
+    // input order alone is not invalid stream coverage.
+    public static IEnumerable<object[]> IncomparableStreamPeriods =>
+        IncomparablePeriods.Where(row => (DateOnly)row[0] <= (DateOnly)row[2]);
+
     [Theory]
-    [MemberData(nameof(IncomparablePeriods))]
+    [MemberData(nameof(IncomparableStreamPeriods))]
     public void StreamAnalysisLeavesUnsupportedCoverageUnanalyzed(
         DateOnly previousStart, DateOnly previousEnd, DateOnly currentStart, DateOnly currentEnd)
     {
@@ -55,6 +60,19 @@ public sealed class StatementAnalysisCoverageGuardTests
         var stream = new BillStream(Guid.NewGuid(), "Example", BillCategory.Internet,
             statements: [previous, current]);
         Assert.NotNull(new BillStreamAnalysisService().Analyze(stream));
+    }
+
+    [Fact]
+    public void StreamAnalysisStillSortsOutOfOrderMonthlyInput()
+    {
+        var stream = new BillStream(Guid.NewGuid(), "Example", BillCategory.Internet,
+            statements: [
+                Statement(new(2026, 2, 1), new(2026, 2, 28), 100m),
+                Statement(new(2026, 1, 1), new(2026, 1, 31), 120m)]);
+        var result = new BillStreamAnalysisService().Analyze(stream);
+        Assert.NotNull(result);
+        Assert.Equal(-20m, result.Comparison.TotalComparison.MonthlyChange);
+        Assert.Equal(-240m, result.Comparison.TotalComparison.AnnualChange);
     }
 
     [Fact]

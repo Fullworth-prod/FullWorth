@@ -79,6 +79,16 @@ function installProbe() {
             encodedBodySize: entry.encodedBodySize, decodedBodySize: entry.decodedBodySize };
         }),
         profileCalls: state.profileCalls,
+        appearance: {
+          family: ["editorial", "workspace", "story"].includes(document.documentElement.dataset.design)
+            ? document.documentElement.dataset.design : null,
+          mode: ["light", "dark"].includes(document.documentElement.dataset.theme)
+            ? document.documentElement.dataset.theme : null,
+          language: ["en-US", "es"].includes(document.documentElement.lang)
+            ? document.documentElement.lang : "other",
+          rootFontPixels: parseFloat(getComputedStyle(document.documentElement).fontSize),
+          prefersReducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches
+        },
         effectiveProfile: document.documentElement.dataset.fullworthPerformance ?? null,
         appError: !!document.querySelector("main .app-error-state"),
         workerSupported: "serviceWorker" in navigator,
@@ -97,6 +107,7 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
   assert.ok(originalBrowser, "The existing disposable Chromium browser is required.");
   const report = {
     schemaVersion: 1,
+    measuredAtUtc: new Date().toISOString(),
     testedMergeRevision: /^[0-9a-f]{40}$/.test(process.env.GITHUB_SHA ?? "") ? process.env.GITHUB_SHA : null,
     runId: /^\d+$/.test(process.env.GITHUB_RUN_ID ?? "") ? process.env.GITHUB_RUN_ID : null,
     fixture: "existing-disposable-synthetic-account",
@@ -189,6 +200,13 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
           engine + ": incomplete read observation.");
         assert.equal(readState.unsafe, 0, "Performance measurement must not issue BFF mutations.");
         assert.equal(readState.failures, 0, engine + ": failed reads invalidate the measurement.");
+        assert.equal(readState.unexpectedAdminStatuses, 0, engine + ": unexpected admin access invalidates the fixture.");
+        assert.equal(readState.recordsTruncated, false, "Every fixture read must remain inspectable.");
+        assert.ok(readState.records.every(read =>
+          (read.status >= 200 && read.status < 300) ||
+          (read.group === "admin-probe" && read.method === "GET" && read.status === 403) ||
+          (item.unavailable && read.group === "bill-detail" && read.status === 404)),
+          engine + ": unexpected denied/missing reads invalidate the measurement.");
         assert.ok(!Object.keys(readState.responseCounts).some(status => Number(status) === 401 ||
           Number(status) === 429 || Number(status) >= 500),
           engine + ": auth/rate/provider failures invalidate the measurement.");
@@ -222,7 +240,10 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
           maxLongTaskMs: observation.supportsLongTasks && observation.longTasksDropped === 0 ? round(Math.max(0, ...longTasks.map(entry => entry.duration))) : null,
           stylesheetLinks: observation.stylesheetLinks, duplicateStylesheetHrefs: observation.duplicateStylesheetHrefs,
           externalScriptElements: observation.externalScriptElements, resources,
-          profileApiCalls: observation.profileCalls, bffReadResponseCounts: readState.responseCounts,
+          profileApiCalls: observation.profileCalls, appearance: observation.appearance,
+          effectiveProfile: observation.effectiveProfile, bffReadResponseCounts: readState.responseCounts,
+          adminHeaderDenials: readState.adminHeaderDenials,
+          expectedAdminBodyCancellations: readState.expectedAdminBodyCancellations,
           expectedUnavailable: !!item.unavailable, workerSupported: observation.workerSupported,
           workerControlled: observation.workerControlled,
           observerRecordsDropped: { layoutShift: observation.shiftsDropped, longTask: observation.longTasksDropped }

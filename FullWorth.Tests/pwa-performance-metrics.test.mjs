@@ -57,13 +57,16 @@ test("a shift session cannot grow beyond five seconds even with short gaps", () 
 
 const request = (url, method = "GET") => ({ url: () => url, method: () => method, failure: () => null });
 
-test("denied admin body failure remains a strict failure and keeps sanitized evidence", () => {
+test("the exact denied admin probe completes at headers and records body cancellation separately", () => {
   const reads = createReadTracker("https://web.localhost");
   const req = request("https://web.localhost/bff/admin/users?skip=0&take=1");
   reads.started(req); reads.responded(req, 403); reads.failed(req, "net::ERR_ABORTED");
   const state = reads.snapshot();
-  assert.equal(state.failures, 1);
+  assert.equal(state.failures, 0);
   assert.equal(state.pending, 0);
+  assert.equal(state.adminHeaderDenials, 1);
+  assert.equal(state.expectedAdminBodyCancellations, 1);
+  assert.equal(state.unexpectedAdminStatuses, 0);
   assert.deepEqual(state.records, [{ method: "GET", group: "admin-probe", status: 403, failureCode: "ERR_ABORTED" }]);
   assert.deepEqual(state.responseCounts, { 403: 1 });
 });
@@ -119,4 +122,47 @@ test("bounded diagnostic records cannot hide failures beyond the retained window
   assert.equal(state.recordsTruncated, true);
   assert.equal(state.requests, 101);
   assert.equal(state.failures, 1);
+});
+
+test("a denied financial read does not inherit the admin-body exception", () => {
+  const reads = createReadTracker("https://web.localhost");
+  const req = request("https://web.localhost/bff/bill-streams");
+  reads.started(req); reads.responded(req, 403); reads.failed(req, "net::ERR_ABORTED");
+  assert.equal(reads.snapshot().failures, 1);
+  assert.equal(reads.snapshot().expectedAdminBodyCancellations, 0);
+});
+
+test("success or missing headers cannot turn a transport failure into an expected admin cancellation", () => {
+  for (const status of [200, null]) {
+    const reads = createReadTracker("https://web.localhost");
+    const req = request("https://web.localhost/bff/admin/users");
+    reads.started(req);
+    if (status !== null) reads.responded(req, status);
+    reads.failed(req, "net::ERR_ABORTED");
+    assert.equal(reads.snapshot().failures, 1);
+    assert.equal(reads.snapshot().expectedAdminBodyCancellations, 0);
+    assert.equal(reads.snapshot().unexpectedAdminStatuses, status === 200 ? 1 : 0);
+  }
+});
+
+test("unknown errors after denied admin headers remain real failures", () => {
+  for (const reason of ["net::ERR_CONNECTION_RESET", "unknown cancelled privateURL"]) {
+    const reads = createReadTracker("https://web.localhost");
+    const req = request("https://web.localhost/bff/admin/users");
+    reads.started(req); reads.responded(req, 403); reads.failed(req, reason);
+    assert.equal(reads.snapshot().failures, 1);
+    assert.equal(reads.snapshot().expectedAdminBodyCancellations, 0);
+  }
+});
+
+test("later admin body disposal does not extend the already completed logical read window", () => {
+  let clock = 0;
+  const reads = createReadTracker("https://web.localhost", () => clock);
+  const req = request("https://web.localhost/bff/admin/users");
+  reads.started(req); reads.responded(req, 403);
+  clock = 900;
+  assert.equal(reads.snapshot().pending, 0);
+  reads.failed(req, "net::ERR_ABORTED");
+  assert.equal(reads.snapshot().idleMs, 900);
+  assert.equal(reads.snapshot().expectedAdminBodyCancellations, 1);
 });

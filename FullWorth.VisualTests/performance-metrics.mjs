@@ -64,7 +64,8 @@ export function createReadTracker(origin, now = () => performance.now()) {
   function begin() {
     lease++;
     state = { pending: new Set(), counts: {}, failures: 0, unsafe: 0,
-      records: [], total: 0, lastActivity: now() };
+      records: [], total: 0, adminHeaderDenials: 0, expectedAdminBodyCancellations: 0,
+      unexpectedAdminStatuses: 0, lastActivity: now() };
   }
   function current(request) {
     const entry = entries.get(request);
@@ -84,7 +85,8 @@ export function createReadTracker(origin, now = () => performance.now()) {
       : url.pathname === "/bff/bill-streams" ? "bill-streams"
       : url.pathname.startsWith("/bff/bill-streams/") ? "bill-detail"
       : url.pathname === "/bff/alerts" ? "alerts" : "other-bff";
-    const entry = { lease, method, group, status: null, failureCode: null };
+    const entry = { lease, method, group, status: null, failureCode: null,
+      wireComplete: false, deniedAdminHeaders: false };
     entries.set(request, entry);
     state.pending.add(request);
     state.total++;
@@ -97,24 +99,47 @@ export function createReadTracker(origin, now = () => performance.now()) {
     if (!entry) return;
     entry.status = status;
     state.counts[status] = (state.counts[status] ?? 0) + 1;
+    // AdminNavLink's GET probe resolves accessDenied at403 without reading a body.
+    // That denial is complete; financial JSON and unknown failures are not.
+    if (entry.group === "admin-probe" && entry.method === "GET") {
+      if (status === 403) {
+        entry.deniedAdminHeaders = true;
+        state.adminHeaderDenials++;
+        state.pending.delete(request);
+      } else state.unexpectedAdminStatuses++;
+    }
     state.lastActivity = now();
   }
   function finished(request) {
-    if (current(request) && state.pending.delete(request)) state.lastActivity = now();
+    const entry = current(request);
+    if (!entry || entry.wireComplete) return;
+    entry.wireComplete = true;
+    if (state.pending.delete(request)) state.lastActivity = now();
   }
   function failed(request, reason = request.failure()?.errorText ?? "") {
     const entry = current(request);
-    if (!entry || !state.pending.delete(request)) return;
-    // Only an error-code token is retained, never the raw failure URL/message.
-    entry.failureCode = String(reason).match(/\b(?:ERR_[A-Z_]+|NS_[A-Z_]+)\b/)?.[0]
-      ?? (/cancel/i.test(String(reason)) ? "CANCELLED" : "OTHER");
-    state.failures++;
-    state.lastActivity = now();
+    if (!entry || entry.wireComplete) return;
+    entry.wireComplete = true;
+    state.pending.delete(request);
+    const raw = String(reason).trim();
+    entry.failureCode = raw.match(/^(?:net::)?(ERR_[A-Z_]+|NS_[A-Z_]+)$/)?.[1]
+      ?? (["cancelled", "canceled", "request cancelled", "request canceled"].includes(raw.toLowerCase())
+        ? "CANCELLED" : "OTHER");
+    if (entry.deniedAdminHeaders &&
+        ["ERR_ABORTED", "NS_BINDING_ABORTED", "CANCELLED"].includes(entry.failureCode)) {
+      state.expectedAdminBodyCancellations++;
+    } else {
+      state.failures++;
+      state.lastActivity = now();
+    }
   }
   function snapshot() {
     return {
       pending: state.pending.size, responseCounts: { ...state.counts },
       failures: state.failures, unsafe: state.unsafe, requests: state.total,
+      adminHeaderDenials: state.adminHeaderDenials,
+      expectedAdminBodyCancellations: state.expectedAdminBodyCancellations,
+      unexpectedAdminStatuses: state.unexpectedAdminStatuses,
       idleMs: Math.max(0, now() - state.lastActivity),
       recordsTruncated: state.total > state.records.length,
       records: state.records.map(({ method, group, status, failureCode }) =>

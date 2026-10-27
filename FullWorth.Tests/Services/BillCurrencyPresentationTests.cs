@@ -52,7 +52,7 @@ public sealed class BillCurrencyPresentationTests
         int previous, int current, string direction, string signedImpact)
     {
         var analysis = new BillAnalysisService().Analyze(
-            Statement(previous, "EUR"), Statement(current, "EUR"));
+            Statement(previous, "EUR"), Statement(current, "EUR", 2));
         Assert.Equal("EUR", analysis.Comparison.CurrencyCode);
         Assert.Equal("EUR", analysis.Explanation.CurrencyCode);
         Assert.Contains(direction, analysis.Explanation.Summary);
@@ -62,8 +62,9 @@ public sealed class BillCurrencyPresentationTests
         Assert.DoesNotContain("$", analysis.Explanation.Summary);
     }
 
-    private static BillStatement Statement(decimal amount, string currency) =>
-        new("Example Provider", new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 31),
+    private static BillStatement Statement(decimal amount, string currency, int month = 1) =>
+        new("Example Provider", new DateOnly(2026, month, 1),
+            new DateOnly(2026, month, DateTime.DaysInMonth(2026, month)),
             new BillAmount(amount), [new BillLineItem("Service", amount)], currency);
 }
 

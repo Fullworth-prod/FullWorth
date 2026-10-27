@@ -36,7 +36,7 @@ public sealed class BillStreamConfirmationRetentionTests
                 db.BankTransactions.Add(new BankTransactionEntity
                 {
                     UserId = userId,
-                    BankAccountId = Guid.NewGuid(),
+                    BankAccountId = userId,
                     PlaidTransactionId = Guid.NewGuid().ToString("N"),
                     Name = provider,
                     MerchantName = provider,

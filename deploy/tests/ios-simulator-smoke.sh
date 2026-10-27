@@ -5,10 +5,22 @@ set -eu
 app_path=${1:-}
 expected_bundle_id=${2:-}
 evidence_dir=${3:-}
+phase=preflight
+
+record_phase()
+{
+    phase=$1
+    if [ -n "$evidence_dir" ]; then
+        printf '%s\n' "$phase" >"$evidence_dir/phase.txt"
+    fi
+}
 
 fail()
 {
     printf '%s\n' "iOS simulator smoke failed: $1" >&2
+    if [ -n "$evidence_dir" ] && [ -d "$evidence_dir" ]; then
+        printf '{"status":"failed","phase":"%s"}\n' "$phase" >"$evidence_dir/result.json"
+    fi
     exit 1
 }
 
@@ -30,6 +42,7 @@ try:
         timeout=timeout_seconds,
         check=False)
 except subprocess.TimeoutExpired:
+    print(f"Bounded iOS simulator command timed out after {timeout_seconds:g} seconds.", file=sys.stderr)
     sys.exit(124)
 
 sys.exit(completed.returncode)
@@ -74,6 +87,11 @@ do
         fail "$command_name is required."
 done
 
+if [ -n "$evidence_dir" ]; then
+    mkdir -p "$evidence_dir"
+    record_phase preflight
+fi
+
 info_plist="$app_path/Info.plist"
 [ -f "$info_plist" ] ||
     fail "app Info.plist is missing."
@@ -86,6 +104,8 @@ actual_bundle_id=$(
 
 [ "$actual_bundle_id" = "$expected_bundle_id" ] ||
     fail "built bundle ID does not match the expected identifier."
+
+record_phase runtime-selection
 
 runtime_id=$(
     xcrun simctl list runtimes --json |
@@ -103,6 +123,8 @@ if not items:
 print(items[0]["identifier"])
 '
 ) || fail "no available iOS 26.0 Simulator runtime was found."
+
+record_phase device-selection
 
 udid=$(
     xcrun simctl list devices --json |
@@ -146,10 +168,12 @@ run_with_timeout 30 \
     xcrun simctl shutdown "$udid" >/dev/null 2>&1 ||
     true
 
+record_phase reset
 run_with_timeout 60 \
     xcrun simctl erase "$udid" ||
     fail "could not reset the iOS 26.0 Simulator within 60 seconds."
 
+record_phase boot
 if ! boot_simulator; then
     printf '%s\n' \
         "Initial iOS simulator boot did not become ready; retrying once." >&2
@@ -158,6 +182,7 @@ if ! boot_simulator; then
         fail "iOS 26.0 Simulator did not finish booting after one bounded retry."
 fi
 
+record_phase install
 if ! install_app; then
     printf '%s\n' \
         "Initial FullWorth simulator install failed or timed out; rebooting and retrying once." >&2
@@ -175,6 +200,7 @@ launch_app()
         xcrun simctl launch "$udid" "$expected_bundle_id"
 }
 
+record_phase launch
 launch_output=$(
     launch_app
 ) || fail "FullWorth could not be launched in the iOS Simulator within 180 seconds."
@@ -185,20 +211,38 @@ printf '%s\n' "$launch_output" |
 
 sleep 3
 
-run_with_timeout 30 \
-    xcrun simctl get_app_container \
-        "$udid" \
-        "$expected_bundle_id" \
-        app >/dev/null ||
-    fail "FullWorth app container was not available after launch."
+# A successful launch can precede CoreSimulator's app-container lookup becoming
+# responsive. Retry only this read, never installation or launch, and remain bounded.
+record_phase app-container
+container_attempt=1
+while :
+do
+    if app_container=$(
+        run_with_timeout 30 xcrun simctl get_app_container \
+            "$udid" "$expected_bundle_id" app
+    ); then
+        if [ -n "$app_container" ] && [ -d "$app_container" ]; then
+            break
+        fi
+    fi
+    [ "$container_attempt" -lt 3 ] ||
+        fail "FullWorth app container was not available after three bounded read attempts."
+    container_attempt=$((container_attempt + 1))
+    sleep 2
+done
 
 if [ -n "$evidence_dir" ]; then
-    mkdir -p "$evidence_dir"
+    record_phase screenshot
     # Capture logged-out launch evidence only; no account credentials in CI.
     sleep 12
     run_with_timeout 30 \
         xcrun simctl io "$udid" screenshot "$evidence_dir/hosted-launch.png" ||
         fail "could not capture the hosted launch screen."
+fi
+
+record_phase complete
+if [ -n "$evidence_dir" ]; then
+    printf '{"status":"passed","phase":"complete"}\n' >"$evidence_dir/result.json"
 fi
 
 printf '%s\n' \

@@ -193,22 +193,40 @@ export function renderTimestamps(root = document) {
         .forEach(renderTimestampElement);
 }
 
+function validTimestampMode(value) {
+    return value === localMode || value === utcMode;
+}
+
+async function readPreferenceObject(response, message) {
+    const mediaType = (response.headers.get("content-type") ?? "")
+        .split(";", 1)[0].trim().toLowerCase();
+    if (response.status !== 200 || response.redirected ||
+        !(mediaType === "application/json" ||
+          (mediaType.startsWith("application/") && mediaType.endsWith("+json"))))
+        throw new Error(message);
+    let payload;
+    try { payload = await response.json(); }
+    catch { throw new Error(message); }
+    if (payload === null || typeof payload !== "object" || Array.isArray(payload))
+        throw new Error(message);
+    return payload;
+}
+
 export async function getTimestampPreference() {
     const response = await fetch(
         "/bff/account/preferences",
         {
-            credentials: "same-origin",
+            credentials: "same-origin", redirect: "error",
             cache: "no-store",
             headers: {
                 Accept: "application/json"
             }
         });
 
-    if (!response.ok) {
+    const preference = await readPreferenceObject(response, "Could not load timestamp preference.");
+    if (!validTimestampMode(preference.timestampDisplayMode))
         throw new Error("Could not load timestamp preference.");
-    }
-
-    return await response.json();
+    return preference;
 }
 
 export function getExperiencePreferences() {
@@ -225,19 +243,18 @@ export async function persistExperiencePreferences(preference) {
     if (!validExperienceResponse({ ...request, experienceSetupComplete: true }))
         throw new Error("Invalid FullWorth experience setup.");
     const antiforgeryResponse = await fetch("/bff/antiforgery", {
-        credentials: "same-origin", cache: "no-store", headers: { Accept: "application/json" }
+        credentials: "same-origin", redirect: "error", cache: "no-store", headers: { Accept: "application/json" }
     });
-    if (!antiforgeryResponse.ok) throw new Error("Could not initialize secure experience setup.");
-    const antiforgery = await antiforgeryResponse.json();
+    const antiforgery = await readPreferenceObject(
+        antiforgeryResponse, "Could not initialize secure experience setup.");
     if (typeof antiforgery?.requestToken !== "string" || !antiforgery.requestToken.trim())
         throw new Error("Could not initialize secure experience setup.");
     const response = await fetch("/bff/account/preferences/experience", {
-        method: "PUT", credentials: "same-origin", cache: "no-store",
+        method: "PUT", credentials: "same-origin", redirect: "error", cache: "no-store",
         headers: { Accept: "application/json", "Content-Type": "application/json", "X-CSRF-TOKEN": antiforgery.requestToken },
         body: JSON.stringify(request)
     });
-    if (response.status !== 200 || response.redirected) throw new Error("Could not confirm your FullWorth setup.");
-    const saved = await response.json();
+    const saved = await readPreferenceObject(response, "Could not confirm your FullWorth setup.");
     if (!validExperienceResponse(saved) || !saved.experienceSetupComplete ||
         ["preferredUiLanguage", "themePreference", "textSizePreference", "highContrastEnabled", "reduceMotionEnabled"]
             .some(key => saved[key] !== request[key]) ||
@@ -256,29 +273,29 @@ export async function saveExperiencePreferences(preference) {
 }
 
 export async function saveTimestampPreference(mode) {
-    const normalizedMode = normalizeMode(mode);
+    if (!validTimestampMode(mode)) throw new Error("Invalid timestamp mode.");
+    const normalizedMode = mode;
 
     const antiforgeryResponse = await fetch(
         "/bff/antiforgery",
         {
-            credentials: "same-origin",
+            credentials: "same-origin", redirect: "error",
             cache: "no-store",
             headers: {
                 Accept: "application/json"
             }
         });
 
-    if (!antiforgeryResponse.ok) {
+    const antiforgery = await readPreferenceObject(
+        antiforgeryResponse, "Could not initialize secure preference update.");
+    if (typeof antiforgery.requestToken !== "string" || !antiforgery.requestToken.trim())
         throw new Error("Could not initialize secure preference update.");
-    }
-
-    const antiforgery = await antiforgeryResponse.json();
 
     const response = await fetch(
         "/bff/account/preferences",
         {
             method: "PUT",
-            credentials: "same-origin",
+            credentials: "same-origin", redirect: "error",
             cache: "no-store",
             headers: {
                 Accept: "application/json",
@@ -290,11 +307,9 @@ export async function saveTimestampPreference(mode) {
             })
         });
 
-    if (!response.ok) {
-        throw new Error("Could not save timestamp preference.");
-    }
-
-    const saved = await response.json();
+    const saved = await readPreferenceObject(response, "Could not confirm timestamp preference.");
+    if (saved.timestampDisplayMode !== normalizedMode)
+        throw new Error("Could not confirm timestamp preference.");
     preferenceRevision++;
     setStoredMode(saved.timestampDisplayMode);
     renderTimestamps(document);

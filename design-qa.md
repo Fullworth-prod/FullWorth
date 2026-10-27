@@ -4,6 +4,12 @@
 
 Accepted rendered source: `c66e534d60304303730740333c3bed3b090a4f48`, tree `e430e5c6855b94b8a587adcb95b84378c709e36e`. [CI 40377964637](https://github.com/Fullworth-prod/FullWorth/actions/runs/40377964637) passed backend, Android and Linux container jobs. Separate confirmation run40377964643 passed. This report records actual source/implementation comparison, not production deployment. Subsequent documentation-only commits require their own final-head checks and runtime-blob equality before merge.
 
+## Final integration evidence
+
+PR [#978](https://github.com/Fullworth-prod/FullWorth/pull/978) squash-merged into development as `ccec80e44c8c2c8be451b2d176ed25c8e983fa91` after all five exact-head checks passed on `d6a828510b69ad9f06e77933dd783a8bee060cd1`. Tested candidate `c3576d286d388430546169d62c459404bd524acc`, final source and integrated tree all equal `b6352dc1d182b9286b9e78ea138fe48e2c94638b`. Branch preserved; active ruleset24230011, strict four required checks, zero required approvals, resolved threads/no bypass verified. No review threads/submissions outstanding.
+
+Final CI40423941923 and separate confirmation40423941922 passed. Artifact12699324836 SHA256c15dedad88ccb6def1d9c212c08aba1a0e40792847a7e88b13d197ca5e9ab863 downloaded/verified; both auditJSON files clear. All12 public desktop/phone frames are pixel-identical to the reviewed c66 captures. Only documentation changed before this final run; runtime blobs were verified identical. No production deployment.
+
 ## Targets, captures and normalization
 
 The owner selected all three light/dark pairs across public Home and signed-in Overview. The six selected source images are1487×1058 pixels. Source root: `C:/Users/brist/.codex/generated_images/01a16c7b-6daf-7762-8b9a-6abcc5d801fb/`.
@@ -70,5 +76,5 @@ Earlier blocked reports are superseded by the accepted c66e534 comparison above.
 - [x] Actual desktop Overview, phone Home and enlarged mobile menu inspection.
 - [x] Both-engine financial-state, interaction, contrast, motion/performance, console/no-write acceptance.
 - [x] Separate confirmation/BFF/Hosted Link regression execution.
-- [ ] Final documentation-head required checks and review/merge verification, then update repository/Drive handoff.
+- [x] Final documentation-head required checks, review and development merge/tree verification; repository/Drive handoff updated.
 - [ ] Separately authorized production promotion/deployment and applicable real acceptance; outside this development completion.

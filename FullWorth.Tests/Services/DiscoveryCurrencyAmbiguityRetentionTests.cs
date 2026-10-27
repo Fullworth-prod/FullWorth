@@ -37,7 +37,7 @@ public sealed class DiscoveryCurrencyAmbiguityRetentionTests
             Charge(owner, account, new(2025, 12, 1), "Unrelated start", 11m, "USD"),
             Charge(owner, account, new(2026, 4, 1), "Unrelated end", 12m, "USD"));
         await db.SaveChangesAsync();
-        var originalLinks = await db.BillTransactionAssociations.OrderBy(x => x.Id).Select(x => x.Id).ToArrayAsync();
+        var originalLinks = await db.BillTransactionAssociations.OrderBy(x => x.BankTransactionId).Select(x => new { x.UserId, x.BankTransactionId, x.BillStreamId }).ToArrayAsync();
         db.ChangeTracker.Clear();
         var service = new RecurringBillDiscoveryPersistenceService(db,
             new PlaidBankTransactionDiscoveryGateway(db), new BillTransactionAssociationGateway(db));
@@ -47,7 +47,7 @@ public sealed class DiscoveryCurrencyAmbiguityRetentionTests
         Assert.Equal(0, result.BillStreamsDeactivated);
         Assert.Equal(0, result.TransactionsUnlinked);
         Assert.True((await db.BillStreams.SingleAsync()).IsActive);
-        Assert.Equal(originalLinks, await db.BillTransactionAssociations.OrderBy(x => x.Id).Select(x => x.Id).ToArrayAsync());
+        Assert.Equal(originalLinks, await db.BillTransactionAssociations.OrderBy(x => x.BankTransactionId).Select(x => new { x.UserId, x.BankTransactionId, x.BillStreamId }).ToArrayAsync());
         Assert.Empty(await db.BillAlerts.ToListAsync());
         Assert.Equal(conflictingCurrency, (await db.BankTransactions.FindAsync(conflicting!.Id))!.IsoCurrencyCode);
 
@@ -59,7 +59,7 @@ public sealed class DiscoveryCurrencyAmbiguityRetentionTests
         Assert.Equal(0, repaired.BillStreamsCreated);
         Assert.Equal(0, repaired.NewBillAlertsCreated);
         Assert.True((await db.BillStreams.SingleAsync()).IsActive);
-        Assert.Equal(originalLinks, await db.BillTransactionAssociations.OrderBy(x => x.Id).Select(x => x.Id).ToArrayAsync());
+        Assert.Equal(originalLinks, await db.BillTransactionAssociations.OrderBy(x => x.BankTransactionId).Select(x => new { x.UserId, x.BankTransactionId, x.BillStreamId }).ToArrayAsync());
     }
 
     private static BankTransactionEntity Charge(Guid owner, Guid account, DateOnly date,

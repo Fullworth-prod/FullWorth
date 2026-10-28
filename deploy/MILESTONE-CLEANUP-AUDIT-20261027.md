@@ -1,3 +1,41 @@
+## Verified integration ledger — 2026-10-28 UTC
+
+### Completed and verified
+
+| Change | Final source / tested commit | Development merge / matching tree |
+|---|---|---|
+| #1002 AI currency recognition and source token boundaries | de5c94b15889a200f628b0ba7c89946f66c04b75 / 323cefb2bf2c08b20936ff6bc19681f0d442acf7 | eee08650724c65338ab4406601d83888eab4852e / 3afa3ec48fb6b4ca66603ea62b908a08abdeef17 |
+| #1003 Privacy proof redirects and CSRF response boundaries | 0d6ba4bde24a29d09b9778167c112b2de82a5cb7 / e289bf7609a259c0ed179b562e8ebc9f3813f93f | e92f4768822b662e083bf78c7779654dd09320de / 09d045aae7c350189ad2336871f89788bab6bfd7 |
+| #1004 Complete signed monetary source evidence and raw ASCII currency | 43d8343a4c6a7882b8d218ad3b9e783a642de989 / 0021956657501babe2045992a656c56b25ddf88f | a161376fb9f712d332e5a166ee198a67f32d9edc / 1f8580ce5b17948c4574c2073dacd7ae80014dc4 |
+
+#1002 final main40747788390 passed3,100 .NET/368 Node and all10 checks; #1003 main40748868038 and browser40748867528 passed all5 checks; #1004 main40752142935 and dependency40752142872 plus six scoped jobs passed all10. All source/tested/integrated trees and exact5/7/6 changed-file bodies matched, branches retained, rules/reviews/threads rechecked. No production/master change.
+
+#1004 executed3,215 .NET/434 Node with zero failures/skips/backend/offline warnings/errors. Scoped runs: bank40752142989(job123041369823,26+12focused), Hosted40752142925(jobs123041369870/123041369380,53+22focused+12synthetic-provider), monitoring40752142812(job123041368828,124), confirmation40752142864(job123041369951,118), subscription40752142888(job123041369642,17+51focused). Subsets overlap full-suite cases. Container job123041371463 passed HTTP, secret, cgroup, PDF/OCR and disposable encrypted DB/file restore snapshot24eb3d66192b259f7a84ed1a41e2caa67e3ed42be682de1857d465b905c6168b. #1004 native/browser stages were conditionally skipped, not fresh native/device or browser acceptance.
+
+#1003 actual Android and full rendered acceptance passed. Browser job123029842962 ran59 privacy HTTP cases per engine,38 dialog/74 BFF/8 auth setup per engine/41 account-security per engine/24 Hosted cases. Full rendered privacy exercised proof clearing, exclusive operations, uncertain writes, synthetic download and disposal. Three-pair2392 Chromium/2422 WebKit assertions,354 geometry/108 state/12 menu cases per engine,12 EN/ES recovery pages and virtual passkey passed. Current disposable restore snapshotd901a5896d551f84f381cc17db183d2f5d531b971de501dfb8eacbe7dc6b1a1c is not production recovery evidence.
+
+Artifact12843299724 digestc3287af5ce3647ec842ac4f0f2b1c898f4bde4787ee5f8ddba862056af0ed2b9 was verified before extraction; uncertain deletion,320px deletion and enlarged export screens inspected. Fixed navigation positions in full-page captures are capture/scroll evidence, not by themselves proof of a new layout defect. Performance21 samples completed without duplicate stylesheets/raw URLs/UUIDs:10 Chromium0, Bills0.00184,10 WebKit unsupported/null. No zero-shift/SLA/device claim.
+
+### Actual failures resolved and fidelity limits
+
+Initial currency candidate5892 admitted cropped USD from USDA/XUSD/USD1/1USD; five counterexamples were fixed before merge and own revised-head CI passed. Source review then reproduced eight wrong monetary totals and a regression suite with55 cropped-money/date/sign cases plus one dense counterexample accepted by prior source. Complete source-span/signed-value matching now rejects them; valid signed values/equivalent trailing zeros/later genuine occurrences remain usable. Invariant casing also admitted Unicode long-s aliases; raw ASCII guards in policy and deterministic parsing reject them. Nine old alias cases failed new checks; ten paired negative and ten ASCII controls pass after correction. Isolated source execution passed198 money/AI/currency cases plus74 parser cases; final SDK execution supplies the broader proof. These assertion counts are not independent production incidents. AI remains off; semantic labeling and every international money format are not proven.
+
+### External and deferred actions
+
+| Class | Scope | Smallest remaining prerequisite |
+|---|---|---|
+| Implemented, awaiting provider acceptance | #972/#912 | Owner/supported controlled provider completion, fresh visibility/first-sync and failure/unknown-commit recovery; no old-token replay. |
+| Implemented, awaiting private acceptance | #762 | Controlled owner-verified expected obligation versus actual source account/history/import/posted debit/rejection evidence. Review original currency privately where a historical non-USD upload matters; no automatic retag/export. |
+| Blocked by consent/access | #970 | Documented supported consented merchant status/renewal/prepaid evidence and freshness; no outreach or invented active/renewal status from a single charge. |
+| Implemented, awaiting provider/delivery | #293/#669 | Actual posted payroll and configured same-release delivery acceptance; fixture pass is not provider receipt. |
+| Blocked by physical device | #251/#258 | Actual Android/iPhone installed-app keyboard/file/session/passkey acceptance on the intended release. |
+| Blocked by release/operator/professional prerequisites | #291/#669 | Separately authorized promotion where needed; controlled two-owner/document/export/delete/security and real nonempty statement+DB+both-keyring clean-host/bootstrap/protected-backup/deletion-denial evidence; qualified legal/license/governance review. Prior separate-runner evidence is partial; no new access or expired-key renewal is assumed. |
+| Deferred | #245 and later decisions | No cleanup activation/deletion; MAUI parity/support decision, MV01–MV06 value/economics acceptance and milestones9–12 remain separate; creator terms proposed/features default-off. |
+
+All11 external/broad issues remain open. Next independent audit is source excerpt boundaries for remaining date/account/string facts and supported partial-failure journeys; this ledger does not invent a new bug. The full autonomous goal remains active.
+
+---
+
 # Verified account and currency integration evidence — 2026-10-28 UTC
 
 ## Completed and verified

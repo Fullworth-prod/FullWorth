@@ -24,11 +24,16 @@ export async function privacyError(response) {
 export async function privacyAntiforgeryToken(signal) {
     const response = await fetch("/bff/antiforgery", {
         method: "GET", credentials: "same-origin", headers: { Accept: "application/json" },
-        cache: "no-store", signal
+        redirect: "error", cache: "no-store", signal
     });
     if (!response.ok) throw new Error(await privacyError(response));
+    const type = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+    if (response.status !== 200 || response.redirected || type !== "application/json")
+        throw new Error("FullWorth could not establish a secure request token.");
     const payload = await response.json();
-    if (typeof payload?.requestToken !== "string" || !payload.requestToken.trim())
+    if (!payload || typeof payload !== "object" || Array.isArray(payload) ||
+        typeof payload.requestToken !== "string" || !payload.requestToken.trim() ||
+        payload.requestToken.length > 4096 || !/^[\x21-\x7e]+$/.test(payload.requestToken))
         throw new Error("FullWorth could not establish a secure request token.");
     return payload.requestToken;
 }

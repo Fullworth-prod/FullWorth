@@ -30,15 +30,17 @@ public sealed class BillStatementProcessingPersistenceTests
     public async Task ExplicitCurrency_RealPdfPipelinePreservesStoredUnit(
         string declaration, string totalLine, string expectedCurrency)
     {
-        using var client = _factory.CreateHttpsClient();
+        // Isolate this added case's real auth budget, database and worker host.
+        await using var caseFactory = new FullWorthApiFactory();
+        using var client = caseFactory.CreateHttpsClient();
         var user = await TestUserAuthentication.RegisterAndLoginAsync(client);
         TestUserAuthentication.Authorize(client, user);
         var streamId = await CreateBillStreamAsync(client);
         var uploadId = await UploadAsync(client, streamId, CreatePdf(
             ["Synthetic Provider", declaration, "Statement Date: 08/10/2026",
              "Billing Period: 07/01/2026 - 07/31/2026", "Due Date: 08/31/2026", totalLine]));
-        await WaitForStatusAsync(uploadId, BillStatementUploadStatus.Processed);
-        using var scope = _factory.Services.CreateScope();
+        await WaitForStatusAsync(uploadId, BillStatementUploadStatus.Processed, caseFactory);
+        using var scope = caseFactory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FullWorthDbContext>();
         var upload = await db.BillStatementUploads.AsNoTracking().SingleAsync(item => item.Id == uploadId);
         Assert.NotNull(upload.BillStatementId);
@@ -56,7 +58,9 @@ public sealed class BillStatementProcessingPersistenceTests
     public async Task UnusableCurrency_RealPdfPipelineStaysInReview(
         string firstDeclaration, string secondDeclaration)
     {
-        using var client = _factory.CreateHttpsClient();
+        // Isolate this added case's real auth budget, database and worker host.
+        await using var caseFactory = new FullWorthApiFactory();
+        using var client = caseFactory.CreateHttpsClient();
         var user = await TestUserAuthentication.RegisterAndLoginAsync(client);
         TestUserAuthentication.Authorize(client, user);
         var streamId = await CreateBillStreamAsync(client);
@@ -64,8 +68,8 @@ public sealed class BillStatementProcessingPersistenceTests
             ["Synthetic Provider", firstDeclaration, secondDeclaration,
              "Statement Date: 08/10/2026", "Billing Period: 07/01/2026 - 07/31/2026",
              "Due Date: 08/31/2026", "Total Amount Due: $104.99"]));
-        await WaitForStatusAsync(uploadId, BillStatementUploadStatus.ReadyForParsing);
-        using var scope = _factory.Services.CreateScope();
+        await WaitForStatusAsync(uploadId, BillStatementUploadStatus.ReadyForParsing, caseFactory);
+        using var scope = caseFactory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FullWorthDbContext>();
         var upload = await db.BillStatementUploads.AsNoTracking().SingleAsync(item => item.Id == uploadId);
         Assert.Null(upload.BillStatementId);
@@ -474,7 +478,8 @@ public sealed class BillStatementProcessingPersistenceTests
 
     private async Task WaitForStatusAsync(
         Guid uploadId,
-        BillStatementUploadStatus expectedStatus)
+        BillStatementUploadStatus expectedStatus,
+        FullWorthApiFactory? caseFactory = null)
     {
         var deadline =
             DateTimeOffset.UtcNow
@@ -489,7 +494,7 @@ public sealed class BillStatementProcessingPersistenceTests
                deadline)
         {
             using var scope =
-                _factory.Services
+                (caseFactory ?? _factory).Services
                     .CreateScope();
 
             var dbContext =

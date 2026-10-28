@@ -38,3 +38,9 @@ Physical mid-range Android installed launch (#251), iPhone standalone/keyboard/s
 - FullWorth.Tests/Web/AccountTransactionPerformanceFallbackTests.cs
 - FullWorth.Tests/Web/NavigationViewportObserverTests.cs
 - FullWorth.VisualTests/navigation-viewport.test.mjs
+
+## Verified startup correction and asset placement — 2026-10-28 UTC
+
+#994 repeated0.216613 slow390px shift, with4px width/8px vertical movement. #995 persistent-head shell stylesheet recorded0 in its complete21-case report, artifact12786438837 SHA2563d9d59f2b16538026b14080051ada2951f19ec44f910008879841045606919ac. No dropped observer records/duplicate stylesheet links in that sample. This is laboratory stability, not a speed/SLA/physical-device pass; varied TTFB prevents a latency claim.
+
+One stylesheet moved from interactive body to head without duplication/content change: App source now21 head styles (old20 plus the layout style); authenticated DOM stays21 before page extras. Public/auth routes now request this scoped static asset, a disclosed tradeoff. Source scripts stay6; runtime7 includes framework work. Slow timing report:23 CSS entries/422486 decoded bytes,18 JS/314426 decoded bytes. Sums are not wire captures or a public-page budget pass. Preserve financial caching boundaries, no write replay, reduced-motion and performance profiles. See the laboratory report for exact run/source/tree/limitations.

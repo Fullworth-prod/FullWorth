@@ -1369,6 +1369,8 @@ try {
 
   await (await import("./pwa-performance-baseline.mjs")).verifyPwaPerformance(page, outputDir);
 
+  await (await import("./recovery-localization.test.mjs")).verifyRecoveryLocalization(page, outputDir);
+
   await context.clearCookies();
 
   await page.evaluate(() => {

@@ -51,7 +51,12 @@ public sealed class SpanishResourceCoverageTests
             "FullWorth.Web/Components/Pages/App/Overview.razor",
             "FullWorth.Web/Components/Pages/App/AccountSettings.razor",
             "FullWorth.Web/Components/Pages/App/Subscription.razor",
-            "FullWorth.Web/Components/Shared/StatementUploadPanel.razor"
+            "FullWorth.Web/Components/Shared/StatementUploadPanel.razor",
+            "FullWorth.Web/Components/Pages/App/SecurityKeys.razor",
+            "FullWorth.Web/Components/Pages/Error.razor",
+            "FullWorth.Web/Components/Pages/NotFound.razor",
+            "FullWorth.Web/Components/Layout/ReconnectModal.razor",
+            "FullWorth.Web/Components/Layout/AdminNavLink.razor"
         })
             Assert.Contains(path, audited);
 
@@ -78,6 +83,11 @@ public sealed class SpanishResourceCoverageTests
 
     [Theory]
     [InlineData(typeof(global::FullWorth.Web.Components.App), "Menu", "Menú")]
+    [InlineData(typeof(global::FullWorth.Web.Components.App), "Passkeys & security keys", "Claves de acceso y llaves de seguridad")]
+    [InlineData(typeof(global::FullWorth.Web.Components.App), "We couldn't find that page.", "No pudimos encontrar esa página.")]
+    [InlineData(typeof(global::FullWorth.Web.Components.App), "FullWorth hit a snag.", "FullWorth tuvo un problema.")]
+    [InlineData(typeof(global::FullWorth.Web.Components.App), "Connection status", "Estado de la conexión")]
+    [InlineData(typeof(global::FullWorth.Web.Components.App), "Failed to resume the session.", "No se pudo reanudar la sesión.")]
     [InlineData(typeof(global::FullWorth.Web.Components.Pages.App.Overview), "Financial pulse", "Pulso financiero")]
     [InlineData(typeof(global::FullWorth.Web.Components.Pages.App.AccountSettings), "Security & preferences", "Seguridad y preferencias")]
     [InlineData(typeof(global::FullWorth.Web.Components.Pages.App.Account), "Accounts currently available", "Cuentas disponibles actualmente")]

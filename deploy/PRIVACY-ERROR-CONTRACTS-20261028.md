@@ -21,3 +21,7 @@ Extend the actual-module isolated HTTP browser suite from59 to94 cases per engin
 ## Gates and boundaries
 
 Require final-head protected/backend/native/container/pinned-browser/rendered privacy checks, inspect any failures and verify rules/reviews/readbacks/integrated tree before development integration. No real proof/export/delete, provider/device/current production recovery/legal acceptance, deployment/master promotion, new credentials/grants/account changes, spending, outreach, destructive operations or hourly automation. Preserve branches and the full active goal.
+
+## First-head verification and corrected test contract
+
+Initial f761 backend CI40758198000 ran3,362 .NET cases:3,361 passed and one source-text ordering assertion failed (WebPwaBoundaryTests line376); the Node step did not run. The helper now scopes status handling before proof classification, so the old lowercase-string/index test does not establish actual behavior. Retain every reauthentication/CSRF/no-cache/no-navigation assertion, explicitly verify the export context is passed, and move precedence coverage to six actual-module401 proof cases in the required Node gate (218 new Node cases total). No implementation comment or weakened check is used to game string positions. Prior pinned browser job123062687379 passed its scenarios; the revised head still needs full own CI and rendered EN/ES proof.

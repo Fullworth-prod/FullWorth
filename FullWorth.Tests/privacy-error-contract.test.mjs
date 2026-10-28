@@ -136,3 +136,9 @@ for (const action of ["delete", "export"])
     test(action + " token failure cannot blame password or issue a write", async () => {
         assert.equal(await attempt(action, () => Response.json({ message: "Current password is incorrect." }, { status: 401 }), true), expired);
     });
+
+for (const action of ["delete", "export"])
+for (const [message, expected] of proofErrors)
+    test(action + " actual module classifies401 proof before session fallback: " + message, async () => {
+        assert.equal(await attempt(action, () => Response.json({ title: message }, { status: 401 })), expected);
+    });

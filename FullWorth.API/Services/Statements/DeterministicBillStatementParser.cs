@@ -136,17 +136,19 @@ public sealed partial class DeterministicBillStatementParser
     private static string TryExtractCurrency(string text, out bool conflicting)
     {
         var labeled = CurrencyCodeRegex().Matches(text).Cast<Match>()
-            .Select(match => match.Groups["currency"].Value.Trim().ToUpperInvariant())
+            .Select(match => match.Groups["currency"].Value.Trim())
             .ToArray();
         var totalCurrencies = TotalAmountRegex().Matches(text).Cast<Match>()
             .Where(match => match.Groups["currency"].Success)
-            .Select(match => match.Groups["currency"].Value.ToUpperInvariant());
-        var currencies = labeled.Concat(totalCurrencies).Distinct(StringComparer.Ordinal).ToArray();
+            .Select(match => match.Groups["currency"].Value);
+        var rawCurrencies = labeled.Concat(totalCurrencies).ToArray();
+        var currencies = rawCurrencies.Select(value => value.ToUpperInvariant())
+            .Distinct(StringComparer.Ordinal).ToArray();
         conflicting = currencies.Length > 1;
 
         // Explicit malformed/competing currency evidence must not fall back to
         // this parser's legacy USD-style format assumption.
-        if (currencies.Any(value => !StatementCurrencyPolicy.IsRecognized(value)) ||
+        if (rawCurrencies.Any(value => !StatementCurrencyPolicy.IsRecognized(value)) ||
             conflicting)
         {
             return string.Empty;

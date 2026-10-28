@@ -51,14 +51,16 @@ async function completedPasskeyRedirect(filename, returnUrl) {
     const response = {
         ok: true,
         status: 200,
-        json: async () => ({ ceremonyId: "synthetic-ceremony", options: { challenge: "test" } })
+        redirected: false,
+        headers: { get: () => "application/json" },
+        json: async () => ({ ceremonyId: "a".repeat(43), options: { challenge: "test" } })
     };
     const context = {
         document,
         window: { isSecureContext: true, PublicKeyCredential },
         PublicKeyCredential,
         navigator: { credentials: { get: async () => ({ toJSON: () => ({ type: "public-key" }) }) } },
-        fetch: async () => response,
+        fetch: async path => /options$/.test(path) ? response : { status: 204, ok: true, redirected: false },
         location: { assign: () => { throw new Error("Unsafe JavaScript URL sink"); } },
         MutationObserver: class { observe() {} },
         confirm: () => true,

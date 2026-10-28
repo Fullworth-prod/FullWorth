@@ -196,7 +196,26 @@ export function layoutShiftEvidence(entries, start = 0) {
       value: Number(entry.value.toFixed(6)),
       sourceRegions: [...new Set((Array.isArray(entry.sourceRegions) && entry.sourceRegions.length
         ? entry.sourceRegions.slice(0, 5) : ["unclassified"]).map(alias =>
-        typeof alias === "string" && allowed.has(alias) ? alias : "unclassified"))]
+        typeof alias === "string" && allowed.has(alias) ? alias : "unclassified"))],
+      ...(Array.isArray(entry.sourceMovements) ? {
+        sourceMovements: entry.sourceMovements.slice(0, 5).map(source => ({
+          region: allowed.has(source?.region) ? source.region : "unclassified",
+          previous: boundedRect(source?.previous), current: boundedRect(source?.current)
+        }))
+      } : {}),
+      ...(entry.layout ? { layout: Object.fromEntries(
+        ["headerTop", "headerHeight", "contentTop", "contentWidth", "rootFontPx"].map(key =>
+          [key, boundedCoordinate(entry.layout[key])])) } : {})
     }))
   };
+}
+
+function boundedCoordinate(value) {
+  return typeof value === "number" && Number.isFinite(value) && Math.abs(value) <= 1e7
+    ? Number(value.toFixed(2)) : null;
+}
+function boundedRect(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return Object.fromEntries(["x", "y", "width", "height"].map(key =>
+    [key, boundedCoordinate(value[key])]));
 }

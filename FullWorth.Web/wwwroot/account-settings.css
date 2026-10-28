@@ -1397,3 +1397,13 @@ a.settings-tab:focus-visible {
         width: 100%;
     }
 }
+
+/* Keep security/profile headings readable at narrow widths, including 200%
+   text enlargement. Use rem so user text sizing still doubles the heading. */
+@media (max-width: 480px) {
+    .app-shell .settings-header h1 {
+        font-size: 1.6rem;
+        line-height: 1.15;
+        letter-spacing: -0.04em;
+    }
+}

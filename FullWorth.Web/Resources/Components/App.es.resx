@@ -314,4 +314,39 @@
   <data name="External account creation options" xml:space="preserve"><value>Opciones de creación de cuenta con un proveedor externo</value></data>
   <data name="or create an account with email" xml:space="preserve"><value>o crea una cuenta con tu correo electrónico</value></data>
   <data name="your sign-in provider" xml:space="preserve"><value>tu proveedor de inicio de sesión</value></data>
+  <data name="Passkeys &amp; security keys — FullWorth" xml:space="preserve"><value>Claves de acceso y llaves de seguridad — FullWorth</value></data>
+  <data name="Passkeys &amp; security keys" xml:space="preserve"><value>Claves de acceso y llaves de seguridad</value></data>
+  <data name="Sign in with Face ID, your device PIN, or a FIDO2 hardware key. FullWorth never receives your face or fingerprint." xml:space="preserve"><value>Inicia sesión con Face ID, el PIN de tu dispositivo o una llave física FIDO2. FullWorth nunca recibe tu rostro ni tu huella dactilar.</value></data>
+  <data name="Back to security settings" xml:space="preserve"><value>Volver a la configuración de seguridad</value></data>
+  <data name="Your keys" xml:space="preserve"><value>Tus claves</value></data>
+  <data name="Changes require your current password and your authenticator code if 2FA is enabled. Your password and recovery options remain available." xml:space="preserve"><value>Los cambios requieren tu contraseña actual y el código de tu autenticador si la autenticación de dos factores está activada. Tu contraseña y las opciones de recuperación siguen disponibles.</value></data>
+  <data name="Current password" xml:space="preserve"><value>Contraseña actual</value></data>
+  <data name="Authenticator code (if enabled)" xml:space="preserve"><value>Código del autenticador (si está activado)</value></data>
+  <data name="Key name" xml:space="preserve"><value>Nombre de la clave</value></data>
+  <data name="My iPhone or security key" xml:space="preserve"><value>Mi iPhone o llave de seguridad</value></data>
+  <data name="Add passkey or security key" xml:space="preserve"><value>Añadir clave de acceso o llave de seguridad</value></data>
+  <data name="Retry loading saved keys" xml:space="preserve"><value>Volver a cargar las claves guardadas</value></data>
+  <data name="Passkey sign-in is not enabled on this installation yet. Your existing sign-in still works." xml:space="preserve"><value>El inicio de sesión con claves de acceso aún no está activado en esta instalación. Tu método de inicio de sesión actual sigue funcionando.</value></data>
+  <data name="Something went wrong — FullWorth" xml:space="preserve"><value>Se produjo un error — FullWorth</value></data>
+  <data name="Something went wrong" xml:space="preserve"><value>Se produjo un error</value></data>
+  <data name="FullWorth hit a snag." xml:space="preserve"><value>FullWorth tuvo un problema.</value></data>
+  <data name="We couldn&apos;t finish that request. Nothing on this page should require you to expose passwords, bank credentials, or security codes." xml:space="preserve"><value>No pudimos completar esa solicitud. Nada en esta página debería pedirte que reveles contraseñas, credenciales bancarias ni códigos de seguridad.</value></data>
+  <data name="Reference" xml:space="preserve"><value>Referencia</value></data>
+  <data name="Return to FullWorth" xml:space="preserve"><value>Volver a FullWorth</value></data>
+  <data name="Back to home" xml:space="preserve"><value>Volver al inicio</value></data>
+  <data name="Page not found — FullWorth" xml:space="preserve"><value>Página no encontrada — FullWorth</value></data>
+  <data name="We couldn&apos;t find that page." xml:space="preserve"><value>No pudimos encontrar esa página.</value></data>
+  <data name="The link may be outdated, or the page may have moved. Your FullWorth data has not been changed." xml:space="preserve"><value>El enlace puede estar desactualizado o la página puede haberse movido. Tus datos de FullWorth no han cambiado.</value></data>
+  <data name="Go to FullWorth" xml:space="preserve"><value>Ir a FullWorth</value></data>
+  <data name="Connection status" xml:space="preserve"><value>Estado de la conexión</value></data>
+  <data name="Rejoining the server..." xml:space="preserve"><value>Volviendo a conectar con el servidor...</value></data>
+  <data name="Rejoin failed... trying again in" xml:space="preserve"><value>No se pudo volver a conectar... se intentará de nuevo en</value></data>
+  <data name="seconds." xml:space="preserve"><value>segundos.</value></data>
+  <data name="Failed to rejoin." xml:space="preserve"><value>No se pudo volver a conectar.</value></data>
+  <data name="Please retry or reload the page." xml:space="preserve"><value>Vuelve a intentarlo o recarga la página.</value></data>
+  <data name="Retry" xml:space="preserve"><value>Reintentar</value></data>
+  <data name="The session has been paused by the server." xml:space="preserve"><value>El servidor ha pausado la sesión.</value></data>
+  <data name="Failed to resume the session." xml:space="preserve"><value>No se pudo reanudar la sesión.</value></data>
+  <data name="Resume" xml:space="preserve"><value>Reanudar</value></data>
+  <data name="Admin" xml:space="preserve"><value>Administración</value></data>
 </root>

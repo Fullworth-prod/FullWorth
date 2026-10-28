@@ -1,6 +1,7 @@
 @implements IAsyncDisposable
 
 @inject IJSRuntime JS
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FullWorth.Web.Components.App> L
 
 @if (_hasAdminAccess)
 {
@@ -15,7 +16,7 @@
         </span>
 
         <span>
-            Admin
+            @L["Admin"]
         </span>
     </NavLink>
 }

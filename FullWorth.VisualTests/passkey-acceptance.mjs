@@ -290,7 +290,37 @@ try {
     cookie.name === "__Host-FullWorth.PendingPassword").length, 0);
   const account = await context.request.get(baseURL + "/bff/account/security/passkeys");
   assert.equal(account.status(), 200, "Browser must have an authenticated session.");
+  checkpoint("password-verified removal without browser WebAuthn");
+  // Only the disposable CI owner/key is changed. Removing a saved key uses
+  // password + enrolled authenticator proof; it must not require a local OS ceremony.
+  await context.addCookies([{
+    name: ".AspNetCore.Culture", value: "c=en-US|uic=es",
+    domain: "web.localhost", path: "/", secure: true, sameSite: "Lax"
+  }]);
+  await page.goto("/app/account/security-keys");
+  await management.locator("[data-passkey-list] li").waitFor();
+  await management.getByRole("heading", { name: "Tus claves", exact: true }).waitFor();
+  await management.locator('input[name="currentPassword"]').fill(password);
+  await management.locator('input[name="twoFactorCode"]').fill(code(setup.sharedKey));
+  await page.evaluate(() => {
+    Object.defineProperty(window, "PublicKeyCredential", { configurable: true, value: undefined });
+  });
+  assert.equal(await page.evaluate(() => window.isSecureContext), true);
+  const removed = page.waitForResponse(response =>
+    response.url().endsWith("/bff/account/security/passkeys/remove") &&
+    response.request().method() === "POST");
+  page.once("dialog", dialog => dialog.accept());
+  await management.getByRole("button", { name: "Eliminar", exact: true }).click();
+  assert.equal((await removed).status(), 204);
+  await management.getByText("Guardado. Tu contraseña y las opciones de recuperación siguen funcionando.",
+    { exact: true }).waitFor();
+  assert.equal(await management.locator("[data-passkey-list] li").count(), 0);
+  assert.equal(await management.locator('input[name="currentPassword"]').inputValue(), "");
+  const remaining = await context.request.get(baseURL + "/bff/account/security/passkeys");
+  assert.equal(remaining.status(), 200);
+  assert.deepEqual(await remaining.json(), []);
+
   await cdp.send("WebAuthn.removeVirtualAuthenticator", { authenticatorId });
   await context.close();
-  console.log("PASS: virtual passkey enrollment, first-factor and password-once sign-in, cancellation/code fallback.");
+  console.log("PASS: virtual passkey enrollment, first-factor/password-once sign-in, cancellation/code fallback and password-verified removal without WebAuthn; Spanish recovery UI.");
 } finally { await browser.close(); clearTimeout(deadline); }

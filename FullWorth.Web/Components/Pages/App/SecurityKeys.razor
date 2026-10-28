@@ -2,39 +2,38 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @layout AppLayout
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FullWorth.Web.Components.App> L
 
-<PageTitle>Passkeys & security keys — FullWorth</PageTitle>
+<PageTitle>@L["Passkeys & security keys — FullWorth"]</PageTitle>
 <link rel="stylesheet" href="/account-settings.css" />
 <div class="app-page settings-page">
     <header class="settings-header">
-        <div><h1>Passkeys & security keys</h1>
-        <p>Sign in with Face ID, your device PIN, or a FIDO2 hardware key.
-        FullWorth never receives your face or fingerprint.</p></div>
+        <div><h1>@L["Passkeys & security keys"]</h1>
+        <p>@L["Sign in with Face ID, your device PIN, or a FIDO2 hardware key. FullWorth never receives your face or fingerprint."]</p></div>
     </header>
-    <a href="/app/account/settings">Back to security settings</a>
+    <a href="/app/account/settings">@L["Back to security settings"]</a>
     @if (Configuration.GetValue<bool>("Passkeys:Enabled"))
     {
         <section class="settings-card" data-passkeys="manage">
-            <h2>Your keys</h2>
-            <p>Changes require your current password and your authenticator code if 2FA is enabled.
-                Your password and recovery options remain available.</p>
-            <label class="field"><span>Current password</span>
+            <h2>@L["Your keys"]</h2>
+            <p>@L["Changes require your current password and your authenticator code if 2FA is enabled. Your password and recovery options remain available."]</p>
+            <label class="field"><span>@L["Current password"]</span>
                 <input name="currentPassword" type="password" autocomplete="current-password" maxlength="1024" /></label>
-            <label class="field"><span>Authenticator code (if enabled)</span>
+            <label class="field"><span>@L["Authenticator code (if enabled)"]</span>
                 <input name="twoFactorCode" autocomplete="one-time-code" inputmode="numeric" maxlength="12" /></label>
-            <label class="field"><span>Key name</span>
-                <input name="keyName" maxlength="80" placeholder="My iPhone or security key" /></label>
-            <button class="primary-action" type="button" data-passkey-action="register">Add passkey or security key</button>
+            <label class="field"><span>@L["Key name"]</span>
+                <input name="keyName" maxlength="80" placeholder="@L["My iPhone or security key"]" /></label>
+            <button class="primary-action" type="button" data-passkey-action="register">@L["Add passkey or security key"]</button>
             <p data-passkey-status role="status" aria-live="polite"></p>
             <button class="secondary-action security-keys-retry" type="button"
                     data-passkey-action="retry" hidden>
-                Retry loading saved keys
+                @L["Retry loading saved keys"]
             </button>
             <ul data-passkey-list></ul>
         </section>
     }
     else
     {
-        <p>Passkey sign-in is not enabled on this installation yet. Your existing sign-in still works.</p>
+        <p>@L["Passkey sign-in is not enabled on this installation yet. Your existing sign-in still works."]</p>
     }
 </div>

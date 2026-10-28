@@ -256,3 +256,33 @@ test("layout triage is bounded, keeps unknown regions explicit and does not sum 
     ["unclassified"]);
   assert.deepEqual(layoutShiftEvidence([]), { eventsObserved: 0, truncated: false, largestEvents: [] });
 });
+
+test("layout coordinates disclose only bounded numeric geometry and fixed region aliases", () => {
+  const result = layoutShiftEvidence([{
+    startTime: 100, value: .2, sourceRegions: ["app-content"],
+    sourceMovements: [{
+      region: "private-owner", previous: { x: 1.234, y: 2, width: "secret", height: Infinity, token: "private" },
+      current: { x: -4, y: 12.345, width: 100, height: 40, text: "private" }
+    }, { region: "overview-loading", previous: null, current: ["private"] }],
+    layout: { headerTop: 0, headerHeight: 64.123, contentTop: 150, contentWidth: 390,
+      rootFontPx: "private", text: "secret", url: "https://private" }
+  }]).largestEvents[0];
+  assert.deepEqual(result.sourceMovements, [{
+    region: "unclassified", previous: { x: 1.23, y: 2, width: null, height: null },
+    current: { x: -4, y: 12.35, width: 100, height: 40 }
+  }, { region: "overview-loading", previous: null, current: null }]);
+  assert.deepEqual(result.layout, {
+    headerTop: 0, headerHeight: 64.12, contentTop: 150, contentWidth: 390, rootFontPx: null
+  });
+  assert.doesNotMatch(JSON.stringify(result), /secret|private|token|https/);
+});
+test("coordinate diagnostics cannot exceed five sources per event or expose invalid geometry", () => {
+  const result = layoutShiftEvidence([{ startTime: 0, value: .1,
+    sourceMovements: Array.from({ length: 100 }, () => ({
+      region: "app-content", previous: { x: 1e20, y: NaN }, current: { x: -1e20, y: undefined }
+    }))
+  }]).largestEvents[0];
+  assert.equal(result.sourceMovements.length, 5);
+  assert.deepEqual(result.sourceMovements[0].previous, { x: null, y: null, width: null, height: null });
+  assert.deepEqual(result.sourceMovements[0].current, { x: null, y: null, width: null, height: null });
+});

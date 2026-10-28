@@ -1,3 +1,34 @@
+const unconfirmedAccountUpdate = "FullWorth could not confirm this account update. Reload settings to check its current state before trying again.";
+
+const isRecord = value => value !== null && typeof value === "object" && !Array.isArray(value);
+const hasText = value => typeof value === "string" && value.trim().length > 0;
+const isSecurityState = value => isRecord(value) &&
+    typeof value.displayName === "string" && hasText(value.email) &&
+    typeof value.emailConfirmed === "boolean" && typeof value.twoFactorEnabled === "boolean" &&
+    typeof value.hasAuthenticatorKey === "boolean" &&
+    Number.isInteger(value.recoveryCodesLeft) && value.recoveryCodesLeft >= 0;
+const isExternalStatus = value => isRecord(value) && Array.isArray(value.linkedProviders) &&
+    value.linkedProviders.every(item => isRecord(item) && hasText(item.provider));
+const isSetup = value => isRecord(value) && hasText(value.sharedKey) &&
+    typeof value.otpAuthUri === "string" && value.otpAuthUri.startsWith("otpauth://totp/");
+const isRecoveryCodes = value => isRecord(value) && Array.isArray(value.recoveryCodes) &&
+    value.recoveryCodes.every(hasText);
+const isMessage = value => isRecord(value) && hasText(value.message);
+
+async function readContractJson(response, fallback, validate) {
+    const type = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+    if (response.status !== 200 || response.redirected || type !== "application/json") {
+        throw new Error(fallback);
+    }
+    try {
+        const result = await response.json();
+        if (validate(result)) return result;
+    } catch {
+        // Neither parser errors nor arbitrary response bodies belong in the UI.
+    }
+    throw new Error(fallback);
+}
+
 async function safeFetch(path, options, fallback) {
     try {
         return await fetch(path, options);
@@ -14,28 +45,20 @@ async function getAntiforgeryToken() {
         {
             credentials: "same-origin",
             cache: "no-store",
+            redirect: "error",
             headers: {
                 Accept: "application/json"
             }
         },
         fallback);
 
-    if (!response.ok) {
+    const payload = await readContractJson(response, fallback, isRecord);
+    // Validate a bounded, nonblank HTTP header value before a credentialed write.
+    if (typeof payload.requestToken !== "string" || payload.requestToken.length > 4096 ||
+        !/^[\x21-\x7E]+$/.test(payload.requestToken)) {
         throw new Error(fallback);
     }
-
-    try {
-        const token = await response.json();
-
-        if (token?.requestToken) {
-            return token.requestToken;
-        }
-    }
-    catch {
-        // Fall through to the safe generic message.
-    }
-
-    throw new Error(fallback);
+    return payload.requestToken;
 }
 
 function mapExpectedError(body, status, fallback) {
@@ -97,17 +120,20 @@ async function readSafeError(response, fallback) {
     }
 }
 
-async function getJson(path, fallback) {
+async function getJson(path, fallback, validate) {
     const response = await safeFetch(
         path,
         {
             credentials: "same-origin",
             cache: "no-store",
+            redirect: "error",
             headers: {
                 Accept: "application/json"
             }
         },
         fallback);
+
+    if (response.redirected) throw new Error(fallback);
 
     if (response.status === 401) {
         // A read cannot reject a submitted password or MFA proof. This is the
@@ -121,15 +147,10 @@ async function getJson(path, fallback) {
         throw new Error(await readSafeError(response, fallback));
     }
 
-    try {
-        return await response.json();
-    }
-    catch {
-        throw new Error(fallback);
-    }
+    return readContractJson(response, fallback, validate);
 }
 
-async function postJson(path, body, fallback) {
+async function postJson(path, body, fallback, contract = "json", validate = isRecord) {
     const requestToken = await getAntiforgeryToken();
     const response = await safeFetch(
         path,
@@ -137,6 +158,7 @@ async function postJson(path, body, fallback) {
             method: "POST",
             credentials: "same-origin",
             cache: "no-store",
+            redirect: "error",
             headers: {
                 Accept: "application/json",
                 "Content-Type": "application/json",
@@ -144,40 +166,32 @@ async function postJson(path, body, fallback) {
             },
             body: JSON.stringify(body)
         },
-        fallback);
+        unconfirmedAccountUpdate);
 
+    // Once sent, a lost/redirected/unexpected response is an unknown outcome.
+    // Do not replay writes or navigate as if a security change was confirmed.
+    if (response.redirected) throw new Error(unconfirmedAccountUpdate);
     if (!response.ok) {
         throw new Error(await readSafeError(response, fallback));
     }
 
-    if (response.status === 204) {
+    if (response.status === 204 && (contract === "no-content" || contract === "json-or-no-content")) {
         return null;
     }
-
-    const contentType = response.headers.get("content-type") ?? "";
-
-    if (!contentType.includes("application/json")) {
-        return null;
-    }
-
-    try {
-        return await response.json();
-    }
-    catch {
-        throw new Error(fallback);
-    }
+    if (contract === "no-content") throw new Error(unconfirmedAccountUpdate);
+    return readContractJson(response, unconfirmedAccountUpdate, validate);
 }
 
 export function getAccountSecurity() {
     return getJson(
         "/bff/account/security",
-        "FullWorth could not load account security settings.");
+        "FullWorth could not load account security settings.", isSecurityState);
 }
 
 export function getExternalIdentityStatus() {
     return getJson(
         "/bff/account/external",
-        "FullWorth could not load linked sign-in methods.");
+        "FullWorth could not load linked sign-in methods.", isExternalStatus);
 }
 
 const settingsToastObservers = new WeakMap();
@@ -438,8 +452,10 @@ async function beginExternalIdentityUnlink(provider) {
             twoFactorRecoveryCode);
         window.alert(`${displayName} was removed from your FullWorth sign-in methods.`);
     }
-    catch {
-        window.alert("FullWorth could not remove this sign-in method. Check your credentials and try again.");
+    catch (error) {
+        window.alert(error?.message === unconfirmedAccountUpdate
+            ? unconfirmedAccountUpdate
+            : "FullWorth could not remove this sign-in method. Check your credentials and try again.");
     }
 }
 
@@ -503,7 +519,7 @@ export function updateProfile(displayName) {
         {
             displayName: displayName || null
         },
-        "FullWorth could not update your profile.");
+        "FullWorth could not update your profile.", "json", isSecurityState);
 }
 
 export async function changePassword(currentPassword, newPassword, twoFactorCode) {
@@ -514,7 +530,7 @@ export async function changePassword(currentPassword, newPassword, twoFactorCode
             newPassword,
             twoFactorCode: twoFactorCode || null
         },
-        "We couldn’t update your password. Please try again.");
+        "We couldn’t update your password. Please try again.", "no-content");
 
     window.location.replace("/login");
 }
@@ -526,7 +542,7 @@ export async function revokeAllSessions(currentPassword, twoFactorCode) {
             currentPassword,
             twoFactorCode: twoFactorCode || null
         },
-        "We couldn’t sign out your other FullWorth sessions. Please try again.");
+        "We couldn’t sign out your other FullWorth sessions. Please try again.", "no-content");
 
     window.location.replace("/login");
 }
@@ -539,14 +555,15 @@ export function requestEmailChange(currentPassword, newEmail, twoFactorCode) {
             newEmail,
             twoFactorCode: twoFactorCode || null
         },
-        "We couldn’t start the email change. Please try again.");
+        "We couldn’t start the email change. Please try again.", "json", isMessage);
 }
 
-export function resendVerificationEmail() {
-    return postJson(
+export async function resendVerificationEmail() {
+    // 204 means it was already verified; only 200 confirms a send request.
+    return (await postJson(
         "/bff/account/security/email/verification",
         {},
-        "We couldn’t send the verification email. Please try again.");
+        "We couldn’t send the verification email. Please try again.", "json-or-no-content", isMessage)) !== null;
 }
 
 export async function linkExternalIdentity(
@@ -566,9 +583,10 @@ export async function linkExternalIdentity(
             twoFactorCode: secondFactor.twoFactorCode,
             twoFactorRecoveryCode: secondFactor.twoFactorRecoveryCode
         },
-        "FullWorth could not link this sign-in method. Start the provider link again and try again.");
+        "FullWorth could not link this sign-in method. Start the provider link again and try again.", "no-content");
 
-    await refreshExternalIdentityStatusUi();
+    try { await refreshExternalIdentityStatusUi(); }
+    catch { throw new Error(unconfirmedAccountUpdate); }
     return result;
 }
 
@@ -585,9 +603,10 @@ export async function unlinkExternalIdentity(
             twoFactorCode: twoFactorCode || null,
             twoFactorRecoveryCode: twoFactorRecoveryCode || null
         },
-        "FullWorth could not remove this sign-in method.");
+        "FullWorth could not remove this sign-in method.", "no-content");
 
-    await refreshExternalIdentityStatusUi();
+    try { await refreshExternalIdentityStatusUi(); }
+    catch { throw new Error(unconfirmedAccountUpdate); }
     return result;
 }
 
@@ -607,7 +626,7 @@ export function setupTwoFactor(currentPassword, twoFactorCode) {
             currentPassword,
             twoFactorCode: twoFactorCode || null
         },
-        "We couldn’t start authenticator setup. Please try again.");
+        "We couldn’t start authenticator setup. Please try again.", "json", isSetup);
 }
 
 export function enableTwoFactor(currentPassword, authenticatorCode) {
@@ -617,7 +636,7 @@ export function enableTwoFactor(currentPassword, authenticatorCode) {
             currentPassword,
             authenticatorCode
         },
-        "We couldn’t enable two-factor authentication. Please try again.");
+        "We couldn’t enable two-factor authentication. Please try again.", "json", isRecoveryCodes);
 }
 
 export function regenerateRecoveryCodes(currentPassword, twoFactorCode) {
@@ -627,7 +646,7 @@ export function regenerateRecoveryCodes(currentPassword, twoFactorCode) {
             currentPassword,
             twoFactorCode: twoFactorCode || null
         },
-        "We couldn’t generate new recovery codes. Please try again.");
+        "We couldn’t generate new recovery codes. Please try again.", "json", isRecoveryCodes);
 }
 
 export function disableTwoFactor(currentPassword, twoFactorCode) {
@@ -637,7 +656,7 @@ export function disableTwoFactor(currentPassword, twoFactorCode) {
             currentPassword,
             twoFactorCode: twoFactorCode || null
         },
-        "We couldn’t disable two-factor authentication. Please try again.");
+        "We couldn’t disable two-factor authentication. Please try again.", "no-content");
 }
 
 export function resetTwoFactor(currentPassword, twoFactorCode) {
@@ -647,7 +666,7 @@ export function resetTwoFactor(currentPassword, twoFactorCode) {
             currentPassword,
             twoFactorCode: twoFactorCode || null
         },
-        "We couldn’t replace your authenticator. Please try again.");
+        "We couldn’t replace your authenticator. Please try again.", "json", isSetup);
 }
 
 void refreshExternalIdentityStatusUi().catch(() => {

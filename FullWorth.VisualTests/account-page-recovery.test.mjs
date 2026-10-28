@@ -8,21 +8,29 @@ export async function verifyAccountPageRecovery(page, outputDir) {
   assert.ok(new URL(page.url()).hostname.endsWith(".localhost"), "Account recovery requires isolated CI.");
   await verifyAccountSecurityReadRecovery();
   const counts = new Map(), writes = [], failures = new Set(), malformed = new Set();
+  let emailConfirmed = true;
   let displayName = "Synthetic profile", profileMode = "ok", statusMode = "ok", plansMode = "ok";
   let active = false, paid = false, billing = true, redeemMode = "lost", holdProfile, releaseProfile, holdCheckout, releaseCheckout;
   let releaseRead, holdRead = false;
-  const security = () => ({ displayName, email: "synthetic-account@example.test", emailConfirmed: true,
+  const security = () => ({ displayName, email: "synthetic-account@example.test", emailConfirmed,
     twoFactorEnabled: true, hasAuthenticatorKey: true, recoveryCodesLeft: 3 });
   const status = () => ({ isActive: active, tier: active ? "FullWorth" : null, startsAtUtc: null,
     endsAtUtc: null, source: active ? "Synthetic fixture" : null, billingAvailable: billing,
     isPaid: paid, billingInterval: paid ? "monthly" : null, cancelAtPeriodEnd: false, providerStatus: null });
   const count = endpoint => counts.get(endpoint) || 0;
-  const pattern = /\/bff\/(?:account\/(?:security(?:\/profile)?|preferences)|subscription(?:\/.*)?)$/;
+  const pattern = /\/bff\/(?:account\/(?:security(?:\/(?:profile|email(?:\/verification)?))?|preferences)|subscription(?:\/.*)?)$/;
   const handler = async route => {
     const request = route.request(), endpoint = new URL(request.url()).pathname;
     counts.set(endpoint, count(endpoint) + 1);
     if (request.method() !== "GET") {
       writes.push({ endpoint, method: request.method(), body: request.postData() ? request.postDataJSON() : null });
+      if (endpoint === "/bff/account/security/email/verification") {
+        emailConfirmed = true; // A concurrent verification already completed.
+        return route.fulfill({ status: 204 });
+      }
+      if (endpoint === "/bff/account/security/email") {
+        return route.fulfill({ status: 200, contentType: "text/html", body: "<html>PRIVATE-EMAIL-CANARY</html>" });
+      }
       if (endpoint === "/bff/account/security/profile") {
         const name = request.postDataJSON().displayName || "";
         if (profileMode === "hold") await new Promise(resolve => { releaseProfile = resolve; });
@@ -154,6 +162,57 @@ export async function verifyAccountPageRecovery(page, outputDir) {
     malformed.clear();
     await button("Retry security settings").click(); await button("Change password").waitFor();
     await button("Retry timestamp preference").click(); await page.locator("#timestamp-display-mode").waitFor();
+
+    // An HTML success response must not close the sensitive dialog or claim
+    // delivery. Verify the actual Razor safe-error mapping in both languages.
+    for (const language of ["en-US", "es"]) {
+      const spanish = language === "es";
+      await page.context().addCookies([{ name: ".AspNetCore.Culture", value: encodeURIComponent("c=en-US|uic=" + language),
+        url: new URL(page.url()).origin, secure: true, sameSite: "Lax" }]);
+      await goto("/app/account/settings");
+      await button(spanish ? "Cambiar correo electrónico" : "Change email").click();
+      const dialog = page.locator(".settings-dialog[open]");
+      await dialog.waitFor();
+      await dialog.getByLabel(spanish ? "Nueva dirección de correo" : "New email address", { exact: true }).fill("synthetic-new@example.test");
+      await dialog.getByLabel(spanish ? "Contraseña actual" : "Current password", { exact: true }).fill("synthetic-password");
+      await dialog.locator('input[autocomplete="one-time-code"]').fill("123456");
+      const before = writes.filter(write => write.endpoint === "/bff/account/security/email").length;
+      await dialog.getByRole("button", { name: spanish ? "Enviar correo de verificación" : "Send verification email", exact: true }).click();
+      const message = spanish
+        ? "FullWorth no pudo confirmar esta actualización de la cuenta. Vuelve a cargar la configuración para revisar su estado actual antes de intentarlo de nuevo."
+        : "FullWorth could not confirm this account update. Reload settings to check its current state before trying again.";
+      await dialog.locator(".settings-toast-portal").getByText(message, { exact: true }).waitFor();
+      assert.equal(writes.filter(write => write.endpoint === "/bff/account/security/email").length, before + 1);
+      assert.equal(await page.locator(".settings-toast-success").count(), 0);
+      assert.equal(await dialog.count(), 1);
+      assert.equal(new URL(page.url()).pathname, "/app/account/settings");
+      await checkNoCanary();
+      await photo("settings-email-unknown-" + language + "-390");
+    }
+    await page.context().addCookies([{ name: ".AspNetCore.Culture", value: encodeURIComponent("c=en-US|uic=en-US"),
+      url: new URL(page.url()).origin, secure: true, sameSite: "Lax" }]);
+
+    // A stale unverified read followed by 204 must report verified state,
+    // never a fabricated email delivery.
+    for (const language of ["en-US", "es"]) {
+      const spanish = language === "es";
+      emailConfirmed = false;
+      await page.context().addCookies([{ name: ".AspNetCore.Culture", value: encodeURIComponent("c=en-US|uic=" + language),
+        url: new URL(page.url()).origin, secure: true, sameSite: "Lax" }]);
+      await goto("/app/account/settings");
+      const before = writes.filter(write => write.endpoint === "/bff/account/security/email/verification").length;
+      const readsBefore = count("/bff/account/security");
+      await button(spanish ? "Enviar correo de verificación" : "Send verification email").click();
+      await page.locator(".settings-toast-success").getByText(spanish
+        ? "Tu dirección de correo ya está verificada." : "Your email address is already verified.", { exact: true }).waitFor();
+      assert.equal(writes.filter(write => write.endpoint === "/bff/account/security/email/verification").length, before + 1);
+      assert.equal(count("/bff/account/security"), readsBefore + 1);
+      assert.equal(await button(spanish ? "Enviar correo de verificación" : "Send verification email").count(), 0);
+      assert.equal((await page.locator(".settings-toast-success").textContent()).includes(spanish ? "Se envió" : "sent"), false);
+      await photo("settings-already-verified-" + language + "-390");
+    }
+    await page.context().addCookies([{ name: ".AspNetCore.Culture", value: encodeURIComponent("c=en-US|uic=en-US"),
+      url: new URL(page.url()).origin, secure: true, sameSite: "Lax" }]);
 
     // Profile: initial failure must terminate loading and offer a real retry.
     failures.add("/bff/account/security");

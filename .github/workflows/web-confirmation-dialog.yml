@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - "FullWorth.Web/wwwroot/js/bff.js"
+      - "FullWorth.Web/wwwroot/js/account-security.js"
       - "FullWorth.Web/wwwroot/js/plaid-completion.js"
       - "FullWorth.Web/wwwroot/js/confirmation-dialog.js"
       - "FullWorth.Web/wwwroot/confirmation-dialog.css"
@@ -58,6 +59,8 @@ jobs:
         run: node FullWorth.VisualTests/confirmation-dialog.test.mjs
       - name: Verify BFF response contracts and explicit retry boundaries
         run: node FullWorth.VisualTests/bff-response-boundary.test.mjs
+      - name: Verify account security responses without credential redirects or write replay
+        run: node FullWorth.VisualTests/account-security-response-boundary.test.mjs
       - name: Verify explicit fresh-Link recovery and no silent replay
         run: node FullWorth.VisualTests/hosted-link-recovery.test.mjs
       - name: Retain synthetic mobile screenshots

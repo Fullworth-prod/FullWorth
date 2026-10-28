@@ -59,6 +59,8 @@ jobs:
         run: node FullWorth.VisualTests/confirmation-dialog.test.mjs
       - name: Verify BFF response contracts and explicit retry boundaries
         run: node FullWorth.VisualTests/bff-response-boundary.test.mjs
+      - name: Verify single-submit disposable owner setup under form replacement
+        run: node FullWorth.VisualTests/auth-owner-setup.test.mjs
       - name: Verify account security responses without credential redirects or write replay
         run: node FullWorth.VisualTests/account-security-response-boundary.test.mjs
       - name: Verify explicit fresh-Link recovery and no silent replay

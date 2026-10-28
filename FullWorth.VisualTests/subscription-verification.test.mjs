@@ -1,3 +1,4 @@
+import { submitDisposableAuthForm } from "./auth-owner-setup.mjs";
 import assert from "node:assert/strict";
 import path from "node:path";
 import { webkit } from "playwright";
@@ -307,28 +308,20 @@ export async function verifySubscriptionVerification(page, outputDir) {
         value: encodeURIComponent("c=en-US|uic=en-US"), url: origin, secure: true, sameSite: "Lax" }]);
       await target.goto(origin + "/register", { waitUntil: "domcontentloaded" });
       await target.locator(".auth-form").waitFor();
-      // Match the parent auth fixture's settling interval before filling native
-      // forms: InteractiveServer hydration can otherwise replace their inputs.
-      await target.waitForTimeout(900);
-      await target.locator('input[name="email"]').fill(email);
-      await target.locator('input[name="password"]').fill(password);
-      await target.locator('input[name="confirmPassword"]').fill(password);
-      await target.locator('input[name="acceptedTermsAndPrivacy"]').check();
       await Promise.all([
         target.waitForURL(url => url.pathname === "/login" &&
           url.searchParams.get("message") === "Registration request received. Sign in to continue.",
           { waitUntil: "domcontentloaded" }),
-        target.locator('button[type="submit"]').click()
+        submitDisposableAuthForm(target, "/auth/register", {
+          email, password, confirmPassword: password, acceptedTermsAndPrivacy: true
+        })
       ]);
       assert.equal(registrationStatus, 302, "Disposable owner registration redirects successfully.");
       phase = "login";
       await target.locator(".auth-form").waitFor();
-      await target.waitForTimeout(900);
-      await target.locator('input[name="email"]').fill(email);
-      await target.locator('input[name="password"]').fill(password);
       await Promise.all([
         target.waitForURL(url => url.pathname.startsWith("/app"), { waitUntil: "domcontentloaded" }),
-        target.locator('button[type="submit"]').click()
+        submitDisposableAuthForm(target, "/auth/login", { email, password })
       ]);
       assert.equal(loginStatus, 302, "Disposable owner login redirects successfully.");
       phase = "release notes";
@@ -340,7 +333,7 @@ export async function verifySubscriptionVerification(page, outputDir) {
     } catch (error) {
       // Never capture the sign-up form: it contains a disposable password.
       // Log only public error text, pathname, status and validity flags.
-      console.error("Subscription owner setup failure", {
+      console.error("Subscription owner setup failure", JSON.stringify({
         engine, phase, registrationStatus, loginStatus,
         state: await target.evaluate(() => ({
           pathname: location.pathname, language: document.documentElement.lang,
@@ -350,7 +343,7 @@ export async function verifySubscriptionVerification(page, outputDir) {
             .map(input => ({ name: input.name, valid: input.validity.valid,
               missing: input.validity.valueMissing, typeMismatch: input.validity.typeMismatch }))
         }))
-      });
+      }));
       throw error;
     } finally { target.off("response", recordAuthStatus); }
   };

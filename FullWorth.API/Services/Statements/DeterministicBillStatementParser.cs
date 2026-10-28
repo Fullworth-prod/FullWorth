@@ -9,17 +9,6 @@ public sealed partial class DeterministicBillStatementParser
         CultureInfo.GetCultureInfo(
             "en-US");
 
-    // Recognition is intentionally bounded to the framework's installed currency
-    // metadata. Unrecognized explicit tokens stay in review rather than becoming USD.
-    private static readonly HashSet<string> RecognizedCurrencyCodes =
-        CultureInfo.GetCultures(CultureTypes.SpecificCultures)
-            .Select(TryGetRegionCurrencyCode)
-            .OfType<string>()
-            .Where(code => code.Length == 3 && code is not "XXX" and not "XTS" &&
-                code.All(character => character is >= 'A' and <= 'Z'))
-            .Append("USD")
-            .ToHashSet(StringComparer.Ordinal);
-
     private static readonly string[] AcceptedDateFormats =
     [
         "M/d/yyyy",
@@ -144,12 +133,6 @@ public sealed partial class DeterministicBillStatementParser
         };
     }
 
-    private static string? TryGetRegionCurrencyCode(CultureInfo culture)
-    {
-        try { return new RegionInfo(culture.Name).ISOCurrencySymbol; }
-        catch (ArgumentException) { return null; }
-    }
-
     private static string TryExtractCurrency(string text, out bool conflicting)
     {
         var labeled = CurrencyCodeRegex().Matches(text).Cast<Match>()
@@ -163,7 +146,7 @@ public sealed partial class DeterministicBillStatementParser
 
         // Explicit malformed/competing currency evidence must not fall back to
         // this parser's legacy USD-style format assumption.
-        if (currencies.Any(value => value.Length != 3 || !RecognizedCurrencyCodes.Contains(value)) ||
+        if (currencies.Any(value => !StatementCurrencyPolicy.IsRecognized(value)) ||
             conflicting)
         {
             return string.Empty;

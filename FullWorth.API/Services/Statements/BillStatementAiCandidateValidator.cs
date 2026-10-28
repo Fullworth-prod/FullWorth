@@ -155,15 +155,10 @@ namespace FullWorth.API.Services.Statements
                     candidate.CurrencyCode
                         .Trim();
 
-                if (currencyCode.Length !=
-                        3 ||
-                    currencyCode.Any(
-                        character =>
-                            !char.IsLetter(
-                                character)))
+                if (!StatementCurrencyPolicy.IsRecognized(currencyCode))
                 {
                     errors.Add(
-                        "The currency code must be a three-letter code.");
+                        "The currency code must be a recognized three-letter currency.");
                 }
             }
         }
@@ -379,7 +374,9 @@ namespace FullWorth.API.Services.Statements
                  */
                 if (!normalizedDocument.Contains(
                         normalizedExcerpt,
-                        StringComparison.OrdinalIgnoreCase))
+                        StringComparison.OrdinalIgnoreCase) ||
+                    factKey == BillStatementAiFactKeys.CurrencyCode &&
+                    !ContainsWholeEvidenceValue(normalizedDocument, normalizedExcerpt))
                 {
                     errors.Add(
                         $"Evidence item {index} was not found in the source document.");

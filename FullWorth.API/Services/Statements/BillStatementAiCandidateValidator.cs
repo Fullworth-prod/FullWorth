@@ -372,11 +372,14 @@ namespace FullWorth.API.Services.Statements
                  * the model cannot cite text that isn't actually
                  * present in the document supplied to it.
                  */
-                if (!normalizedDocument.Contains(
-                        normalizedExcerpt,
-                        StringComparison.OrdinalIgnoreCase) ||
-                    factKey == BillStatementAiFactKeys.CurrencyCode &&
-                    !ContainsWholeEvidenceValue(normalizedDocument, normalizedExcerpt))
+                // Money facts are checked against complete signed numeric source
+                // spans below. Other facts must not crop a source word/year or
+                // identifier; only a genuine account suffix may omit a prefix.
+                var foundInSource = IsMoneyFact(factKey)
+                    ? normalizedDocument.Contains(normalizedExcerpt, StringComparison.OrdinalIgnoreCase)
+                    : ContainsWholeEvidenceValue(normalizedDocument, normalizedExcerpt,
+                        allowLeadingFragment: factKey == BillStatementAiFactKeys.AccountIdentifierSuffix);
+                if (!foundInSource)
                 {
                     errors.Add(
                         $"Evidence item {index} was not found in the source document.");
@@ -634,9 +637,31 @@ namespace FullWorth.API.Services.Statements
                 errors);
         }
 
+        private static bool IsMoneyFact(string factKey) =>
+            factKey is BillStatementAiFactKeys.PreviousBalance or BillStatementAiFactKeys.Payments or
+                BillStatementAiFactKeys.CurrentCharges or BillStatementAiFactKeys.TotalDue ||
+            factKey.StartsWith("lineItems[", StringComparison.Ordinal) &&
+                factKey.EndsWith("].amount", StringComparison.Ordinal);
+
+        private static bool IsEvidenceWordCharacter(string text, int index)
+        {
+            // Inspect the full Unicode scalar, including a preceding low
+            // surrogate, so a non-BMP letter/digit cannot fake a boundary.
+            if (index > 0 && char.IsLowSurrogate(text[index]) && char.IsHighSurrogate(text[index - 1]))
+                index--;
+            return CharUnicodeInfo.GetUnicodeCategory(text, index) is
+                UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter or
+                UnicodeCategory.TitlecaseLetter or UnicodeCategory.ModifierLetter or
+                UnicodeCategory.OtherLetter or UnicodeCategory.DecimalDigitNumber or
+                UnicodeCategory.LetterNumber or UnicodeCategory.OtherNumber or
+                UnicodeCategory.NonSpacingMark or UnicodeCategory.SpacingCombiningMark or
+                UnicodeCategory.EnclosingMark or UnicodeCategory.ConnectorPunctuation;
+        }
+
         private static bool ContainsWholeEvidenceValue(
             string excerpt,
-            string normalizedValue)
+            string normalizedValue,
+            bool allowLeadingFragment = false)
         {
             if (string.IsNullOrWhiteSpace(
                     normalizedValue))
@@ -667,16 +692,15 @@ namespace FullWorth.API.Services.Statements
                     normalizedValue.Length;
 
                 var hasWholeLeadingBoundary =
+                    allowLeadingFragment ||
                     index ==
                         0 ||
-                    !char.IsLetterOrDigit(
-                        excerpt[index - 1]);
+                    !IsEvidenceWordCharacter(excerpt, index - 1);
 
                 var hasWholeTrailingBoundary =
                     endIndex ==
                         excerpt.Length ||
-                    !char.IsLetterOrDigit(
-                        excerpt[endIndex]);
+                    !IsEvidenceWordCharacter(excerpt, endIndex);
 
                 if (hasWholeLeadingBoundary &&
                     hasWholeTrailingBoundary)
@@ -730,8 +754,7 @@ namespace FullWorth.API.Services.Statements
 
                 if (endIndex ==
                         excerpt.Length ||
-                    !char.IsLetterOrDigit(
-                        excerpt[endIndex]))
+                    !IsEvidenceWordCharacter(excerpt, endIndex))
                 {
                     return true;
                 }

@@ -16,9 +16,16 @@ internal static class StatementCurrencyPolicy
             .Append("USD")
             .ToHashSet(StringComparer.Ordinal);
 
-    internal static bool IsRecognized(string? code) =>
-        !string.IsNullOrWhiteSpace(code) &&
-        RecognizedCurrencyCodes.Contains(code.Trim().ToUpperInvariant());
+    internal static bool IsRecognized(string? code)
+    {
+        if (code is null) return false;
+        var raw = code.Trim();
+        // Check the original alphabet before casing: e.g. Unicode long-s
+        // uppercases to ASCII S and must not manufacture a recognized unit.
+        return raw.Length == 3 &&
+            raw.All(character => character is >= 'A' and <= 'Z' or >= 'a' and <= 'z') &&
+            RecognizedCurrencyCodes.Contains(raw.ToUpperInvariant());
+    }
 
     private static string? TryGetRegionCurrencyCode(CultureInfo culture)
     {

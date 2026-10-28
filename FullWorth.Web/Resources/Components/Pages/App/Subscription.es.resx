@@ -39,4 +39,54 @@
   <data name="No paid plans are available right now." xml:space="preserve"><value>No hay planes de pago disponibles en este momento.</value></data>
   <data name="Retry paid plans" xml:space="preserve"><value>Reintentar planes de pago</value></data>
   <data name="Current access was checked. Review it before redeeming a key again." xml:space="preserve"><value>Se ha comprobado el acceso actual. Revísalo antes de volver a canjear una clave.</value></data>
+  <data name="Dismiss notification" xml:space="preserve"><value>Descartar notificación</value></data>
+  <data name="Plan &amp; access" xml:space="preserve"><value>Plan y acceso</value></data>
+  <data name="See how your FullWorth access is provided, manage billing when available, or redeem controlled beta access." xml:space="preserve"><value>Consulta cómo se proporciona tu acceso a FullWorth, gestiona la facturación cuando esté disponible o canjea acceso a la beta controlada.</value></data>
+  <data name="Access" xml:space="preserve"><value>Acceso</value></data>
+  <data name="Paid subscription" xml:space="preserve"><value>Suscripción de pago</value></data>
+  <data name="Included access" xml:space="preserve"><value>Acceso incluido</value></data>
+  <data name="Billing" xml:space="preserve"><value>Facturación</value></data>
+  <data name="Access ends" xml:space="preserve"><value>Fin del acceso</value></data>
+  <data name="Current period" xml:space="preserve"><value>Período actual</value></data>
+  <data name="Cancellation scheduled" xml:space="preserve"><value>Cancelación programada</value></data>
+  <data name="Your paid plan will not renew after the current billing period." xml:space="preserve"><value>Tu plan de pago no se renovará al finalizar el período de facturación actual.</value></data>
+  <data name="Opening…" xml:space="preserve"><value>Abriendo…</value></data>
+  <data name="Manage billing" xml:space="preserve"><value>Gestionar facturación</value></data>
+  <data name="Simple pricing" xml:space="preserve"><value>Precios sencillos</value></data>
+  <data name="Choose how you want to pay" xml:space="preserve"><value>Elige cómo quieres pagar</value></data>
+  <data name="Choose a billing interval. Review the final price and renewal terms in secure checkout before paying." xml:space="preserve"><value>Elige un intervalo de facturación. Revisa el precio final y las condiciones de renovación en el proceso de pago seguro antes de pagar.</value></data>
+  <data name="Best value" xml:space="preserve"><value>Mejor opción</value></data>
+  <data name="Yearly" xml:space="preserve"><value>Anual</value></data>
+  <data name="Monthly" xml:space="preserve"><value>Mensual</value></data>
+  <data name="year" xml:space="preserve"><value>año</value></data>
+  <data name="month" xml:space="preserve"><value>mes</value></data>
+  <data name="About {0} per month when billed yearly" xml:space="preserve"><value>Aproximadamente {0} al mes con facturación anual</value></data>
+  <data name="Billed every month until you cancel" xml:space="preserve"><value>Se factura cada mes hasta que canceles</value></data>
+  <data name="Recurring bill monitoring" xml:space="preserve"><value>Seguimiento de facturas recurrentes</value></data>
+  <data name="Bill change detection" xml:space="preserve"><value>Detección de cambios en las facturas</value></data>
+  <data name="Monthly and annual impact" xml:space="preserve"><value>Impacto mensual y anual</value></data>
+  <data name="Statement-backed explanations when evidence is available" xml:space="preserve"><value>Explicaciones respaldadas por estados de cuenta cuando hay evidencia disponible</value></data>
+  <data name="Opening secure checkout…" xml:space="preserve"><value>Abriendo el proceso de pago seguro…</value></data>
+  <data name="Choose {0}" xml:space="preserve"><value>Elegir plan {0}</value></data>
+  <data name="Checkout is handled by our payment provider. By subscribing, you agree to the" xml:space="preserve"><value>Nuestro proveedor de pagos gestiona el proceso de pago. Al suscribirte, aceptas los</value></data>
+  <data name="Terms of Service" xml:space="preserve"><value>Términos del servicio</value></data>
+  <data name="and acknowledge the" xml:space="preserve"><value>y tomas conocimiento de la</value></data>
+  <data name="Privacy Policy" xml:space="preserve"><value>Política de privacidad</value></data>
+  <data name="Paid plans not configured" xml:space="preserve"><value>Planes de pago sin configurar</value></data>
+  <data name="FullWorth paid checkout is not available yet" xml:space="preserve"><value>La contratación de pago de FullWorth aún no está disponible</value></data>
+  <data name="This environment is still using controlled beta access. No payment button is shown until real billing is configured." xml:space="preserve"><value>Este entorno todavía utiliza acceso de beta controlada. No se muestra un botón de pago hasta que la facturación real esté configurada.</value></data>
+  <data name="Beta access" xml:space="preserve"><value>Acceso a la beta</value></data>
+  <data name="Have an access key?" xml:space="preserve"><value>¿Tienes una clave de acceso?</value></data>
+  <data name="Controlled beta and complimentary access keys can still be redeemed without entering payment information." xml:space="preserve"><value>Las claves de acceso a la beta controlada y de acceso gratuito se pueden canjear sin introducir información de pago.</value></data>
+  <data name="Access keys are redeemed once and attached securely to your FullWorth account." xml:space="preserve"><value>Las claves de acceso se canjean una sola vez y se vinculan de forma segura a tu cuenta de FullWorth.</value></data>
+  <data name="Account export and deletion controls remain available regardless of subscription status." xml:space="preserve"><value>Los controles para exportar los datos de la cuenta y eliminarla siguen disponibles independientemente del estado de la suscripción.</value></data>
+  <data name="Data controls" xml:space="preserve"><value>Controles de datos</value></data>
+  <data name="Terms" xml:space="preserve"><value>Términos</value></data>
+  <data name="Privacy" xml:space="preserve"><value>Privacidad</value></data>
+  <data name="Your paid FullWorth access is active." xml:space="preserve"><value>Tu acceso de pago a FullWorth está activo.</value></data>
+  <data name="Checkout returned, but paid access is not confirmed yet. Refresh this page shortly." xml:space="preserve"><value>Has vuelto del proceso de pago, pero el acceso de pago aún no está confirmado. Actualiza esta página dentro de un momento.</value></data>
+  <data name="Checkout was cancelled. You were not subscribed by FullWorth." xml:space="preserve"><value>Se canceló el proceso de pago. FullWorth no te suscribió.</value></data>
+  <data name="FullWorth could not start secure checkout." xml:space="preserve"><value>FullWorth no pudo iniciar el proceso de pago seguro.</value></data>
+  <data name="FullWorth could not open subscription management." xml:space="preserve"><value>FullWorth no pudo abrir la gestión de suscripciones.</value></data>
+  <data name="Not applicable" xml:space="preserve"><value>No aplicable</value></data>
 </root>

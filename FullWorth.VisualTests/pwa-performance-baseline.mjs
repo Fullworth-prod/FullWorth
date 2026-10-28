@@ -2,12 +2,12 @@ import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { webkit } from "playwright";
-import { requireDisposableOrigin, summarizeStaticResources, maximumLayoutShiftWindow, createReadTracker, unavailableBillFixtureId }
+import { requireDisposableOrigin, summarizeStaticResources, maximumLayoutShiftWindow, createReadTracker, unavailableBillFixtureId, layoutShiftRegions, layoutShiftEvidence }
   from "./performance-metrics.mjs";
 
 // Test-local public profile wrappers and PerformanceObservers only. Production
 // application files, framework internals and request payloads are not changed.
-function installProbe() {
+function installProbe({ regions }) {
   try { localStorage.setItem("fullworth.performance-profile", "balanced"); } catch {}
   const supported = new Set(globalThis.PerformanceObserver?.supportedEntryTypes ?? []);
   const state = { shifts: [], lcp: null, longTasks: [], profileCalls: {}, shiftsDropped: 0, longTasksDropped: 0 };
@@ -31,7 +31,12 @@ function installProbe() {
     const entries = list.getEntries();
     state.shiftsDropped += Math.max(0, entries.length - 500);
     state.shifts.push(...entries.slice(-500).map(entry =>
-      ({ value: entry.value, startTime: entry.startTime, hadRecentInput: entry.hadRecentInput })));
+      ({ value: entry.value, startTime: entry.startTime, hadRecentInput: entry.hadRecentInput,
+        sourceRegions: [...new Set((entry.sources ?? []).slice(0, 5).map(source => {
+          const node = source.node?.nodeType === 1 ? source.node : source.node?.parentElement;
+          return regions.find(([, selector]) => node?.closest?.(selector))?.[0] ?? "unclassified";
+        }))]
+      })));
     state.shiftsDropped += Math.max(0, state.shifts.length - 500);
     state.shifts = state.shifts.slice(-500);
   }).observe({ type: "layout-shift", buffered: true });
@@ -120,6 +125,7 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
       "Heading readability includes automation observation overhead, not financial-data readiness.",
       "Paint/LCP/layout observations are bounded windows, not final field Core Web Vitals or percentile SLAs.",
       "Profile API counters cover four public methods; resource entries are not import or total JS-interop counts.",
+      "Layout triage retains at most ten individual shifts and five fixed region aliases per shift; it does not diagnose a cause or export DOM text/classes/IDs.",
       "Only the fixed nonexistent Bill Detail fixture permits404-header completion; its visible error screen is required. Populated/private histories and CPU/device throttling are not claimed."
     ],
     samples: []
@@ -142,7 +148,7 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
     });
     let session, reads, page;
     try {
-      await context.addInitScript(installProbe);
+      await context.addInitScript(installProbe, { regions: layoutShiftRegions });
       page = await context.newPage();
       if (network === "emulated-slow") {
         session = await context.newCDPSession(page);
@@ -240,6 +246,8 @@ export async function verifyPwaPerformance(authenticatedPage, outputDir) {
           fcpMs: enhanced ? null : round(observation.fcp),
           lcpAtObservationMs: enhanced ? null : round(observation.lcp),
           layoutShiftWindowScore: observation.supportsLayoutShift && observation.shiftsDropped === 0 ? maximumLayoutShiftWindow(observation.shifts.filter(entry => entry.startTime >= start)) : null,
+          layoutShiftEvidence: observation.supportsLayoutShift && observation.shiftsDropped === 0
+            ? layoutShiftEvidence(observation.shifts, start) : null,
           longTasksObserved: observation.supportsLongTasks && observation.longTasksDropped === 0 ? longTasks.length : null,
           maxLongTaskMs: observation.supportsLongTasks && observation.longTasksDropped === 0 ? round(Math.max(0, ...longTasks.map(entry => entry.duration))) : null,
           stylesheetLinks: observation.stylesheetLinks, duplicateStylesheetHrefs: observation.duplicateStylesheetHrefs,

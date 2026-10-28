@@ -277,10 +277,22 @@ export async function verifyThemePairs(page, outputDir) {
               expect(await target.locator('.home-evidence a[href="/app/bills"]').isVisible(),
                 "Authenticated evidence entry opens the existing bills workspace.");
               expect(await target.locator(".sample-" + style).isVisible(), "The matching composition is visible.");
+              expect((await target.locator('.home-evidence a[href="/app/bills"]').innerText()).trim() ===
+                (language === "es" ? "Revisar facturas" : "Review bills"),
+                "The evidence link uses the selected language, not an English fallback.");
               expect(await target.locator(".sample-qualification").isVisible() &&
                 (await target.locator(".sample-qualification").innerText()).includes("12"),
                 "The fictional annualized illustration retains its twelve-month qualification.");
             } else {
+              expect((await target.locator(".overview-page h1").innerText()).trim() ===
+                (language === "es" ? "Pulso financiero" : "Financial pulse"),
+                "The primary Overview heading is localized in every pair.");
+              expect((await target.locator(".fw-watchlist h2").innerText()).trim() ===
+                (language === "es" ? "Tu lista de seguimiento" : "Your watchlist"),
+                "The watchlist heading cannot silently fall back to English.");
+              expect((await target.locator('.overview-page a[href="/app/account"] strong').innerText()).trim() ===
+                (language === "es" ? "Cuentas" : "Accounts"),
+                "Account navigation has its localized label.");
               const amounts = await snapshot();
               if (!financial.has(language)) financial.set(language, amounts);
               assert.deepEqual(amounts, financial.get(language), "Themes cannot change financial content.");
@@ -506,6 +518,8 @@ export async function verifyThemePairs(page, outputDir) {
         await target.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
         await target.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
         const trigger = target.locator(".mobile-menu-trigger");
+        expect((await trigger.innerText()).trim() === (language === "es" ? "Menú" : "Menu"),
+          "The mobile menu label uses the selected language.");
         await trigger.click();
         const sheet = target.locator(".mobile-menu-sheet");
         await sheet.waitFor();
@@ -544,6 +558,27 @@ export async function verifyThemePairs(page, outputDir) {
         await target.waitForFunction(() => document.activeElement?.classList.contains("mobile-menu-trigger"));
         expect(await trigger.getAttribute("aria-expanded") === "false", "Escape closes the menu and restores focus.");
         menuCases++;
+      }
+
+      // Read-only real disposable Settings; no security or preference actions.
+      // Spanish security/recovery copy must fit every family and both modes.
+      for (const style of styles) for (const mode of modes) {
+        await culture("es");
+        await target.goto(origin + "/app/account/settings", { waitUntil: "domcontentloaded" });
+        await target.locator(".settings-page h1").waitFor();
+        await appearance(style, mode);
+        expect((await target.locator(".settings-page h1").innerText()).trim() === "Seguridad y preferencias",
+          "Settings resolves the Spanish security heading.");
+        expect(await target.getByText("Perfil de rendimiento", { exact: true }).isVisible(),
+          "Spanish device-profile copy is rendered.");
+        expect(await target.getByText("Elige cómo muestra FullWorth las fechas y las horas.", { exact: true }).isVisible(),
+          "Spanish timestamp guidance is rendered.");
+        await geometry("settings/" + style + "/" + mode + "/es", 390, false);
+        await geometry("settings/" + style + "/" + mode + "/es-large", 320, true);
+        await readable(".settings-page h1");
+        if (engine === "webkit" && mode === "dark")
+          await capture(target, { path: path.join(outputDir,
+            "spanish-settings-" + style + "-" + engine + "-320-large.png"), fullPage: true });
       }
 
       state = "populated";

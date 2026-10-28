@@ -166,3 +166,37 @@ export function createReadTracker(origin, now = () => performance.now()) {
   begin();
   return { begin, started, responded, finished, failed, snapshot };
 }
+
+// Fixed public component regions only. Never serialize DOM classes/text/IDs.
+export const layoutShiftRegions = Object.freeze([
+  ["overview-heading", ".overview-heading"],
+  ["overview-loading", ".dashboard-loading"],
+  ["overview-empty", ".onboarding-card"],
+  ["overview-attention", ".overview-attention"],
+  ["overview-summary", ".fw-pulse"],
+  ["overview-watchlist", ".fw-watchlist"],
+  ["mobile-navigation", ".app-sidebar"],
+  ["app-header", ".app-topbar"],
+  ["app-content", ".app-content"],
+  ["site-header", ".site-header"]
+]);
+
+// Triage events, not a second CLS calculation or an attribution of financial data.
+export function layoutShiftEvidence(entries, start = 0) {
+  const allowed = new Set(layoutShiftRegions.map(([alias]) => alias));
+  const eligible = entries.filter(entry => !entry.hadRecentInput &&
+    Number.isFinite(entry.startTime) && entry.startTime >= start &&
+    Number.isFinite(entry.value) && entry.value >= 0)
+    .sort((a, b) => b.value - a.value || a.startTime - b.startTime);
+  return {
+    eventsObserved: eligible.length,
+    truncated: eligible.length > 10,
+    largestEvents: eligible.slice(0, 10).map(entry => ({
+      startMs: Number((entry.startTime - start).toFixed(2)),
+      value: Number(entry.value.toFixed(6)),
+      sourceRegions: [...new Set((Array.isArray(entry.sourceRegions) && entry.sourceRegions.length
+        ? entry.sourceRegions.slice(0, 5) : ["unclassified"]).map(alias =>
+        typeof alias === "string" && allowed.has(alias) ? alias : "unclassified"))]
+    }))
+  };
+}

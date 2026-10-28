@@ -101,4 +101,129 @@
   <data name="Retry timestamp preference" xml:space="preserve"><value>Reintentar preferencia de fecha y hora</value></data>
   <data name="FullWorth could not load this device's performance preference." xml:space="preserve"><value>FullWorth no pudo cargar la preferencia de rendimiento de este dispositivo.</value></data>
   <data name="Retry performance preference" xml:space="preserve"><value>Reintentar preferencia de rendimiento</value></data>
+  <data name="Settings — FullWorth" xml:space="preserve"><value>Ajustes — FullWorth</value></data>
+  <data name="Something needs your attention" xml:space="preserve"><value>Algo requiere tu atención</value></data>
+  <data name="Dismiss notification" xml:space="preserve"><value>Descartar notificación</value></data>
+  <data name="Saved" xml:space="preserve"><value>Guardado</value></data>
+  <data name="Account protection" xml:space="preserve"><value>Protección de la cuenta</value></data>
+  <data name="Security &amp; preferences" xml:space="preserve"><value>Seguridad y preferencias</value></data>
+  <data name="Keep your FullWorth account protected and choose how this device presents your financial information. Sensitive credentials appear only when an action needs them." xml:space="preserve"><value>Mantén protegida tu cuenta de FullWorth y elige cómo presenta este dispositivo tu información financiera. Las credenciales sensibles solo aparecen cuando una acción las requiere.</value></data>
+  <data name="Settings sections" xml:space="preserve"><value>Secciones de ajustes</value></data>
+  <data name="Security" xml:space="preserve"><value>Seguridad</value></data>
+  <data name="Personalization" xml:space="preserve"><value>Personalización</value></data>
+  <data name="Data &amp; privacy" xml:space="preserve"><value>Datos y privacidad</value></data>
+  <data name="Checking your current protection settings." xml:space="preserve"><value>Comprobando tus ajustes de protección actuales.</value></data>
+  <data name="Security status" xml:space="preserve"><value>Estado de seguridad</value></data>
+  <data name="Current security status" xml:space="preserve"><value>Estado de seguridad actual</value></data>
+  <data name="Email verified" xml:space="preserve"><value>Correo verificado</value></data>
+  <data name="Email unverified" xml:space="preserve"><value>Correo sin verificar</value></data>
+  <data name="2FA enabled" xml:space="preserve"><value>2FA activada</value></data>
+  <data name="2FA disabled" xml:space="preserve"><value>2FA desactivada</value></data>
+  <data name="Disabled" xml:space="preserve"><value>Desactivada</value></data>
+  <data name="Your account requires a second factor after the password step." xml:space="preserve"><value>Tu cuenta requiere un segundo factor después de introducir la contraseña.</value></data>
+  <data name="Add an authenticator app so a stolen password is not enough to sign in." xml:space="preserve"><value>Añade una aplicación de autenticación para que una contraseña robada no sea suficiente para iniciar sesión.</value></data>
+  <data name="Authenticator" xml:space="preserve"><value>Aplicación de autenticación</value></data>
+  <data name="Configured" xml:space="preserve"><value>Configurada</value></data>
+  <data name="Not configured" xml:space="preserve"><value>Sin configurar</value></data>
+  <data name="Set up 2FA" xml:space="preserve"><value>Configurar 2FA</value></data>
+  <data name="Email" xml:space="preserve"><value>Correo electrónico</value></data>
+  <data name="Used for sign-in, account recovery, and security messages." xml:space="preserve"><value>Se usa para iniciar sesión, recuperar la cuenta y recibir mensajes de seguridad.</value></data>
+  <data name="Change email" xml:space="preserve"><value>Cambiar correo electrónico</value></data>
+  <data name="Change your FullWorth password only when you need to." xml:space="preserve"><value>Cambia tu contraseña de FullWorth solo cuando lo necesites.</value></data>
+  <data name="Password requirements" xml:space="preserve"><value>Requisitos de la contraseña</value></data>
+  <data name="12+ characters · upper &amp; lower case · number · symbol" xml:space="preserve"><value>12 caracteres como mínimo · mayúsculas y minúsculas · número · símbolo</value></data>
+  <data name="Sign-in methods" xml:space="preserve"><value>Métodos de inicio de sesión</value></data>
+  <data name="Connect a trusted provider to this FullWorth account. Provider tokens stay server-side." xml:space="preserve"><value>Vincula un proveedor de confianza a esta cuenta de FullWorth. Los tokens del proveedor permanecen en el servidor.</value></data>
+  <data name="Link Google" xml:space="preserve"><value>Vincular Google</value></data>
+  <data name="Link Apple" xml:space="preserve"><value>Vincular Apple</value></data>
+  <data name="Link Microsoft" xml:space="preserve"><value>Vincular Microsoft</value></data>
+  <data name="Confirm account link" xml:space="preserve"><value>Confirmar la vinculación de la cuenta</value></data>
+  <data name="Finish connecting" xml:space="preserve"><value>Completar la conexión</value></data>
+  <data name="The provider verified you. Re-enter your FullWorth credentials to authorize this sign-in method." xml:space="preserve"><value>El proveedor verificó tu identidad. Vuelve a introducir tus credenciales de FullWorth para autorizar este método de inicio de sesión.</value></data>
+  <data name="Confirm and link" xml:space="preserve"><value>Confirmar y vincular</value></data>
+  <data name="Choose how FullWorth displays dates and times." xml:space="preserve"><value>Elige cómo muestra FullWorth las fechas y las horas.</value></data>
+  <data name="Experience performance" xml:space="preserve"><value>Rendimiento de la experiencia</value></data>
+  <data name="Tune visual effects and data-loading size for this device and network. Financial features stay the same at every level." xml:space="preserve"><value>Ajusta los efectos visuales y la cantidad de datos cargados para este dispositivo y esta red. Las funciones financieras son las mismas en todos los niveles.</value></data>
+  <data name="Performance profile" xml:space="preserve"><value>Perfil de rendimiento</value></data>
+  <data name="Auto — recommended" xml:space="preserve"><value>Automático — recomendado</value></data>
+  <data name="Efficiency — older devices or slower networks" xml:space="preserve"><value>Eficiencia — dispositivos antiguos o redes más lentas</value></data>
+  <data name="Balanced — moderate effects and data" xml:space="preserve"><value>Equilibrado — efectos y datos moderados</value></data>
+  <data name="High — richest experience and largest data window" xml:space="preserve"><value>Alto — experiencia más completa y mayor cantidad de datos</value></data>
+  <data name="Currently applied" xml:space="preserve"><value>Aplicado actualmente</value></data>
+  <data name="Apply to this device" xml:space="preserve"><value>Aplicar a este dispositivo</value></data>
+  <data name="Privacy" xml:space="preserve"><value>Privacidad</value></data>
+  <data name="Review how FullWorth handles account, transaction, and statement information." xml:space="preserve"><value>Revisa cómo FullWorth gestiona la información de cuentas, transacciones y estados de cuenta.</value></data>
+  <data name="Open data &amp; privacy" xml:space="preserve"><value>Abrir datos y privacidad</value></data>
+  <data name="Close" xml:space="preserve"><value>Cerrar</value></data>
+  <data name="At least 12 characters, uppercase and lowercase letters, at least one number, and at least one symbol." xml:space="preserve"><value>Al menos 12 caracteres, con letras mayúsculas y minúsculas, al menos un número y al menos un símbolo.</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Cancelar</value></data>
+  <data name="Your sign-in email changes only after the new inbox opens the verification link." xml:space="preserve"><value>Tu correo de inicio de sesión solo cambia después de abrir el enlace de verificación desde la nueva bandeja de entrada.</value></data>
+  <data name="Generating a new set permanently invalidates every recovery code you currently have." xml:space="preserve"><value>Al generar un conjunto nuevo, todos tus códigos de recuperación actuales quedarán invalidados de forma permanente.</value></data>
+  <data name="Generate new codes" xml:space="preserve"><value>Generar códigos nuevos</value></data>
+  <data name="Store these somewhere safe now." xml:space="preserve"><value>Guárdalos ahora en un lugar seguro.</value></data>
+  <data name="FullWorth will not show this set again after you close the dialog." xml:space="preserve"><value>FullWorth no volverá a mostrar este conjunto después de que cierres el diálogo.</value></data>
+  <data name="This removes the second sign-in factor." xml:space="preserve"><value>Esto elimina el segundo factor de inicio de sesión.</value></data>
+  <data name="Your password will become the only factor protecting normal password sign-in until you enable 2FA again." xml:space="preserve"><value>La contraseña será el único factor que protegerá el inicio de sesión habitual con contraseña hasta que vuelvas a activar 2FA.</value></data>
+  <data name="Keep 2FA" xml:space="preserve"><value>Mantener 2FA</value></data>
+  <data name="Your old authenticator stops working after this step." xml:space="preserve"><value>Tu aplicación de autenticación anterior dejará de funcionar después de este paso.</value></data>
+  <data name="Finish the new authenticator setup before leaving this dialog." xml:space="preserve"><value>Completa la configuración de la nueva aplicación de autenticación antes de salir de este diálogo.</value></data>
+  <data name="Continue" xml:space="preserve"><value>Continuar</value></data>
+  <data name="Scan this QR code" xml:space="preserve"><value>Escanea este código QR</value></data>
+  <data name="Use your authenticator app, then enter the current six-digit code below." xml:space="preserve"><value>Usa tu aplicación de autenticación y después introduce abajo el código actual de seis dígitos.</value></data>
+  <data name="Manual setup key" xml:space="preserve"><value>Clave de configuración manual</value></data>
+  <data name="6-digit code from the new authenticator" xml:space="preserve"><value>Código de 6 dígitos de la nueva aplicación de autenticación</value></data>
+  <data name="Verify and enable" xml:space="preserve"><value>Verificar y activar</value></data>
+  <data name="Each code works once. FullWorth will not show this set again after you close the dialog." xml:space="preserve"><value>Cada código funciona una sola vez. FullWorth no volverá a mostrar este conjunto después de que cierres el diálogo.</value></data>
+  <data name="Two-factor authentication is currently disabled. Finish setting up a new authenticator to restore 2FA protection." xml:space="preserve"><value>La autenticación de dos factores está desactivada actualmente. Termina de configurar una nueva aplicación de autenticación para restablecer la protección de 2FA.</value></data>
+  <data name="Enter the current code from your authenticator app." xml:space="preserve"><value>Introduce el código actual de tu aplicación de autenticación.</value></data>
+  <data name="We couldn’t start the email change. Please try again." xml:space="preserve"><value>No pudimos iniciar el cambio de correo electrónico. Inténtalo de nuevo.</value></data>
+  <data name="Verification email sent. Check your inbox for the confirmation link." xml:space="preserve"><value>Se envió el correo de verificación. Busca el enlace de confirmación en tu bandeja de entrada.</value></data>
+  <data name="We couldn’t send the verification email. Please try again." xml:space="preserve"><value>No pudimos enviar el correo de verificación. Inténtalo de nuevo.</value></data>
+  <data name="We couldn’t update your password. Please try again." xml:space="preserve"><value>No pudimos actualizar tu contraseña. Inténtalo de nuevo.</value></data>
+  <data name="Enter your current password." xml:space="preserve"><value>Introduce tu contraseña actual.</value></data>
+  <data name="Enter your current password to link this sign-in method." xml:space="preserve"><value>Introduce tu contraseña actual para vincular este método de inicio de sesión.</value></data>
+  <data name="Enter your current authenticator code to link this sign-in method." xml:space="preserve"><value>Introduce el código actual de tu aplicación de autenticación para vincular este método de inicio de sesión.</value></data>
+  <data name="can now be used to sign in to FullWorth." xml:space="preserve"><value>ya se puede usar para iniciar sesión en FullWorth.</value></data>
+  <data name="FullWorth could not link this sign-in method. Start the provider link again and try again." xml:space="preserve"><value>FullWorth no pudo vincular este método de inicio de sesión. Inicia de nuevo la vinculación con el proveedor e inténtalo otra vez.</value></data>
+  <data name="We couldn’t replace your authenticator. Please try again." xml:space="preserve"><value>No pudimos reemplazar tu aplicación de autenticación. Inténtalo de nuevo.</value></data>
+  <data name="We couldn’t start authenticator setup. Please try again." xml:space="preserve"><value>No pudimos iniciar la configuración de la aplicación de autenticación. Inténtalo de nuevo.</value></data>
+  <data name="Enter the current code from the new authenticator app." xml:space="preserve"><value>Introduce el código actual de la nueva aplicación de autenticación.</value></data>
+  <data name="We couldn’t enable two-factor authentication. Please try again." xml:space="preserve"><value>No pudimos activar la autenticación de dos factores. Inténtalo de nuevo.</value></data>
+  <data name="We couldn’t generate new recovery codes. Please try again." xml:space="preserve"><value>No pudimos generar nuevos códigos de recuperación. Inténtalo de nuevo.</value></data>
+  <data name="We couldn’t disable two-factor authentication. Please try again." xml:space="preserve"><value>No pudimos desactivar la autenticación de dos factores. Inténtalo de nuevo.</value></data>
+  <data name="FullWorth could not save that preference. Please try again." xml:space="preserve"><value>FullWorth no pudo guardar esa preferencia. Inténtalo de nuevo.</value></data>
+  <data name="Performance profile applied to this device." xml:space="preserve"><value>Perfil de rendimiento aplicado a este dispositivo.</value></data>
+  <data name="FullWorth could not apply that performance profile. Please try again." xml:space="preserve"><value>FullWorth no pudo aplicar ese perfil de rendimiento. Inténtalo de nuevo.</value></data>
+  <data name="Efficiency" xml:space="preserve"><value>Eficiencia</value></data>
+  <data name="High" xml:space="preserve"><value>Alto</value></data>
+  <data name="Balanced" xml:space="preserve"><value>Equilibrado</value></data>
+  <data name="Your current password is incorrect." xml:space="preserve"><value>Tu contraseña actual es incorrecta.</value></data>
+  <data name="That authenticator code isn’t valid. Try the current code from your authenticator app." xml:space="preserve"><value>Ese código de autenticación no es válido. Prueba con el código actual de tu aplicación de autenticación.</value></data>
+  <data name="That email address is already in use." xml:space="preserve"><value>Esa dirección de correo electrónico ya está en uso.</value></data>
+  <data name="Your new password doesn’t meet FullWorth’s password requirements." xml:space="preserve"><value>La nueva contraseña no cumple los requisitos de FullWorth.</value></data>
+  <data name="Too many attempts. Please wait a little while and try again." xml:space="preserve"><value>Demasiados intentos. Espera un momento e inténtalo de nuevo.</value></data>
+  <data name="Strong protection is active" xml:space="preserve"><value>La protección reforzada está activa</value></data>
+  <data name="A security action is recommended" xml:space="preserve"><value>Se recomienda una acción de seguridad</value></data>
+  <data name="Your email is verified and authenticator protection is enabled." xml:space="preserve"><value>Tu correo está verificado y la protección de la aplicación de autenticación está activada.</value></data>
+  <data name="Finish the remaining account-security step below to strengthen sign-in protection." xml:space="preserve"><value>Completa el paso de seguridad de la cuenta que queda pendiente abajo para reforzar la protección del inicio de sesión.</value></data>
+  <data name="Recovery" xml:space="preserve"><value>Recuperación</value></data>
+  <data name="Security change" xml:space="preserve"><value>Cambio de seguridad</value></data>
+  <data name="Change email address" xml:space="preserve"><value>Cambiar la dirección de correo electrónico</value></data>
+  <data name="Generate new recovery codes" xml:space="preserve"><value>Generar nuevos códigos de recuperación</value></data>
+  <data name="Save your recovery codes" xml:space="preserve"><value>Guarda tus códigos de recuperación</value></data>
+  <data name="Set up the new authenticator" xml:space="preserve"><value>Configurar la nueva aplicación de autenticación</value></data>
+  <data name="Save your new recovery codes" xml:space="preserve"><value>Guarda tus nuevos códigos de recuperación</value></data>
+  <data name="Disable two-factor authentication?" xml:space="preserve"><value>¿Desactivar la autenticación de dos factores?</value></data>
+  <data name="Set up two-factor authentication" xml:space="preserve"><value>Configurar la autenticación de dos factores</value></data>
+  <data name="Connect your authenticator app" xml:space="preserve"><value>Conectar tu aplicación de autenticación</value></data>
+  <data name="Account security" xml:space="preserve"><value>Seguridad de la cuenta</value></data>
+  <data name="Confirm your identity only for this password change." xml:space="preserve"><value>Confirma tu identidad solo para este cambio de contraseña.</value></data>
+  <data name="Enter the new address and verify this sensitive account change." xml:space="preserve"><value>Introduce la nueva dirección y verifica este cambio sensible de la cuenta.</value></data>
+  <data name="Verify your identity before FullWorth replaces your current recovery codes." xml:space="preserve"><value>Verifica tu identidad antes de que FullWorth reemplace tus códigos de recuperación actuales.</value></data>
+  <data name="Each code works once. Store them somewhere safe outside FullWorth." xml:space="preserve"><value>Cada código funciona una sola vez. Guárdalos en un lugar seguro fuera de FullWorth.</value></data>
+  <data name="Verify your identity before replacing the authenticator currently protecting your account." xml:space="preserve"><value>Verifica tu identidad antes de reemplazar la aplicación de autenticación que protege actualmente tu cuenta.</value></data>
+  <data name="Complete the replacement before leaving this flow." xml:space="preserve"><value>Completa el reemplazo antes de salir de este proceso.</value></data>
+  <data name="This is a sensitive security change and requires your current credentials." xml:space="preserve"><value>Este es un cambio de seguridad sensible y requiere tus credenciales actuales.</value></data>
+  <data name="Verify your password, then connect any standard authenticator app." xml:space="preserve"><value>Verifica tu contraseña y después conecta una aplicación de autenticación estándar.</value></data>
+  <data name="Scan the code and verify one current code from the app." xml:space="preserve"><value>Escanea el código y verifica un código actual de la aplicación.</value></data>
 </root>

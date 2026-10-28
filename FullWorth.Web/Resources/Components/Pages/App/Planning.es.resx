@@ -95,4 +95,21 @@
   <data name="The save could not be confirmed. Your edits are kept here. Check the saved value before trying again." xml:space="preserve"><value>No se pudo confirmar que se guardaran los cambios. Tus cambios se conservan aquí. Comprueba el valor guardado antes de volver a intentarlo.</value></data>
   <data name="Saved values differ from your edits. Review your draft, then save or discard it." xml:space="preserve"><value>Los valores guardados son distintos de tus cambios. Revisa el borrador y guárdalo o descártalo.</value></data>
   <data name="Saved values could not be checked. Your edits are still here." xml:space="preserve"><value>No se pudieron comprobar los valores guardados. Tus cambios siguen aquí.</value></data>
+  <data name="Amount unavailable" xml:space="preserve"><value>Importe no disponible</value></data>
+  <data name="Coverage unknown" xml:space="preserve"><value>Cobertura desconocida</value></data>
+  <data name="Incomplete plan" xml:space="preserve"><value>Plan incompleto</value></data>
+  <data name="No recorded shortfall" xml:space="preserve"><value>Sin déficit registrado</value></data>
+  <data name="Not allocated by this plan" xml:space="preserve"><value>No asignado por este plan</value></data>
+  <data name="The original bill coverage for this historical plan was not saved. A zero recorded shortfall does not prove every bill was included." xml:space="preserve"><value>No se guardó la cobertura original de facturas de este plan histórico. Un déficit registrado de cero no demuestra que se incluyeran todas las facturas.</value></data>
+  <data name="Bill evidence at plan creation" xml:space="preserve"><value>Evidencia de facturas al crear el plan</value></data>
+  <data name="eligible" xml:space="preserve"><value>elegibles</value></data>
+  <data name="excluded" xml:space="preserve"><value>excluidas</value></data>
+  <data name="Excluded because of missing statement evidence" xml:space="preserve"><value>Excluidas por falta de evidencia en estados de cuenta</value></data>
+  <data name="Missing due date" xml:space="preserve"><value>Sin fecha de vencimiento</value></data>
+  <data name="Currency mismatch" xml:space="preserve"><value>La moneda no coincide</value></data>
+  <data name="Invalid statement amount" xml:space="preserve"><value>Importe del estado de cuenta no válido</value></data>
+  <data name="Prior currency conflict" xml:space="preserve"><value>Conflicto de moneda anterior</value></data>
+  <data name="These bills were not included in the recorded amount or shortfall. Review missing evidence before relying on this plan." xml:space="preserve"><value>Estas facturas no se incluyeron en el importe ni en el déficit registrados. Revisa la evidencia faltante antes de basarte en este plan.</value></data>
+  <data name="No bill was excluded from the active bills evaluated at generation. This does not prove that every real-world bill was imported." xml:space="preserve"><value>No se excluyó ninguna de las facturas activas evaluadas al generar el plan. Esto no demuestra que se importaran todas las facturas reales.</value></data>
+  <data name="No allocations were recorded for this paycheck. This does not prove that no bills were due." xml:space="preserve"><value>No se registraron asignaciones para este pago de nómina. Esto no demuestra que no hubiera facturas que pagar.</value></data>
 </root>

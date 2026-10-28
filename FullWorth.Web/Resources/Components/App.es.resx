@@ -281,4 +281,37 @@
   <data name="Terms" xml:space="preserve"><value>Términos</value></data>
   <data name="Switch to light mode" xml:space="preserve"><value>Cambiar al modo claro</value></data>
   <data name="Switch to dark mode" xml:space="preserve"><value>Cambiar al modo oscuro</value></data>
+  <data name="Review bills" xml:space="preserve"><value>Revisar facturas</value></data>
+  <data name="Financial intelligence" xml:space="preserve"><value>Inteligencia financiera</value></data>
+  <data name="Money" xml:space="preserve"><value>Dinero</value></data>
+  <data name="Manage" xml:space="preserve"><value>Gestionar</value></data>
+  <data name="Menu" xml:space="preserve"><value>Menú</value></data>
+  <data name="Close menu" xml:space="preserve"><value>Cerrar menú</value></data>
+  <data name="More" xml:space="preserve"><value>Más</value></data>
+  <data name="Account and settings" xml:space="preserve"><value>Cuenta y ajustes</value></data>
+  <data name="Your external identity was verified. Finish signing in with a code from your FullWorth authenticator app or one recovery code." xml:space="preserve"><value>Se verificó tu identidad externa. Termina de iniciar sesión con un código de tu aplicación de autenticación de FullWorth o un código de recuperación.</value></data>
+  <data name="FullWorth could not complete that external sign-in. Try again or sign in with email." xml:space="preserve"><value>FullWorth no pudo completar ese inicio de sesión externo. Inténtalo de nuevo o inicia sesión con tu correo electrónico.</value></data>
+  <data name="Enter exactly one authenticator code or recovery code." xml:space="preserve"><value>Introduce un único código de autenticación o de recuperación.</value></data>
+  <data name="Sign in with a passkey" xml:space="preserve"><value>Iniciar sesión con una clave de acceso</value></data>
+  <data name="Sign in with Face ID or a passkey" xml:space="preserve"><value>Iniciar sesión con Face ID o una clave de acceso</value></data>
+  <data name="Already added a passkey to your account? Use Face ID, Touch ID, or your device PIN. No password is sent." xml:space="preserve"><value>¿Ya añadiste una clave de acceso a tu cuenta? Usa Face ID, Touch ID o el PIN de tu dispositivo. No se envía ninguna contraseña.</value></data>
+  <data name="Authenticator code (only if your account uses two-factor authentication)" xml:space="preserve"><value>Código de autenticación (solo si tu cuenta usa autenticación de dos factores)</value></data>
+  <data name="or sign in with your password" xml:space="preserve"><value>o inicia sesión con tu contraseña</value></data>
+  <data name="External sign-in options" xml:space="preserve"><value>Opciones de inicio de sesión externo</value></data>
+  <data name="Continue with Google" xml:space="preserve"><value>Continuar con Google</value></data>
+  <data name="Continue with Apple" xml:space="preserve"><value>Continuar con Apple</value></data>
+  <data name="Continue with Microsoft" xml:space="preserve"><value>Continuar con Microsoft</value></data>
+  <data name="or continue with email" xml:space="preserve"><value>o continúa con tu correo electrónico</value></data>
+  <data name="Finish creating your account with" xml:space="preserve"><value>Termina de crear tu cuenta con</value></data>
+  <data name="Your provider verified your identity. Create a FullWorth password for sensitive account changes and recovery, then accept the current Terms and Privacy Notice." xml:space="preserve"><value>Tu proveedor verificó tu identidad. Crea una contraseña de FullWorth para los cambios sensibles y la recuperación de la cuenta; después acepta los Términos y el Aviso de privacidad vigentes.</value></data>
+  <data name="FullWorth could not create that account through your sign-in provider. Try the provider again or create your account with email." xml:space="preserve"><value>FullWorth no pudo crear esa cuenta mediante tu proveedor de inicio de sesión. Vuelve a intentarlo con el proveedor o crea tu cuenta con tu correo electrónico.</value></data>
+  <data name="Check the password confirmation and accept the current Terms and Privacy Notice." xml:space="preserve"><value>Comprueba la confirmación de la contraseña y acepta los Términos y el Aviso de privacidad vigentes.</value></data>
+  <data name="FullWorth password" xml:space="preserve"><value>Contraseña de FullWorth</value></data>
+  <data name="I agree to the" xml:space="preserve"><value>Acepto los</value></data>
+  <data name="and acknowledge the" xml:space="preserve"><value>y tomo conocimiento del</value></data>
+  <data name="Create FullWorth account" xml:space="preserve"><value>Crear cuenta de FullWorth</value></data>
+  <data name="Use a different sign-up method" xml:space="preserve"><value>Usar otro método de registro</value></data>
+  <data name="External account creation options" xml:space="preserve"><value>Opciones de creación de cuenta con un proveedor externo</value></data>
+  <data name="or create an account with email" xml:space="preserve"><value>o crea una cuenta con tu correo electrónico</value></data>
+  <data name="your sign-in provider" xml:space="preserve"><value>tu proveedor de inicio de sesión</value></data>
 </root>

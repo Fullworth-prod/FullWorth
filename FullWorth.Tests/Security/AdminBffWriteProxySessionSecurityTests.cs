@@ -161,6 +161,163 @@ public sealed class AdminBffWriteProxySessionSecurityTests
         Assert.Equal(0, handler.RequestCount);
     }
 
+    [Theory]
+    [InlineData("/api/account/security/password", 200, false)]
+    [InlineData("/api/account/security/password", 201, false)]
+    [InlineData("/api/account/security/password", 202, false)]
+    [InlineData("/api/account/security/password", 205, false)]
+    [InlineData("/api/account/security/password", 200, true)]
+    [InlineData("/api/account/security/password", 202, true)]
+    [InlineData("/api/account/security/sessions/revoke-all", 200, true)]
+    [InlineData("/api/account/security/sessions/revoke-all", 202, true)]
+    [InlineData("/api/account/security/two-factor/disable", 200, true)]
+    [InlineData("/api/account/security/two-factor/disable", 202, true)]
+    public async Task UnconfirmedSecuritySuccess_PreservesSessionAndRejectsBody(
+        string path, int status, bool explicitSignOut)
+    {
+        var authentication = new RecordingAuthenticationService();
+        var handler = new StaticResponseHandler((HttpStatusCode)status, "<html>PRIVATE-ACCOUNT-CANARY</html>", "text/html");
+        var proxy = CreateProxy((HttpStatusCode)status, handler);
+        var context = CreateHttpContext(authentication);
+        var result = explicitSignOut
+            ? await proxy.ForwardJsonAndSignOutOnSuccessAsync(context, HttpMethod.Post, path, new { synthetic = true })
+            : await proxy.ForwardJsonAsync(context, HttpMethod.Post, path, new { synthetic = true });
+        Assert.Equal(StatusCodes.Status502BadGateway,
+            Assert.IsAssignableFrom<IStatusCodeHttpResult>(result).StatusCode);
+        Assert.Equal(0, authentication.SignOutCount);
+        Assert.Equal(1, handler.RequestCount);
+        var problem = Assert.IsAssignableFrom<IValueHttpResult>(result).Value;
+        var body = System.Text.Json.JsonSerializer.Serialize(problem);
+        Assert.DoesNotContain("PRIVATE-ACCOUNT-CANARY", body);
+        Assert.Contains("could not confirm", body);
+    }
+
+    [Theory]
+    [InlineData("/api/account/security/password", false)]
+    [InlineData("/api/account/security/password", true)]
+    [InlineData("/api/account/security/sessions/revoke-all", true)]
+    [InlineData("/api/account/security/two-factor/disable", true)]
+    public async Task ContractedNoContent_SignsOutOnce(string path, bool explicitSignOut)
+    {
+        var authentication = new RecordingAuthenticationService();
+        var handler = new StaticResponseHandler(HttpStatusCode.NoContent);
+        var proxy = CreateProxy(HttpStatusCode.NoContent, handler);
+        var context = CreateHttpContext(authentication);
+        var result = explicitSignOut
+            ? await proxy.ForwardJsonAndSignOutOnSuccessAsync(context, HttpMethod.Post, path, new { synthetic = true })
+            : await proxy.ForwardJsonAsync(context, HttpMethod.Post, path, new { synthetic = true });
+        Assert.Equal(StatusCodes.Status204NoContent,
+            Assert.IsAssignableFrom<IStatusCodeHttpResult>(result).StatusCode);
+        Assert.Equal(1, authentication.SignOutCount);
+        Assert.Equal(1, handler.RequestCount);
+    }
+
+    [Theory]
+    [InlineData(202)]
+    [InlineData(204)]
+    public async Task AccountDeletion_ConfirmedOrCleanupPending_SignsOutOnce(int status)
+    {
+        var authentication = new RecordingAuthenticationService();
+        var handler = new StaticResponseHandler((HttpStatusCode)status,
+            status == 202 ? "{\"erasurePending\":true}" : null);
+        var result = await CreateProxy((HttpStatusCode)status, handler).ForwardJsonAsync(
+            CreateHttpContext(authentication), HttpMethod.Delete, "/api/account", new { synthetic = true });
+        Assert.Equal(status, Assert.IsAssignableFrom<IStatusCodeHttpResult>(result).StatusCode);
+        Assert.Equal(1, authentication.SignOutCount);
+        Assert.Equal(1, handler.RequestCount);
+        Assert.Equal(HttpMethod.Delete, handler.LastMethod);
+    }
+
+    [Theory]
+    [InlineData(200)]
+    [InlineData(201)]
+    [InlineData(205)]
+    public async Task AccountDeletion_UnexpectedSuccessDoesNotConfirmDeletion(int status)
+    {
+        var authentication = new RecordingAuthenticationService();
+        var handler = new StaticResponseHandler((HttpStatusCode)status, "{\"accepted\":true}");
+        var result = await CreateProxy((HttpStatusCode)status, handler).ForwardJsonAsync(
+            CreateHttpContext(authentication), HttpMethod.Delete, "/api/account", new { synthetic = true });
+        Assert.Equal(StatusCodes.Status502BadGateway,
+            Assert.IsAssignableFrom<IStatusCodeHttpResult>(result).StatusCode);
+        Assert.Equal(0, authentication.SignOutCount);
+        Assert.Equal(1, handler.RequestCount);
+    }
+
+    [Theory]
+    [InlineData(400)]
+    [InlineData(403)]
+    [InlineData(429)]
+    [InlineData(503)]
+    public async Task RejectedSecurityUpdate_PreservesStatusAndSession(int status)
+    {
+        var authentication = new RecordingAuthenticationService();
+        var handler = new StaticResponseHandler((HttpStatusCode)status);
+        var result = await CreateProxy((HttpStatusCode)status, handler).ForwardJsonAndSignOutOnSuccessAsync(
+            CreateHttpContext(authentication), HttpMethod.Post, "/api/account/security/password", new { synthetic = true });
+        Assert.Equal(status, Assert.IsAssignableFrom<IStatusCodeHttpResult>(result).StatusCode);
+        Assert.Equal(0, authentication.SignOutCount);
+        Assert.Equal(1, handler.RequestCount);
+    }
+
+    [Theory]
+    [InlineData(200, "<html>PRIVATE-EXPORT-CANARY</html>", "text/html")]
+    [InlineData(202, "{\"pending\":true}", "application/json")]
+    [InlineData(204, "", "application/json")]
+    [InlineData(200, "", "application/json")]
+    [InlineData(200, "{PRIVATE-EXPORT-CANARY", "application/json")]
+    [InlineData(200, "null", "application/json")]
+    [InlineData(200, "[]", "application/json")]
+    [InlineData(200, "true", "application/json")]
+    [InlineData(200, "{}{}", "application/json")]
+    [InlineData(200, "{}", "text/plain")]
+    [InlineData(200, "{}", "application/jsonp")]
+    public async Task Export_RejectsUnconfirmedOrInvalidJsonWithoutDownload(int status, string payload, string mediaType)
+    {
+        var authentication = new RecordingAuthenticationService();
+        var handler = new StaticResponseHandler((HttpStatusCode)status, payload, mediaType);
+        var result = await CreateProxy((HttpStatusCode)status, handler).ForwardJsonDownloadAsync(
+            CreateHttpContext(authentication), HttpMethod.Post, "/api/account/export", new { synthetic = true },
+            "synthetic-export.json", "application/json");
+        Assert.Equal(StatusCodes.Status502BadGateway,
+            Assert.IsAssignableFrom<IStatusCodeHttpResult>(result).StatusCode);
+        Assert.IsNotType<Microsoft.AspNetCore.Http.HttpResults.FileContentHttpResult>(result);
+        Assert.Equal(1, handler.RequestCount);
+        Assert.Equal(0, authentication.SignOutCount);
+        Assert.DoesNotContain("PRIVATE-EXPORT-CANARY",
+            System.Text.Json.JsonSerializer.Serialize(Assert.IsAssignableFrom<IValueHttpResult>(result).Value));
+    }
+
+    [Theory]
+    [InlineData("application/json")]
+    [InlineData("Application/JSON")]
+    public async Task Export_ValidObjectPreservesExactBytesAndFilename(string mediaType)
+    {
+        const string payload = " { \"synthetic\": { \"original\": \"café\", \"amount\": 1.25 }, \"items\": [null, true] }\n";
+        var handler = new StaticResponseHandler(HttpStatusCode.OK, payload, mediaType);
+        var result = await CreateProxy(HttpStatusCode.OK, handler).ForwardJsonDownloadAsync(
+            CreateHttpContext(new RecordingAuthenticationService()), HttpMethod.Post, "/api/account/export",
+            new { synthetic = true }, "synthetic-export.json", "application/json");
+        var file = Assert.IsType<Microsoft.AspNetCore.Http.HttpResults.FileContentHttpResult>(result);
+        Assert.Equal(System.Text.Encoding.UTF8.GetBytes(payload), file.FileContents.ToArray());
+        Assert.Equal("application/json", file.ContentType);
+        Assert.Equal("synthetic-export.json", file.FileDownloadName);
+        Assert.Equal(1, handler.RequestCount);
+    }
+
+    [Fact]
+    public async Task Export_TooDeepJsonFailsSafely()
+    {
+        var payload = "{\"synthetic\":" + new string('[', 65) + "0" + new string(']', 65) + "}";
+        var handler = new StaticResponseHandler(HttpStatusCode.OK, payload);
+        var result = await CreateProxy(HttpStatusCode.OK, handler).ForwardJsonDownloadAsync(
+            CreateHttpContext(new RecordingAuthenticationService()), HttpMethod.Post, "/api/account/export",
+            new { synthetic = true }, "synthetic-export.json", "application/json");
+        Assert.Equal(StatusCodes.Status502BadGateway,
+            Assert.IsAssignableFrom<IStatusCodeHttpResult>(result).StatusCode);
+        Assert.Equal(1, handler.RequestCount);
+    }
+
     private static DefaultHttpContext
         CreateHttpContext(
             RecordingAuthenticationService
@@ -331,7 +488,9 @@ public sealed class AdminBffWriteProxySessionSecurityTests
     }
 
     private sealed class StaticResponseHandler(
-        HttpStatusCode responseStatusCode)
+        HttpStatusCode responseStatusCode,
+        string? payload = null,
+        string mediaType = "application/json")
         : HttpMessageHandler
     {
         public int RequestCount { get; private set; }
@@ -350,7 +509,10 @@ public sealed class AdminBffWriteProxySessionSecurityTests
             LastAuthorizationScheme = request.Headers.Authorization?.Scheme;
             return Task.FromResult(
                 new HttpResponseMessage(
-                    responseStatusCode));
+                    responseStatusCode)
+                {
+                    Content = payload is null ? null : new StringContent(payload, System.Text.Encoding.UTF8, mediaType)
+                });
         }
     }
 }

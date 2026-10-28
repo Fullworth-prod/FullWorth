@@ -200,9 +200,11 @@ export async function verifyAccountPageRecovery(page, outputDir) {
       await page.context().addCookies([{ name: ".AspNetCore.Culture", value: encodeURIComponent("c=en-US|uic=" + language),
         url: new URL(page.url()).origin, secure: true, sameSite: "Lax" }]);
       await goto("/app/account/settings");
+      const sendVerification = button(spanish ? "Enviar correo de verificación" : "Send verification email");
+      await sendVerification.waitFor(); // Initial security GET must finish before the action baseline.
       const before = writes.filter(write => write.endpoint === "/bff/account/security/email/verification").length;
       const readsBefore = count("/bff/account/security");
-      await button(spanish ? "Enviar correo de verificación" : "Send verification email").click();
+      await sendVerification.click();
       await page.locator(".settings-toast-success").getByText(spanish
         ? "Tu dirección de correo ya está verificada." : "Your email address is already verified.", { exact: true }).waitFor();
       assert.equal(writes.filter(write => write.endpoint === "/bff/account/security/email/verification").length, before + 1);

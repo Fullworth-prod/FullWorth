@@ -57,6 +57,7 @@ const server = createServer((request, response) => {
         } else if (state.mode === "malformed") {
             response.writeHead(200, { "Content-Type": "application/json" }); response.end("{PRIVATE-CANARY");
         } else if (state.mode === "accepted") json({ message: "Synthetic pending" }, 202);
+        else if (state.mode === "server-failed") json({ title: "PRIVATE-CANARY" }, 503);
         else if (state.mode === "proof-rejected") json({ title: "The current password is incorrect.", detail: "PRIVATE-CANARY" }, 401);
         else if (state.mode === "dropped") {
             // Drop after headers/body begin: exercise an unknown completion,
@@ -133,7 +134,7 @@ try {
                     assert.equal(state.writes, 0);
                 });
             }
-            for (const mode of ["token-redirect", "malformed", "accepted", "dropped", "proof-rejected"]) {
+            for (const mode of ["token-redirect", "malformed", "accepted", "dropped", "proof-rejected", "server-failed"]) {
                 await scenario(mode, { mode }, async ({ invoke, page, state }) => {
                     const result = await invoke("requestEmailChange", ["synthetic", "synthetic@example.test", null]);
                     assert.equal(result.ok, false);

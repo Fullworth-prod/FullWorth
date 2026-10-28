@@ -174,14 +174,46 @@ public sealed class AdminBffWriteProxyService(
                     cancellationToken);
             }
 
+            // A proxy/login page or accepted job is not a completed JSON export.
+            if (response.StatusCode != HttpStatusCode.OK ||
+                !string.Equals(response.Content.Headers.ContentType?.MediaType,
+                    "application/json", StringComparison.OrdinalIgnoreCase))
+            {
+                return InvalidAccountExport();
+            }
+
             var bytes =
                 await response.Content.ReadAsByteArrayAsync(
                     cancellationToken);
+            if (!IsJsonObjectExport(bytes))
+            {
+                return InvalidAccountExport();
+            }
 
             return Results.File(
                 bytes,
                 contentType,
                 Path.GetFileName(downloadFileName));
+        }
+    }
+
+    private static IResult InvalidAccountExport() => Results.Problem(
+        statusCode: StatusCodes.Status502BadGateway,
+        title: "FullWorth did not return a valid account export.");
+
+    private static bool IsJsonObjectExport(byte[] bytes)
+    {
+        // Validate the existing byte buffer without building another private-data
+        // object graph. Keep exact original bytes for the downloaded export.
+        try
+        {
+            var reader = new System.Text.Json.Utf8JsonReader(bytes);
+            return reader.Read() && reader.TokenType == System.Text.Json.JsonTokenType.StartObject &&
+                reader.TrySkip() && !reader.Read();
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return false;
         }
     }
 
@@ -269,6 +301,19 @@ public sealed class AdminBffWriteProxyService(
             if (signOutOnSuccess &&
                 response.IsSuccessStatusCode)
             {
+                // These account mutations commit with 204. Deletion alone may
+                // return 202 after the account is removed but file cleanup remains.
+                // An arbitrary 2xx page is not proof of either committed outcome.
+                var acceptedDeletion = method == HttpMethod.Delete &&
+                    string.Equals(requestUri, AccountDeletionPath, StringComparison.Ordinal) &&
+                    response.StatusCode == HttpStatusCode.Accepted;
+                if (response.StatusCode != HttpStatusCode.NoContent && !acceptedDeletion)
+                {
+                    return Results.Problem(
+                        statusCode: StatusCodes.Status502BadGateway,
+                        title: "FullWorth could not confirm the account update.");
+                }
+
                 await httpContext.SignOutAsync(
                     CookieAuthenticationDefaults.AuthenticationScheme);
             }

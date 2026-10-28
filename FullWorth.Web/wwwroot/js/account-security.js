@@ -90,7 +90,7 @@ function mapExpectedError(body, status, fallback) {
         return "That is already your account email address.";
     }
 
-    if (title.includes("email delivery") || status === 503) {
+    if (title.includes("email delivery")) {
         return "Email delivery is temporarily unavailable. Please try again later.";
     }
 
@@ -170,7 +170,7 @@ async function postJson(path, body, fallback, contract = "json", validate = isRe
 
     // Once sent, a lost/redirected/unexpected response is an unknown outcome.
     // Do not replay writes or navigate as if a security change was confirmed.
-    if (response.redirected) throw new Error(unconfirmedAccountUpdate);
+    if (response.redirected || response.status >= 500) throw new Error(unconfirmedAccountUpdate);
     if (!response.ok) {
         throw new Error(await readSafeError(response, fallback));
     }

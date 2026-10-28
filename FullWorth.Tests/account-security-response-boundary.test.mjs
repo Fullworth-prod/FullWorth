@@ -60,6 +60,7 @@ for (const [name, args, payload] of actions) {
     for (const [label, reply] of [
         ["HTML 200", () => new Response("<html>PRIVATE-CANARY</html>", { headers: { "Content-Type": "text/html" } })],
         ["uncommitted 202", () => json({ message: "PRIVATE-CANARY" }, 202)],
+        ["server failure", () => json({ title: "PRIVATE-CANARY" }, 503)],
         ["JSON null", () => json(null)],
         ["malformed JSON", () => new Response("{PRIVATE-CANARY", { headers: { "Content-Type": "application/json" } })],
         ["misleading JSON prefix", () => json(payload, 200, "application/jsonp")],

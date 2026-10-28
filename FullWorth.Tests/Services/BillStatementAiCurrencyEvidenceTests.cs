@@ -103,6 +103,35 @@ public sealed class BillStatementAiCurrencyEvidenceTests
             converted.Extraction.Statement.MissingRequiredFields);
     }
 
+    [Theory]
+    [InlineData("USDA", "USD")]
+    [InlineData("XUSD", "USD")]
+    [InlineData("USD1", "USD")]
+    [InlineData("1USD", "USD")]
+    [InlineData("Currency: USDA", "Currency: USD")]
+    public void CroppedCurrencyExcerptInsideSourceToken_IsRejected(
+        string actualSource, string croppedExcerpt)
+    {
+        var (_, candidate) = Create("USD", croppedExcerpt);
+        var converted = new BillStatementAiCandidateConversionService(new()).Convert(
+            Period + "\nTotal due $104.99\n" + actualSource, candidate);
+
+        Assert.False(converted.IsAccepted);
+        Assert.Null(converted.Extraction);
+    }
+
+    [Fact]
+    public void WholeCurrencyOccurrenceAfterEmbeddedOne_IsAccepted()
+    {
+        var (_, candidate) = Create("USD", "USD");
+        var converted = new BillStatementAiCandidateConversionService(new()).Convert(
+            Period + "\nTotal due $104.99\nUSDA report\nCurrency: USD", candidate);
+
+        Assert.True(converted.IsAccepted, string.Join("; ", converted.Errors));
+        Assert.NotNull(converted.Extraction);
+        Assert.Equal("USD", converted.Extraction.Statement.CurrencyCode);
+    }
+
     private const string Period =
         "Billing period August 1, 2026 through August 31, 2026";
 

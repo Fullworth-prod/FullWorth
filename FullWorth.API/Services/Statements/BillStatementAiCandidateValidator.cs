@@ -374,7 +374,9 @@ namespace FullWorth.API.Services.Statements
                  */
                 if (!normalizedDocument.Contains(
                         normalizedExcerpt,
-                        StringComparison.OrdinalIgnoreCase))
+                        StringComparison.OrdinalIgnoreCase) ||
+                    factKey == BillStatementAiFactKeys.CurrencyCode &&
+                    !ContainsWholeEvidenceValue(normalizedDocument, normalizedExcerpt))
                 {
                     errors.Add(
                         $"Evidence item {index} was not found in the source document.");

@@ -17,3 +17,7 @@ No provider/device/real private financial acceptance, production recovery, legal
 ## Focused execution before PR
 
 77 actual xUnit assertions/cases passed in an isolated in-memory compilation: all 32 new currency cases, 38 existing validator cases and 7 existing conversion cases. Actual validator/converter/contracts/structured models were used; file-scoped namespaces and implicit usings were adapted for a single compilation. The host-only CS1701 reference-unification warning was suppressed; repository warning gates are unchanged. This is not a full SDK build, provider call, production document or activation. Final-head CI remains required.
+
+## Source-boundary review before integration
+
+The initial prepared head5892 accepted five additional clipped source cases: an excerpt USD could be cropped from USDA/XUSD/USD1/1USD, or Currency: USD cropped from Currency: USDA. Whole-value checks inside the excerpt alone did not validate its surrounding source characters. Currency evidence now also requires a whole excerpt occurrence within the normalized source document. Other fact types and intentional account-suffix evidence rules are unchanged. Five negative cases and a valid later whole-occurrence control were added (38 new currency cases total). All83 AI-focused cases plus74 deterministic parser cases passed in isolated execution; initial5892 CI is historical, and the revised source requires its own final-head checks.

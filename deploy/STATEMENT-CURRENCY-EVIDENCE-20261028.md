@@ -1,3 +1,9 @@
+# Verified integration — 2026-10-28 UTC
+
+This scoped change is now verified in development through #999 atc556f22ffd51782202b6a3cf9c4ca6fed83977f8 and #1000 at74d559cead93ca6073cd469697a1a5e5b31221e6. See [the exact source/tested/tree/test/acceptance record](MILESTONE-CLEANUP-AUDIT-20261027.md). #999 final814 source passed3,003 .NET/368 Node/all5 checks with full browser/Android/HTTP/disposable recovery; #1000 final10fac source passed3,062 .NET/368 Node/all10 checks and all six PostgreSQL scopes, with native/browser conditional. Both source branches remain. Earlier prepared/failed-head notes below are historical, not the current integration state. Real provider/device/private-data/delivery/current-release recovery/legal acceptance remains open; no production deployment or activation occurred. This Markdown-only handoff still requires its own protected checks.
+
+---
+
 ## Current recognition and whitespace review — 2026-10-28 UTC
 
 Source review of the unmerged5fba draft reproduced TotalAmount104.99/CurrencyCodeDUE/readytrue when U+2028 separated the total from the ordinary word DUE. Horizontal matching now uses Unicode space separators plus TAB, excluding vertical controls/line/paragraph separators. Unrecognized codes and XXX/XTS placeholders cannot become statement units. Recognized codes come from the installed framework's region currency metadata; unusable region entries are skipped safely. Missing recognition holds review rather than inventing USD.

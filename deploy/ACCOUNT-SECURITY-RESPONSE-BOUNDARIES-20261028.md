@@ -1,3 +1,9 @@
+# Verified integration — 2026-10-28 UTC
+
+This scoped change is now verified in development through #999 atc556f22ffd51782202b6a3cf9c4ca6fed83977f8 and #1000 at74d559cead93ca6073cd469697a1a5e5b31221e6. See [the exact source/tested/tree/test/acceptance record](MILESTONE-CLEANUP-AUDIT-20261027.md). #999 final814 source passed3,003 .NET/368 Node/all5 checks with full browser/Android/HTTP/disposable recovery; #1000 final10fac source passed3,062 .NET/368 Node/all10 checks and all six PostgreSQL scopes, with native/browser conditional. Both source branches remain. Earlier prepared/failed-head notes below are historical, not the current integration state. Real provider/device/private-data/delivery/current-release recovery/legal acceptance remains open; no production deployment or activation occurred. This Markdown-only handoff still requires its own protected checks.
+
+---
+
 # Account-security response boundaries — 2026-10-28 UTC
 
 ## Confirmed defects

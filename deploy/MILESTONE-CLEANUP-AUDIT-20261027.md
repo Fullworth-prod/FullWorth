@@ -1,3 +1,41 @@
+# Verified account and currency integration evidence — 2026-10-28 UTC
+
+## Completed and verified
+
+[#999](https://github.com/Fullworth-prod/FullWorth/pull/999) squash-merged as `c556f22ffd51782202b6a3cf9c4ca6fed83977f8`. Source `814153aebb59d5a42389347b79c8c28ab42db583`, tested `e103288716c921969f8f3b80c51a4e1a51c8e2a5` and integrated tree `3ed46dd9b4667498560925d6ed4b4d311b3dcc25` matched;14 source files read back exactly. Account write/token/redirect/typed-state contracts prevent false success; documented204/202 sign-out semantics and valid JSON-object export bytes are enforced. Already-verified responses do not invent email delivery. EN/ES unknown-outcome guidance is fixed text; no application write replay. Test-only disposable-owner setup uses native constraint/CSRF/consent/302 checks, bounded pre-write reattachment and no submitted-write retry.
+
+Actual final [main40664476414](https://github.com/Fullworth-prod/FullWorth/actions/runs/40664476414)/browser40664476322:3,003 .NET/368 Node, zero failures/skips/backend/offline/Android warnings/errors;8 setup and41 account HTTP cases per pinned engine, existing38 dialog/74 BFF/24 Hosted cases;2,392 Chromium/2,422 WebKit theme assertions,354 geometry/108 financial-state/12 menu cases per engine; four actual EN/ES Settings states,12 recovery pages, virtual-key continuation, HTTP/parser/secret boundaries and disposable encrypted database/file restore passed. Android compiled; no new physical/emulator/iPhone acceptance is claimed.
+
+Artifact12806137592 SHA256`678aaaa88d8e736cca6c67aaa482dd7f6f3e2eae81919cdd175bd2f1877c5b31` was downloaded/hash-verified and four new Settings states inspected.21 performance samples completed with no forbidden keys/raw URLs/UUIDs or duplicate stylesheets;11 Chromium shift observations0 and10 WebKit unsupported/null. This is bounded laboratory evidence, not a field/SLA claim. Fixed navigation/header positions in full-page captures are not themselves new overlay-defect evidence.
+
+[#1000](https://github.com/Fullworth-prod/FullWorth/pull/1000) squash-merged as `74d559cead93ca6073cd469697a1a5e5b31221e6`. Source `10fac283688b9e215a75cc4992956692edd4f109`, tested `c9ba4d7e49cd0cab182b303f32645170c20d1cd4` and integrated tree `f45231b717c85e7792c5e9982cf03512a8104b79` matched;4 files read back exactly. Explicit CAD had been mislabeled USD/ready; declared recognized units now persist without conversion. Conflicting, malformed, empty, unrecognized/placeholder codes remain reviewable. Horizontal space separators/TAB do not borrow suffixes across vertical separators. Runtime metadata recognition and the historical no-declaration USD-format fallback are limited formats, not universal international extraction. No retrospective private-row correction was performed.
+
+Actual final [main40669328289](https://github.com/Fullworth-prod/FullWorth/actions/runs/40669328289):3,062 .NET/368 Node, zero failed/skipped/backend/offline warnings/errors, including53 new parser cases and6 real PDF/upload/background/test-database cases. All10 source checks passed. PostgreSQL: bank26 plus12 focused .NET (40669328206); Hosted durable53 and consumed-token12 (40669328119); monitoring124 (40669328444); confirmation118 (40669328134); subscription17 plus51 focused .NET (40669328479). Provider calls are synthetic. Main container PDF/OCR/cgroup/secret/HTTP/disposable encrypted restore passed. Native/visual stages were conditional and do not repeat #999's browser/device scope.
+
+Current ruleset24230011 remained active: mandatory PR, four strict Actions checks, zero required approvals, resolved threads, no bypass; no outstanding reviews/threads. Auto-deletion stayed off and both source branches were read back present. Master/last separately recorded deployment9540 remained; no promotion/deployment or host inspection. This handoff is Markdown-only and still needs its own final-head checks; no own merge SHA is predeclared.
+
+## Implemented, awaiting specified external acceptance
+
+| Gate | Smallest missing prerequisite/action |
+| --- | --- |
+| #972 bank visibility | Owner starts a fresh secure Wells Fargo Link session on the applicable deployed release, then verifies visibility and initial sync. Preserve the old consumed-token fence. |
+| #912 provider recovery | Controlled real provider/Sandbox error/unknown-commit/mobile lifecycle observations with metadata-only evidence. PostgreSQL/synthetic provider runs do not substitute. |
+| #762 private bill/import truth | Controlled expected-obligation/account/history/source comparison; inspect any previously affected non-USD upload against its original document before correction. No broad private exports or automatic retagging. |
+| #970 subscription evidence | Actual consented merchant/document/billing-party freshness and access/renewal/prepaid/cancelled/one-off acceptance. Direct merchant verification remains unavailable without documented supported access. |
+| #293 payroll | Controlled actual posted payroll/provider outcomes, preserving income privacy and no money movement. |
+| #251/#258 devices | Physical Android installed PWA and actual iPhone installed/session/keyboard/file/passkey checks for the intended release; emulator/browser/build proof is separate. |
+| #291/#669 release/security/recovery | Separately authorized promotion when intended, same-release two-owner/document/export/deletion/delivery/security records, real nonempty statement/database/both-keyring clean-host/bootstrap/retention and compromised-host deletion-denial/protection proof, plus qualified legal/license/governance acceptance. |
+
+The earlier authorized read-only clean-runner recovery40257392831 used tools9540 and restored protected pre-hotfix3fd3 snapshot8067b8e4; preserve it as actual partial proof. It does not establish a restored current-release/nonempty-statement/disaster-bootstrap bundle. Temporary access retains its original expiry/scope; no new credential or extension is authorized by the active goal. Record only protected locations/non-sensitive evidence metadata.
+
+## Deferred with concrete reason
+
+Branch deletion/cleanup activation (#245) is outside authority; preserve all branches/history. MAUI retirement awaits parity/support decision. Financial Home expansion awaits MV-01–MV-06 retained value/economics; broader milestones9–12 remain later. Creator terms stay proposed/features off; all three light/dark pairs remain selected and implemented.
+
+The entire autonomous milestones0–8 goal remains active. Continue authorized source/journey review for demonstrated defects; do not shrink completion to these PRs, close external gates from CI, or repeatedly rediscover recorded prerequisites. No production/master promotion, spending/paid activation, new grants/credentials/settings/secrets, outreach/payouts/purchases/cancellations, real private exports, destructive operations, other-thread messages or hourly automation occurred. Earlier retained audit text below is history.
+
+---
+
 # Milestones 0–8 cleanup and acceptance reconciliation — 2026-10-27 UTC
 
 This audit preserves the full autonomous cleanup scope. It distinguishes verified development changes, implemented software needing external acceptance, precise blocked prerequisites and deliberately deferred proposals. It does not declare the product/release complete or substitute CI for provider/device/private-data/recovery/legal evidence.

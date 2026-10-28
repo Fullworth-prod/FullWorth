@@ -1,3 +1,21 @@
+# Current verified account and statement-currency checkpoint — 2026-10-28 UTC
+
+Development runtime is `74d559cead93ca6073cd469697a1a5e5b31221e6` through [#1000](https://github.com/Fullworth-prod/FullWorth/pull/1000), following [#999](https://github.com/Fullworth-prod/FullWorth/pull/999) at `c556f22ffd51782202b6a3cf9c4ca6fed83977f8`. Both passed their own final-head gates, exact source/tested/integrated tree comparisons and source readback; both branches remain. This documentation revision still requires its own protected checks; it does not predeclare an own merge SHA.
+
+**Completed and verified:** account-security response/token/redirect contracts; truthful already-verified versus email-sent handling; fixed EN/ES uncertainty guidance without application write replay; server session preservation on unexpected success; valid-byte-preserving JSON export checks. Statements preserve recognized explicit currency evidence, withhold conflicting/invalid/unknown units and reject ordinary-word/vertical-separator suffix mistakes. No conversion or historical bulk retagging. Recognition uses bounded installed framework metadata; the legacy no-declaration USD-format fallback remains a documented limitation.
+
+Final #1000 source `10fac283688b9e215a75cc4992956692edd4f109` passed all10 checks:3,062 .NET/368 Node, zero failed/skipped/backend/offline build warnings/errors,53 new parser cases plus6 actual PDF-to-test-database cases and six PostgreSQL scopes. Browser/native stages were conditional for that API-only change. #999 source814153ae passed all5 checks,3,003 .NET/368 Node, fresh Android compilation,8 setup+41 account HTTP cases per pinned engine, full themed/EN/ES/recovery/virtual-key/HTTP/parser/disposable encrypted restore checks. These are CI/build/synthetic results, not provider/physical-device/real delivery/current-release real recovery/legal acceptance.
+
+**Implemented, awaiting external acceptance:** #972 fresh owner Wells Fargo visibility/initial sync; #912 controlled provider lifecycle; #762 private expected-bill/import truth and any older non-USD statement's original-unit review; #970 real subscription/access/renewal/billing-party evidence; #293 real payroll; #251/#258 physical Android/iPhone; #291/#669 same-release two-owner/document/security/deletion/delivery, nonempty real statement/database/both-keyring clean-host/bootstrap/retention and qualified legal proof. Prior authorized read-only clean-runner recovery remains actual partial evidence, not wholly missing or current-release acceptance.
+
+**Deferred:** #245 deletion/cleanup activation is unauthorized; MAUI retirement requires parity/support decision; Financial Home expansion waits for MV-01–MV-06 value/economics. Creator features stay default-off/terms proposed; all three selected light/dark pairs remain implemented.
+
+See [the detailed milestone audit](deploy/MILESTONE-CLEANUP-AUDIT-20261027.md), [account evidence](deploy/ACCOUNT-SECURITY-RESPONSE-BOUNDARIES-20261028.md) and [currency evidence](deploy/STATEMENT-CURRENCY-EVIDENCE-20261028.md). Preserve the full milestones0–8 goal and continue independent reproducible-bug/source review; this batch does not finish the goal or all #934.
+
+Master/last separately recorded deployment remain `9540b2616841e9794d8f8c07616edcd1e339982c`; no fresh host inspection or deployment occurred. No spending/activation, new credentials/grants/settings/secrets, outreach/payouts, real private exports, destructive actions, other-thread messages or hourly automation. Development integration is not deployment. Earlier checkpoints below are retained history; fresh Git refs govern.
+
+---
+
 # Newest verified statement-precision integration — 2026-10-28 UTC
 
 Verified runtime baseline is `2a72b8912e73a157a797c3ceddf6e51694f9d0e6` via [#997](https://github.com/Fullworth-prod/FullWorth/pull/997), following #996. Exact sourced83c678fdb69caa71ea3e35dc1368ddf0ae94437 passed all10 checks; source/tested2f72bcc91915581b1eb087b53f214492e5b9466f/integrated treecbe1c90ecaff4f6e5855bf6538fc0b6fc754139e matched. Five source blobs read back exactly; branch retained.

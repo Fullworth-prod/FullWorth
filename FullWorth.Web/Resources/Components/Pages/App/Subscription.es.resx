@@ -68,8 +68,6 @@
   <data name="Statement-backed explanations when evidence is available" xml:space="preserve"><value>Explicaciones respaldadas por estados de cuenta cuando hay evidencia disponible</value></data>
   <data name="Opening secure checkout…" xml:space="preserve"><value>Abriendo el proceso de pago seguro…</value></data>
   <data name="Choose {0}" xml:space="preserve"><value>Elegir plan {0}</value></data>
-  <data name="yearly" xml:space="preserve"><value>anual</value></data>
-  <data name="monthly" xml:space="preserve"><value>mensual</value></data>
   <data name="Checkout is handled by our payment provider. By subscribing, you agree to the" xml:space="preserve"><value>Nuestro proveedor de pagos gestiona el proceso de pago. Al suscribirte, aceptas los</value></data>
   <data name="Terms of Service" xml:space="preserve"><value>Términos del servicio</value></data>
   <data name="and acknowledge the" xml:space="preserve"><value>y tomas conocimiento de la</value></data>

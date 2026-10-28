@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { requireDisposableOrigin, summarizeStaticResources, maximumLayoutShiftWindow, createReadTracker, unavailableBillFixtureId }
+import { requireDisposableOrigin, summarizeStaticResources, maximumLayoutShiftWindow, createReadTracker, unavailableBillFixtureId, layoutShiftEvidence }
   from "../FullWorth.VisualTests/performance-metrics.mjs";
 
 test("performance probe rejects production, insecure, misleading and credentialed origins", () => {
@@ -223,4 +223,36 @@ test("unavailable-fixture opt-in cannot leak into a later normal sample", () => 
   reads.started(req); reads.responded(req, 404);
   assert.equal(reads.snapshot().pending, 1);
   assert.equal(reads.snapshot().expectedUnavailableResponses, 0);
+});
+
+test("layout triage strips private source values and excludes interaction/outside-window entries", () => {
+  const result = layoutShiftEvidence([
+    { startTime: 100, value: .2, sourceRegions: ["overview-empty", "private-owner-id", "https://private.invalid?token=secret"] },
+    { startTime: 110, value: .4, hadRecentInput: true, sourceRegions: ["app-content"] },
+    { startTime: 40, value: .9, sourceRegions: ["app-content"] },
+    { startTime: 120, value: .1, sourceRegions: [{ private: "secret" }] },
+    { startTime: NaN, value: .8 }, { startTime: 130, value: -1 }
+  ], 50);
+  assert.deepEqual(result, {
+    eventsObserved: 2, truncated: false,
+    largestEvents: [
+      { startMs: 50, value: .2, sourceRegions: ["overview-empty", "unclassified"] },
+      { startMs: 70, value: .1, sourceRegions: ["unclassified"] }
+    ]
+  });
+  assert.doesNotMatch(JSON.stringify(result), /private|secret|token|https/);
+});
+
+test("layout triage is bounded, keeps unknown regions explicit and does not sum lifetime shifts", () => {
+  const result = layoutShiftEvidence(Array.from({ length: 12 }, (_, i) => ({
+    startTime: i * 100, value: i / 100, sourceRegions: ["overview-heading"]
+  })));
+  assert.equal(result.eventsObserved, 12);
+  assert.equal(result.truncated, true);
+  assert.equal(result.largestEvents.length, 10);
+  assert.equal(result.largestEvents[0].value, .11);
+  assert.equal(result.largestEvents.at(-1).value, .02);
+  assert.deepEqual(layoutShiftEvidence([{ startTime: 0, value: .1 }]).largestEvents[0].sourceRegions,
+    ["unclassified"]);
+  assert.deepEqual(layoutShiftEvidence([]), { eventsObserved: 0, truncated: false, largestEvents: [] });
 });

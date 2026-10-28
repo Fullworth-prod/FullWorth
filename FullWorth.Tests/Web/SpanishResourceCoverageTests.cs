@@ -84,6 +84,8 @@ public sealed class SpanishResourceCoverageTests
     [InlineData(typeof(global::FullWorth.Web.Components.Pages.App.Planning), "Coverage unknown", "Cobertura desconocida")]
     [InlineData(typeof(global::FullWorth.Web.Components.Pages.App.Profile), "Personal profile", "Perfil personal")]
     [InlineData(typeof(global::FullWorth.Web.Components.Pages.App.Subscription), "Cancellation scheduled", "Cancelación programada")]
+    [InlineData(typeof(global::FullWorth.Web.Components.Pages.App.Subscription), "Yearly", "Anual")]
+    [InlineData(typeof(global::FullWorth.Web.Components.Pages.App.Subscription), "Monthly", "Mensual")]
     [InlineData(typeof(global::FullWorth.Web.Components.Shared.StatementUploadPanel), "Upload not confirmed", "Carga no confirmada")]
     public void CompiledResources_ResolveSpanishAndKeepTheEnglishFallback(
         Type component, string key, string expectedSpanish)
@@ -141,7 +143,7 @@ public sealed class SpanishResourceCoverageTests
             Value = (string?)data.Element("value") ?? ""
         }).ToArray();
         Assert.All(entries, entry => Assert.False(string.IsNullOrEmpty(entry.Key)));
-        Assert.Equal(entries.Length, entries.Select(entry => entry.Key).Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(entries.Length, entries.Select(entry => entry.Key).Distinct(StringComparer.OrdinalIgnoreCase).Count());
         return entries.ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
     }
 

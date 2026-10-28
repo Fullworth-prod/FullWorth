@@ -27,6 +27,9 @@ function installProbe({ regions }) {
       profile = value;
     }
   });
+  const regionOf = node => regions.find(([, selector]) => node?.closest?.(selector))?.[0] ?? "unclassified";
+  const rect = value => value ? Object.fromEntries(["x", "y", "width", "height"]
+    .map(key => [key, Number.isFinite(value[key]) ? value[key] : null])) : null;
   if (supported.has("layout-shift")) new PerformanceObserver(list => {
     const entries = list.getEntries();
     state.shiftsDropped += Math.max(0, entries.length - 500);
@@ -34,8 +37,19 @@ function installProbe({ regions }) {
       ({ value: entry.value, startTime: entry.startTime, hadRecentInput: entry.hadRecentInput,
         sourceRegions: [...new Set((entry.sources ?? []).slice(0, 5).map(source => {
           const node = source.node?.nodeType === 1 ? source.node : source.node?.parentElement;
-          return regions.find(([, selector]) => node?.closest?.(selector))?.[0] ?? "unclassified";
-        }))]
+          return regionOf(node);
+        }))],
+        sourceMovements: (entry.sources ?? []).slice(0, 5).map(source => ({
+          region: regionOf(source.node?.nodeType === 1 ? source.node : source.node?.parentElement),
+          previous: rect(source.previousRect), current: rect(source.currentRect)
+        })),
+        layout: (() => {
+          const header = document.querySelector(".app-topbar")?.getBoundingClientRect();
+          const content = document.querySelector(".app-content")?.getBoundingClientRect();
+          return { headerTop: header?.top, headerHeight: header?.height,
+            contentTop: content?.top, contentWidth: content?.width,
+            rootFontPx: parseFloat(getComputedStyle(document.documentElement).fontSize) };
+        })()
       })));
     state.shiftsDropped += Math.max(0, state.shifts.length - 500);
     state.shifts = state.shifts.slice(-500);

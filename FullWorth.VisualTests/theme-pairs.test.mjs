@@ -561,24 +561,48 @@ export async function verifyThemePairs(page, outputDir) {
       }
 
       // Read-only real disposable Settings; no security or preference actions.
-      // Spanish security/recovery copy must fit every family and both modes.
-      for (const style of styles) for (const mode of modes) {
-        await culture("es");
+      // Check full words, not just page overflow: the previous 2.3rem mobile
+      // heading broke English/Spanish words at320px/200% despite passing geometry.
+      for (const language of ["en-US", "es"]) for (const style of styles) for (const mode of modes) {
+        await culture(language);
         await target.goto(origin + "/app/account/settings", { waitUntil: "domcontentloaded" });
         await target.locator(".settings-page h1").waitFor();
         await appearance(style, mode);
-        expect((await target.locator(".settings-page h1").innerText()).trim() === "Seguridad y preferencias",
-          "Settings resolves the Spanish security heading.");
-        expect(await target.getByText("Perfil de rendimiento", { exact: true }).isVisible(),
-          "Spanish device-profile copy is rendered.");
-        expect(await target.getByText("Elige cómo muestra FullWorth las fechas y las horas.", { exact: true }).isVisible(),
-          "Spanish timestamp guidance is rendered.");
-        await geometry("settings/" + style + "/" + mode + "/es", 390, false);
-        await geometry("settings/" + style + "/" + mode + "/es-large", 320, true);
+        expect((await target.locator(".settings-page h1").innerText()).trim() ===
+          (language === "es" ? "Seguridad y preferencias" : "Security & preferences"),
+          "Settings resolves the selected security heading.");
+        if (language === "es") {
+          expect(await target.getByText("Perfil de rendimiento", { exact: true }).isVisible(),
+            "Spanish device-profile copy is rendered.");
+          expect(await target.getByText("Elige cómo muestra FullWorth las fechas y las horas.", { exact: true }).isVisible(),
+            "Spanish timestamp guidance is rendered.");
+        }
+        await geometry("settings/" + style + "/" + mode + "/" + language, 390, false);
+        const normalHeadingSize = await target.locator(".settings-page h1")
+          .evaluate(element => parseFloat(getComputedStyle(element).fontSize));
+        await geometry("settings/" + style + "/" + mode + "/" + language + "-large", 320, true);
         await readable(".settings-page h1");
+        const heading = await target.locator(".settings-page h1").evaluate(element => {
+          const splitWords = [];
+          const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+          while (walker.nextNode()) for (const match of walker.currentNode.textContent.matchAll(/\S+/g)) {
+            const range = document.createRange();
+            range.setStart(walker.currentNode, match.index);
+            range.setEnd(walker.currentNode, match.index + match[0].length);
+            const lines = new Set([...range.getClientRects()].filter(r => r.width > 0 && r.height > 0)
+              .map(r => Math.round(r.top)));
+            if (lines.size > 1) splitWords.push(match[0]);
+          }
+          return { fontSize: parseFloat(getComputedStyle(element).fontSize), splitWords };
+        });
+        audit(heading.fontSize >= normalHeadingSize * 1.99,
+          "The narrow heading preserves 200% user text scaling.");
+        audit(heading.splitWords.length === 0,
+          "Security heading wraps between words at320px/200%: " + JSON.stringify(heading.splitWords));
         if (engine === "webkit" && mode === "dark")
           await capture(target, { path: path.join(outputDir,
-            "spanish-settings-" + style + "-" + engine + "-320-large.png"), fullPage: true });
+            (language === "es" ? "spanish-settings-" : "english-settings-") + style + "-" +
+            engine + "-320-large.png"), fullPage: true });
       }
 
       state = "populated";

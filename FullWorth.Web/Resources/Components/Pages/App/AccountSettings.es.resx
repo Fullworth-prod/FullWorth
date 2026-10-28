@@ -226,4 +226,10 @@
   <data name="This is a sensitive security change and requires your current credentials." xml:space="preserve"><value>Este es un cambio de seguridad sensible y requiere tus credenciales actuales.</value></data>
   <data name="Verify your password, then connect any standard authenticator app." xml:space="preserve"><value>Verifica tu contraseña y después conecta una aplicación de autenticación estándar.</value></data>
   <data name="Scan the code and verify one current code from the app." xml:space="preserve"><value>Escanea el código y verifica un código actual de la aplicación.</value></data>
+  <data name="FullWorth could not confirm this account update. Reload settings to check its current state before trying again." xml:space="preserve">
+    <value>FullWorth no pudo confirmar esta actualización de la cuenta. Vuelve a cargar la configuración para revisar su estado actual antes de intentarlo de nuevo.</value>
+  </data>
+  <data name="Your email address is already verified." xml:space="preserve">
+    <value>Tu dirección de correo ya está verificada.</value>
+  </data>
 </root>

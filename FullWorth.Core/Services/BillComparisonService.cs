@@ -17,9 +17,9 @@ public sealed class BillComparisonService
         decimal annualChange =
             monthlyChange * 12m;
 
-        decimal percentageChange =
+        decimal? percentageChange =
             previousAmount.Amount == 0m
-                ? 0m
+                ? null
                 : (monthlyChange / previousAmount.Amount) * 100m;
 
         return new BillComparisonResult(
@@ -33,10 +33,9 @@ public sealed class BillComparisonService
                 annualChange,
                 2,
                 MidpointRounding.AwayFromZero),
-            PercentageChange: decimal.Round(
-                percentageChange,
-                2,
-                MidpointRounding.AwayFromZero));
+            PercentageChange: percentageChange.HasValue
+                ? decimal.Round(percentageChange.Value, 2, MidpointRounding.AwayFromZero)
+                : null);
     }
 }
 
@@ -45,4 +44,4 @@ public sealed record BillComparisonResult(
     decimal CurrentAmount,
     decimal MonthlyChange,
     decimal AnnualChange,
-    decimal PercentageChange);
+    decimal? PercentageChange);

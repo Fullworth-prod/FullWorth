@@ -1,0 +1,7 @@
+# AI candidate amount precision — 2026-10-28
+
+Actual validator/converter/contracts/model definitions compiled in memory accepted evidence-backed1.005→1.01,0.005→0.01 and-0.005→-0.01 and marked extraction ready. This is synthetic source execution, not provider/real-document/DB acceptance. Existing conversion test explicitly expected rounding, while the downstream raw storage policy rejects more than two decimal places. Conversion could erase evidence precision before that guard.
+
+Validate every candidate monetary field and signed line item against the existing storage policy before mapping; retain the existing narrower AI amount limits. Remove conversion rounding so accepted values stay exact. Reject unsupported fractions rather than invent a cent or erase a credit. Preserve supported trailing zeros, zero, signed credits, currency and evidence. Update the valid mapping fixture to supported two-decimal evidence and add17 rejection/four preservation cases. No storage schema expansion, new currency feature, AI activation or paid inference.
+
+Corrected actual source execution rejected the three unsupported fractional cases with no extraction and retained the valid1.00 ready result. Full final-head .NET/regression/relational/container/security checks remain required before development integration. Preserve private corpus/provider/legal acceptance as separate gates; no private export, deployment, master promotion or credential/config changes.

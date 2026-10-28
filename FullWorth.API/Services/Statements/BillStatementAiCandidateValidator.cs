@@ -268,6 +268,10 @@ namespace FullWorth.API.Services.Statements
                     errors.Add(
                         $"Line item {index} has an invalid monetary amount.");
                 }
+                else if (!StatementMoneyStoragePolicy.IsSupportedSigned(item.Amount))
+                {
+                    errors.Add($"Line item {index} must have no more than two decimal places.");
+                }
             }
         }
 
@@ -581,21 +585,13 @@ namespace FullWorth.API.Services.Statements
         }
 
         private static void ValidateMoneyValue(
-            decimal? value,
-            string fieldName,
-            ICollection<string> errors)
+            decimal? value, string fieldName, ICollection<string> errors)
         {
-            if (!value.HasValue)
-            {
-                return;
-            }
-
-            if (IsOutsideMoneyRange(
-                    value.Value))
-            {
-                errors.Add(
-                    $"'{fieldName}' contains an invalid monetary value.");
-            }
+            if (!value.HasValue) return;
+            if (IsOutsideMoneyRange(value.Value))
+                errors.Add($"'{fieldName}' contains an invalid monetary value.");
+            else if (!StatementMoneyStoragePolicy.IsSupportedSigned(value.Value))
+                errors.Add($"'{fieldName}' must have no more than two decimal places.");
         }
 
         private static void RequireStringEvidence(

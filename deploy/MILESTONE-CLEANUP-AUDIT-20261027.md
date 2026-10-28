@@ -2,7 +2,17 @@
 
 This audit preserves the full autonomous cleanup scope. It distinguishes verified development changes, implemented software needing external acceptance, precise blocked prerequisites and deliberately deferred proposals. It does not declare the product/release complete or substitute CI for provider/device/private-data/recovery/legal evidence.
 
-## Verified follow-up — 2026-10-28 UTC
+## Newest runtime verification and footer follow-up — 2026-10-28 UTC
+
+#994 sourcee4da179a / tested9b89a8a / integrated43388bfc share tree595f2b0e1862d192168a65d2c989e3848d8d6ab6: all5 checks,2,941 .NET/229 Node, zero failures/skips/backend/offline warnings/errors. Strict passkey confirmations/no replay/read-only ambiguity recovery, secure password/authenticator removal without WebAuthn, five EN/ES recovery surfaces/35 resources and200% heading readability verified. Browser2392/2422 assertions and354 geometry/108 states/12 menus per engine;12 recovery pages/virtual-key/HTTP/disposable restore passed. Android job was conditional.
+
+#995 sourcebe50d1bb / testedee2a4998 / integrated4ac115e2 share tree85a8babf06a32b2f233a31cf8684840bd9cf4a7f: all12 checks,2,945 .NET/229 Node, zero failures/skips/backend/offline warnings/errors. Fresh MAUI Android/APK/emulator launch/iOS simulator/unsigned iPhone IPA passed; not physical/signed-device acceptance. Zero-baseline percentage is unknown; dollar/currency/monthly explanation retained. Persistent-head stylesheet yielded0 slow390px shift after three0.216613 reports. No universal performance/SLA claim.
+
+Artifact994:12785653600 SHA256b826b01d66166acd094e29f58dac532017b008cf5e658cac58703157883f372c. Artifact995:12786438837 SHA2563d9d59f2b16538026b14080051ada2951f19ec44f910008879841045606919ac. Both downloaded/hash/privacy verified,21 cases completed, no forbidden keys/raw URLs/UUIDs; EN/ES heading/recovery/Overview captures inspected. Branches preserved; master9540 unchanged.
+
+This follow-up fixes the confirmed nonhome legal-footer target/spacing defect. Isolated original8 failed/corrected8 passed;16 real-browser normal/enlarged legal-navigation states now cover targets/gaps/bounds/focus. Final checks/integration proof is in its associated protected PR; no own merge SHA predeclared. No legal body/destination change or external acceptance closure. All prior requirements/history remain below.
+
+## Prior verified follow-up — 2026-10-28 UTC
 
 [#990](https://github.com/Fullworth-prod/FullWorth/pull/990) merged as `59185a8114486662a5f8fab3154f1a9a0225359a` after all five checks on `09b3fcfd1c10d226e3e16f2a830273e789761760`; source/tested510dc8e/integrated tree `e68c70a734e490d4988baa6fd05672ed7fbb99fa` matched. Actual 2,915 .NET/159 Node, zero failures/skips/backend/offline warnings/errors, full browser/HTTP/passkey/disposable recovery and 21 laboratory observations passed. #991 was accurately closed as superseded, not individually merged; exact two integrated source blobs were read back and both branches retained.
 

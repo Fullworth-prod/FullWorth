@@ -61,3 +61,16 @@ Source `de3ff1ef8e2b2b611605e984c2ddd631328e5745` passed all5 checks and2,928 .N
 Artifact12783207418 SHA256`426a9c1f737acaa45778b927db5eba3809ded962bc42b87d76d83853ee228b3c` was downloaded/checksum-verified and privacy-inspected. The slow sample again recorded0.216613, with one event at2,005.1ms and only fixed app-content/overview-loading aliases. Heading1,175.9ms, FCP948ms, latest LCP2,552ms and observation end3,445.1ms are bounded laboratory observations, not a statistical improvement or readiness threshold.
 
 The triage retains at most10 individual events and5 public region aliases/event; unknown regions remain unclassified and unsupported/dropped metrics remain unknown. It never exports DOM text/classes/IDs or financial data. This establishes repeatability and an investigation region; it does not establish a cause or fix. Track recovery/error/passkey copy and enlarged-heading typography as separate source follow-up. Published legal copy, real provider/device/recovery/delivery acceptance and deployment remain outside this evidence.
+
+## Third observation and persistent-head correction — 2026-10-28 UTC
+
+| Source / integration | Verified artifact / SHA256 | Slow390px bounded shift |
+|---|---|---:|
+| #994 e4da179a /43388bfc |12785653600 /b826b01d66166acd094e29f58dac532017b008cf5e658cac58703157883f372c |0.216613 |
+| #995 be50d1bb /4ac115e2 |12786438837 /3d9d59f2b16538026b14080051ada2951f19ec44f910008879841045606919ac |0 |
+
+#994 loading x14→12,y221→229,width362→366; header68/contentTop68/root16 at observer delivery. Third repeat was coordinate evidence, not cause proof alone. #995 moved one stylesheet from interactive layout to persistent head; no shift events/dropped records/duplicate links in its slow sample. Both verified reports completed21 cases with no forbidden payload/credential/storage keys/raw URLs/UUIDs. Chromium140.0.7339.186/WebKit26.0.8; slow fixture390×844,150ms/1.5Mbps,worker-blocked,editorial-dark/en-US/balanced.
+
+#995: heading1678.9ms,FCP1488,LCP3436,end4257.2,TTFB622.1. #994: heading1212.4ms,FCP1004,LCP3236,end4080,TTFB7.3. Server timing varies: do not call the new run faster or claim latency/SLA improvement. The observed correction is bounded startup stability. #995 CSS23 timing entries vs24, same422486 decoded bytes; JS18 entries/314426 decoded bytes,21 DOM stylesheets/7 scripts/no duplicate hrefs. Timing reports are not socket captures. Public/auth routes now request the scoped asset; no overall transfer reduction claimed.
+
+All5 #994 /12 #995 checks passed with source/tested/integrated tree equality. Both engines2392/2422 assertions and354 geometry/108 state/12 menu cases,12 recovery pages and virtual-key/HTTP/disposable restore passed. Physical installed-device/field Web Vitals/populated-history/full interop/real provider/recovery/legal acceptance remains separate. Retain actual report limits and repeat on later source/device evidence.

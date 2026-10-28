@@ -52,6 +52,36 @@ export async function verifyRecoveryLocalization(page, outputDir) {
                             ? "Tu método de inicio de sesión actual sigue funcionando."
                             : "Your existing sign-in still works."));
                     }
+                    if (!route.includes("security-keys")) {
+                        for (const enlarged of [false, true]) {
+                        await current.evaluate(enlarged => { document.documentElement.style.fontSize = enlarged ? "200%" : ""; }, enlarged);
+                        await current.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+                        if (enlarged) assert.ok(await current.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize)) >= 31.9);
+                        const links = current.locator(".footer-legal-links a");
+                        assert.equal(await links.count(), 2);
+                        assert.deepEqual(await links.evaluateAll(items => items.map(item => item.getAttribute("href"))),
+                            ["/terms", "/privacy"], "Published legal destinations stay unchanged.");
+                        const targets = await links.evaluateAll(items => items.map(item => {
+                            const r = item.getBoundingClientRect();
+                            return { left: r.left, right: r.right, top: r.top, bottom: r.bottom,
+                                width: r.width, height: r.height };
+                        }));
+                        for (const target of targets) {
+                            assert.ok(target.width >= 43.9 && target.height >= 43.9,
+                                "Legal navigation needs usable tap targets: " + JSON.stringify(target));
+                            assert.ok(target.left >= -1 && target.right <= width + 1,
+                                "Legal navigation remains within the narrow page.");
+                        }
+                        const gap = targets[1].top >= targets[0].bottom - 1
+                            ? targets[1].top - targets[0].bottom : targets[1].left - targets[0].right;
+                        assert.ok(gap >= 19, "Legal destinations must not run together.");
+                        await links.nth(0).focus();
+                        await current.keyboard.press("Tab");
+                        assert.equal(await links.nth(1).evaluate(item => item === document.activeElement), true,
+                            "Both legal destinations remain reachable in keyboard order.");
+                        }
+                        await current.evaluate(() => { document.documentElement.style.fontSize = ""; });
+                    }
                     const name = route.includes("security-keys") ? "keys-disabled" :
                         route === "/Error" ? "error" : "not-found";
                     await current.screenshot({ path: path.join(outputDir, "recovery-" + name + "-" + language + "-" + width + ".png"),
@@ -61,5 +91,5 @@ export async function verifyRecoveryLocalization(page, outputDir) {
             }
         } finally { await context.close(); }
     }
-    console.log("PASS: " + cases + " read-only EN/ES recovery pages at 320/390px; reconnect controls and default-off keys preserved.");
+    console.log("PASS: " + cases + " read-only EN/ES recovery pages at 320/390px; legal navigation targets/spacing/focus, reconnect controls and default-off keys preserved.");
 }

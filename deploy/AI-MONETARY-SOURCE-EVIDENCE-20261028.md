@@ -1,3 +1,9 @@
+## Verified integration — 2026-10-28 UTC
+
+Merged #1004 as a161376fb9f712d332e5a166ee198a67f32d9edc after all10 checks on source43d8343a4c6a7882b8d218ad3b9e783a642de989. Tested0021956657501babe2045992a656c56b25ddf88f and integrated tree1f8580ce5b17948c4574c2073dacd7ae80014dc4 match. Six exact readbacks; current strict rules, reviews/threads and retained branch verified. Actual3,215 .NET/434 Node, zero failures/skips/backend/offline warnings/errors, all six PostgreSQL jobs and container HTTP/PDF/OCR/cgroup/secret/disposable encrypted restore passed. Native/browser were conditional; fresh UI/native evidence is #1003.115 new tests cover95 monetary-source and20 raw ASCII unit cases;198+74 focused local cases passed before final SDK proof. Earlier prepared-head notes below are history. AI off, master9540 unchanged; no production/provider/private/device/recovery/legal acceptance.
+
+---
+
 # AI monetary source evidence boundaries — 2026-10-28
 
 ## Reproduced failure

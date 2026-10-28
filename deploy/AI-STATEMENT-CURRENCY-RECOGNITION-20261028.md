@@ -1,3 +1,9 @@
+## Verified integration — 2026-10-28 UTC
+
+Merged #1002 as eee08650724c65338ab4406601d83888eab4852e after all10 final-source checks (de5c94b15889a200f628b0ba7c89946f66c04b75/tested323cefb2bf2c08b20936ff6bc19681f0d442acf7/tree3afa3ec48fb6b4ca66603ea62b908a08abdeef17). Actual3,100 .NET/368 Node; applicable PostgreSQL/container checks passed, native/browser conditional. #1004 subsequently adds raw ASCII-before-casing guards in both parsing paths, merged as a161376fb9f712d332e5a166ee198a67f32d9edc after all10 checks and3,215 .NET/434 Node. Earlier prepared-head notes below are historical. AI remains off, branches retained, master9540 unchanged; no deployment/provider/device/recovery acceptance.
+
+---
+
 # AI statement currency recognition — 2026-10-28
 
 ## Reproduced defect and correction

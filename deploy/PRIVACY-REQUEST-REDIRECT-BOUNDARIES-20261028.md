@@ -1,3 +1,9 @@
+## Verified integration — 2026-10-28 UTC
+
+Merged #1003 as e92f4768822b662e083bf78c7779654dd09320de, exact source0d6ba4bde24a29d09b9778167c112b2de82a5cb7/testede289bf7609a259c0ed179b562e8ebc9f3813f93f/tree09d045aae7c350189ad2336871f89788bab6bfd7 matched. All5 checks;3,100 .NET/434 Node, actual Android zero warnings/errors,59 pinned privacy HTTP cases per Chromium/WebKit, rendered privacy and synthetic download/disposal, full themes/recovery/virtual passkey/HTTP/parser/disposable encrypted restore passed. Artifact12843299724 digestc3287af5ce3647ec842ac4f0f2b1c898f4bde4787ee5f8ddba862056af0ed2b9 verified; three privacy screens inspected.21 bounded performance observations include Bills0.00184 and unsupported WebKit values, not a zero-shift/device/SLA claim. All seven exact readbacks, rules/reviews/threads, retained branch and unchanged master9540 verified. No real proof/export/delete/production recovery or deployment acceptance. Older pending requirements below are history.
+
+---
+
 # Privacy request redirect boundaries — 2026-10-28
 
 ## Reproduced actual-source failure

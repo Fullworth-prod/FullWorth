@@ -9,6 +9,17 @@ public sealed partial class DeterministicBillStatementParser
         CultureInfo.GetCultureInfo(
             "en-US");
 
+    // Recognition is intentionally bounded to the framework's installed currency
+    // metadata. Unrecognized explicit tokens stay in review rather than becoming USD.
+    private static readonly HashSet<string> RecognizedCurrencyCodes =
+        CultureInfo.GetCultures(CultureTypes.SpecificCultures)
+            .Select(TryGetRegionCurrencyCode)
+            .OfType<string>()
+            .Where(code => code.Length == 3 && code is not "XXX" and not "XTS" &&
+                code.All(character => character is >= 'A' and <= 'Z'))
+            .Append("USD")
+            .ToHashSet(StringComparer.Ordinal);
+
     private static readonly string[] AcceptedDateFormats =
     [
         "M/d/yyyy",
@@ -133,6 +144,12 @@ public sealed partial class DeterministicBillStatementParser
         };
     }
 
+    private static string? TryGetRegionCurrencyCode(CultureInfo culture)
+    {
+        try { return new RegionInfo(culture.Name).ISOCurrencySymbol; }
+        catch (ArgumentException) { return null; }
+    }
+
     private static string TryExtractCurrency(string text, out bool conflicting)
     {
         var labeled = CurrencyCodeRegex().Matches(text).Cast<Match>()
@@ -146,7 +163,7 @@ public sealed partial class DeterministicBillStatementParser
 
         // Explicit malformed/competing currency evidence must not fall back to
         // this parser's legacy USD-style format assumption.
-        if (currencies.Any(value => value.Length != 3 || value.Any(character => character is < 'A' or > 'Z')) ||
+        if (currencies.Any(value => value.Length != 3 || !RecognizedCurrencyCodes.Contains(value)) ||
             conflicting)
         {
             return string.Empty;
@@ -396,13 +413,13 @@ public sealed partial class DeterministicBillStatementParser
     }
 
     [GeneratedRegex(
-        @"(?im)^\s*(?<label>total\s+amount\s+due|current\s+amount\s+due|total\s+due|amount\s+due|balance\s+due)\s*:?\s*(?<amount>\$?\s*\(?-?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?\)?)[^\S\r\n]*(?<currency>[A-Za-z]{3})?[^\S\r\n]*\r?$",
+        @"(?im)^\s*(?<label>total\s+amount\s+due|current\s+amount\s+due|total\s+due|amount\s+due|balance\s+due)\s*:?\s*(?<amount>\$?\s*\(?-?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?\)?)[\p{Zs}\t]*(?<currency>[A-Za-z]{3})?[\p{Zs}\t]*\r?$",
         RegexOptions.CultureInvariant)]
     private static partial Regex
         TotalAmountRegex();
 
     [GeneratedRegex(
-        @"(?im)^[^\S\r\n]*(?:statement[^\S\r\n]+currency|billing[^\S\r\n]+currency|currency[^\S\r\n]+code|currency)[^\S\r\n]*:[^\S\r\n]*(?<currency>[^\r\n]*)\r?$",
+        @"(?im)^[\p{Zs}\t]*(?:statement[\p{Zs}\t]+currency|billing[\p{Zs}\t]+currency|currency[\p{Zs}\t]+code|currency)[\p{Zs}\t]*:[\p{Zs}\t]*(?<currency>[^\r\n]*)\r?$",
         RegexOptions.CultureInvariant)]
     private static partial Regex
         CurrencyCodeRegex();

@@ -99,6 +99,11 @@ public sealed class StatementCurrencyEvidenceTests
     [InlineData("USDD")]
     [InlineData("12$")]
     [InlineData("CAD / USD")]
+    [InlineData("DUE")]
+    [InlineData("ZZZ")]
+    [InlineData("XYZ")]
+    [InlineData("XXX")]
+    [InlineData("XTS")]
     public void ExplicitMalformedCurrency_DoesNotFallBackToUsd(string value)
     {
         var result = _parser.Parse(Document + "\nCurrency: " + value);
@@ -165,6 +170,36 @@ public sealed class StatementCurrencyEvidenceTests
         Assert.Equal("CAD", result.CurrencyCode);
         Assert.Equal(104.99m, result.TotalAmount);
         Assert.True(result.IsReadyForPersistence);
+    }
+
+    [Theory]
+    [InlineData("DUE")]
+    [InlineData("due")]
+    [InlineData("xyz")]
+    public void OrdinaryWordOrUnrecognizedSuffix_CannotBecomeAUnit(string suffix)
+    {
+        var result = _parser.Parse(Document.Replace("104.99", "104.99 " + suffix));
+        Assert.Equal(string.Empty, result.CurrencyCode);
+        Assert.False(result.IsReadyForPersistence);
+        Assert.Equal(104.99m, result.TotalAmount);
+    }
+
+    [Theory]
+    [InlineData("\v", "DUE")]
+    [InlineData("\f", "DUE")]
+    [InlineData("\u0085", "DUE")]
+    [InlineData("\u2028", "DUE")]
+    [InlineData("\u2029", "DUE")]
+    [InlineData("\v", "CAD")]
+    [InlineData("\f", "CAD")]
+    [InlineData("\u0085", "CAD")]
+    [InlineData("\u2028", "CAD")]
+    [InlineData("\u2029", "CAD")]
+    public void VerticalSeparator_DoesNotBorrowSuffixFromAnotherLine(string separator, string suffix)
+    {
+        var result = _parser.Parse(Document + separator + suffix);
+        Assert.False(result.IsReadyForPersistence);
+        Assert.Null(result.TotalAmount);
     }
 
     [Fact]

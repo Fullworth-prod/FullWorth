@@ -1,3 +1,13 @@
+## Current recognition and whitespace review — 2026-10-28 UTC
+
+Source review of the unmerged5fba draft reproduced TotalAmount104.99/CurrencyCodeDUE/readytrue when U+2028 separated the total from the ordinary word DUE. Horizontal matching now uses Unicode space separators plus TAB, excluding vertical controls/line/paragraph separators. Unrecognized codes and XXX/XTS placeholders cannot become statement units. Recognized codes come from the installed framework's region currency metadata; unusable region entries are skipped safely. Missing recognition holds review rather than inventing USD.
+
+The recognition set is deliberately bounded by the installed OS/ICU data, not a claim of a complete or permanently current currency registry. Microsoft documents [RegionInfo.ISOCurrencySymbol](https://learn.microsoft.com/en-us/dotnet/api/system.globalization.regioninfo.isocurrencysymbol?view=net-10.0) and [GetCultures](https://learn.microsoft.com/en-us/dotnet/api/system.globalization.cultureinfo.getcultures?view=net-10.0); OS/ICU updates can change available metadata.
+
+74 actual existing/new parser-validation tests passed locally with the previously documented same-pattern compiler adapter, including53 new cases for currency evidence, unknown/ordinary-word/placeholder tokens and vertical separators. Six PDF pipeline cases remain in normal CI. Prior combined5fba source passed all10 checks,3,044 .NET/368 Node, zero failures/skips/backend/offline warnings/errors, but these new review corrections require their own final-head checks; that previous pass is not their acceptance.
+
+---
+
 # Explicit statement currency evidence — 2026-10-28 UTC
 
 ## Reproduced defect

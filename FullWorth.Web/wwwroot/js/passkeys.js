@@ -259,6 +259,13 @@
                 });
             }
         } catch (error) {
+            // An ambiguous write may have committed. Offer an explicit read-only
+            // refresh of the saved keys; never replay the credential operation.
+            if (root.isConnected && error instanceof PasskeyError && error.key === "unconfirmed") {
+                root.dataset.loaded = "error";
+                const retry = root.querySelector('[data-passkey-action="retry"]');
+                if (retry) { retry.hidden = false; retry.disabled = false; }
+            }
             message(root, error?.name === "NotAllowedError"
                 ? text("cancelled")
                 : knownError(error, action === "login" ? "loginUnconfirmed" : "unconfirmed"));

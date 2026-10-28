@@ -21,6 +21,7 @@ function element(tag = "") {
 async function run(filename, settings = {}) {
     let handler, nativeCalls = 0, submitted = 0;
     const status = element(), list = element(), retry = element();
+    retry.hidden = true;
     list.children = ["previously verified key"];
     const password = { value: "synthetic-password" };
     const root = { isConnected: true, dataset: {}, querySelector(selector) {
@@ -77,7 +78,13 @@ async function run(filename, settings = {}) {
     };
     runInNewContext(sourceFor(filename), context, { filename });
     await handler({ target: { closest: () => button } });
-    return { status: status.textContent, list, retry, password, button, calls, nativeCalls, submitted, root };
+    return { status: status.textContent, list, retry, password, button, calls, nativeCalls, submitted, root,
+        retryRead: async () => {
+            button.dataset.passkeyAction = "retry";
+            await handler({ target: { closest: () => button } });
+            return status.textContent;
+        }
+    };
 }
 const files = ["passkeys.js", "password-step.js"];
 for (const filename of files) {
@@ -230,4 +237,22 @@ test("valid fetched antiforgery response permits exactly one explicit removal", 
     assert.equal(result.calls.filter(c => c.method === "POST").length, 1);
     assert.equal(result.calls.find(c => c.method === "POST").headers["X-CSRF-TOKEN"], "new-synthetic-csrf");
     assert.match(result.status, /^Saved\./);
+});
+
+for (const action of ["remove", "register"]) test(action + " ambiguity offers read-only recovery without replaying the write", async () => {
+    const result = await run("passkeys.js", {
+        action, writeResponse: () => json({}), listResponse: () => json([])
+    });
+    assert.match(result.status, /could not confirm this change/);
+    assert.equal(result.retry.hidden, false);
+    assert.equal(result.retry.disabled, false);
+    assert.equal(result.root.dataset.loaded, "error");
+    assert.equal(result.calls.length, action === "remove" ? 1 : 2);
+    const status = await result.retryRead();
+    assert.equal(status, "No keys registered yet.");
+    assert.equal(result.list.children.length, 0);
+    assert.equal(result.calls.filter(c => /remove$|register$/.test(c.path)).length, 1,
+        "Read-only recovery cannot repeat the credential write.");
+    assert.equal(result.calls.at(-1).method, undefined);
+    assert.equal(result.retry.hidden, true);
 });

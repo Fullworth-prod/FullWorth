@@ -77,6 +77,36 @@ try {
                 });
             }
             await scenario("/auth/login", async (page, state) => {
+                let detachedOnce = false;
+                const replacingPage = {
+                    url: () => page.url(),
+                    waitForTimeout: value => page.waitForTimeout(value),
+                    locator: selector => {
+                        const locator = page.locator(selector);
+                        return {
+                            waitFor: () => locator.waitFor(),
+                            evaluate: async (callback, args) => {
+                                if (!detachedOnce) {
+                                    detachedOnce = true;
+                                    const handle = await locator.elementHandle();
+                                    await handle.evaluate(form => form.replaceWith(form.cloneNode(true)));
+                                    return handle.evaluate(callback, args);
+                                }
+                                return locator.evaluate(callback, args);
+                            }
+                        };
+                    }
+                };
+                await Promise.all([
+                    page.waitForURL(origin + "/done"),
+                    submitDisposableAuthForm(replacingPage, "/auth/login",
+                        { email: "synthetic@example.test", password: "synthetic-proof" })
+                ]);
+                assert.equal(detachedOnce, true);
+                assert.equal(state.posts, 1, "Reattach reads, never replay a submitted login.");
+                assert.equal(state.proof, true);
+            });
+            await scenario("/auth/login", async (page, state) => {
                 await page.locator("[name=__RequestVerificationToken]").evaluate(input => input.remove());
                 await assert.rejects(() => submitDisposableAuthForm(page, "/auth/login",
                     { email: "synthetic@example.test", password: "synthetic-proof" }), /antiforgery token/);

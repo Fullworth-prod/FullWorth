@@ -10,11 +10,18 @@ export async function submitDisposableAuthForm(page, action, fields) {
     assert.ok(["/auth/register", "/auth/login"].includes(action), "Unsupported disposable auth action.");
     const form = page.locator('form.auth-form[action="' + action + '"]');
     await form.waitFor();
-    await form.evaluate((form, { action, fields }) => {
+    for (let attempt = 0; attempt < 40; attempt++) {
+      const submitted = await form.evaluate((form, { action, fields }) => {
         const target = new URL(form.action, location.href);
-        if (!form.isConnected || form.method.toUpperCase() !== "POST" ||
+        // A stale ElementHandle can reach evaluate during WebKit navigation.
+        // A read-only reattachment is safe only before any fields/write attempt.
+        if (!form.isConnected) return false;
+        if (form.method.toUpperCase() !== "POST" ||
             target.origin !== location.origin || target.pathname !== action)
-            throw new Error("Disposable auth form action was not verified.");
+            throw new Error("Disposable auth form action was not verified: " + JSON.stringify({
+                method: form.method, targetOrigin: target.origin, documentOrigin: location.origin,
+                targetPath: target.pathname, expectedPath: action
+            }));
         const token = form.elements.namedItem("__RequestVerificationToken");
         if (!(token instanceof HTMLInputElement) || !token.value.trim())
             throw new Error("Disposable auth form is missing its antiforgery token.");
@@ -29,5 +36,10 @@ export async function submitDisposableAuthForm(page, action, fields) {
         if (!(submit instanceof HTMLButtonElement) || submit.disabled || !form.checkValidity())
             throw new Error("Disposable auth form is not valid and ready.");
         form.requestSubmit(submit); // Exactly one attempt; never replay registration/login.
-    }, { action, fields });
+        return true;
+      }, { action, fields });
+      if (submitted) return;
+      await page.waitForTimeout(25);
+    }
+    throw new Error("Disposable auth form stayed detached before submission.");
 }

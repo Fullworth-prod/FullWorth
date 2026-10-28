@@ -91,4 +91,6 @@
   <data name="Subscription verification" xml:space="preserve"><value>Verificación de suscripciones</value></data>
   <data name="Verify subscription" xml:space="preserve"><value>Verificar suscripción</value></data>
   <data name="A posted charge does not confirm that this service will renew. Review access, renewal and supporting documents separately." xml:space="preserve"><value>Un cobro contabilizado no confirma que este servicio se renovará. Revisa por separado el acceso, la renovación y los documentos de respaldo.</value></data>
+  <data name="Most recent verified statement change" xml:space="preserve"><value>Cambio verificado más reciente en el estado de cuenta</value></data>
+  <data name="Download original statement" xml:space="preserve"><value>Descargar el estado de cuenta original</value></data>
 </root>

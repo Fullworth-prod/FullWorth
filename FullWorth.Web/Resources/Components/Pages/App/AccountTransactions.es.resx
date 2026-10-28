@@ -57,4 +57,10 @@
   <data name="Syncing…" xml:space="preserve"><value>Sincronizando…</value></data>
   <data name="Loaded dates: {0} – {1}. This is not proof of complete bank coverage." xml:space="preserve"><value>Fechas cargadas: {0} – {1}. Esto no demuestra una cobertura bancaria completa.</value></data>
   <data name="Verify subscription" xml:space="preserve"><value>Verificar suscripción</value></data>
+  <data name="Account activity" xml:space="preserve"><value>Actividad de la cuenta</value></data>
+  <data name="Loading older…" xml:space="preserve"><value>Cargando anteriores…</value></data>
+  <data name="Load older transactions" xml:space="preserve"><value>Cargar transacciones anteriores</value></data>
+  <data name="FullWorth could not load older transactions. Try again." xml:space="preserve"><value>FullWorth no pudo cargar las transacciones anteriores. Inténtalo de nuevo.</value></data>
+  <data name="Something went wrong while loading older transactions." xml:space="preserve"><value>Ocurrió un problema al cargar las transacciones anteriores.</value></data>
+  <data name="Previously selected account is not in the loaded history. Showing all loaded accounts." xml:space="preserve"><value>La cuenta seleccionada anteriormente no está en el historial cargado. Se muestran todas las cuentas cargadas.</value></data>
 </root>

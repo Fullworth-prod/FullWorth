@@ -92,4 +92,17 @@
   <data name="Review bills and history" xml:space="preserve"><value>Revisar facturas e historial</value></data>
   <data name="At least one active bank connection has not reported a successful sync. Recognized bills may be incomplete." xml:space="preserve"><value>Al menos una conexión bancaria activa no ha informado una sincronización correcta. Es posible que falten facturas reconocidas.</value></data>
   <data name="Comparison status" xml:space="preserve"><value>Estado de la comparación</value></data>
+  <data name="FullWorth home" xml:space="preserve"><value>Inicio de FullWorth</value></data>
+  <data name="Financial pulse" xml:space="preserve"><value>Pulso financiero</value></data>
+  <data name="See what changed, what needs attention, and where the evidence leads." xml:space="preserve"><value>Descubre qué cambió, qué requiere atención y qué indica la evidencia.</value></data>
+  <data name="One of your bank connections needs attention. Other connected banks can keep syncing, but the affected bank needs to be repaired." xml:space="preserve"><value>Una de tus conexiones bancarias requiere atención. Los demás bancos conectados pueden seguir sincronizándose, pero es necesario reparar la conexión del banco afectado.</value></data>
+  <data name="Your watchlist" xml:space="preserve"><value>Tu lista de seguimiento</value></data>
+  <data name="Bills with supported increases appear first; others are listed by provider name. Amounts in different currencies are never ranked against each other." xml:space="preserve"><value>Primero se muestran las facturas con aumentos respaldados por la evidencia; las demás se ordenan por nombre de proveedor. Nunca se comparan importes de distintas monedas para ordenarlos.</value></data>
+  <data name="Quick links" xml:space="preserve"><value>Accesos rápidos</value></data>
+  <data name="Transactions" xml:space="preserve"><value>Transacciones</value></data>
+  <data name="Review recent account activity" xml:space="preserve"><value>Revisar la actividad reciente de la cuenta</value></data>
+  <data name="Accounts" xml:space="preserve"><value>Cuentas</value></data>
+  <data name="Manage bank connections" xml:space="preserve"><value>Gestionar conexiones bancarias</value></data>
+  <data name="Activity" xml:space="preserve"><value>Actividad</value></data>
+  <data name="See alerts and important changes" xml:space="preserve"><value>Ver alertas y cambios importantes</value></data>
 </root>

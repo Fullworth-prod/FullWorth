@@ -13,6 +13,12 @@ Milestone1 requires a lightweight budget without financial caching or invasive a
 | Service-worker cache | Existing WebPwaBoundaryTests requires network-first navigation, one generic offline-page cache entry and no financial cache writes. | No authenticated document/API/BFF data cache and no financial local/session storage to improve timings. Preserve explicit update consent/truthful offline behavior. |
 | Motion/presentation | Performance profiles reduce effects/list workload; the user-selected theme family and reduced-motion preference must preserve financial controls and content. | Test all three light/dark pairs, efficiency/auto, reduced motion and enlarged text before approving presentation changes. Browser geometry is not a startup latency benchmark. |
 
+## Measured follow-up — #990/#992
+
+The [laboratory report](PWA-PERFORMANCE-LAB-20261027.md) now records21 completed samples per source, preserving the source table above as an authored inventory. Observed DOM counts were21 stylesheet links/7 script elements (22 links on Transactions/Settings), distinct from20/6 authored declarations; every sample had0 duplicate stylesheet hrefs. Reported CSS/JS transfer/body sizes, cache hints, worker control and four profile API counters are recorded with their scope/unknowns.
+
+The slow390px sample repeated bounded shift0.216613. New aliases place moving content in app-content/overview-loading at~2,005ms; its cause is unresolved. Geometry and probe completion do not pass a latency SLA, field Core Web Vitals or physical installed-device acceptance. Investigate source behavior without weakening financial cache boundaries or hiding latency. Full interop, populated/private history and actual intended-release/device timing remain separate.
+
 ## Repeatable acceptance procedure
 
 On the intended release, use a disposable controlled account with synthetic data. Record browser/OS/device class, installed versus ordinary browser, release SHA, profile, theme, network conditions, cold versus warm cache and whether the server circuit was new or reconnected. Keep traces private if any real account is involved; do not export private financial data under this goal.

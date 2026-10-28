@@ -1,0 +1,23 @@
+# Privacy error response contracts — 2026-10-28
+
+## Reproduced failure and source contracts
+
+Actual shipped privacyError execution relabeled500/502/503/504 bodies containing proof-like phrases as incorrect password/authenticator or definite account nondeletion. The caller then showed a specific cause instead of preserving the uncertain result. Token-fetch failures could also blame password proof even though that request carries none. No real account/export/deletion or private credentials were used.
+
+Source review confirmed valid current API contracts that must remain useful:401 proof errors,409 staff-role conflict,503 bank-revocation failure before local deletion,500 statement-quarantine preparation failure before the transaction. These pre-deletion response bodies are application/json objects with only message. The controller locations were inspected; synthetic client tests are not real provider or account-deletion acceptance.
+
+## Correction
+
+Bind known error interpretation to the operation, status and current declared envelope. Only export/deletion401 responses can identify exact known proof errors. Only deletion responses with the exact current409/503/500 message in a one-property JSON message object can report their documented pre-deletion condition. Problem-detail titles, extra contradictory fields, changed/substr-only messages, wrong status/MIME/operation, redirected responses and unrelated failures remain generic/uncertain.429 takes precedence over body text. Token failures cannot claim incorrect proof.
+
+This intentionally matches the current API's English response contract. A future contract/copy change fails closed and must update both sides/test evidence together; the browser never reflects arbitrary response bodies. Keep existing localized fixed UI strings, proof clearing, session behavior, response validation and no application write replay. Direct202 cleanup-pending/204 and export download contracts are unchanged.
+
+## Verification
+
+212 new Node cases cover status/operation/envelope binding, exact proof controls, documented pre-deletion receipts, mismatches, irrelevant-body short circuits and actual-module no-replay/token behavior. All212 passed locally, as did the prior66 boundary cases and existing lifecycle/cancellation/object-URL suite.
+
+Extend the actual-module isolated HTTP browser suite from59 to94 cases per engine: server proof-like failures, documented401/deletion controls,429 priority and token401 no-write. All94 installed-Chromium cases passed locally with source imports remapped in memory; pinned Chromium/WebKit require own final-head CI. Update the rendered staff fixture to the actual API receipt and add real rendered EN/ES server-failure uncertainty/proof-clearing/no-replay checks with screenshots. Those application render checks have not yet run.
+
+## Gates and boundaries
+
+Require final-head protected/backend/native/container/pinned-browser/rendered privacy checks, inspect any failures and verify rules/reviews/readbacks/integrated tree before development integration. No real proof/export/delete, provider/device/current production recovery/legal acceptance, deployment/master promotion, new credentials/grants/account changes, spending, outreach, destructive operations or hourly automation. Preserve branches and the full active goal.

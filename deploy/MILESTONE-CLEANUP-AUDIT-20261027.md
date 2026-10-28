@@ -86,3 +86,20 @@ The following dated prepend never reached current context. Preserve its historic
 
 ---
 
+
+# Newest verified statement-precision integration — 2026-10-28 UTC
+
+Verified runtime baseline is `2a72b8912e73a157a797c3ceddf6e51694f9d0e6` via [#997](https://github.com/Fullworth-prod/FullWorth/pull/997), following #996. Exact sourced83c678fdb69caa71ea3e35dc1368ddf0ae94437 passed all10 checks; source/tested2f72bcc91915581b1eb087b53f214492e5b9466f/integrated treecbe1c90ecaff4f6e5855bf6538fc0b6fc754139e matched. Five source blobs read back exactly; branch retained.
+
+**Completed and verified:** raw evidence-backed AI candidates1.005/0.005/-0.005 previously passed conversion as1.01/0.01/-0.01 and were marked ready. All four candidate monetary fields and signed line items now enforce the existing two-decimal storage policy before mapping. Converter rounding is removed; accepted values remain exact. Existing narrower AI bounds, zeros/trailing zeros/credits, currency/evidence/completeness guards are retained. The former three-decimal happy fixture is now supported two-decimal evidence, with17 explicit rejection/four preservation cases. No new currency/schema feature or AI activation/inference.
+
+Actual final CI40646521357:2,966 .NET/229 Node, zero failed/skipped/backend/offline warnings/errors. PostgreSQL bank26(+12 focused .NET), Hosted Link durable53, consumed-token recovery12, monitoring124, bill confirmation118 and subscription17(+51 focused .NET) passed. Providers are synthetic and data isolated. Container PDF/OCR/cgroup/HTTP/secret-boundary/disposable encrypted database/file restore passed. Native and browser builds were conditionally skipped for this backend-only change; no fresh physical/provider/private-document/recovery/legal acceptance inferred.
+
+#996 sourceb04cabce / integrated7b780855 previously verified the shared legal footer and six handoff updates:16 EN/ES normal/enlarged legal-navigation states,2,945 .NET/229 Node and full browser/security/disposable recovery. Its21-case report independently repeated the slow390px shift0 after #995; field performance/SLA acceptance remains distinct. The earlier verified headers below retain those exact source/artifact limits.
+
+**Remaining:** audit other authorized journeys against real evidence. Real owner/provider/Wells Fargo/payroll/private expected-bill/statement accuracy, destination receipt, physical installed devices, same-release real recovery/two-owner/security and qualified legal gates remain open on existing issues. Prior authorized read-only clean-runner recovery is actual partial evidence, not wholly absent or current-release acceptance. MAUI retirement/support, Financial Home expansion and branch cleanup activation stay deferred for their recorded prerequisites. All three theme pairs remain selected; creator features default-off/terms proposed.
+
+Master/last separately recorded deployment remains9540b2616841e9794d8f8c07616edcd1e339982c. No deployment/promotion, spending/paid activation, new credentials/grants/secrets/settings, merchant contact, private export, branch deletion, other-thread messages or hourly automation. Goal is active; these verified slices do not complete all milestones. This follow-up only records existing evidence; its own protected PR must pass before integration. Earlier dated material below is preserved history; fresh Git refs govern.
+
+---
+

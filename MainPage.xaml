@@ -197,7 +197,7 @@
                             <VerticalStackLayout Spacing="6">
 
                                 <Label
-                                    Text="MONTHLY BILLS"
+                                    Text="KNOWN AMOUNTS"
                                     FontSize="11"
                                     FontAttributes="Bold"
                                     Style="{StaticResource SecondaryTextStyle}" />
@@ -364,11 +364,11 @@
                                 <VerticalStackLayout Spacing="3">
 
                                     <Label
-                                        Text="Monthly bills"
+                                        Text="Known bill amounts"
                                         Style="{StaticResource SectionTitleStyle}" />
 
                                     <Label
-                                        Text="Recurring expenses FullWorth is currently monitoring."
+                                        Text="Latest known bill amounts. Yearly estimates need reliable monthly history."
                                         Style="{StaticResource SmallTextStyle}" />
 
                                 </VerticalStackLayout>

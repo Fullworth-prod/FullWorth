@@ -7,10 +7,21 @@ namespace FullWorth.ViewModels
     // no browser, device storage or OS application is opened by these tests.
     public sealed class Command(Action execute, Func<bool> canExecute) : ICommand
     {
+        public Command(Action execute) : this(execute, () => true) { }
         public event EventHandler? CanExecuteChanged;
         public bool CanExecute(object? parameter) => canExecute();
         public void Execute(object? parameter) => execute();
         public void ChangeCanExecute() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    // Test compilation only; financial dashboard tests never navigate an OS shell.
+    public static class Shell
+    {
+        public static TestShell Current { get; } = new();
+        public sealed class TestShell
+        {
+            public Task GoToAsync(string route) => Task.CompletedTask;
+        }
     }
 
     public static class Launcher

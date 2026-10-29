@@ -291,9 +291,10 @@ public sealed class AdminBffWriteProxySessionSecurityTests
     [Theory]
     [InlineData("application/json")]
     [InlineData("Application/JSON")]
-    public async Task Export_ValidObjectPreservesExactBytesAndFilename(string mediaType)
+    public async Task Export_CurrentApiEnvelopePreservesExactBytesAndFilename(string mediaType)
     {
-        const string payload = " { \"synthetic\": { \"original\": \"café\", \"amount\": 1.25 }, \"items\": [null, true] }\n";
+        var payload = " \n" + CreateExportPayload().TrimEnd('}') +
+            ",\"additionalMetadata\":{\"note\":\"café\"}}\n";
         var handler = new StaticResponseHandler(HttpStatusCode.OK, payload, mediaType);
         var result = await CreateProxy(HttpStatusCode.OK, handler).ForwardJsonDownloadAsync(
             CreateHttpContext(new RecordingAuthenticationService()), HttpMethod.Post, "/api/account/export",
@@ -316,6 +317,131 @@ public sealed class AdminBffWriteProxySessionSecurityTests
         Assert.Equal(StatusCodes.Status502BadGateway,
             Assert.IsAssignableFrom<IStatusCodeHttpResult>(result).StatusCode);
         Assert.Equal(1, handler.RequestCount);
+    }
+
+
+    public static IEnumerable<object[]> InvalidExportEnvelopes()
+    {
+        yield return ["empty-object", "{}"];
+        yield return ["error-object", "{\"message\":\"PRIVATE-EXPORT-CANARY\"}"];
+        yield return ["schema-only", "{\"schemaVersion\":\"1.1\"}"];
+        var valid = CreateExportPayload();
+        var root = System.Text.Json.Nodes.JsonNode.Parse(valid)!.AsObject();
+        foreach (var name in root.Select(property => property.Key).ToArray())
+        {
+            var missing = System.Text.Json.Nodes.JsonNode.Parse(valid)!.AsObject();
+            missing.Remove(name);
+            yield return ["missing-" + name, missing.ToJsonString()];
+            var wrong = System.Text.Json.Nodes.JsonNode.Parse(valid)!.AsObject();
+            wrong[name] = System.Text.Json.Nodes.JsonValue.Create(42);
+            yield return ["wrong-type-" + name, wrong.ToJsonString()];
+            yield return ["duplicate-" + name, valid.TrimEnd('}') +
+                "," + System.Text.Json.JsonSerializer.Serialize(name) + ":" + root[name]!.ToJsonString() + "}"];
+        }
+        foreach (var version in new[] { "", "1.0", "1.2", "1.1 ", "login required" })
+        {
+            var changed = System.Text.Json.Nodes.JsonNode.Parse(valid)!.AsObject();
+            changed["schemaVersion"] = version;
+            yield return ["unsupported-schema-" + version, changed.ToJsonString()];
+        }
+        foreach (var field in root["profile"]!.AsObject().Select(property => property.Key).ToArray())
+        {
+            var missing = System.Text.Json.Nodes.JsonNode.Parse(valid)!.AsObject();
+            missing["profile"]!.AsObject().Remove(field);
+            yield return ["missing-profile-" + field, missing.ToJsonString()];
+            var wrong = System.Text.Json.Nodes.JsonNode.Parse(valid)!.AsObject();
+            wrong["profile"]![field] = 42;
+            yield return ["wrong-profile-" + field, wrong.ToJsonString()];
+            yield return ["duplicate-profile-" + field,
+                valid.Replace("\"profile\":{", "\"profile\":{" +
+                    System.Text.Json.JsonSerializer.Serialize(field) + ":" +
+                    (root["profile"]![field]?.ToJsonString() ?? "null") + ",", StringComparison.Ordinal)];
+        }
+        foreach (var field in new[] { "exportedAtUtc", "profile.createdAtUtc", "profile.lastLoginAtUtc" })
+        {
+            var changed = System.Text.Json.Nodes.JsonNode.Parse(valid)!.AsObject();
+            if (field.StartsWith("profile.", StringComparison.Ordinal))
+                changed["profile"]![field[8..]] = "not-a-timestamp";
+            else changed[field] = "not-a-timestamp";
+            yield return ["invalid-date-" + field, changed.ToJsonString()];
+        }
+        foreach (var field in root.Where(property => property.Value is System.Text.Json.Nodes.JsonArray)
+            .Select(property => property.Key))
+        {
+            foreach (var entry in new[] { "null", "true", "1", "\"record\"", "[]" })
+            {
+                var changed = System.Text.Json.Nodes.JsonNode.Parse(valid)!.AsObject();
+                changed[field] = System.Text.Json.Nodes.JsonNode.Parse("[" + entry + "]");
+                yield return ["invalid-record-" + field + "-" + entry, changed.ToJsonString()];
+            }
+        }
+        // Escaped names must be interpreted before duplicate/required-field checks.
+        yield return ["escaped-duplicate", valid.TrimEnd('}') + ",\"schema\\u0056ersion\":\"1.1\"}"];
+        yield return ["truncated-root", valid[..^1]];
+        yield return ["trailing-second-object", valid + "{}"];
+        yield return ["trailing-value", valid + "true"];
+    }
+
+    [Theory]
+    [MemberData(nameof(InvalidExportEnvelopes))]
+    public async Task Export_RejectsIncompleteOrContradictoryEnvelopeWithoutDownload(string scenario, string payload)
+    {
+        Assert.False(string.IsNullOrEmpty(scenario));
+        var authentication = new RecordingAuthenticationService();
+        var handler = new StaticResponseHandler(HttpStatusCode.OK, payload);
+        var result = await CreateProxy(HttpStatusCode.OK, handler).ForwardJsonDownloadAsync(
+            CreateHttpContext(authentication), HttpMethod.Post, "/api/account/export", new { synthetic = true },
+            "synthetic-export.json", "application/json");
+        Assert.Equal(StatusCodes.Status502BadGateway,
+            Assert.IsAssignableFrom<IStatusCodeHttpResult>(result).StatusCode);
+        Assert.IsNotType<Microsoft.AspNetCore.Http.HttpResults.FileContentHttpResult>(result);
+        Assert.Equal(1, handler.RequestCount);
+        Assert.Equal(0, authentication.SignOutCount);
+        Assert.DoesNotContain("PRIVATE-EXPORT-CANARY",
+            System.Text.Json.JsonSerializer.Serialize(Assert.IsAssignableFrom<IValueHttpResult>(result).Value));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Export_PreservesNullableProfileAndRecordCollections(bool lastLoginPresent)
+    {
+        var root = System.Text.Json.Nodes.JsonNode.Parse(CreateExportPayload())!.AsObject();
+        root["profile"]!["lastLoginAtUtc"] = lastLoginPresent ? "2026-10-29T01:00:00+00:00" : null;
+        root["profile"]!["displayName"] = "";
+        root["profile"]!["isActive"] = false;
+        root["bankConnections"] = System.Text.Json.JsonSerializer.SerializeToNode(new[]
+        {
+            new FullWorth.API.Services.Accounts.BankConnectionExport(
+                Guid.Parse("11111111-1111-1111-1111-111111111111"), "Synthetic bank", "Connected",
+                null, DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch)
+        }, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
+        root["profile"]!["additionalMetadata"] = System.Text.Json.Nodes.JsonNode.Parse("{\"nested\":[1,null]}");
+        var payload = root.ToJsonString();
+        var handler = new StaticResponseHandler(HttpStatusCode.OK, payload);
+        var result = await CreateProxy(HttpStatusCode.OK, handler).ForwardJsonDownloadAsync(
+            CreateHttpContext(new RecordingAuthenticationService()), HttpMethod.Post, "/api/account/export",
+            new { synthetic = true }, "synthetic-export.json", "application/json");
+        var file = Assert.IsType<Microsoft.AspNetCore.Http.HttpResults.FileContentHttpResult>(result);
+        Assert.Equal(System.Text.Encoding.UTF8.GetBytes(payload), file.FileContents.ToArray());
+        Assert.Equal(1, handler.RequestCount);
+    }
+
+    private static string CreateExportPayload()
+    {
+        // Serialize actual current API DTO with MVC's default web naming policy.
+        // A coordinated API schema change must update the BFF contract explicitly.
+        var timestamp = new DateTimeOffset(2026, 10, 29, 1, 0, 0, TimeSpan.Zero);
+        var export = new FullWorth.API.Services.Accounts.AccountDataExportResult(
+            SchemaVersion: FullWorth.API.Services.Accounts.AccountDataExportBuilder.CurrentSchemaVersion,
+            ExportedAtUtc: timestamp,
+            Profile: new FullWorth.API.Services.Accounts.AccountProfileExport(
+                "Synthetic café", "synthetic@fullworth.local", timestamp, null, true),
+            BankConnections: [], BankAccounts: [], BankTransactions: [], BillStreams: [],
+            BillStatements: [], BillLineItems: [], BillChanges: [], BillAlerts: [],
+            StatementUploads: [], AiEvaluations: [], PlaidLinkSessions: []);
+        return System.Text.Json.JsonSerializer.Serialize(export,
+            new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
     }
 
     private static DefaultHttpContext

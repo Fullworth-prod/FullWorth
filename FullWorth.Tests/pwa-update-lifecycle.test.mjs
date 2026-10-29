@@ -36,7 +36,10 @@ async function harness({ waiting = true, workerThrows = false, unsupported = fal
     const worker = { postMessage(message) {
         messages.push(message.type);
         if (workerThrows) throw new Error("synthetic redundant worker");
-        if (synchronousChange) void serviceWorker.dispatch("controllerchange");
+        if (synchronousChange) {
+            serviceWorker.controller = worker;
+            void serviceWorker.dispatch("controllerchange");
+        }
     }};
     registration.waiting = waiting ? worker : null;
     registration.update = async () => { updates++; };
@@ -63,6 +66,7 @@ async function harness({ waiting = true, workerThrows = false, unsupported = fal
     return {
         api: window.FullWorthPwa, registration, serviceWorker, worker, timers, callbacks, messages,
         reloads: () => reloads, updates: () => updates,
+        activate(target = worker) { serviceWorker.controller = target; return serviceWorker.dispatch("controllerchange"); },
         expire() {
             for (const [id, callback] of [...timers]) {
                 timers.delete(id); callback();
@@ -79,11 +83,11 @@ test("explicit update reloads once and releases the listener/timer", async () =>
     const h = await harness();
     const pending = h.api.applyUpdate();
     assert.deepEqual(h.messages, ["SKIP_WAITING"]);
-    await h.serviceWorker.dispatch("controllerchange");
+    await h.activate();
     assert.equal(await pending, "reloaded");
     assert.equal(h.reloads(), 1);
     clean(h);
-    await h.serviceWorker.dispatch("controllerchange");
+    await h.activate();
     h.callbacks[0]();
     assert.equal(h.reloads(), 1);
 });
@@ -92,7 +96,7 @@ test("timeout cannot turn a later controller change into an unexpected reload", 
     const pending = h.api.applyUpdate();
     h.expire();
     assert.equal(await pending, "timeout");
-    await h.serviceWorker.dispatch("controllerchange");
+    await h.activate();
     assert.equal(h.reloads(), 0);
     clean(h);
     assert.deepEqual(h.messages, ["SKIP_WAITING"]);
@@ -103,7 +107,7 @@ test("an explicit retry after timeout owns exactly one reload", async () => {
     h.expire();
     assert.equal(await first, "timeout");
     const second = h.api.applyUpdate();
-    await h.serviceWorker.dispatch("controllerchange");
+    await h.activate();
     assert.equal(await second, "reloaded");
     assert.equal(h.reloads(), 1);
     assert.deepEqual(h.messages, ["SKIP_WAITING", "SKIP_WAITING"]);
@@ -113,7 +117,7 @@ test("a redundant worker message failure leaves no future reload or automatic re
     const h = await harness({ workerThrows: true });
     assert.equal(await h.api.applyUpdate(), "unavailable");
     clean(h);
-    await h.serviceWorker.dispatch("controllerchange");
+    await h.activate();
     assert.equal(h.reloads(), 0);
     assert.deepEqual(h.messages, ["SKIP_WAITING"]);
 });
@@ -136,7 +140,7 @@ test("a worker discovered by the explicit update can complete normally", async (
     h.registration.update = async () => { h.registration.waiting = h.worker; };
     const pending = h.api.applyUpdate();
     await new Promise(resolve => setImmediate(resolve));
-    await h.serviceWorker.dispatch("controllerchange");
+    await h.activate();
     assert.equal(await pending, "reloaded");
     assert.equal(h.reloads(), 1);
     clean(h);
@@ -146,7 +150,7 @@ test("a failed browser update check does not install a future reload listener", 
     h.registration.update = async () => { throw new Error("synthetic update rejection"); };
     await assert.rejects(h.api.applyUpdate(), /synthetic update rejection/);
     clean(h);
-    await h.serviceWorker.dispatch("controllerchange");
+    await h.activate();
     assert.equal(h.reloads(), 0);
 });
 test("repeated explicit timeouts do not accumulate reloads or live resources", async () => {
@@ -157,7 +161,7 @@ test("repeated explicit timeouts do not accumulate reloads or live resources", a
         assert.equal(await pending, "timeout");
         clean(h);
     }
-    await h.serviceWorker.dispatch("controllerchange");
+    await h.activate();
     assert.equal(h.reloads(), 0);
     assert.equal(h.messages.length, 8);
 });
@@ -170,3 +174,70 @@ for (const options of [{ unsupported: true }, { registerThrows: true }]) {
         clean(h);
     });
 }
+
+test("explicit retry reloads the exact requested worker if it activated after timeout", async () => {
+    const h = await harness();
+    const first = h.api.applyUpdate();
+    h.expire();
+    assert.equal(await first, "timeout");
+    h.registration.waiting = null;
+    h.serviceWorker.controller = h.worker;
+    await h.serviceWorker.dispatch("controllerchange");
+    assert.equal(h.reloads(), 0, "Late activation must not reload without a fresh user action.");
+    assert.equal(await h.api.applyUpdate(), "reloaded");
+    assert.equal(h.reloads(), 1);
+    assert.deepEqual(h.messages, ["SKIP_WAITING"], "An active worker must not receive an automatic replay.");
+    clean(h);
+});
+test("same script URL is not proof that the requested worker became controller", async () => {
+    const h = await harness();
+    h.worker.scriptURL = "/service-worker.js";
+    const first = h.api.applyUpdate();
+    h.expire();
+    assert.equal(await first, "timeout");
+    h.registration.waiting = null;
+    h.serviceWorker.controller = { scriptURL: "/service-worker.js" };
+    await h.serviceWorker.dispatch("controllerchange");
+    assert.equal(await h.api.applyUpdate(), "unavailable");
+    assert.equal(h.reloads(), 0);
+    assert.deepEqual(h.messages, ["SKIP_WAITING"]);
+    clean(h);
+});
+test("a failed worker message does not authorize a later active-worker retry shortcut", async () => {
+    const h = await harness({ workerThrows: true });
+    assert.equal(await h.api.applyUpdate(), "unavailable");
+    h.registration.waiting = null;
+    h.serviceWorker.controller = h.worker;
+    assert.equal(await h.api.applyUpdate(), "unavailable");
+    assert.equal(h.reloads(), 0);
+    clean(h);
+});
+test("a newer waiting worker takes priority over reloading a previously requested controller", async () => {
+    const h = await harness();
+    const first = h.api.applyUpdate();
+    h.expire();
+    assert.equal(await first, "timeout");
+    h.serviceWorker.controller = h.worker;
+    const next = { postMessage(message) { h.messages.push("new:" + message.type); } };
+    h.registration.waiting = next;
+    const pending = h.api.applyUpdate();
+    assert.equal(h.reloads(), 0);
+    assert.deepEqual(h.messages, ["SKIP_WAITING", "new:SKIP_WAITING"]);
+    h.serviceWorker.controller = next;
+    await h.serviceWorker.dispatch("controllerchange");
+    assert.equal(await pending, "reloaded");
+    assert.equal(h.reloads(), 1);
+    clean(h);
+});
+
+test("an unrelated controller change cannot confirm the requested waiting worker", async () => {
+    const h = await harness();
+    const pending = h.api.applyUpdate();
+    await h.activate({ scriptURL: "/service-worker.js" });
+    assert.equal(h.reloads(), 0, "A different worker must not be reported as the requested update.");
+    assert.equal(h.serviceWorker.count("controllerchange"), 1);
+    await h.activate(h.worker);
+    assert.equal(await pending, "reloaded");
+    assert.equal(h.reloads(), 1);
+    clean(h);
+});

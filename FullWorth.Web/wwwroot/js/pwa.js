@@ -3,6 +3,7 @@
     let serviceWorkerRegistration = null;
     let updateCallback = null;
     let updateAvailable = false;
+    let timedOutUpdateWorker = null;
 
     function announceUpdate() {
         if (updateAvailable) {
@@ -106,6 +107,15 @@
                 return "unavailable";
             }
 
+            // A timed-out request may have activated since its listener expired.
+            // Only a fresh explicit action may reload, and only for that exact worker.
+            if (!registration.waiting && timedOutUpdateWorker &&
+                navigator.serviceWorker.controller === timedOutUpdateWorker) {
+                timedOutUpdateWorker = null;
+                window.location.reload();
+                return "reloaded";
+            }
+
             if (!registration.waiting) {
                 await registration.update();
             }
@@ -121,13 +131,18 @@
                 let settled = false;
                 let timeout = null;
 
-                const onControllerChange = () => finish("reloaded");
+                const onControllerChange = () => {
+                    if (navigator.serviceWorker.controller === waitingWorker) {
+                        finish("reloaded");
+                    }
+                };
                 const finish = result => {
                     if (settled) {
                         return;
                     }
 
                     settled = true;
+                    timedOutUpdateWorker = result === "timeout" ? waitingWorker : null;
                     navigator.serviceWorker.removeEventListener(
                         "controllerchange", onControllerChange);
                     if (timeout !== null) {
@@ -143,7 +158,7 @@
                 };
 
                 navigator.serviceWorker.addEventListener(
-                    "controllerchange", onControllerChange, { once: true });
+                    "controllerchange", onControllerChange);
                 timeout = window.setTimeout(
                     () => finish("timeout"), 10000);
 

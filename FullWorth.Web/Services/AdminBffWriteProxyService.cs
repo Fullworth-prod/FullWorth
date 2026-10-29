@@ -203,18 +203,116 @@ public sealed class AdminBffWriteProxyService(
 
     private static bool IsJsonObjectExport(byte[] bytes)
     {
-        // Validate the existing byte buffer without building another private-data
-        // object graph. Keep exact original bytes for the downloaded export.
+        // Validate the current API envelope in the existing byte buffer. Do not
+        // deserialize another private-data graph or rewrite the downloaded bytes.
         try
         {
             var reader = new System.Text.Json.Utf8JsonReader(bytes);
-            return reader.Read() && reader.TokenType == System.Text.Json.JsonTokenType.StartObject &&
-                reader.TrySkip() && !reader.Read();
+            if (!reader.Read() || reader.TokenType != System.Text.Json.JsonTokenType.StartObject)
+                return false;
+
+            var seen = 0;
+            while (reader.Read() && reader.TokenType != System.Text.Json.JsonTokenType.EndObject)
+            {
+                if (reader.TokenType != System.Text.Json.JsonTokenType.PropertyName) return false;
+                var field = reader.GetString() switch
+                {
+                    "schemaVersion" => 1,
+                    "exportedAtUtc" => 2,
+                    "profile" => 4,
+                    "bankConnections" => 8,
+                    "bankAccounts" => 16,
+                    "bankTransactions" => 32,
+                    "billStreams" => 64,
+                    "billStatements" => 128,
+                    "billLineItems" => 256,
+                    "billChanges" => 512,
+                    "billAlerts" => 1024,
+                    "statementUploads" => 2048,
+                    "aiEvaluations" => 4096,
+                    "plaidLinkSessions" => 8192,
+                    "subscriptionReviews" => 16384,
+                    "subscriptionEvidence" => 32768,
+                    _ => 0
+                };
+                if (!reader.Read()) return false;
+                if (field == 0)
+                {
+                    // Permit additive API metadata, but never let it substitute
+                    // for a required field or bypass JSON/depth validation.
+                    if (!reader.TrySkip()) return false;
+                    continue;
+                }
+                if ((seen & field) != 0) return false;
+                seen |= field;
+                var valid = field switch
+                {
+                    1 => reader.TokenType == System.Text.Json.JsonTokenType.String &&
+                        reader.ValueTextEquals("1.1"),
+                    2 => IsExportTimestamp(ref reader),
+                    4 => IsExportProfile(ref reader),
+                    _ => IsExportCollection(ref reader)
+                };
+                if (!valid) return false;
+            }
+            return reader.TokenType == System.Text.Json.JsonTokenType.EndObject &&
+                seen == 65535 && !reader.Read();
         }
         catch (System.Text.Json.JsonException)
         {
             return false;
         }
+    }
+
+    private static bool IsExportTimestamp(ref System.Text.Json.Utf8JsonReader reader) =>
+        reader.TokenType == System.Text.Json.JsonTokenType.String &&
+        reader.TryGetDateTimeOffset(out _);
+
+    private static bool IsExportProfile(ref System.Text.Json.Utf8JsonReader reader)
+    {
+        if (reader.TokenType != System.Text.Json.JsonTokenType.StartObject) return false;
+        var seen = 0;
+        while (reader.Read() && reader.TokenType != System.Text.Json.JsonTokenType.EndObject)
+        {
+            if (reader.TokenType != System.Text.Json.JsonTokenType.PropertyName) return false;
+            var field = reader.GetString() switch
+            {
+                "displayName" => 1, "email" => 2, "createdAtUtc" => 4,
+                "lastLoginAtUtc" => 8, "isActive" => 16, _ => 0
+            };
+            if (!reader.Read()) return false;
+            if (field == 0)
+            {
+                if (!reader.TrySkip()) return false;
+                continue;
+            }
+            if ((seen & field) != 0) return false;
+            seen |= field;
+            var valid = field switch
+            {
+                1 or 2 => reader.TokenType == System.Text.Json.JsonTokenType.String,
+                4 => IsExportTimestamp(ref reader),
+                8 => reader.TokenType == System.Text.Json.JsonTokenType.Null ||
+                    IsExportTimestamp(ref reader),
+                _ => reader.TokenType is System.Text.Json.JsonTokenType.True or
+                    System.Text.Json.JsonTokenType.False
+            };
+            if (!valid) return false;
+        }
+        return reader.TokenType == System.Text.Json.JsonTokenType.EndObject && seen == 31;
+    }
+
+    private static bool IsExportCollection(ref System.Text.Json.Utf8JsonReader reader)
+    {
+        if (reader.TokenType != System.Text.Json.JsonTokenType.StartArray) return false;
+        while (reader.Read() && reader.TokenType != System.Text.Json.JsonTokenType.EndArray)
+        {
+            // Every current collection contains records; empty collections are
+            // legitimate. Record-level semantics/owner scoping remain API duties.
+            if (reader.TokenType != System.Text.Json.JsonTokenType.StartObject ||
+                !reader.TrySkip()) return false;
+        }
+        return reader.TokenType == System.Text.Json.JsonTokenType.EndArray;
     }
 
     public Task<IResult> ForwardJsonAndSignOutOnSuccessAsync<T>(

@@ -121,8 +121,42 @@ public sealed class BillStatementHistoryReadGateway(
                 .ToListAsync(
                     cancellationToken);
 
-        return new BillStatementHistorySnapshot(
-            linkedStatements,
-            changes);
+        var ownedPeriods = linkedStatements.ToDictionary(statement => statement.Id);
+        var qualifiedChanges = changes.Select(change => change with
+        {
+            HasAnnualizedImpactEvidence = CanAnnualize(change, ownedPeriods)
+        }).ToList();
+        return new BillStatementHistorySnapshot(linkedStatements, qualifiedChanges);
+    }
+
+    private static bool CanAnnualize(
+        BillChangeHistoryReadRecord change,
+        IReadOnlyDictionary<Guid, BillStatementHistoryReadRecord> statements)
+    {
+        if (change.PreviousStatementId is not { } previousId ||
+            previousId == Guid.Empty || change.CurrentStatementId == Guid.Empty ||
+            previousId == change.CurrentStatementId ||
+            !statements.TryGetValue(previousId, out var previous) ||
+            !statements.TryGetValue(change.CurrentStatementId, out var current) ||
+            !FullWorth.Core.Formatting.FinancialAmountFormatter.TryNormalizeCurrency(
+                previous.CurrencyCode, out var previousCurrency) ||
+            !FullWorth.Core.Formatting.FinancialAmountFormatter.TryNormalizeCurrency(
+                current.CurrencyCode, out var currentCurrency) ||
+            previousCurrency != currentCurrency ||
+            !FullWorth.Core.Services.MonthlyStatementPeriodPolicy.CanCompare(
+                previous.PeriodStart, previous.PeriodEnd, current.PeriodStart, current.PeriodEnd))
+            return false;
+
+        try
+        {
+            return change.AmountDifference == decimal.Round(
+                change.CurrentAmount - change.PreviousAmount, 2, MidpointRounding.AwayFromZero) &&
+                change.AnnualizedImpact == decimal.Round(
+                    change.AmountDifference * 12m, 2, MidpointRounding.AwayFromZero);
+        }
+        catch (OverflowException)
+        {
+            return false;
+        }
     }
 }

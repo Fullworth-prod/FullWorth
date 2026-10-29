@@ -311,14 +311,25 @@ public partial class BillDetailPage : ContentPage
         }
     }
 
-    public BillChangeResult?
-        LatestChange =>
-            _detail?
-                .Changes
-                .OrderByDescending(
-                    change =>
-                        change.DetectedAtUtc)
+    public BillChangeResult? LatestChange
+    {
+        get
+        {
+            if (_detail is null) return null;
+            var periods = _detail.Statements
+                .Where(statement => statement.Id != Guid.Empty && statement.PeriodStart <= statement.PeriodEnd)
+                .GroupBy(statement => statement.Id)
+                .Where(group => group.Count() == 1)
+                .ToDictionary(group => group.Key, group => group.Single());
+            return _detail.Changes
+                .Where(change => periods.ContainsKey(change.CurrentStatementId))
+                .OrderByDescending(change => periods[change.CurrentStatementId].PeriodEnd)
+                .ThenByDescending(change => periods[change.CurrentStatementId].PeriodStart)
+                .ThenByDescending(change => change.DetectedAtUtc)
+                .ThenBy(change => change.Id)
                 .FirstOrDefault();
+        }
+    }
 
     public bool HasDetectedChange =>
         LatestChange is not
@@ -428,6 +439,10 @@ public partial class BillDetailPage : ContentPage
                 return
                     string.Empty;
             }
+
+            if (!change.HasAnnualizedImpactEvidence ||
+                !FinancialAmountFormatter.TryNormalizeCurrency(change.CurrencyCode, out _))
+                return "Yearly estimate unavailable";
 
             var impact =
                 change.AnnualizedImpact;

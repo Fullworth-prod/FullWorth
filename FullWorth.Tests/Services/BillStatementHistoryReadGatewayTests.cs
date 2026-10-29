@@ -301,6 +301,80 @@ public sealed class BillStatementHistoryReadGatewayTests
         Assert.Empty((await gateway.GetAsync(foreign, bill)).Statements);
     }
 
+
+    [Theory]
+    [InlineData("monthly", true)]
+    [InlineData("zero", true)]
+    [InlineData("discount", true)]
+    [InlineData("lowercase", true)]
+    [InlineData("quarterly", false)]
+    [InlineData("gap", false)]
+    [InlineData("overlap", false)]
+    [InlineData("cross-currency", false)]
+    [InlineData("invalid-unit", false)]
+    [InlineData("missing-previous", false)]
+    [InlineData("same-statement", false)]
+    [InlineData("foreign-previous", false)]
+    [InlineData("foreign-current", false)]
+    [InlineData("other-bill", false)]
+    [InlineData("difference-mismatch", false)]
+    [InlineData("annual-mismatch", false)]
+    [InlineData("overflow", false)]
+    public async Task AnnualEvidence_RequiresOwnedComparableHistoryWithoutRewritingIt(
+        string mode, bool expected)
+    {
+        await using var db = CreateDbContext();
+        var owner = Guid.NewGuid();
+        var bill = Guid.NewGuid();
+        var previous = CreateStatement(owner, bill, new(2026, 1, 1), new(2026, 1, 31), 100m);
+        var current = CreateStatement(owner, bill, new(2026, 2, 1), new(2026, 2, 28), 120m);
+        if (mode == "quarterly")
+        {
+            previous.PeriodEnd = new(2026, 3, 31);
+            current.PeriodStart = new(2026, 4, 1);
+            current.PeriodEnd = new(2026, 6, 30);
+        }
+        if (mode == "gap") { current.PeriodStart = new(2026, 3, 1); current.PeriodEnd = new(2026, 3, 31); }
+        if (mode == "overlap") current.PeriodStart = new(2026, 1, 31);
+        if (mode == "cross-currency") previous.CurrencyCode = "CAD";
+        if (mode == "invalid-unit") current.CurrencyCode = "uſd";
+        if (mode == "lowercase") { previous.CurrencyCode = "usd"; current.CurrencyCode = " USD "; }
+        if (mode == "foreign-previous") previous.UserId = Guid.NewGuid();
+        if (mode == "foreign-current") current.UserId = Guid.NewGuid();
+        if (mode == "other-bill") previous.BillStreamId = Guid.NewGuid();
+        var change = CreateChange(owner, bill, previous.Id, current.Id,
+            BillChangeType.TotalIncrease, DateTimeOffset.UtcNow);
+        change.PreviousAmount = 100m;
+        change.CurrentAmount = 120m;
+        change.AmountDifference = 20m;
+        change.AnnualizedImpact = 240m;
+        if (mode == "missing-previous") change.PreviousStatementId = null;
+        if (mode == "same-statement") change.PreviousStatementId = current.Id;
+        if (mode == "zero") { change.CurrentAmount = 100m; change.AmountDifference = 0m; change.AnnualizedImpact = 0m; }
+        if (mode == "discount") { change.PreviousAmount = -5m; change.CurrentAmount = -10m; change.AmountDifference = -5m; change.AnnualizedImpact = -60m; }
+        if (mode == "difference-mismatch") change.AmountDifference = 19m;
+        if (mode == "annual-mismatch") change.AnnualizedImpact = 241m;
+        if (mode == "overflow") { change.PreviousAmount = 0m; change.CurrentAmount = decimal.MaxValue; change.AmountDifference = decimal.MaxValue; }
+        db.BillStatements.AddRange(previous, current);
+        db.BillChanges.Add(change);
+        await db.SaveChangesAsync();
+        var rawAnnual = change.AnnualizedImpact;
+        var rawDifference = change.AmountDifference;
+        var rawCurrency = current.CurrencyCode;
+        var gateway = new BillStatementHistoryReadGateway(db);
+        var snapshot = await gateway.GetAsync(owner, bill);
+        var result = Assert.Single(snapshot.Changes);
+        Assert.Equal(expected, result.HasAnnualizedImpactEvidence);
+        Assert.Equal(rawAnnual, result.AnnualizedImpact);
+        Assert.Equal(rawDifference, result.AmountDifference);
+        Assert.Equal(rawCurrency, current.CurrencyCode);
+        Assert.Equal(rawAnnual, (await db.BillChanges.AsNoTracking().SingleAsync()).AnnualizedImpact);
+        Assert.Equal(rawCurrency, (await db.BillStatements.AsNoTracking().SingleAsync(x => x.Id == current.Id)).CurrencyCode);
+        Assert.Empty((await gateway.GetAsync(Guid.NewGuid(), bill)).Changes);
+        db.ChangeTracker.DetectChanges();
+        Assert.False(db.ChangeTracker.HasChanges());
+    }
+
     private static FullWorthDbContext
         CreateDbContext()
     {

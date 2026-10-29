@@ -131,6 +131,12 @@ public sealed class FullWorthApiClient
                 cancellationToken);
 
         response.EnsureSuccessStatusCode();
+        if (response.StatusCode != System.Net.HttpStatusCode.OK ||
+            !string.Equals(response.Content.Headers.ContentType?.MediaType,
+                "application/json", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidDataException("The bill response was not a confirmed JSON snapshot.");
+        }
 
         var billStreams =
             await response.Content
@@ -138,7 +144,16 @@ public sealed class FullWorthApiClient
                     cancellationToken:
                         cancellationToken);
 
-        return billStreams ?? [];
+        // Null/malformed identities are not an empty monitored account, and
+        // duplicate identities must not double the displayed financial totals.
+        if (billStreams is null || billStreams.Any(stream =>
+                stream is null || stream.Id == Guid.Empty ||
+                string.IsNullOrWhiteSpace(stream.ProviderName)) ||
+            billStreams.Select(stream => stream.Id).Distinct().Count() != billStreams.Count)
+        {
+            throw new InvalidDataException("The bill response contained invalid records.");
+        }
+        return billStreams;
     }
 
     public async Task<BillStreamDetailResult>

@@ -1,3 +1,11 @@
+## Verified development integration — 2026-10-29 UTC
+
+#1010 merged as9b2780fa5043bb5c0995268fd8d2e1d1d640a55b after allfour required source4efe8eebe5aebe5ce8d32ffd664d5e3b764ab6ed checks passed; tested33f3f4fc2dbb661c1f3d2869a60c67f172aaeeaf and integrated treed92fabdf5c26120a5bf7160d3446c5a2a7c0b1eb match. Main40816899055 passed3,507 .NET/668 Node, zero failed/skipped/backend/offline warnings/errors. Full rendered/virtual passkey/HTTP/parser/disposable restoreb4d574a1e9016131c35ec47388d95ec69a76d690c393a174bdba1cadcd112c5c passed; Android steps conditional. Separate installed-Chromium loopback with two real workers confirmed late activation does not reload, explicit retry reloads once into the target, and only one activation message is sent. The helper timeout was shortened in that local probe; it is not pinned/physical-device acceptance. Branch retained, no deployment/master promotion.
+
+Pending statements below are the historical preparation record; physical installed-device gates stay open. [Full ledger](MILESTONE-CLEANUP-AUDIT-20261027.md).
+
+---
+
 # Explicit PWA recovery for the requested worker — 2026-10-29 UTC
 
 ## Reproduction against verified development

@@ -1,3 +1,11 @@
+## Verified development integration — 2026-10-29 UTC
+
+Merged as 7eb783bec319142ff7c5874249e83adbcb9d9e7a. All17 final-head checks passed on source 08adf89f387eef65c049765fce7b85700e3e8514; tested candidate abdc2307f776b4b8672c2920f8d32320027083cf and integrated tree 953f297b19e2e8502d086dc52499bcfd613bac40 match. Actual main CI40820676492 passed 3,538 .NET/748 Node, zero failed/skipped and zero backend/offline/actual Android warnings/errors. Applicable PostgreSQL bank, consumed-token/durable Hosted Link, monitoring, confirmation and subscription checks passed, as did Android APK/emulator and iOS simulator/unsigned device packaging. Full container HTTP/parser/secret/cgroup/disposable restore verification passed (89330973bf507a566dcb734287563e5a39d6a837dcc7834f7f49597ad3b9e835); rendered browser steps were conditional for this Core/API scope. Source branch remains present. Packaging/emulation is not physical-device acceptance, and disposable recovery is not real private recovery acceptance. No deployment or master promotion.
+
+The pending language in the preparation record below is historical.
+
+---
+
 # Raw currency validation at display and due-alert boundaries — 2026-10-29 UTC
 
 ## Demonstrated defect

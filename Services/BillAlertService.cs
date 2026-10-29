@@ -52,6 +52,12 @@ public sealed class BillAlertService
                 cancellationToken);
 
         response.EnsureSuccessStatusCode();
+        if (response.StatusCode != System.Net.HttpStatusCode.OK ||
+            !string.Equals(response.Content.Headers.ContentType?.MediaType,
+                "application/json", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidDataException("The alert response was not a confirmed JSON snapshot.");
+        }
 
         var alerts =
             await response.Content
@@ -59,7 +65,16 @@ public sealed class BillAlertService
                     cancellationToken:
                         cancellationToken);
 
-        return alerts ?? [];
+        if (alerts is null || alerts.Any(alert => alert is null ||
+                alert.Id == Guid.Empty || string.IsNullOrWhiteSpace(alert.AlertType) ||
+                string.IsNullOrWhiteSpace(alert.Severity) || string.IsNullOrWhiteSpace(alert.Title) ||
+                string.IsNullOrWhiteSpace(alert.Message) || alert.CreatedAtUtc == default ||
+                alert.UpdatedAtUtc == default) ||
+            alerts.Select(alert => alert.Id).Distinct().Count() != alerts.Count)
+        {
+            throw new InvalidDataException("The alert response contained invalid records.");
+        }
+        return alerts;
     }
 
     public async Task MarkReadAsync(
@@ -117,6 +132,19 @@ public sealed class BillAlertService
                 cancellationToken);
 
         response.EnsureSuccessStatusCode();
+        if (response.StatusCode != System.Net.HttpStatusCode.NoContent)
+        {
+            throw new InvalidDataException("The alert update could not be confirmed.");
+        }
+
+        // Read at most one byte: an unexpected body cannot confirm a 204
+        // receipt, and no response content is reflected or replayed.
+        using var receipt = await response.Content.ReadAsStreamAsync(cancellationToken);
+        var firstByte = new byte[1];
+        if (await receipt.ReadAsync(firstByte.AsMemory(), cancellationToken) != 0)
+        {
+            throw new InvalidDataException("The alert update could not be confirmed.");
+        }
     }
 
     private static HttpRequestMessage

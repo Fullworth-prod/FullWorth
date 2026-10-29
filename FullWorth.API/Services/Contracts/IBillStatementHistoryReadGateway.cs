@@ -25,7 +25,10 @@ public sealed record BillChangeHistoryReadRecord(
     decimal AmountDifference,
     decimal AnnualizedImpact,
     bool IsAcknowledged,
-    DateTimeOffset DetectedAtUtc);
+    DateTimeOffset DetectedAtUtc)
+{
+    public bool HasAnnualizedImpactEvidence { get; init; }
+}
 
 public sealed record BillStatementHistorySnapshot(
     IReadOnlyList<BillStatementHistoryReadRecord> Statements,

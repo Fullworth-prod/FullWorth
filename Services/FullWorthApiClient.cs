@@ -638,6 +638,7 @@ public sealed record BillChangeResult(
     DateTimeOffset DetectedAtUtc)
 {
     public string? CurrencyCode { get; init; }
+    public bool HasAnnualizedImpactEvidence { get; init; }
 }
 
 public sealed record BillStatementUploadResult(

@@ -229,7 +229,8 @@ public sealed class BillStreamsController : ControllerBase
                             change.IsAcknowledged,
                             change.DetectedAtUtc)
                         {
-                            CurrencyCode = statementCurrencyById.GetValueOrDefault(change.CurrentStatementId)
+                            CurrencyCode = statementCurrencyById.GetValueOrDefault(change.CurrentStatementId),
+                            HasAnnualizedImpactEvidence = change.HasAnnualizedImpactEvidence
                         })
                 .ToList();
 
@@ -632,4 +633,5 @@ public sealed record BillChangeResult(
     DateTimeOffset DetectedAtUtc)
 {
     public string? CurrencyCode { get; init; }
+    public bool HasAnnualizedImpactEvidence { get; init; }
 }

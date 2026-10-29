@@ -1,3 +1,11 @@
+## Verified integration status — 2026-10-29 UTC
+
+Verified in final #1007 sourcef4dd:9 actual-script fixture cases passed per pinned Chromium/WebKit; full disposable virtual passkey test passed with204/exactproof/native consent, replacement root empty-es, cleared proof/current empty list/authenticated readback. The existing ownership guard was preserved. Old failed runs are not retrospectively diagnosed or counted as success.3,507 .NET/663 Node and all5 final-head checks passed; no physical-device acceptance.
+
+The detailed current ledger is in MILESTONE-CLEANUP-AUDIT-20261027.md. Original preparation notes below are preserved as history; this documentation change requires its own checks. No production deployment or new real acceptance is implied.
+
+---
+
 # Disposable passkey-removal acceptance setup — 2026-10-29 UTC
 
 The #1007 Linux container job 123066203242 (run 40759111954, source 1ff1ae4d43c4d6536ba6afa0d8bb6e2ddc7602bf) reached virtual passkey removal and returned 400 rather than the required 204. Earlier rendered privacy checks, including EN/ES uncertain server-error responses, passed. The original response body/proof-shape diagnostics were absent; the actual CI rejection's cause remains unconfirmed. Do not call the failed container job successful or infer a production authentication defect.

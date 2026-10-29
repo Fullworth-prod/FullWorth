@@ -1,3 +1,11 @@
+## Verified integration status — 2026-10-29 UTC
+
+Verified in final #1007 sourcef4dd, integrated0c89f56b76f345607d193cb99fb2e791bc0e5704 after all5 checks.11 actual-script lifecycle cases passed in the required Node gate (663 total);3,507 .NET plus actual Android/full container and pinned browser checks passed. Timed-out/failed attempts cannot retain a later reload listener. Physical installed-device and real activation acceptance remain separate.
+
+The detailed current ledger is in MILESTONE-CLEANUP-AUDIT-20261027.md. Original preparation notes below are preserved as history; this documentation change requires its own checks. No production deployment or new real acceptance is implied.
+
+---
+
 # Bound explicit PWA update attempts — 2026-10-29 UTC
 
 ## Demonstrated failure

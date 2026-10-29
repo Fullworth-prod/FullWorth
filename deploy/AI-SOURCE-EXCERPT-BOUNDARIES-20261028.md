@@ -1,3 +1,11 @@
+## Verified integration status — 2026-10-29 UTC
+
+Verified in development through #1006 (3913a8d614f6182de0f05064fbaba431b0012f4a), source018d6e3f07ab21bd65610d32e45411d549988a50/testeda484530db83e55a98d96607221068317968751ab/tree08586b779c923fb18be9b029e57dd61c5e52f4e8 equal. All10 final-head checks passed;3,362 .NET/434 Node, zero failed/skipped/backend/offline warnings/errors; scoped relational/container checks. AI remains off; real document/provider semantics remain separate.
+
+The detailed current ledger is in MILESTONE-CLEANUP-AUDIT-20261027.md. Original preparation notes below are preserved as history; this documentation change requires its own checks. No production deployment or new real acceptance is implied.
+
+---
+
 # AI source excerpt boundaries — 2026-10-28
 
 ## Actual-source counterexamples

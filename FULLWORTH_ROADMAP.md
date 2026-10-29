@@ -1,3 +1,17 @@
+## Verified runtime checkpoint — 2026-10-29 UTC
+
+**Runtime integrated in development:** `0c89f56b76f345607d193cb99fb2e791bc0e5704` ([#1007](https://github.com/Fullworth-prod/FullWorth/pull/1007)), following [#1006](https://github.com/Fullworth-prod/FullWorth/pull/1006) source-excerpt boundaries and [#1008](https://github.com/Fullworth-prod/FullWorth/pull/1008) account-export envelopes. Master and the last separately recorded deployment remain `9540b2616841e9794d8f8c07616edcd1e339982c`; this continuation did not inspect or deploy the production host. The complete milestones 0–8 goal remains active.
+
+**Verified behavior:** privacy failures preserve uncertainty unless operation, status and the current declared API receipt agree; explicit PWA update attempts release their listener/timer so a later activation cannot reload after timeout/failure. Export downloads require the current API 1.1 envelope while preserving valid empty accounts and exact bytes. AI excerpts require complete source boundaries; AI stays off. Disposable passkey acceptance enters current-owner proof atomically and distinguishes retained-region success from a replacement region's current empty-key readback.
+
+**Final evidence:** #1007 source `f4ddfb70ddd56f3f3d5ad43889be03182f319108`, tested `2ce79a61f5263928bb01de27d5a86f22d949f11c` and integrated tree `73414e6bafc1c84d7ef5c96dd788ac0d92f50f5b` match. All five checks passed: 3,507 .NET and 663 Node tests, zero failed/skipped; backend/offline and actual Android builds reported zero warnings/errors. Pinned Chromium/WebKit each passed 94 privacy and 9 passkey-fixture cases. Full rendered EN/ES, three theme pairs, responsive/ARIA/recovery pages, virtual passkey, HTTP/parser/secret/cgroup and disposable encrypted restore checks passed. Counts overlap and are not additive. Details and exact evidence are in [the cleanup audit](deploy/MILESTONE-CLEANUP-AUDIT-20261027.md).
+
+**Acceptance remains open:** owner/provider/expected-bill/payroll evidence (#972/#912/#762/#970/#293), physical Android/iPhone (#251/#258), actual alert receipt, same-release two-owner/document/privacy/security, current nonempty real-statement/database/both-keyring clean-host/protected-backup and qualified legal acceptance (#291/#669). Prior separate-runner recovery is partial, not absent. Synthetic CI does not complete these gates. #245 cleanup stays off; MAUI retirement and Financial Home expansion remain deferred for parity/support and MV-01–MV-06 evidence respectively. All three light/dark theme pairs are implemented; older unselected-concept notes below are history.
+
+Next: preserve this verified runtime checkpoint, complete this documentation change's own gates, then continue the highest-priority independently reproducible source work. External acceptance needs its recorded prerequisite; no deployment/master promotion, spending/activation, new grants/secrets/account changes, private export, outreach, destructive action or hourly automation is authorized. Creator features stay default-off and terms proposed. Earlier dated heads/pending checklists below are historical and do not override this checkpoint.
+
+---
+
 ## Verified source-evidence and privacy continuation — 2026-10-28 UTC
 
 **Current verified development:** `a161376fb9f712d332e5a166ee198a67f32d9edc`. Master remains `9540b2616841e9794d8f8c07616edcd1e339982c`; the last separately recorded deployment is also9540, not a fresh host inspection. This continuation did not deploy or promote. The complete milestones0–8 autonomous goal remains active.

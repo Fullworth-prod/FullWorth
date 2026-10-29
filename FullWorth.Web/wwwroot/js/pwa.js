@@ -119,31 +119,43 @@
 
             return await new Promise(resolve => {
                 let settled = false;
+                let timeout = null;
 
+                const onControllerChange = () => finish("reloaded");
                 const finish = result => {
                     if (settled) {
                         return;
                     }
 
                     settled = true;
+                    navigator.serviceWorker.removeEventListener(
+                        "controllerchange", onControllerChange);
+                    if (timeout !== null) {
+                        window.clearTimeout(timeout);
+                    }
                     resolve(result);
+
+                    // Only the currently pending, explicit update attempt may
+                    // reload. A timed-out/failed attempt must not reload later.
+                    if (result === "reloaded") {
+                        window.location.reload();
+                    }
                 };
 
                 navigator.serviceWorker.addEventListener(
-                    "controllerchange",
-                    () => {
-                        finish("reloaded");
-                        window.location.reload();
-                    },
-                    { once: true });
+                    "controllerchange", onControllerChange, { once: true });
+                timeout = window.setTimeout(
+                    () => finish("timeout"), 10000);
 
-                waitingWorker.postMessage({
-                    type: "SKIP_WAITING"
-                });
-
-                window.setTimeout(
-                    () => finish("timeout"),
-                    10000);
+                try {
+                    waitingWorker.postMessage({
+                        type: "SKIP_WAITING"
+                    });
+                } catch {
+                    // A worker can become redundant before the message is sent.
+                    // Clean up this attempt; leave any retry to the user.
+                    finish("unavailable");
+                }
             });
         },
 

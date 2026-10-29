@@ -47,12 +47,15 @@ const server = createServer((request, response) => {
             response.writeHead(307, { Location: "/redirect-target" }); response.end();
         } else json({ requestToken: state.mode === "token" ? state.token : "synthetic-csrf" });
     } else if (request.method === "GET") {
-        json(path === "/bff/account/external" ? { linkedProviders: [] } : security);
+        if (state.mode === "read-error") json(state.body, state.status);
+        else json(path === "/bff/account/external" ? { linkedProviders: [] } : security);
     } else {
         state.writes++; state.methods.push(request.method); state.csrf.push(request.headers["x-csrf-token"]);
         if (state.mode === "redirect") {
             response.writeHead(state.status, { Location: "/redirect-target" }); response.end();
-        } else if (state.mode === "html") {
+        } else if (state.mode === "throttled") json(state.body, 429);
+        else if (state.mode === "authenticator-invalid") json({ title: "The authenticator code is invalid." }, 400);
+        else if (state.mode === "html") {
             response.writeHead(200, { "Content-Type": "text/html" }); response.end("<html>PRIVATE-CANARY</html>");
         } else if (state.mode === "malformed") {
             response.writeHead(200, { "Content-Type": "application/json" }); response.end("{PRIVATE-CANARY");
@@ -134,6 +137,41 @@ try {
                     assert.equal(state.writes, 0);
                 });
             }
+            for (const [method, fallback] of [
+                ["getAccountSecurity", "FullWorth could not load account security settings."],
+                ["getExternalIdentityStatus", "FullWorth could not load linked sign-in methods."]
+            ]) {
+                for (const status of [503, 429]) {
+                    await scenario(method + " neutral read " + status,
+                        { mode: "read-error", status, body: { title: "Current password is incorrect." } },
+                        async ({ invoke, page, state }) => {
+                            const result = await invoke(method, []);
+                            assert.equal(result.ok, false);
+                            assert.equal(result.message, status === 429
+                                ? "Too many attempts. Please wait a little while and try again." : fallback);
+                            assert.equal(state.writes, 0);
+                            assert.equal(state.tokens, 0);
+                            assert.equal(page.url(), origin + "/");
+                        });
+                }
+            }
+            await scenario("write rate priority", { mode: "throttled",
+                body: { title: "Current password is incorrect." } }, async ({ invoke, page, state }) => {
+                const result = await invoke("changePassword", ["synthetic", "new", null]);
+                assert.equal(result.ok, false);
+                assert.equal(result.message, "Too many attempts. Please wait a little while and try again.");
+                assert.equal(state.writes, 1);
+                assert.equal(page.url(), origin + "/");
+            });
+            await scenario("actual enrollment validation", { mode: "authenticator-invalid" },
+                async ({ invoke, page, state }) => {
+                    const result = await invoke("enableTwoFactor", ["synthetic", "123456"]);
+                    assert.equal(result.ok, false);
+                    assert.equal(result.message,
+                        "That authenticator code isn’t valid. Try the current code from your authenticator app.");
+                    assert.equal(state.writes, 1);
+                    assert.equal(page.url(), origin + "/");
+                });
             for (const mode of ["token-redirect", "malformed", "accepted", "dropped", "proof-rejected", "server-failed"]) {
                 await scenario(mode, { mode }, async ({ invoke, page, state }) => {
                     const result = await invoke("requestEmailChange", ["synthetic", "synthetic@example.test", null]);

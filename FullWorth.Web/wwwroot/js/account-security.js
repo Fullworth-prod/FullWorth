@@ -1,4 +1,5 @@
 const unconfirmedAccountUpdate = "FullWorth could not confirm this account update. Reload settings to check its current state before trying again.";
+const rateLimitedAccountRequest = "Too many attempts. Please wait a little while and try again.";
 
 const isRecord = value => value !== null && typeof value === "object" && !Array.isArray(value);
 const hasText = value => typeof value === "string" && value.trim().length > 0;
@@ -99,7 +100,7 @@ function mapExpectedError(body, status, fallback) {
     }
 
     if (status === 429) {
-        return "Too many attempts. Please wait a little while and try again.";
+        return rateLimitedAccountRequest;
     }
 
     if (status === 401 || status === 403) {
@@ -110,13 +111,13 @@ function mapExpectedError(body, status, fallback) {
 }
 
 async function readSafeError(response, fallback) {
+    // Throttling is authoritative even when a proxy returns a misleading body.
+    if (response.status === 429) return rateLimitedAccountRequest;
     try {
         return mapExpectedError(await response.json(), response.status, fallback);
     }
     catch {
-        return response.status === 429
-            ? "Too many attempts. Please wait a little while and try again."
-            : fallback;
+        return fallback;
     }
 }
 
@@ -144,7 +145,9 @@ async function getJson(path, fallback, validate) {
     }
 
     if (!response.ok) {
-        throw new Error(await readSafeError(response, fallback));
+        // Reads submit no password, authenticator or email change. Their error
+        // bodies cannot diagnose proof or a mutation that never occurred.
+        throw new Error(response.status === 429 ? rateLimitedAccountRequest : fallback);
     }
 
     return readContractJson(response, fallback, validate);

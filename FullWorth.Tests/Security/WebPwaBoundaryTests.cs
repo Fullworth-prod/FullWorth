@@ -345,7 +345,7 @@ public sealed class WebPwaBoundaryTests
     }
 
     [Fact]
-    public void AccountExportClient_UsesReauthenticatedPostWithoutMisclassifyingCredentialFailures()
+    public void AccountExportClient_UsesReauthenticatedPostAndScopedPrivacyContract()
     {
         var root = FindRepositoryRoot();
         var bff = File.ReadAllText(Path.Combine(root, "FullWorth.Web", "wwwroot", "js", "bff.js"));
@@ -371,10 +371,9 @@ public sealed class WebPwaBoundaryTests
         Assert.Contains("\"no-store\"", exportClient, StringComparison.Ordinal);
         Assert.Contains("application/problem+json", privacyRequests, StringComparison.Ordinal);
 
-        var credentialFailureIndex = privacyRequests.IndexOf("current password is incorrect", StringComparison.Ordinal);
-        var sessionFailureIndex = privacyRequests.IndexOf("response.status === 401", StringComparison.Ordinal);
-        Assert.True(credentialFailureIndex >= 0 && sessionFailureIndex > credentialFailureIndex,
-            "Credential rejection must be classified before a generic expired-session result.");
+        Assert.Contains("privacyError(response, \"export\")", exportClient, StringComparison.Ordinal);
+        // Credential/session precedence is verified by actual module execution in
+        // privacy-error-contract.test.mjs; lexical ordering cannot prove branching.
         Assert.DoesNotContain("window.location.assign(", exportClient, StringComparison.Ordinal);
         Assert.Contains("blob.size === 0", exportClient, StringComparison.Ordinal);
         Assert.Contains("cancelAccountExport", exportClient, StringComparison.Ordinal);

@@ -33,7 +33,7 @@ export async function downloadAccountExport(currentPassword, twoFactorCode) {
                 twoFactorCode: typeof twoFactorCode === "string" && twoFactorCode.trim() ? twoFactorCode.trim() : null }),
             redirect: "error", cache: "no-store", signal: operation.signal
         });
-        if (!response.ok) throw new Error(await privacyError(response));
+        if (!response.ok) throw new Error(await privacyError(response, "export"));
         const type = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
         if (response.status !== 200 || response.redirected || type !== "application/json")
             throw new Error("FullWorth did not return a JSON export.");

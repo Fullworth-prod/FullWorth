@@ -14,7 +14,7 @@ export async function deleteFullWorthAccount(confirmation, currentPassword, twoF
             twoFactorCode: typeof twoFactorCode === "string" && twoFactorCode.trim() ? twoFactorCode.trim() : null }),
         redirect: "error", cache: "no-store"
     });
-    if (!response.ok) throw new Error(await privacyError(response));
+    if (!response.ok) throw new Error(await privacyError(response, "delete"));
     // The API commits account deletion before either response. A 202 still means
     // quarantined file cleanup is pending; this does not certify immediate file erasure.
     if (response.redirected || (response.status !== 204 && response.status !== 202))

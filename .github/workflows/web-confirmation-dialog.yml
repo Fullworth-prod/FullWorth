@@ -64,6 +64,8 @@ jobs:
         run: node FullWorth.VisualTests/bff-response-boundary.test.mjs
       - name: Verify single-submit disposable owner setup under form replacement
         run: node FullWorth.VisualTests/auth-owner-setup.test.mjs
+      - name: Verify single-write passkey removal setup under control replacement
+        run: node FullWorth.VisualTests/passkey-removal-setup.test.mjs
       - name: Verify account security responses without credential redirects or write replay
         run: node FullWorth.VisualTests/account-security-response-boundary.test.mjs
       - name: Verify privacy proof never follows redirects

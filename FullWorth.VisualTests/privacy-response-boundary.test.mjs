@@ -48,6 +48,8 @@ const server = http.createServer(async (request, response) => {
         if (scenario.stage === "write-redirect") {
             response.writeHead(scenario.redirect, { location: (scenario.crossOrigin ? foreignOrigin : "") + "/redirect-sink" }); response.end(); return;
         }
+        if (scenario.failure)
+            return send(scenario.failure.status, "application/json", JSON.stringify({ message: scenario.failure.message }));
         return send(scenario.action === "delete" ? scenario.writeStatus ?? 204 : 200,
             "application/json", scenario.action === "delete" ? "" : '{"synthetic":"not private data"}');
     }
@@ -77,9 +79,10 @@ try {
                                 await module.downloadAccountExport("Synthetic!Proof123", null);
                             module.cancelAccountExport?.();
                             return { accepted: value === true };
-                        } catch { return { accepted: false }; }
+                        } catch (error) { return { accepted: false, error: error.message }; }
                     }, value.action);
                     assert.equal(result.accepted, value.accepted, name + " acceptance: " + JSON.stringify(value));
+                    if (value.expectedError) assert.equal(result.error, value.expectedError, name + " error contract");
                     assert.equal(writes, value.expectedWrites, "Unexpected write arrival");
                     assert.equal(sinks, 0, "A privacy redirect must not reach its destination");
                     assert.equal(proofAtSink, 0, "Synthetic proof must not be forwarded");
@@ -102,7 +105,27 @@ try {
                     await run({ action, tokenStatus, accepted: false, expectedWrites: 0 });
                 await run({ action, tokenType: "text/html", accepted: false, expectedWrites: 0 });
                 await run({ action, tokenRaw: "{broken", accepted: false, expectedWrites: 0 });
+                const unknown = "FullWorth could not confirm this privacy request.";
+                for (const status of [500, 502, 503, 504])
+                for (const message of ["Current password is incorrect.", "The authenticator code is invalid.",
+                    "Stored statement preparation failed; account was not deleted."])
+                    await run({ action, failure: { status, message }, accepted: false, expectedWrites: 1,
+                        expectedError: unknown });
+                for (const [message, expectedError] of [
+                    ["Current password is incorrect.", "Current password is incorrect."],
+                    ["The authenticator code is invalid.", "A valid current authenticator code is required."]])
+                    await run({ action, failure: { status: 401, message }, accepted: false, expectedWrites: 1, expectedError });
+                await run({ action, failure: { status: 429, message: "Current password is incorrect." },
+                    accepted: false, expectedWrites: 1, expectedError: "Too many attempts. Please wait before trying again." });
+                await run({ action, tokenStatus: 401, tokenRaw: '{"message":"Current password is incorrect."}',
+                    accepted: false, expectedWrites: 0, expectedError: "FullWorth session expired." });
+
             }
+            for (const [status, message, expectedError] of [
+                [409, "FullWorth staff accounts cannot be self-deleted while privileged roles are assigned. Remove the staff roles through the authorized admin workflow first.", "Staff accounts cannot be self-deleted."],
+                [503, "FullWorth could not safely finish deleting your account because a bank connection could not be revoked. Your FullWorth account was not deleted. Try again shortly.", "A bank connection could not be revoked."],
+                [500, "FullWorth could not securely prepare stored statement files for deletion. Your FullWorth account was not deleted. Try again.", "Stored statement preparation failed; account was not deleted."]])
+                await run({ action: "delete", failure: { status, message }, accepted: false, expectedWrites: 1, expectedError });
             console.log(name + ": " + cases + " privacy HTTP response/redirect cases passed.");
         } finally { await browser.close(); }
     }

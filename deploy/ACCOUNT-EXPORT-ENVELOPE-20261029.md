@@ -1,3 +1,11 @@
+## Verified integration status — 2026-10-29 UTC
+
+Verified in development through #1008 as375242935cf4fa524b64962d5ee745d35c7b6e5e; source46b0e3ea770b8e30c53a601d23ce6814bb74e53f/testedc746b287e94284fb7dfc5e1e0d813a28f755dbfb/tree5c005788818c1b2fb1577d8226abdad97c6caf31 equal. All4 required checks passed;3,507 .NET/434 Node and full rendered/virtual-passkey/HTTP/parser/disposable restore passed. No real private export or completeness/ownership acceptance is inferred.
+
+The detailed current ledger is in MILESTONE-CLEANUP-AUDIT-20261027.md. Original preparation notes below are preserved as history; this documentation change requires its own checks. No production deployment or new real acceptance is implied.
+
+---
+
 # Account export envelope boundary — 2026-10-29 UTC
 
 ## Demonstrated defect

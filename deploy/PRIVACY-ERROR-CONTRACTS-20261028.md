@@ -1,3 +1,11 @@
+## Verified integration status — 2026-10-29 UTC
+
+Verified in development through #1007 as0c89f56b76f345607d193cb99fb2e791bc0e5704. Final sourcef4ddfb70ddd56f3f3d5ad43889be03182f319108/tested2ce79a61f5263928bb01de27d5a86f22d949f11c/tree73414e6bafc1c84d7ef5c96dd788ac0d92f50f5b equal; all5 checks passed.3,507 .NET/663 Node,94 privacy HTTP cases per pinned engine, full rendered EN/ES uncertainty/proof-clearing/no-replay passed. This is synthetic controlled acceptance, not a real account deletion/export.
+
+The detailed current ledger is in MILESTONE-CLEANUP-AUDIT-20261027.md. Original preparation notes below are preserved as history; this documentation change requires its own checks. No production deployment or new real acceptance is implied.
+
+---
+
 # Privacy error response contracts — 2026-10-28
 
 ## Reproduced failure and source contracts

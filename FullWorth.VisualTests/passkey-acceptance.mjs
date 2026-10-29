@@ -313,6 +313,16 @@ try {
     response.request().method() === "POST");
   let removalDialogs = 0;
   page.once("dialog", async dialog => { removalDialogs++; await dialog.accept(); });
+  // Track the root actually clicked, without persisting any proof values.
+  await page.evaluate(() => {
+    const observe = event => {
+      const button = event.target.closest('[data-passkey-action="remove"]');
+      if (!button) return;
+      window.__fullworthCiRemovalRoot = button.closest('[data-passkeys="manage"]');
+      document.removeEventListener("click", observe, true);
+    };
+    document.addEventListener("click", observe, true);
+  });
   const removalCode = code(setup.sharedKey);
   // Resolve current owned controls and enter proof/click in one DOM task.
   // No direct API removal, antiforgery injection or write replay is permitted.
@@ -347,8 +357,43 @@ try {
   assert.ok(proofShape.exactFields && proofShape.passwordMatches &&
     proofShape.codeMatches && proofShape.ownedKeyMatches && proofShape.csrfPresent &&
     proofShape.confirmationDialogs === 1, "Removal must use current owner proof and native consent.");
-  await management.getByText("Guardado. Tu contraseña y las opciones de recuperación siguen funcionando.",
-    { exact: true }).waitFor();
+  // A retained root reports Saved; the existing production ownership guard
+  // refreshes a replacement root without transferring old-operation success.
+  // Require the corresponding Spanish state and the current empty saved-key list.
+  try {
+    await page.waitForFunction(() => {
+      const root = document.querySelector('[data-passkeys="manage"]');
+      if (!root || root.dataset.loaded !== "true" ||
+          root.querySelectorAll("[data-passkey-list] li").length !== 0 ||
+          root.querySelector('[name="currentPassword"]')?.value !== "") return false;
+      const retained = root === window.__fullworthCiRemovalRoot;
+      return root.querySelector("[data-passkey-status]")?.textContent === (retained
+        ? "Guardado. Tu contraseña y las opciones de recuperación siguen funcionando."
+        : "Aún no hay claves registradas.");
+    }, undefined, { timeout: 15000 });
+  } catch (error) {
+    const render = await page.evaluate(() => {
+      const root = document.querySelector('[data-passkeys="manage"]');
+      const status = root?.querySelector("[data-passkey-status]")?.textContent;
+      return {
+        retainedRoot: root === window.__fullworthCiRemovalRoot,
+        spanishDocument: /^es(?:-|$)/i.test(document.documentElement.lang || ""),
+        listLoaded: root?.dataset.loaded === "true",
+        emptyList: root?.querySelectorAll("[data-passkey-list] li").length === 0,
+        passwordCleared: root?.querySelector('[name="currentPassword"]')?.value === "",
+        statusKind: status === "Guardado. Tu contraseña y las opciones de recuperación siguen funcionando."
+          ? "saved-es" : status === "Aún no hay claves registradas." ? "empty-es"
+          : status === "Saved. Your password and recovery options still work." ? "saved-en" : "other"
+      };
+    });
+    console.error("Passkey removal render mismatch: " + JSON.stringify(render));
+    throw error;
+  }
+  const retainedRemovalRoot = await page.evaluate(() =>
+    document.querySelector('[data-passkeys="manage"]') === window.__fullworthCiRemovalRoot);
+  console.log("Passkey removal render confirmed: " +
+    (retainedRemovalRoot ? "retained root saved-es" : "replacement root empty-es"));
+
   assert.equal(await management.locator("[data-passkey-list] li").count(), 0);
   assert.equal(await management.locator('input[name="currentPassword"]').inputValue(), "");
   const remaining = await context.request.get(baseURL + "/bff/account/security/passkeys");

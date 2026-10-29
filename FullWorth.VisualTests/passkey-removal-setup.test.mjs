@@ -8,7 +8,7 @@ const source = await readFile(new URL("../FullWorth.Web/wwwroot/js/passkeys.js",
 const credentialId = "c3ludGhldGljLXNhdmVkLWtleQ";
 const proof = { credentialId, password: "Synthetic!Proof123", twoFactorCode: "123456" };
 let state;
-const html = '<!doctype html><html lang="en"><body><section data-passkeys="manage">' +
+const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"></head><body><section data-passkeys="manage">' +
     '<input name="currentPassword" type="password"><input name="twoFactorCode">' +
     '<input name="keyName"><p data-passkey-status></p>' +
     '<button data-passkey-action="retry" hidden>Retry</button><ul data-passkey-list></ul>' +
@@ -112,6 +112,40 @@ try {
         await run(async page => {
             await assert.rejects(removeOwnedFixturePasskey(page, { ...proof, password: "" }), /Invalid synthetic/);
             assert.equal(state.writes, 0);
+        });
+        await run(async page => {
+            await page.evaluate(() => document.documentElement.lang = "es");
+            const response = page.waitForResponse(r => r.url().endsWith("/passkeys/remove"));
+            await removeOwnedFixturePasskey(page, proof);
+            assert.equal((await response).status(), 204);
+            await page.getByText("Guardado. Tu contraseña y las opciones de recuperación siguen funcionando.",
+                { exact: true }).waitFor();
+            assert.equal(state.writes, 1);
+        });
+        await run(async page => {
+            await page.evaluate(() => document.documentElement.lang = "es");
+            let release;
+            const held = new Promise(done => release = done);
+            await page.route("**/bff/account/security/passkeys/remove", async route => {
+                await held; await route.continue();
+            });
+            const request = page.waitForRequest(r => r.url().endsWith("/passkeys/remove"));
+            const response = page.waitForResponse(r => r.url().endsWith("/passkeys/remove"));
+            try {
+                await removeOwnedFixturePasskey(page, proof);
+                await request;
+                await replace(page);
+                await page.locator('[data-passkeys="manage"][data-loaded="true"]').waitFor();
+                assert.equal(await page.locator('[name="currentPassword"]').inputValue(), "");
+            } finally { release(); }
+            assert.equal((await response).status(), 204);
+            await page.getByText("Aún no hay claves registradas.", { exact: true }).first().waitFor();
+            assert.equal(await page.locator("[data-passkey-status]").innerText(),
+                "Aún no hay claves registradas.");
+            assert.equal(await page.getByText(
+                "Guardado. Tu contraseña y las opciones de recuperación siguen funcionando.",
+                { exact: true }).count(), 0, "An abandoned root's success must not move into a replacement region.");
+            assert.equal(state.writes, 1);
         });
         await run(async page => {
             const response = page.waitForResponse(r => r.url().endsWith("/passkeys/remove"));

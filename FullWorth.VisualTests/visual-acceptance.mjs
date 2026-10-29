@@ -308,7 +308,7 @@ try {
       hasAnnualizedImpactEvidence: true,
       previousAmount: 20, currentAmount: 25, amountDifference: 5, annualizedImpact: 60,
       currencyCode: "EUR", changeType: "TotalIncrease", confidence: "Confirmed",
-      description: "Synthetic statement evidence", isAcknowledged: false,
+      description: "Your synthetic bill increased by EUR 5.00 per month, or EUR 60.00 per year. Why: a fee changed.", isAcknowledged: false,
       detectedAtUtc: "2026-02-01T00:00:00Z" }]
   };
   const currencyRoute = async route => {
@@ -371,6 +371,7 @@ try {
       assert.ok(detailText.includes("EUR 20.00"));
       assert.ok(detailText.includes("EUR 25.00"));
       assert.ok(detailText.includes("+EUR 60.00"));
+      assert.ok(!detailText.includes("Its monthly and yearly estimates are unverified."));
       assert.ok(!detailText.includes("$20.00") && !detailText.includes("$25.00"));
       await page.screenshot({ path: path.join(outputDir, "bill-detail-currencies-" + width + ".png"), fullPage: true });
 
@@ -381,6 +382,9 @@ try {
       await settle(".fw-detail-current");
       const oldResponseText = await page.locator(".app-page").innerText();
       assert.ok(oldResponseText.includes("Yearly estimate unavailable"));
+      assert.ok(oldResponseText.includes("Earlier saved explanation"));
+      assert.ok(oldResponseText.includes("Its monthly and yearly estimates are unverified."));
+      assert.ok(oldResponseText.includes("Your synthetic bill increased by EUR 5.00 per month, or EUR 60.00 per year. Why: a fee changed."));
       assert.ok(!oldResponseText.includes("+EUR 60.00"));
       await page.screenshot({ path: path.join(outputDir, "bill-detail-old-evidence-" + width + ".png"), fullPage: true });
 
@@ -390,6 +394,8 @@ try {
       await settle(".fw-detail-current");
       const unknownUnitText = await page.locator(".app-page").innerText();
       assert.ok(unknownUnitText.includes("Yearly estimate unavailable"));
+      assert.ok(unknownUnitText.includes("Its monthly and yearly estimates are unverified."));
+      assert.ok(unknownUnitText.includes("Your synthetic bill increased by EUR 5.00 per month, or EUR 60.00 per year. Why: a fee changed."));
       assert.ok(!unknownUnitText.includes("+EUR 60.00"));
       assert.ok(!unknownUnitText.includes("(Currency unavailable) / year"));
       currencyDetail.changes[0].currencyCode = "EUR";

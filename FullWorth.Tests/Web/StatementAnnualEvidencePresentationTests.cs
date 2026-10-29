@@ -42,6 +42,29 @@ public sealed class StatementAnnualEvidencePresentationTests
         Assert.Equal("+$240.00 / year", Format(change, true));
     }
 
+
+    [Theory]
+    [InlineData(false, "USD", true)]
+    [InlineData(true, "USD", false)]
+    [InlineData(true, null, true)]
+    public void SavedExplanation_PreservesEvidenceAndQualifiesUnverifiedRates(
+        bool evidence, string? currency, bool historical)
+    {
+        const string saved = "Your synthetic bill increased by $20 per month, or $240 per year. Why: a fee changed.";
+        var change = new BillDetail.BillChangeViewModel
+            { CurrencyCode = currency, HasAnnualizedImpactEvidence = evidence, Description = saved };
+        var page = new BillDetail();
+        typeof(BillDetail).GetProperty("L", Flags)!.SetValue(page, new Localizer());
+        var displayed = (string)typeof(BillDetail).GetMethod("GetExplanation", Flags)!
+            .Invoke(page, [change])!;
+        Assert.Contains(saved, displayed);
+        Assert.Equal(saved, change.Description);
+        if (historical)
+            Assert.StartsWith("Earlier saved explanation. Its monthly and yearly estimates are unverified. ", displayed);
+        else
+            Assert.Equal(saved, displayed);
+    }
+
     private static string Format(BillDetail.BillChangeViewModel change, bool includeUnit)
     {
         var page = new BillDetail();

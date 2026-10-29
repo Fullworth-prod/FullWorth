@@ -1,3 +1,11 @@
+## Verified development integration — 2026-10-29 UTC
+
+Merged as 8166996fcb712fa0424cc2a1c9492b9398f6a802. All five final-head checks passed on source 025b044b1baccadf98ead305e9eb7258d3cef6dd; tested candidate 46380475af1214e9af87ef6f3e87370d3c4a628c and integrated tree 7779e7633c530c52b1d8b197efbc13b99e9dec7c match. Actual main CI40818833945 passed 3,507 .NET/748 Node, zero failed/skipped and zero backend/offline warnings/errors. Pinned Chromium/WebKit account boundary coverage passed47 cases per engine (browser40818833950); privacy/passkey fixtures and full rendered/virtual-passkey/HTTP/parser/disposable encrypted restore passed. Container123266689292 recorded retained-root saved-es and restore verification e508dd4d3c11ba4201e7e854e3aacafd82c96caf0865f2bab32e12d72bccaa4e. Android build steps were conditional. Source branch remains present. Development integration is not deployment or physical/provider/private recovery acceptance.
+
+The pending language in the preparation record below is historical.
+
+---
+
 # Account read errors and rate-limit priority — 2026-10-29 UTC
 
 ## Demonstrated current-source behavior

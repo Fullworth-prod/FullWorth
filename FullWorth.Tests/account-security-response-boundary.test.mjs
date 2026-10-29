@@ -149,3 +149,58 @@ test("Confirmed external write followed by failed status read remains safe", asy
     assert.equal(writes(run).length, 1);
     assert.deepEqual(run.navigation, []);
 });
+
+const rateMessage = "Too many attempts. Please wait a little while and try again.";
+const misleadingBodies = [
+    { title: "Current password is incorrect." },
+    { title: "A current authenticator code is required." },
+    { title: "Email address is already in use." }
+];
+for (const [name, fallback] of [
+    ["getAccountSecurity", "FullWorth could not load account security settings."],
+    ["getExternalIdentityStatus", "FullWorth could not load linked sign-in methods."]
+]) {
+    for (const status of [400, 403, 404, 409, 422, 503]) {
+        for (const [index, body] of misleadingBodies.entries()) {
+            test(name + " read failure cannot reject proof never submitted: " + status + "/" + index, async () => {
+                const run = await harness({ readReply: () => json(body, status) });
+                await assert.rejects(run.api[name](), error => error.message === fallback);
+                assert.equal(writes(run).length, 0);
+                assert.deepEqual(run.navigation, []);
+            });
+        }
+    }
+    for (const [index, body] of misleadingBodies.entries()) {
+        test(name + " throttling takes priority over response body: " + index, async () => {
+            const run = await harness({ readReply: () => json(body, 429) });
+            await assert.rejects(run.api[name](), error => error.message === rateMessage);
+            assert.equal(writes(run).length, 0);
+            assert.deepEqual(run.navigation, []);
+        });
+    }
+}
+for (const [name, args] of actions) {
+    for (const [index, body] of misleadingBodies.entries()) {
+        test(name + " write throttling takes priority without replay: " + index, async () => {
+            const run = await harness({ writeReply: () => json(body, 429) });
+            await assert.rejects(run.api[name](...args), error => error.message === rateMessage);
+            assert.equal(writes(run).length, 1);
+            assert.deepEqual(run.navigation, []);
+        });
+    }
+}
+
+for (const [name, args, status, body, expected] of [
+    ["changePassword", ["synthetic", "synthetic-new", null], 401,
+        { title: "Current password is incorrect." }, "Your current password is incorrect."],
+    ["enableTwoFactor", ["synthetic", "123456"], 400,
+        { title: "The authenticator code is invalid." },
+        "That authenticator code isn’t valid. Try the current code from your authenticator app."]
+]) {
+    test(name + " preserves the actual API credential-rejection contract", async () => {
+        const run = await harness({ writeReply: () => json(body, status) });
+        await assert.rejects(run.api[name](...args), error => error.message === expected);
+        assert.equal(writes(run).length, 1);
+        assert.deepEqual(run.navigation, []);
+    });
+}

@@ -99,13 +99,7 @@ public sealed class BillStatementPaymentDueAlertService
                 "Payment-due alerts cannot be created from a negative statement total.");
         }
 
-        var normalizedCurrency =
-            currencyCode
-                .Trim()
-                .ToUpperInvariant();
-
-        if (normalizedCurrency.Length !=
-            3 || normalizedCurrency.Any(character => character is < 'A' or > 'Z'))
+        if (!FinancialAmountFormatter.TryNormalizeCurrency(currencyCode, out var normalizedCurrency))
         {
             throw new InvalidOperationException(
                 "Payment-due alert currency is invalid.");

@@ -7,9 +7,15 @@ public static class FinancialAmountFormatter
 {
     public static bool TryNormalizeCurrency(string? currencyCode, out string currency)
     {
-        currency = currencyCode?.Trim().ToUpperInvariant() ?? string.Empty;
-        if (currency.Length == 3 && currency.All(character => character is >= 'A' and <= 'Z'))
+        var raw = currencyCode?.Trim();
+        // Validate before casing: Unicode long-s can otherwise fold into S and
+        // turn an invalid stated unit into a real currency such as USD.
+        if (raw is { Length: 3 } && raw.All(character =>
+            character is >= 'A' and <= 'Z' or >= 'a' and <= 'z'))
+        {
+            currency = raw.ToUpperInvariant();
             return true;
+        }
         currency = string.Empty;
         return false;
     }
@@ -36,9 +42,7 @@ public static class FinancialAmountFormatter
     public static string NormalizeCurrency(string currencyCode)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(currencyCode);
-        var normalized = currencyCode.Trim().ToUpperInvariant();
-        if (normalized.Length != 3 ||
-            normalized.Any(character => character is < 'A' or > 'Z'))
+        if (!TryNormalizeCurrency(currencyCode, out var normalized))
         {
             throw new ArgumentException("Currency must contain three ASCII letters.", nameof(currencyCode));
         }

@@ -298,10 +298,14 @@ try {
       currencyCode: null, hasTransactionEvidence: false, hasMonthlyCadenceEvidence: false }
   ];
   const currencyDetail = { ...currencyBills[0],
-    statements: [{ id: "55555555-5555-5555-5555-555555555555",
+    statements: [{ id: "88888888-8888-8888-8888-888888888888",
+      periodStart: "2025-12-01", periodEnd: "2025-12-31", totalAmount: 20, currencyCode: "EUR" },
+      { id: "55555555-5555-5555-5555-555555555555",
       periodStart: "2026-01-01", periodEnd: "2026-01-31", totalAmount: 25, currencyCode: "EUR" }],
     changes: [{ id: "66666666-6666-6666-6666-666666666666",
       currentStatementId: "55555555-5555-5555-5555-555555555555",
+      previousStatementId: "88888888-8888-8888-8888-888888888888",
+      hasAnnualizedImpactEvidence: true,
       previousAmount: 20, currentAmount: 25, amountDifference: 5, annualizedImpact: 60,
       currencyCode: "EUR", changeType: "TotalIncrease", confidence: "Confirmed",
       description: "Synthetic statement evidence", isAcknowledged: false,
@@ -369,6 +373,27 @@ try {
       assert.ok(detailText.includes("+EUR 60.00"));
       assert.ok(!detailText.includes("$20.00") && !detailText.includes("$25.00"));
       await page.screenshot({ path: path.join(outputDir, "bill-detail-currencies-" + width + ".png"), fullPage: true });
+
+      // Old/incomplete API responses must not inherit the positive fixture's
+      // yearly claim. This exercises the real rendered component after reload.
+      delete currencyDetail.changes[0].hasAnnualizedImpactEvidence;
+      await page.goto("/app/bills/" + currencyBillId, { waitUntil: "domcontentloaded" });
+      await settle(".fw-detail-current");
+      const oldResponseText = await page.locator(".app-page").innerText();
+      assert.ok(oldResponseText.includes("Yearly estimate unavailable"));
+      assert.ok(!oldResponseText.includes("+EUR 60.00"));
+      await page.screenshot({ path: path.join(outputDir, "bill-detail-old-evidence-" + width + ".png"), fullPage: true });
+
+      currencyDetail.changes[0].hasAnnualizedImpactEvidence = true;
+      currencyDetail.changes[0].currencyCode = null;
+      await page.goto("/app/bills/" + currencyBillId, { waitUntil: "domcontentloaded" });
+      await settle(".fw-detail-current");
+      const unknownUnitText = await page.locator(".app-page").innerText();
+      assert.ok(unknownUnitText.includes("Yearly estimate unavailable"));
+      assert.ok(!unknownUnitText.includes("+EUR 60.00"));
+      assert.ok(!unknownUnitText.includes("(Currency unavailable) / year"));
+      currencyDetail.changes[0].currencyCode = "EUR";
+
 
       if (width === 320) {
         // Reproduce the real upload-status markup and its Blazor CSS scope without

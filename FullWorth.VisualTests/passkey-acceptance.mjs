@@ -3,6 +3,7 @@ import { createHmac } from "node:crypto";
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
+import { removeOwnedFixturePasskey } from "./passkey-removal-setup.mjs";
 
 // Virtual browser coverage is NOT physical iPhone/Face ID acceptance.
 const baseURL = process.env.FULLWORTH_VISUAL_BASE_URL;
@@ -290,6 +291,9 @@ try {
     cookie.name === "__Host-FullWorth.PendingPassword").length, 0);
   const account = await context.request.get(baseURL + "/bff/account/security/passkeys");
   assert.equal(account.status(), 200, "Browser must have an authenticated session.");
+  const ownedKeys = await account.json();
+  assert.ok(Array.isArray(ownedKeys) && ownedKeys.length === 1 &&
+    typeof ownedKeys[0].id === "string", "Disposable owner must have exactly one saved key.");
   checkpoint("password-verified removal without browser WebAuthn");
   // Only the disposable CI owner/key is changed. Removing a saved key uses
   // password + enrolled authenticator proof; it must not require a local OS ceremony.
@@ -300,8 +304,6 @@ try {
   await page.goto("/app/account/security-keys");
   await management.locator("[data-passkey-list] li").waitFor();
   await management.getByRole("heading", { name: "Tus claves", exact: true }).waitFor();
-  await management.locator('input[name="currentPassword"]').fill(password);
-  await management.locator('input[name="twoFactorCode"]').fill(code(setup.sharedKey));
   await page.evaluate(() => {
     Object.defineProperty(window, "PublicKeyCredential", { configurable: true, value: undefined });
   });
@@ -309,9 +311,42 @@ try {
   const removed = page.waitForResponse(response =>
     response.url().endsWith("/bff/account/security/passkeys/remove") &&
     response.request().method() === "POST");
-  page.once("dialog", dialog => dialog.accept());
-  await management.getByRole("button", { name: "Eliminar", exact: true }).click();
-  assert.equal((await removed).status(), 204);
+  let removalDialogs = 0;
+  page.once("dialog", async dialog => { removalDialogs++; await dialog.accept(); });
+  const removalCode = code(setup.sharedKey);
+  // Resolve current owned controls and enter proof/click in one DOM task.
+  // No direct API removal, antiforgery injection or write replay is permitted.
+  await removeOwnedFixturePasskey(page, {
+    credentialId: ownedKeys[0].id, password, twoFactorCode: removalCode
+  });
+  const removal = await removed;
+  const submitted = removal.request().postDataJSON();
+  const proofShape = {
+    exactFields: Object.keys(submitted).sort().join(",") ===
+      "credentialId,currentPassword,twoFactorCode",
+    passwordMatches: submitted.currentPassword === password,
+    codeMatches: submitted.twoFactorCode === removalCode,
+    ownedKeyMatches: submitted.credentialId === ownedKeys[0].id,
+    csrfPresent: !!removal.request().headers()["x-csrf-token"],
+    confirmationDialogs: removalDialogs
+  };
+  // Diagnostics disclose only fixed categories/booleans, never raw proof,
+  // credential IDs, CSRF tokens, provider bodies or arbitrary server messages.
+  if (removal.status() !== 204) {
+    let validationFields = [];
+    try {
+      const problem = await removal.json();
+      validationFields = ["CurrentPassword", "CredentialId", "TwoFactorCode"]
+        .filter(name => Object.prototype.hasOwnProperty.call(problem?.errors || {}, name));
+    } catch { /* Non-JSON bodies are intentionally not printed. */ }
+    console.error("Passkey removal rejected: " + JSON.stringify({
+      status: removal.status(), ...proofShape, validationFields
+    }));
+  }
+  assert.equal(removal.status(), 204, "Password-verified removal must return its exact 204 contract.");
+  assert.ok(proofShape.exactFields && proofShape.passwordMatches &&
+    proofShape.codeMatches && proofShape.ownedKeyMatches && proofShape.csrfPresent &&
+    proofShape.confirmationDialogs === 1, "Removal must use current owner proof and native consent.");
   await management.getByText("Guardado. Tu contraseña y las opciones de recuperación siguen funcionando.",
     { exact: true }).waitFor();
   assert.equal(await management.locator("[data-passkey-list] li").count(), 0);

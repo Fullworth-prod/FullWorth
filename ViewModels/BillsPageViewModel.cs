@@ -120,8 +120,11 @@ public sealed class BillsPageViewModel : INotifyPropertyChanged
             Bills = billStreams
                 .Select(stream =>
                 {
+                    var hasKnownCurrentAmount = stream.HasTransactionEvidence &&
+                        stream.CurrentAmount > 0m &&
+                        FinancialAmountFormatter.TryNormalizeCurrency(stream.CurrencyCode, out _);
                     var monthlyChange =
-                        stream.PreviousAverage <= 0m ? 0m : decimal.Round(
+                        !hasKnownCurrentAmount || stream.PreviousAverage <= 0m ? 0m : decimal.Round(
                             stream.CurrentAmount -
                             stream.PreviousAverage,
                             2,
@@ -134,7 +137,7 @@ public sealed class BillsPageViewModel : INotifyPropertyChanged
                             MidpointRounding.AwayFromZero);
 
                     var hasMeaningfulChange =
-                        stream.PreviousAverage > 0m &&
+                        hasKnownCurrentAmount && stream.PreviousAverage > 0m &&
                         Math.Abs(monthlyChange) >= 5m &&
                         Math.Abs(
                             monthlyChange /
@@ -169,7 +172,7 @@ public sealed class BillsPageViewModel : INotifyPropertyChanged
             BillsMonitored = Bills.Count;
 
             MonthlyTotal = FinancialAmountFormatter.FormatTotals(Bills
-                .Where(bill => bill.HasTransactionEvidence)
+                .Where(bill => bill.HasKnownCurrentAmount)
                 .Select(bill => (bill.CurrentAmount, bill.CurrencyCode))) ?? "Amount unavailable";
         }
         catch (HttpRequestException)
@@ -224,13 +227,18 @@ public sealed record BillListItem(
     public string? CurrencyCode { get; init; }
     public bool HasTransactionEvidence { get; init; }
     public bool HasMonthlyCadenceEvidence { get; init; }
-    public string CurrentAmountText => HasTransactionEvidence
+    public bool HasKnownCurrentAmount => HasTransactionEvidence && CurrentAmount > 0m &&
+        FinancialAmountFormatter.TryNormalizeCurrency(CurrencyCode, out _);
+    public string CurrentAmountText => HasKnownCurrentAmount
         ? FinancialAmountFormatter.FormatOrUnspecified(CurrentAmount, CurrencyCode) : "Amount unavailable";
     public string PreviousAverageText => PreviousAverage > 0m
         ? "Previous average " + FinancialAmountFormatter.FormatOrUnspecified(PreviousAverage, CurrencyCode)
         : "Building historical average";
-    public string ChangeText => FinancialAmountFormatter.FormatOrUnspecified(MonthlyChange, CurrencyCode) + " per cycle";
-    public string AnnualImpactText => HasMonthlyCadenceEvidence &&
+    public string ChangeText => HasMeaningfulChange && HasKnownCurrentAmount && PreviousAverage > 0m
+        ? FinancialAmountFormatter.FormatOrUnspecified(MonthlyChange, CurrencyCode) + " per cycle"
+        : "Change unavailable";
+    public string AnnualImpactText => HasMeaningfulChange && HasKnownCurrentAmount &&
+        PreviousAverage > 0m && HasMonthlyCadenceEvidence &&
         FinancialAmountFormatter.TryNormalizeCurrency(CurrencyCode, out _)
             ? FinancialAmountFormatter.FormatOrUnspecified(AnnualImpact, CurrencyCode) + "/year"
             : "Yearly estimate unavailable";

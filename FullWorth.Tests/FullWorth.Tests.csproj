@@ -53,7 +53,7 @@
 	</ItemGroup>
 
 
-  <!-- Exercise the actual native auth and dashboard sources without a MAUI runtime. -->
+  <!-- Exercise the actual native auth and financial-screen sources without a MAUI runtime. -->
   <ItemGroup>
     <Compile Include="../Services/FullWorthApiClient.cs" Link="Native/FullWorthApiClient.cs" />
     <Compile Include="../Services/AuthenticationService.cs" Link="Native/AuthenticationService.cs" />
@@ -63,6 +63,7 @@
     <Compile Include="../Services/BillStreamService.cs" Link="Native/BillStreamService.cs" />
     <Compile Include="../Services/BillAlertService.cs" Link="Native/BillAlertService.cs" />
     <Compile Include="../ViewModels/MainPageViewModel.cs" Link="Native/MainPageViewModel.cs" />
+    <Compile Include="../ViewModels/BillsPageViewModel.cs" Link="Native/BillsPageViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <!-- The disposable PostgreSQL executable is built separately. Link only

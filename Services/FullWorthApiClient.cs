@@ -181,6 +181,10 @@ public sealed class FullWorthApiClient
                 cancellationToken);
 
         response.EnsureSuccessStatusCode();
+        if (response.StatusCode != System.Net.HttpStatusCode.OK ||
+            !string.Equals(response.Content.Headers.ContentType?.MediaType,
+                "application/json", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("The bill detail response was not a confirmed JSON snapshot.");
 
         var detail =
             await response.Content
@@ -188,9 +192,15 @@ public sealed class FullWorthApiClient
                     cancellationToken:
                         cancellationToken);
 
-        return detail
-            ?? throw new InvalidOperationException(
-                "The bill detail response was empty.");
+        if (detail is null || detail.Id != billStreamId ||
+            string.IsNullOrWhiteSpace(detail.ProviderName) ||
+            detail.Statements is null || detail.Changes is null ||
+            detail.Statements.Any(statement => statement is null || statement.Id == Guid.Empty) ||
+            detail.Changes.Any(change => change is null || change.Id == Guid.Empty) ||
+            detail.Statements.Select(statement => statement.Id).Distinct().Count() != detail.Statements.Count ||
+            detail.Changes.Select(change => change.Id).Distinct().Count() != detail.Changes.Count)
+            throw new InvalidDataException("The bill detail response contained invalid records.");
+        return detail;
     }
 
     public async Task<BillStatementUploadResult>

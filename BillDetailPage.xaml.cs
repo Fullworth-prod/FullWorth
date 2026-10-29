@@ -470,15 +470,17 @@ public partial class BillDetailPage : ContentPage
     {
         get
         {
-            var description =
-                LatestChange?
-                    .Description;
+            var change = LatestChange;
+            var description = change?.Description;
 
             return
                 string.IsNullOrWhiteSpace(
                     description)
                     ? "FullWorth confirmed the amount changed, but there is not enough provider evidence yet to explain why."
-                    : description;
+                    : change is { HasAnnualizedImpactEvidence: true } &&
+                        FinancialAmountFormatter.TryNormalizeCurrency(change.CurrencyCode, out _)
+                        ? description
+                        : "Earlier saved explanation. Its monthly and yearly estimates are unverified. " + description;
         }
     }
 

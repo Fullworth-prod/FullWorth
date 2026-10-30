@@ -23,6 +23,12 @@ Decision: HOLD. Prepare the candidate and testing package; do not dispatch produ
 
 The source of these requirements is the current .github/workflows/production-deploy.yml and deploy/deploy-production.sh, not a new deployment route. The workflow dispatch requires release_sha, explicit guarded-deploy confirmation and exact configured-host confirmation, runs from master and rejects a stale/different master commit. It downloads verified image artifacts for successful CI on that exact master release. No dispatch is performed by writing this proposal.
 
+## Inspected schema delta and rollback limits
+
+Comparing master9540b2616841e9794d8f8c07616edcd1e339982c to candidatebb0cdd70abc80f82afae6bd193a5b7549f3bcf56 finds one added migration:20261025210000_AddSubscriptionVerification, plus the model snapshot. Up adds the BankTransactions(Id,UserId) alternate key, SubscriptionReviews and SubscriptionEvidence, owner foreign keys and indexes. It does not rewrite/drop existing financial columns. The unique constraint can require a lock/scan; live volume, lock budget and database migration state have not been inspected. Source inspection is not production migration acceptance.
+
+Down drops both evidence tables and the alternate key; do not run it as ordinary rollback. Older master lacks coordinated erasure of new subscription-dependent rows, so code-only rollback after those tables are populated needs explicit compatibility review. No reverse migration, private data deletion or restore is approved.
+
 ## Proposed authorized execution sequence, only after approval
 
 1. Recheck current branch rules, source freshness, review requirements and candidate acceptance. Resolve divergence through a normal protected PR; no bypass/force push.

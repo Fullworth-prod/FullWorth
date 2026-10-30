@@ -1,3 +1,15 @@
+## Verified upload recovery candidate — October 30, 2026
+
+Latest runtime candidate in development: `bb0cdd70abc80f82afae6bd193a5b7549f3bcf56` ([#1020](https://github.com/Fullworth-prod/FullWorth/pull/1020)). This supersedes the older candidate card below; the Sunday goal remains active and prior history is preserved.
+
+Two actual SDK regressions on unchanged production source proved original-file deletion after metadata persistence plus acknowledgement failure/cancellation (run41013048107:2 failed/3,659 passed). The correction preserves originals after uncertain save outcomes, detaches only the candidate and rethrows without save replay or false success. Owner account deletion includes finalized unreferenced originals in its existing quarantine lifecycle; invalid/temp/nested/link entries refuse enumeration. Failed uncommitted originals can remain until controlled account erasure. No timed orphan deletion or real account erasure occurred.
+
+Final source `00eac25bd3be7c222edfc5a42f8b8b46ec0963aa`, tested `6b860dbbd7127b4666576c3b8964a330be1b7b98` and integrated tree `be480f9e58bd93eb52589abb293b2b2ecb720c04` verified. All10 checks passed; [main run41013942600](https://github.com/Fullworth-prod/FullWorth/actions/runs/41013942600) executed3,665 .NET/753 Node with zero failures/skips and zero backend/offline build warnings/errors. All six scoped PostgreSQL checks passed. Container HTTP/parser/security/disposable backup/restore checks passed; this is not real recovery acceptance. Android job was conditional for server scope; no new native artifact is claimed. Strict rules, empty reviews/threads and disabled auto-delete were checked; no bypass. Native client artifacts from #1018 remain separately identified and do not certify this server revision.
+
+[Sunday checklist](SUNDAY-TESTING-20261101.md) now includes interrupted-upload readback and retention limits. All source reviews remain scoped evidence: bank one-time completion/ownership; discovery sparse/conflicting currency preservation; independent subscription facts; upload ownership/status; refresh-family replay protection. Real provider/private expected bills/payroll/merchant/device/delivery/two-owner/document/privacy/current nonempty both-keyring recovery/legal gates remain open. Gated AI/creator stay off; cleanup unauthorized. Master9540b2616841e9794d8f8c07616edcd1e339982c remains unchanged; its separately recorded deployment has not been freshly host-confirmed. No deployment/promotion/access/account/spending/private export occurred. Candidate availability still requires the separate guarded proposal and approval; integration is not deployment.
+
+---
+
 # FullWorth Sunday testing package — November 1, 2026
 
 ## Release card: fill before testing
@@ -98,3 +110,9 @@ Stop the affected journey for wrong-owner data, unexpected financial mutation, c
 ## Sunday completion
 
 Summarize pass/fail/blocked/not-run by journey and device, with one confirmed candidate/served-release identity. Separate bugs from missing access/consent/evidence. Passing Sunday tests is not legal acceptance, full recovery acceptance, merchant-wide verification or launch authorization.
+
+## Interrupted upload — candidate #1020
+
+Use only owned documents you consent to process. If upload fails or its acknowledgement is lost, reopen the same bill and check existing latest/status before uploading again. A committed upload may still be processing. Unresolved outcome is BLOCKED, not permission to repeat writes. Verify only Processed refreshes trusted history. Do not disrupt production services to manufacture failure.
+
+A failed uncommitted upload may retain an original until controlled account erasure. Account deletion is destructive and is not an ordinary Sunday test; it requires separate explicit authorization and controlled evidence. Do not delete real files or records to force this checklist to pass.

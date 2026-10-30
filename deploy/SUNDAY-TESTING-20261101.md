@@ -1,6 +1,6 @@
 ## Verified upload recovery candidate — October 30, 2026
 
-Latest runtime candidate in development: `bb0cdd70abc80f82afae6bd193a5b7549f3bcf56` ([#1020](https://github.com/Fullworth-prod/FullWorth/pull/1020)). This supersedes the older candidate card below; the Sunday goal remains active and prior history is preserved.
+Latest runtime candidate in development: `bb0cdd70abc80f82afae6bd193a5b7549f3bcf56` ([#1020](https://github.com/Fullworth-prod/FullWorth/pull/1020)). The release card below uses this same runtime candidate; the Sunday goal remains active and prior history is preserved.
 
 Two actual SDK regressions on unchanged production source proved original-file deletion after metadata persistence plus acknowledgement failure/cancellation (run41013048107:2 failed/3,659 passed). The correction preserves originals after uncertain save outcomes, detaches only the candidate and rethrows without save replay or false success. Owner account deletion includes finalized unreferenced originals in its existing quarantine lifecycle; invalid/temp/nested/link entries refuse enumeration. Failed uncommitted originals can remain until controlled account erasure. No timed orphan deletion or real account erasure occurred.
 
@@ -16,13 +16,13 @@ Final source `00eac25bd3be7c222edfc5a42f8b8b46ec0963aa`, tested `6b860dbbd7127b4
 
 Status: VERIFIED DEVELOPMENT CANDIDATE; remaining journey review and served availability are pending. This package does not authorize deployment.
 
-- Candidate commit: c07c5b739487252fdd17282690c6ab8c70257760.
-- Final source: 2e04866bbcce4d490a00d0d889a2d054a28fbc69 (#1018); all 12 checks passed. Main run: https://github.com/Fullworth-prod/FullWorth/actions/runs/40843332700 (3,659 .NET / 753 Node, zero failures/skips).
-- Tested and integrated tree: a1bdbfbf7dfd9a101c3f203d93a322ef5b7a569c.
+- Candidate commit: bb0cdd70abc80f82afae6bd193a5b7549f3bcf56.
+- Final source: 00eac25bd3be7c222edfc5a42f8b8b46ec0963aa (#1020); all 10 checks passed. Main run: https://github.com/Fullworth-prod/FullWorth/actions/runs/41013942600 (3,665 .NET / 753 Node, zero failures/skips).
+- Tested and integrated runtime tree: be480f9e58bd93eb52589abb293b2b2ecb720c04.
 - Website entry: https://fullworth.org/ (existing production; not a candidate preview).
 - API served commit and observation time: not freshly verified.
 - Last separately recorded production release:9540b2616841e9794d8f8c07616edcd1e339982c.
-- Android: [APK build run](https://github.com/Fullworth-prod/FullWorth/actions/runs/40843332683), artifact 12884610408, built from tested merge 891afab79f5480d52e12b3165741a25e4ffc71df (same candidate tree). Archive SHA256: 0b389d6f2b46f6c190a4e6783547406607a4f3d1f8b892c1b59f6da29dea54f1; expires November 12, 08:43 UTC. Metadata verified; archive not independently downloaded in this pass. Requires existing GitHub access; installing on a physical device remains owner acceptance.
+- Android: [APK build run](https://github.com/Fullworth-prod/FullWorth/actions/runs/40843332683), artifact 12884610408, built from tested merge 891afab79f5480d52e12b3165741a25e4ffc71df (earlier #1018 native build, not the #1020 server candidate). Archive SHA256: 0b389d6f2b46f6c190a4e6783547406607a4f3d1f8b892c1b59f6da29dea54f1; expires November 12, 08:43 UTC. Metadata verified; archive not independently downloaded in this pass. Requires existing GitHub access; installing on a physical device remains owner acceptance.
 - iPhone: Safari Add to Home Screen on the confirmed served website. An unsigned IPA is not proof of installability on a physical iPhone.
 - Browser/native client version and API version must both be recorded. A new native build pointing to the older API does not test new server features; absent annual-evidence flags should show unavailable.
 - Rollback target: identify the independently verified previously served release and protected backup evidence in the separate deployment proposal. Do not deploy or restore from this checklist.
@@ -31,7 +31,7 @@ Until the intended release is actually available at an approved test entry point
 
 ## Before Sunday
 
-Engineering: #1017 and #1018 are merged after final-head checks and tree verification. Owned coverage/unit/math, old responses, native chronology and historical explanation qualification have regression coverage. Continue the bank/bill/statement/alert/auth/device journey review. Freeze one candidate after actionable defects are resolved; preserve source branches.
+Engineering: #1017, #1018 and #1020 are merged after final-head checks and tree verification. Owned coverage/unit/math, old responses, native chronology and historical explanation qualification have regression coverage. Continue the bank/bill/statement/alert/auth/device journey review. Freeze one candidate after actionable defects are resolved; preserve source branches.
 
 Operator: prepare a concrete promotion/deployment/rollback proposal for separate approval. No approval is inferred from this goal. Identify database/migration compatibility, current recovery evidence, proposed smoke checks and stop conditions; never assume restoring a database is a safe ordinary rollback.
 

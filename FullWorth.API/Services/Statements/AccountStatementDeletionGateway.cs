@@ -32,6 +32,11 @@ public sealed class AccountStatementDeletionGateway(
                 .ToListAsync(
                     cancellationToken);
 
+        // Include finalized originals whose metadata outcome was uncertain.
+        // Enumeration is owner-scoped and rejects links/unexpected files.
+        storageKeys = storageKeys.Concat(statementStorage.GetOwnedStorageKeys(userId))
+            .Distinct(StringComparer.Ordinal).ToList();
+
         var quarantined =
             new List<
                 AccountStatementQuarantineEntry>(

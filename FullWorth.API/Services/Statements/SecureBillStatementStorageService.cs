@@ -157,6 +157,38 @@ public sealed class SecureBillStatementStorageService
             options: FileOptions.SequentialScan);
     }
 
+
+    // Finalized originals may outlive a failed metadata acknowledgement.
+    // Only generated files in the exact owner directory enter deletion quarantine;
+    // unexpected files, links or in-flight uploads fail closed for operator review.
+    public IReadOnlyList<string> GetOwnedStorageKeys(Guid userId)
+    {
+        if (userId == Guid.Empty)
+            throw new ArgumentException("User ID is required.", nameof(userId));
+        var directory = GetUserDirectory(userId);
+        if (!Directory.Exists(directory))
+            return [];
+        if ((File.GetAttributes(_rootPath) & FileAttributes.ReparsePoint) != 0 ||
+            (File.GetAttributes(directory) & FileAttributes.ReparsePoint) != 0 ||
+            Directory.EnumerateDirectories(directory).Any())
+            throw new InvalidOperationException("Statement owner storage is unsafe for enumeration.");
+        var keys = new List<string>();
+        foreach (var path in Directory.EnumerateFiles(directory))
+        {
+            var name = Path.GetFileName(path);
+            var extension = Path.GetExtension(name);
+            if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0 ||
+                extension is not ".pdf" and not ".jpg" and not ".png" ||
+                !Guid.TryParseExact(Path.GetFileNameWithoutExtension(name), "N", out var id) ||
+                id == Guid.Empty)
+                throw new InvalidOperationException("Statement owner storage contains an unexpected file.");
+            var key = BuildStorageKey(userId, name);
+            _ = GetOwnedPhysicalPath(userId, key);
+            keys.Add(key);
+        }
+        return keys.OrderBy(key => key, StringComparer.Ordinal).ToArray();
+    }
+
     public void Delete(
         string storageKey)
     {

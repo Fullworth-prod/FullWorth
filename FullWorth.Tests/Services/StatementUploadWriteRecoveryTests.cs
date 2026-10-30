@@ -29,7 +29,7 @@ public sealed class StatementUploadWriteRecoveryTests
 
     [Theory]
     [MemberData(nameof(Failures))]
-    public async Task FailedMetadataInsert_RemovesFileAndCandidate_PreservesCaller_AndRetries(
+    public async Task FailedMetadataInsert_PreservesOriginalForOwnedDeletion_DetachesCandidate_AndRetries(
         string mode, bool callerChanges)
     {
         await using var factory = new FullWorthApiFactory();
@@ -84,7 +84,16 @@ public sealed class StatementUploadWriteRecoveryTests
             else Assert.IsType<InvalidOperationException>(error);
             Assert.NotNull(failure.Candidate);
             Assert.Equal(EntityState.Detached, db.Entry(failure.Candidate).State);
-            Assert.Empty(Directory.GetFiles(storageRoot, "*", SearchOption.AllDirectories));
+            Assert.Single(Directory.GetFiles(storageRoot, "*", SearchOption.AllDirectories));
+            var deletion = new AccountStatementDeletionGateway(db, storage,
+                Microsoft.Extensions.Logging.Abstractions.NullLogger<AccountStatementDeletionGateway>.Instance);
+            var protectedEntries = await deletion.QuarantineOwnedFilesAsync(owner);
+            var protectedEntry = Assert.Single(protectedEntries);
+            Assert.True(protectedEntry.WasPresent);
+            Assert.Equal(owner, protectedEntry.UserId);
+            Assert.Empty(storage.GetOwnedStorageKeys(owner));
+            deletion.RestoreQuarantine(protectedEntry);
+            Assert.Single(storage.GetOwnedStorageKeys(owner));
             foreach (var (id, state) in states)
                 Assert.Equal(state, db.ChangeTracker.Entries<BankConnectionEntity>().Single(x => x.Entity.Id == id).State);
             Assert.Equal(flags, db.Entry(modified).Properties.Where(x => x.IsModified)
@@ -193,6 +202,43 @@ public sealed class StatementUploadWriteRecoveryTests
             if (cancel) { Cancel!(); cancellationToken.ThrowIfCancellationRequested(); }
             throw new InvalidOperationException("Synthetic post-commit acknowledgement loss.");
         }
+    }
+
+
+    [Fact]
+    public async Task OwnedDeletion_IncludesUnreferencedOriginals_ExcludesOtherOwners_AndRejectsUnexpectedFiles()
+    {
+        await using var factory = new FullWorthApiFactory();
+        var root = Path.Combine(Path.GetTempPath(), "FullWorth-upload-owned", Guid.NewGuid().ToString());
+        var storage = new SecureBillStatementStorageService(Options.Create(new BillStatementStorageOptions
+            { RootPath = root, MaxFileSizeBytes = 1024 * 1024 }),
+            factory.Services.GetRequiredService<IWebHostEnvironment>());
+        var options = new DbContextOptionsBuilder<FullWorthDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
+        try
+        {
+            var owner = Guid.NewGuid();
+            var other = Guid.NewGuid();
+            using var first = new MemoryStream(Encoding.ASCII.GetBytes("%PDF-1.4\nfixture"));
+            using var second = new MemoryStream(Encoding.ASCII.GetBytes("%PDF-1.4\nother fixture"));
+            var owned = await storage.StoreAsync(owner, first, "fixture.pdf");
+            var foreign = await storage.StoreAsync(other, second, "fixture.pdf");
+            Assert.Equal(owned.StorageKey, Assert.Single(storage.GetOwnedStorageKeys(owner)));
+            await using var db = new FullWorthDbContext(options);
+            var gateway = new AccountStatementDeletionGateway(db, storage,
+                Microsoft.Extensions.Logging.Abstractions.NullLogger<AccountStatementDeletionGateway>.Instance);
+            var entry = Assert.Single(await gateway.QuarantineOwnedFilesAsync(owner));
+            Assert.Equal(owned.StorageKey, entry.StorageKey);
+            gateway.CommitQuarantine(entry);
+            Assert.Empty(storage.GetOwnedStorageKeys(owner));
+            using var untouched = storage.OpenRead(other, foreign.StorageKey);
+            Assert.True(untouched.Length > 8);
+            Directory.CreateDirectory(Path.Combine(root, owner.ToString("N")));
+            await File.WriteAllTextAsync(Path.Combine(root, owner.ToString("N"), "unexpected.txt"), "fixture");
+            Assert.Throws<InvalidOperationException>(() => storage.GetOwnedStorageKeys(owner));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => gateway.QuarantineOwnedFilesAsync(owner));
+        }
+        finally { Directory.Delete(root, recursive: true); }
     }
 
     private sealed class UploadFailure(string mode) : SaveChangesInterceptor

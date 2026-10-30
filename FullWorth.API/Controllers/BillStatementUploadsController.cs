@@ -197,11 +197,12 @@ public sealed class BillStatementUploadsController
         }
         catch
         {
-            // The file is removed below; its failed metadata insert must not
-            // survive in this context and later reference a deleted file.
+            // An exception can follow a successful commit. Never delete the
+            // original based on an unconfirmed database outcome or replay a save.
+            // Detach only our candidate; later status reads reconcile committed
+            // uploads. Owner-directory enumeration keeps unreferenced originals
+            // inside the existing account-deletion quarantine lifecycle.
             _dbContext.Entry(upload).State = EntityState.Detached;
-            _storageService.Delete(
-                storedFile.StorageKey);
 
             throw;
         }

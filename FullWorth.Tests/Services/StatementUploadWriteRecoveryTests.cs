@@ -112,6 +112,89 @@ public sealed class StatementUploadWriteRecoveryTests
         finally { Directory.Delete(storageRoot, recursive: true); }
     }
 
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CommittedInsert_WithLostAcknowledgement_PreservesFileAndReadableStatus(bool cancel)
+    {
+        await using var factory = new FullWorthApiFactory();
+        using var identityScope = factory.Services.CreateScope();
+        var name = Guid.NewGuid().ToString();
+        var root = new InMemoryDatabaseRoot();
+        var failure = new LostUploadAcknowledgement(cancel);
+        var options = new DbContextOptionsBuilder<FullWorthDbContext>()
+            .UseInMemoryDatabase(name, root).AddInterceptors(failure).Options;
+        var plain = new DbContextOptionsBuilder<FullWorthDbContext>().UseInMemoryDatabase(name, root).Options;
+        var storageRoot = Path.Combine(Path.GetTempPath(), "FullWorth-upload-ack", Guid.NewGuid().ToString());
+        var storage = new SecureBillStatementStorageService(Options.Create(new BillStatementStorageOptions
+            { RootPath = storageRoot, MaxFileSizeBytes = 1024 * 1024 }),
+            factory.Services.GetRequiredService<IWebHostEnvironment>());
+        try
+        {
+            await using var db = new FullWorthDbContext(options);
+            var owner = Guid.NewGuid();
+            var stream = new BillStreamEntity { UserId = owner, ProviderName = "Fixture" };
+            db.Add(stream);
+            await db.SaveChangesAsync();
+            var controller = new BillStatementUploadsController(db,
+                identityScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>(), storage,
+                new BillStatementProcessingSignal(), new BillStreamReadGateway(db))
+            {
+                ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(
+                        [new Claim(ClaimTypes.NameIdentifier, owner.ToString())], "fixture"))
+                }}
+            };
+            using var stop = new CancellationTokenSource();
+            failure.Cancel = stop.Cancel;
+            failure.Armed = true;
+            using var bytes = new MemoryStream(Encoding.ASCII.GetBytes("%PDF-1.4\nfixture document\n%%EOF"));
+            var file = new FormFile(bytes, 0, bytes.Length, "file", "fixture.pdf");
+            var error = await Record.ExceptionAsync(() => controller.UploadStatement(stream.Id, file, stop.Token));
+            if (cancel) Assert.IsAssignableFrom<OperationCanceledException>(error);
+            else Assert.IsType<InvalidOperationException>(error);
+            Assert.NotNull(failure.Candidate);
+            Assert.Equal(EntityState.Detached, db.Entry(failure.Candidate).State);
+            await using var verify = new FullWorthDbContext(plain);
+            var saved = await verify.BillStatementUploads.SingleAsync();
+            Assert.Equal(owner, saved.UserId);
+            Assert.Equal(stream.Id, saved.BillStreamId);
+            using var stored = storage.OpenRead(owner, saved.StorageKey);
+            Assert.True(stored.Length > 8);
+            var latest = await controller.GetLatestUpload(stream.Id);
+            var ok = Assert.IsType<OkObjectResult>(latest.Result);
+            Assert.Equal(saved.Id, Assert.IsType<BillStatementUploadStatusResult>(ok.Value).Id);
+            await db.SaveChangesAsync();
+            Assert.Single(await verify.BillStatementUploads.AsNoTracking().ToListAsync());
+        }
+        finally { Directory.Delete(storageRoot, recursive: true); }
+    }
+
+    private sealed class LostUploadAcknowledgement(bool cancel) : SaveChangesInterceptor
+    {
+        public bool Armed { get; set; }
+        public Action? Cancel { get; set; }
+        public BillStatementUploadEntity? Candidate { get; private set; }
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData,
+            InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            if (Armed)
+                Candidate = eventData.Context!.ChangeTracker.Entries<BillStatementUploadEntity>()
+                    .Single(x => x.State == EntityState.Added).Entity;
+            return ValueTask.FromResult(result);
+        }
+        public override ValueTask<int> SavedChangesAsync(SaveChangesCompletedEventData eventData,
+            int result, CancellationToken cancellationToken = default)
+        {
+            if (!Armed) return ValueTask.FromResult(result);
+            Armed = false;
+            if (cancel) { Cancel!(); cancellationToken.ThrowIfCancellationRequested(); }
+            throw new InvalidOperationException("Synthetic post-commit acknowledgement loss.");
+        }
+    }
+
     private sealed class UploadFailure(string mode) : SaveChangesInterceptor
     {
         public bool Armed { get; set; }

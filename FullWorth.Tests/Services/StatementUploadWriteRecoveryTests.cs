@@ -205,8 +205,12 @@ public sealed class StatementUploadWriteRecoveryTests
     }
 
 
-    [Fact]
-    public async Task OwnedDeletion_IncludesUnreferencedOriginals_ExcludesOtherOwners_AndRejectsUnexpectedFiles()
+    [Theory]
+    [InlineData("unexpected.txt")]
+    [InlineData(".upload-fixture.tmp")]
+    [InlineData("11111111111111111111111111111111.exe")]
+    [InlineData("nested")]
+    public async Task OwnedDeletion_IncludesUnreferencedOriginals_ExcludesOtherOwners_AndRejectsUnexpectedFiles(string unexpected)
     {
         await using var factory = new FullWorthApiFactory();
         var root = Path.Combine(Path.GetTempPath(), "FullWorth-upload-owned", Guid.NewGuid().ToString());
@@ -234,7 +238,11 @@ public sealed class StatementUploadWriteRecoveryTests
             using var untouched = storage.OpenRead(other, foreign.StorageKey);
             Assert.True(untouched.Length > 8);
             Directory.CreateDirectory(Path.Combine(root, owner.ToString("N")));
-            await File.WriteAllTextAsync(Path.Combine(root, owner.ToString("N"), "unexpected.txt"), "fixture");
+            var unexpectedPath = Path.Combine(root, owner.ToString("N"), unexpected);
+            if (unexpected == "nested")
+                Directory.CreateDirectory(unexpectedPath);
+            else
+                await File.WriteAllTextAsync(unexpectedPath, "fixture");
             Assert.Throws<InvalidOperationException>(() => storage.GetOwnedStorageKeys(owner));
             await Assert.ThrowsAsync<InvalidOperationException>(() => gateway.QuarantineOwnedFilesAsync(owner));
         }

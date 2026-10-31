@@ -1,3 +1,17 @@
+# Sunday deployment decision — APPROVED CONDITIONALLY, NOT DEPLOYED
+
+The human explicitly approved promoting runtime candidatebb0cdd70 through the protected master PR and then using the existing guarded deployment after exact-master CI, attested artifacts, target identity and backup/migration prerequisites pass. Do not request that same approval again. Approval does not extend to new credentials/grants, spending, paid activation, secret/account changes, destructive rollback, down-migration or database restore.
+
+[#1023](https://github.com/Fullworth-prod/FullWorth/pull/1023) promoted master to `ccdb0cc6be4ae649c0292d2e1bf0a2a97bd71cb4` after23 PR-head checks; source/tested/integrated tree8799ac7c7b50a856f01fb5f622e929e0046ca495 matches. Exact-master CI41166392224 passed and produced unexpired attested image artifact13029104536. [Current release checkpoint](SUNDAY-RELEASE-CHECKPOINT-20261031.md) records identity, tests, hashes, expiry, live host preflight and recovery limits.
+
+Production remains9540b2616841e9794d8f8c07616edcd1e339982c. Parser resource drift was repaired without restart; full production and automated beta-host preflight passed on that older release. Guarded deployment has not run. The remaining execution blocker is workflow dispatch access: the connector lacks dispatch, local browser use is disabled, and the separate Cloud Work task choice is pending. Preserve the approved master and use its existing workflow; do not replace it with an ad hoc deployment or change credentials.
+
+The additive subscription-verification migration below is still pending. Existing backup snapshot metadata and passing host checks are not proof of a current nonempty real-statement/both-keyring clean-host restore. Historical partial separate-runner recovery remains partial. A code-only rollback after new evidence-table writes remains unproven; stop and inspect rather than execute destructive Down or restore.
+
+---
+
+## Historical proposal prepared before approval
+
 # Sunday candidate deployment and recovery proposal — NOT APPROVED
 
 This is a preparation document. It grants no production/master promotion, deployment, spending, new credential/grant, secret/account change, private financial export or destructive recovery authorization.

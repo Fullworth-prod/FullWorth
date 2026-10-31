@@ -1,3 +1,17 @@
+## Approved Sunday promotion and verified live preflight — October 31, 2026
+
+`master` is the release branch at candidate `ccdb0cc6be4ae649c0292d2e1bf0a2a97bd71cb4`.
+
+Currently verified live production release: `9540b2616841e9794d8f8c07616edcd1e339982c` (fresh October31 host verification; approved new candidate not deployed).
+
+The preserved runtime candidate `bb0cdd70abc80f82afae6bd193a5b7549f3bcf56` is promoted through [#1023](https://github.com/Fullworth-prod/FullWorth/pull/1023) to master `ccdb0cc6be4ae649c0292d2e1bf0a2a97bd71cb4`. Human approval covers the existing guarded deployment after its prerequisites; it is already received. All 23 final PR-head checks passed. Source/tested/integrated tree `8799ac7c7b50a856f01fb5f622e929e0046ca495` matches. Exact-master [CI41166392224](https://github.com/Fullworth-prod/FullWorth/actions/runs/41166392224) passed 3,665 .NET/753 Node tests, zero failed/skipped, and backend/offline builds reported zero warnings/errors. All 14 observed master check-runs passed, including four CodeQL analyses and native packaging/emulator/simulator checks.
+
+Production is freshly verified on `9540b2616841e9794d8f8c07616edcd1e339982c`, not the new master. A parser swap-boundary drift was repaired without restart; full production and automated beta-host verifiers now pass. [#1024](https://github.com/Fullworth-prod/FullWorth/issues/1024) remains open for recurrence/root-cause follow-up. Guarded deployment has not been dispatched: the connector has no dispatch capability, local browser use is disabled, and a separate Cloud Work task choice is pending. No new access is needed or authorized by this record.
+
+Use the [current release evidence and next checkpoint](deploy/SUNDAY-RELEASE-CHECKPOINT-20261031.md), [Sunday checklist](deploy/SUNDAY-TESTING-20261101.md) and private evidence template. Fresh master Android artifact13029368725 is downloaded and hash-verified; it does not certify a physical device or the older served API. Real provider/private-fact/device/delivery/two-owner/document/recovery/legal acceptance remains open. No deployment, private financial export, new credential, activation or destructive recovery occurred. Older dated cards below are historical.
+
+---
+
 ## Verified upload recovery candidate — October 30, 2026
 
 Latest runtime candidate in development: `bb0cdd70abc80f82afae6bd193a5b7549f3bcf56` ([#1020](https://github.com/Fullworth-prod/FullWorth/pull/1020)). This supersedes the older candidate card below; the Sunday goal remains active and prior history is preserved.

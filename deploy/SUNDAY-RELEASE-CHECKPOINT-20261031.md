@@ -1,3 +1,19 @@
+# Latest development correction — October 31, 2026 UTC
+
+[#1026](https://github.com/Fullworth-prod/FullWorth/pull/1026) merged into development as `ca848ad1e61f72a1408b7d87d4d656dbcd9dacec`. Final source9cfaa61e5b71822ef0a72b58eab8ce32979ded93/tested2e8c6661b00a01434f5affc534eafbdb627ca4e2/integrated tree146aa3a0242c0fa353306214ae0c5c69ed843eb0 match; all5 files read back exactly and source branch retained. Fresh strict ruleset/empty reviews+threads/no auto-delete checked. Master remainsccdb0cc6, live9540 remains independently verified; this later runtime configuration needs a distinct promotion decision.
+
+All5 final-head checks passed: main41234428815 (backend124635121284, container124635121129, Android124635121408), pinned browser41234428884 and dependency41234428920. Actual3665.NET/753Node0failed/skipped/backend+offline+actual Android0warnings/errors. All-three actual systemd reload preserved manager/kernel zero and PIDs/start times; parser readiness and full hard containment/PDF/OCR/HTTP checks passed. Full rendered Chromium/WebKit themes/responsiveness/ARIA/subscription/privacy/Planning/recovery, virtualpasskey enrollment/firstfactor/MFAcode+passkey/removal with Spanish success and disposable encrypted restore554ea3096396f82c8e303e66440572066afd46930d84dd68b8325dd57f0675c0 passed. These are synthetic/disposable scopes, not physical/provider/real recovery acceptance; no financial PostgreSQL workflow was triggered by this correction.
+
+Unchanged-Compose reproductionc6f failed manager zero (41232038277/job124628095390). Parser-only0c9 passed actual reload but later virtualpasskey login-response wait timed out (41232318975/job124628921035). Final9cf did not reproduce that timeout; [#1027](https://github.com/Fullworth-prod/FullWorth/issues/1027) remains open with boolean-only diagnostics and unchanged submission/assertion/timeout. No passkey root cause or fix is claimed.
+
+Read-only production inspection also found API/Web manager infinity with kernel zero and existing equal Docker memory/memswap. Set only those existing scope runtime properties to the already effective zero. API PID2307463/start2026-10-31T03:22:37.808812353Z and Web PID2309741/start03:23:52.424094734Z were unchanged; manager/kernel0 verified. Full production verifier passed again afterward. No production manager reload, service restart, deployment, package/runtime upgrade, private export or new access occurred. One SSH/connector timeout recovered; public API/Web readiness200 and fresh host verification do not show an outage.
+
+See [durable correction](PARSER-SWAP-PERSISTENCE-20261031.md) and [new decision proposal](SUNDAY-DEPLOYMENT-PROPOSAL-20261101.md). The earlier master artifact/approval evidence below stays tied toccdb; it is not automatically valid for the new configuration. Existing cloud task choice remains pending; no other task was created or messaged. #1024 stays open until durable live evidence. Preserve every external acceptance gate and privacy boundary.
+
+---
+
+## Earlier approved master and preflight evidence
+
 # Sunday release checkpoint — October 31, 2026 UTC
 
 ## Identity and authorization

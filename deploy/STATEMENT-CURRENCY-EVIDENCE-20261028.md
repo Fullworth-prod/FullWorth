@@ -1,0 +1,47 @@
+# Verified integration — 2026-10-28 UTC
+
+This scoped change is now verified in development through #999 atc556f22ffd51782202b6a3cf9c4ca6fed83977f8 and #1000 at74d559cead93ca6073cd469697a1a5e5b31221e6. See [the exact source/tested/tree/test/acceptance record](MILESTONE-CLEANUP-AUDIT-20261027.md). #999 final814 source passed3,003 .NET/368 Node/all5 checks with full browser/Android/HTTP/disposable recovery; #1000 final10fac source passed3,062 .NET/368 Node/all10 checks and all six PostgreSQL scopes, with native/browser conditional. Both source branches remain. Earlier prepared/failed-head notes below are historical, not the current integration state. Real provider/device/private-data/delivery/current-release recovery/legal acceptance remains open; no production deployment or activation occurred. This Markdown-only handoff still requires its own protected checks.
+
+---
+
+## Current recognition and whitespace review — 2026-10-28 UTC
+
+Source review of the unmerged5fba draft reproduced TotalAmount104.99/CurrencyCodeDUE/readytrue when U+2028 separated the total from the ordinary word DUE. Horizontal matching now uses Unicode space separators plus TAB, excluding vertical controls/line/paragraph separators. Unrecognized codes and XXX/XTS placeholders cannot become statement units. Recognized codes come from the installed framework's region currency metadata; unusable region entries are skipped safely. Missing recognition holds review rather than inventing USD.
+
+The recognition set is deliberately bounded by the installed OS/ICU data, not a claim of a complete or permanently current currency registry. Microsoft documents [RegionInfo.ISOCurrencySymbol](https://learn.microsoft.com/en-us/dotnet/api/system.globalization.regioninfo.isocurrencysymbol?view=net-10.0) and [GetCultures](https://learn.microsoft.com/en-us/dotnet/api/system.globalization.cultureinfo.getcultures?view=net-10.0); OS/ICU updates can change available metadata.
+
+74 actual existing/new parser-validation tests passed locally with the previously documented same-pattern compiler adapter, including53 new cases for currency evidence, unknown/ordinary-word/placeholder tokens and vertical separators. Six PDF pipeline cases remain in normal CI. Prior combined5fba source passed all10 checks,3,044 .NET/368 Node, zero failures/skips/backend/offline warnings/errors, but these new review corrections require their own final-head checks; that previous pass is not their acceptance.
+
+---
+
+# Explicit statement currency evidence — 2026-10-28 UTC
+
+## Reproduced defect
+
+The actual deterministic parser returned TotalAmount104.99, CurrencyCodeUSD and IsReadyForPersistencetrue for a complete synthetic statement explicitly declaring Currency:CAD and Total Amount Due:$104.99. Existing validation accepts a well-formed USD code, so the incorrect unit could reach automatic persistence. No private statement/provider was used.
+
+## Correction
+
+Recognize explicit Currency:, Statement Currency:, Billing Currency: and Currency code: lines plus a three-letter currency suffix on the same labeled total line. Normalize declared codes without converting or changing amounts. Equivalent repeated declarations remain usable. Conflicting declarations/suffixes return no currency and include CurrencyCode in conflict/missing metadata; malformed or empty explicit declarations never fall back to USD. Existing readiness and currency validation then withhold automatic persistence.
+
+The suffix accepts horizontal whitespace (including nonbreaking/thin spaces) on its own amount line; it cannot borrow an unrelated three-letter word from the next line. Existing amount precision/range, amount-label priority, date parsing, field conflict, ownership and storage policies remain.
+
+This is explicit currency evidence handling within the existing deterministic number/date format, not a general international statement/localization expansion. The historical USD-style fallback for documents with no recognized declaration remains. Unsupported formats and real representative-provider accuracy remain external acceptance work; no FX conversion or global currency inference is claimed.
+
+## Executed validation
+
+56 actual existing/new parser-validation cases passed in isolated C# execution, including35 new currency cases. Coverage includes original CAD mislabel, four declaration labels, suffixes, duplicate evidence, order-independent conflicting codes, declaration/suffix conflicts, invalid/empty codes, CRLF, no next-line borrowing, fractional precision, existing USD compatibility and the real validation boundary.
+
+Local execution used the actual parser, validation service, storage policy and xUnit2.9.3 test classes. GeneratedRegex methods were adapted to ordinary Regex construction with the exact same patterns/options solely because the isolated Add-Type compiler does not run SDK source generators; namespace/implicit-usings and framework-compatibility warning1701 adapters are also local only. Normal protected CI must compile the actual source-generated regex and run the complete solution/applicable relational suites on the final source before integration. These results are not predeclared here.
+
+The change does not establish private provider/document accuracy, real bank visibility, physical-device, delivery, same-release real recovery or legal acceptance. No paid inference/activation, provider contact, production/account/secret change, real private export or deployment occurred.
+
+Six new HTTP/upload/background PDF pipeline cases are also prepared: three declared CAD/EUR/GBP units must persist exactly with the synthetic owner/bill; three unusable declarations must retain review status and create no statement/change/alert. These have not been executed locally and require the final-head normal CI run. The change does not retrospectively audit or retag historical statement rows; any previously affected private upload needs controlled comparison with its original document before correction.
+
+Initial source367407bce3bca5cab7d25ceeddf8da1448a43f4a (base51c, before #999) built with zero backend/offline warnings/errors and ran3,007 .NET cases:3,004 passed/3 failed/0 skipped. The three positive new PDF cases hit429 during shared-fixture registration before parsing; the added cases exhausted that class's anonymous auth budget. Each new PDF case now owns a real test factory/auth limiter/database/worker host, with status reads scoped to it. All six pipeline assertions and production quotas remain intact; no retry/skip/limiter weakening is added. Fresh final-head CI is required. The negative PDF/generated-regex/pure parser cases did execute successfully on that initial head, but that is not a complete or combined pass.
+
+## Current combined base
+
+Account-response PR#999 merged into development as c556f22ffd51782202b6a3cf9c4ca6fed83977f8 after all5 checks on814153aebb59d5a42389347b79c8c28ab42db583. Source/testede103288/integrated tree3ed46dd9b4667498560925d6ed4b4d311b3dcc25 matched;3,003 .NET/368 Node, zero failures/skips/build warnings/errors,8 setup+41 account HTTP cases per pinned engine, full themed/recovery/HTTP/virtual-key/disposable encrypted restore passed. Its branch is retained. Those synthetic results do not establish real provider/device/delivery/current-release recovery/legal acceptance.
+
+This currency branch now merges that actual development commit as an additional parent while retaining its four independent files. Initial cab2 source's successful3,007 .NET/229 Node run excludes #999 and is preliminary evidence only. Require the updated combined source's own protected CI and all applicable PostgreSQL suites before integration. No combined outcome or own merge SHA is predeclared.

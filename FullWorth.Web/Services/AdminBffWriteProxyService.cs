@@ -80,7 +80,8 @@ public sealed class AdminBffWriteProxyService(
                 Results.BadRequest());
         }
 
-        if (!IsAllowedApiPath(requestUri))
+        if (!IsAllowedApiPath(requestUri) ||
+            IsSubscriptionReviewPath(requestUri) && method != HttpMethod.Post)
         {
             return Task.FromResult<IResult>(
                 Results.BadRequest());
@@ -173,15 +174,145 @@ public sealed class AdminBffWriteProxyService(
                     cancellationToken);
             }
 
+            // A proxy/login page or accepted job is not a completed JSON export.
+            if (response.StatusCode != HttpStatusCode.OK ||
+                !string.Equals(response.Content.Headers.ContentType?.MediaType,
+                    "application/json", StringComparison.OrdinalIgnoreCase))
+            {
+                return InvalidAccountExport();
+            }
+
             var bytes =
                 await response.Content.ReadAsByteArrayAsync(
                     cancellationToken);
+            if (!IsJsonObjectExport(bytes))
+            {
+                return InvalidAccountExport();
+            }
 
             return Results.File(
                 bytes,
                 contentType,
                 Path.GetFileName(downloadFileName));
         }
+    }
+
+    private static IResult InvalidAccountExport() => Results.Problem(
+        statusCode: StatusCodes.Status502BadGateway,
+        title: "FullWorth did not return a valid account export.");
+
+    private static bool IsJsonObjectExport(byte[] bytes)
+    {
+        // Validate the current API envelope in the existing byte buffer. Do not
+        // deserialize another private-data graph or rewrite the downloaded bytes.
+        try
+        {
+            var reader = new System.Text.Json.Utf8JsonReader(bytes);
+            if (!reader.Read() || reader.TokenType != System.Text.Json.JsonTokenType.StartObject)
+                return false;
+
+            var seen = 0;
+            while (reader.Read() && reader.TokenType != System.Text.Json.JsonTokenType.EndObject)
+            {
+                if (reader.TokenType != System.Text.Json.JsonTokenType.PropertyName) return false;
+                var field = reader.GetString() switch
+                {
+                    "schemaVersion" => 1,
+                    "exportedAtUtc" => 2,
+                    "profile" => 4,
+                    "bankConnections" => 8,
+                    "bankAccounts" => 16,
+                    "bankTransactions" => 32,
+                    "billStreams" => 64,
+                    "billStatements" => 128,
+                    "billLineItems" => 256,
+                    "billChanges" => 512,
+                    "billAlerts" => 1024,
+                    "statementUploads" => 2048,
+                    "aiEvaluations" => 4096,
+                    "plaidLinkSessions" => 8192,
+                    "subscriptionReviews" => 16384,
+                    "subscriptionEvidence" => 32768,
+                    _ => 0
+                };
+                if (!reader.Read()) return false;
+                if (field == 0)
+                {
+                    // Permit additive API metadata, but never let it substitute
+                    // for a required field or bypass JSON/depth validation.
+                    if (!reader.TrySkip()) return false;
+                    continue;
+                }
+                if ((seen & field) != 0) return false;
+                seen |= field;
+                var valid = field switch
+                {
+                    1 => reader.TokenType == System.Text.Json.JsonTokenType.String &&
+                        reader.ValueTextEquals("1.1"),
+                    2 => IsExportTimestamp(ref reader),
+                    4 => IsExportProfile(ref reader),
+                    _ => IsExportCollection(ref reader)
+                };
+                if (!valid) return false;
+            }
+            return reader.TokenType == System.Text.Json.JsonTokenType.EndObject &&
+                seen == 65535 && !reader.Read();
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static bool IsExportTimestamp(ref System.Text.Json.Utf8JsonReader reader) =>
+        reader.TokenType == System.Text.Json.JsonTokenType.String &&
+        reader.TryGetDateTimeOffset(out _);
+
+    private static bool IsExportProfile(ref System.Text.Json.Utf8JsonReader reader)
+    {
+        if (reader.TokenType != System.Text.Json.JsonTokenType.StartObject) return false;
+        var seen = 0;
+        while (reader.Read() && reader.TokenType != System.Text.Json.JsonTokenType.EndObject)
+        {
+            if (reader.TokenType != System.Text.Json.JsonTokenType.PropertyName) return false;
+            var field = reader.GetString() switch
+            {
+                "displayName" => 1, "email" => 2, "createdAtUtc" => 4,
+                "lastLoginAtUtc" => 8, "isActive" => 16, _ => 0
+            };
+            if (!reader.Read()) return false;
+            if (field == 0)
+            {
+                if (!reader.TrySkip()) return false;
+                continue;
+            }
+            if ((seen & field) != 0) return false;
+            seen |= field;
+            var valid = field switch
+            {
+                1 or 2 => reader.TokenType == System.Text.Json.JsonTokenType.String,
+                4 => IsExportTimestamp(ref reader),
+                8 => reader.TokenType == System.Text.Json.JsonTokenType.Null ||
+                    IsExportTimestamp(ref reader),
+                _ => reader.TokenType is System.Text.Json.JsonTokenType.True or
+                    System.Text.Json.JsonTokenType.False
+            };
+            if (!valid) return false;
+        }
+        return reader.TokenType == System.Text.Json.JsonTokenType.EndObject && seen == 31;
+    }
+
+    private static bool IsExportCollection(ref System.Text.Json.Utf8JsonReader reader)
+    {
+        if (reader.TokenType != System.Text.Json.JsonTokenType.StartArray) return false;
+        while (reader.Read() && reader.TokenType != System.Text.Json.JsonTokenType.EndArray)
+        {
+            // Every current collection contains records; empty collections are
+            // legitimate. Record-level semantics/owner scoping remain API duties.
+            if (reader.TokenType != System.Text.Json.JsonTokenType.StartObject ||
+                !reader.TrySkip()) return false;
+        }
+        return reader.TokenType == System.Text.Json.JsonTokenType.EndArray;
     }
 
     public Task<IResult> ForwardJsonAndSignOutOnSuccessAsync<T>(
@@ -268,6 +399,19 @@ public sealed class AdminBffWriteProxyService(
             if (signOutOnSuccess &&
                 response.IsSuccessStatusCode)
             {
+                // These account mutations commit with 204. Deletion alone may
+                // return 202 after the account is removed but file cleanup remains.
+                // An arbitrary 2xx page is not proof of either committed outcome.
+                var acceptedDeletion = method == HttpMethod.Delete &&
+                    string.Equals(requestUri, AccountDeletionPath, StringComparison.Ordinal) &&
+                    response.StatusCode == HttpStatusCode.Accepted;
+                if (response.StatusCode != HttpStatusCode.NoContent && !acceptedDeletion)
+                {
+                    return Results.Problem(
+                        statusCode: StatusCodes.Status502BadGateway,
+                        title: "FullWorth could not confirm the account update.");
+                }
+
                 await httpContext.SignOutAsync(
                     CookieAuthenticationDefaults.AuthenticationScheme);
             }
@@ -620,7 +764,10 @@ public sealed class AdminBffWriteProxyService(
                 StringComparison.Ordinal) ||
             IsPlanningBillFundingPreferencePath(requestUri);
 
+        var isSubscriptionReviewPath = IsSubscriptionReviewPath(requestUri);
+
         if (!isAdminPath &&
+            !isSubscriptionReviewPath &&
             !isSubscriptionCheckoutPath &&
             !isSubscriptionRedemptionPath &&
             !isAccountPreferencesPath &&
@@ -640,6 +787,19 @@ public sealed class AdminBffWriteProxyService(
                !requestUri.Contains(
                    '\\',
                    StringComparison.Ordinal);
+    }
+
+    private static bool IsSubscriptionReviewPath(string requestUri)
+    {
+        const string root = "/api/subscription-reviews";
+        const string prefix = root + "/";
+        const string suffix = "/evidence";
+        if (string.Equals(requestUri, root, StringComparison.Ordinal)) return true;
+        if (requestUri.Length != prefix.Length + 36 + suffix.Length ||
+            !requestUri.StartsWith(prefix, StringComparison.Ordinal) ||
+            !requestUri.EndsWith(suffix, StringComparison.Ordinal)) return false;
+        var identifier = requestUri[prefix.Length..^suffix.Length];
+        return Guid.TryParseExact(identifier, "D", out var id) && id != Guid.Empty;
     }
 
     private static bool IsPlanningBillFundingPreferencePath(

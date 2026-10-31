@@ -49,7 +49,7 @@ export async function verifyAccountSecurityReadRecovery() {
     assert.equal(mutation.options.credentials, "same-origin");
     assert.equal(mutation.options.cache, "no-store");
 
-    const expected = { email: "synthetic@example.test", emailConfirmed: true, twoFactorEnabled: true };
+    const expected = { displayName: "Synthetic", email: "synthetic@example.test", emailConfirmed: true, twoFactorEnabled: true, hasAuthenticatorKey: true, recoveryCodesLeft: 3 };
     reply = () => new Response(JSON.stringify(expected), { status: 200, headers: { "Content-Type": "application/json" } });
     assert.deepEqual(await module.getAccountSecurity(), expected);
     const reads = calls.filter(call => call.url === "/bff/account/security");

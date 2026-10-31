@@ -157,6 +157,9 @@ grep -Fq 'xcrun simctl shutdown' "$smoke_script" ||
 grep -Fq 'subprocess.run(' "$smoke_script" ||
     fail "smoke does not use the bounded command wrapper."
 
+python3 "$root_dir/deploy/tests/ios-simulator-smoke-tests.py" ||
+    fail "executable simulator lifecycle regressions failed."
+
 sh -n "$smoke_script" ||
     fail "iOS simulator smoke script has invalid shell syntax."
 

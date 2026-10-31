@@ -15,11 +15,11 @@
 
 
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"
-						  Version="10.0.13" />
+						  Version="10.0.14" />
 
 
 		<PackageReference Include="Microsoft.EntityFrameworkCore.InMemory"
-						  Version="10.0.13" />
+						  Version="10.0.14" />
 
 
 		<PackageReference Include="Microsoft.NET.Test.Sdk"
@@ -53,19 +53,24 @@
 	</ItemGroup>
 
 
-  <!-- Exercise the actual native auth sources without a MAUI runtime. -->
+  <!-- Exercise the actual native auth and financial-screen sources without a MAUI runtime. -->
   <ItemGroup>
     <Compile Include="../Services/FullWorthApiClient.cs" Link="Native/FullWorthApiClient.cs" />
     <Compile Include="../Services/AuthenticationService.cs" Link="Native/AuthenticationService.cs" />
     <Compile Include="../Services/PlaidConnectionService.cs" Link="Native/PlaidConnectionService.cs" />
     <Compile Include="../ViewModels/LoginPageViewModel.cs" Link="Native/LoginPageViewModel.cs" />
     <Compile Include="../ViewModels/ConnectBankPageViewModel.cs" Link="Native/ConnectBankPageViewModel.cs" />
+    <Compile Include="../Services/BillStreamService.cs" Link="Native/BillStreamService.cs" />
+    <Compile Include="../Services/BillAlertService.cs" Link="Native/BillAlertService.cs" />
+    <Compile Include="../ViewModels/MainPageViewModel.cs" Link="Native/MainPageViewModel.cs" />
+    <Compile Include="../ViewModels/BillsPageViewModel.cs" Link="Native/BillsPageViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <!-- The disposable PostgreSQL executable is built separately. Link only
          its reusable scenarios, never its generated obj/bin sources. -->
     <Compile Remove="RelationalBankLifecycle/**" />
     <Compile Remove="RelationalHostedRecovery/**" />
+    <Compile Remove="RelationalSubscriptionVerification/**" />
     <Compile Include="RelationalBankLifecycle/BankLifecycleRaceChecks.cs" />
   </ItemGroup>
 </Project>

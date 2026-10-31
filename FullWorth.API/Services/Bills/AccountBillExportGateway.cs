@@ -37,6 +37,16 @@ public sealed class AccountBillExportGateway(
                 .OrderBy(item => item.BankTransactionId)
                 .ToListAsync(cancellationToken);
 
+        var reviews = await dbContext.SubscriptionReviews.AsNoTracking()
+            .Where(r => r.UserId == userId).OrderBy(r => r.CreatedAtUtc).ThenBy(r => r.Id)
+            .Select(r => new SubscriptionReviewExportRecord(r.Id, r.Revision, r.MerchantName,
+                r.PlanLabel, r.BillingParty, r.SourceTransactionId, r.BillStreamId, r.CreatedAtUtc))
+            .ToListAsync(cancellationToken);
+        var evidence = await dbContext.SubscriptionEvidence.AsNoTracking()
+            .Where(e => e.UserId == userId).OrderBy(e => e.RecordedAtUtc).ThenBy(e => e.Id)
+            .Select(e => new SubscriptionEvidenceExportRecord(e.Id, e.ReviewId, e.Source,
+                e.SourceUploadId, e.FactsJson, e.RecordedAtUtc)).ToListAsync(cancellationToken);
+
         return new AccountBillExportSnapshot(
             streams
                 .Select(item => new AccountBillStreamExportRecord(
@@ -67,7 +77,7 @@ public sealed class AccountBillExportGateway(
                 .Select(item => new AccountBillTransactionAssociationExportRecord(
                     item.BankTransactionId,
                     item.BillStreamId))
-                .ToArray());
+                .ToArray()) { SubscriptionReviews = reviews, SubscriptionEvidence = evidence };
     }
 
     private static void ValidateUserId(Guid userId)

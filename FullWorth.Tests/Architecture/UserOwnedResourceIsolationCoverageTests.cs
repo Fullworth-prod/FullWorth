@@ -96,6 +96,14 @@ public sealed class UserOwnedResourceIsolationCoverageTests
                     Evidence<Security.UserOwnedResourceIsolationTests>(
                         nameof(Security.UserOwnedResourceIsolationTests.RecentPaydayPlans_DoNotExposeAnotherUsersHistory)),
 
+                [typeof(SubscriptionReviewEntity)] =
+                    Evidence<Security.SubscriptionReviewAuthorizationTests>(
+                        nameof(Security.SubscriptionReviewAuthorizationTests.ForeignReview_ReadWriteAndListAreOwnerScoped)),
+
+                [typeof(SubscriptionEvidenceEntity)] =
+                    Evidence<Security.SubscriptionReviewAuthorizationTests>(
+                        nameof(Security.SubscriptionReviewAuthorizationTests.AccountDeletionAndExportIncludeOnlyOwnedReviewEvidence)),
+
                 [typeof(SubscriptionAccessKeyRedemptionEntity)] =
                     Evidence<AccountSubscriptionDeletionGatewayTests>(
                         nameof(AccountSubscriptionDeletionGatewayTests.ApplyOwnedDataDeletionAsync_PreservesOtherUsersSubscriptionState)),

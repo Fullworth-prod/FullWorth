@@ -1,0 +1,35 @@
+## Verified development integration — 2026-10-29 UTC
+
+[#1015](https://github.com/Fullworth-prod/FullWorth/pull/1015) merged as 07832c84abf6ee6b7b9a3f35a67322f646b5e63e. All13 checks passed on exact source3773315faa4ef58806ac71cdba4da8b91a0a608b; testedae96045b94924c7faf789f4a1fce3d89ec98e9eb and integrated tree67b926a6bb80cda27596fe9810afd0ff798a7eb9 match. Actual final execution: 3,611 .NET/753 Node, zero failed/skipped and zero backend/offline/actual Android warnings/errors; applicable container/relational/native packaging checks passed. Branch retained. Details, run/job IDs and explicit scope limits are in [the cleanup audit](MILESTONE-CLEANUP-AUDIT-20261027.md). These are development and synthetic/emulator/simulator results, not deployment, physical-device or real provider/private recovery acceptance.
+
+The pending language in the preparation record below is historical. The complete milestones0–8 goal and external gates remain open.
+
+---
+
+# Native Bills list financial evidence — 2026-10-29 UTC
+
+## Demonstrated inconsistency
+
+After #1013 corrected native Overview, BillsPageViewModel still computed a material decrease from missing/default/nonpositive current evidence, and still classified unsupported currency changes as Changed. The list could show an unsupported per-cycle/annual amount while Overview withheld the same claim. These are actual-source synthetic counterexamples, not evidence of five customer incidents. The API normally returns active debit-based metrics; this guard also prevents incomplete/contradictory financial fields in an otherwise identified snapshot from becoming facts.
+
+## Correction
+
+Require explicit current transaction evidence, a positive current debit and a usable raw currency before calculating a list change or including an amount in its latest recurring total. Preserve the existing previous-average>0, rounded absolute>=5 and relative>=10% materiality rules. Unknown current evidence cannot establish a zero balance, a reduction or an annual estimate. Unsupported changes remain unavailable and are not labeled Changed; valid rows and provider/category/history context remain.
+
+BillListItem also guards its current, change and annual text so a hidden unsupported value cannot become a financial claim if reused. Reliable monthly evidence is still required for a yearly rate; known changed amounts with unknown cadence retain their amount/change without an invented annual projection. Currencies remain separate, with no conversion. Existing signed-money style is retained. The actual list heading is LATEST RECURRING TOTAL; its legacy MonthlyTotal property is not relabeled into an unsupported monthly-rate claim.
+
+## Actual verification
+
+14 focused xUnit cases pass through the real BillsPageViewModel/API client/auth/bill service. Five unsupported-amount/unit cases fail original source; nine compatibility cases pass. Cases compare public Overview and Bills results for the same inputs, preserve supported monthly reduction math, unverified-cadence behavior, five existing materiality/baseline boundaries, separate currency totals and prior-list retention after an invalid refresh. The dashboard29 + alert30 + list14 actual-source suites pass73 together.
+
+Only network/device storage/Command/Shell and local namespace/implicit-using/XAML lookup execution adapters are substituted. The first local positive-control expectation was corrected to the existing dollar-before-minus formatter style; production formatting was not changed. Local execution is not a full SDK, MAUI rendering, physical device or real-provider acceptance. The test project links the real list source, with the test directory excluded from the production MAUI application.
+
+This follow-up is based on the completed native dashboard/alert work and requires its own exact-head protected backend/Android/container/dependency and applicable packaging checks before integration. Record final source/tested/integrated trees and results in the handoff. No API persistence, bank/provider behavior, ledger/history retagging, financial export, theme redesign or MAUI retirement.
+
+No production deployment/master promotion, spending/paid activation, new grants/secrets/account changes, outreach/delivery, destructive operation or private financial-data access. Provider/expected-bill/payroll/device/actual delivery/current nonempty real recovery/both-keyring/protected-backup/two-owner/security/legal acceptance remains separately open.
+
+## Packaging path gap found during this PR
+
+The first prepared source ed00cd2be9c4b186e237f32760332c211e808aa0 did not start Android APK or iOS simulator workflows: both filtered root C# and Core/resource files but omitted Services/** and ViewModels/**. Personal iPhone packaging already covered both. Add the two native directories to the existing PR and master-push path filters for APK/simulator; branch restrictions, permissions, signing isolation, jobs and checks are unchanged.
+
+Five Node fixture cases evaluate current event path selection: four workflow/event combinations retain root/Core/resource coverage, include representative native service/view-model files and exclude unrelated Web/test/docs files; a control distinguishes root-only from recursive patterns. The bounded literal/star parser rejects unsupported pattern syntax; it is not a full Actions-event simulator. Official pattern semantics: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#filter-pattern-cheat-sheet. Actual final-head automatically started workflows and job results must verify dispatch. This is a changed-source correction, not a blind rerun of the earlier head.

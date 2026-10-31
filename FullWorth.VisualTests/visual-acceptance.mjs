@@ -215,8 +215,13 @@ try {
   await page.goto("/app", { waitUntil: "domcontentloaded" });
   await settle(".app-shell");
 
+  await (await import("./theme-pairs.test.mjs")).verifyThemePairs(page, outputDir);
+  await page.goto("/app", { waitUntil: "domcontentloaded" });
+  await settle(".app-shell");
+
   await (await import("./ui-polish.test.mjs")).verifyUiPolish(page, outputDir);
   await (await import("./aria-states.test.mjs")).verifyAriaStates(page);
+  await (await import("./subscription-verification.test.mjs")).verifySubscriptionVerification(page, outputDir);
   await page.goto("/app", { waitUntil: "domcontentloaded" });
   await settle(".app-shell");
 
@@ -293,13 +298,17 @@ try {
       currencyCode: null, hasTransactionEvidence: false, hasMonthlyCadenceEvidence: false }
   ];
   const currencyDetail = { ...currencyBills[0],
-    statements: [{ id: "55555555-5555-5555-5555-555555555555",
+    statements: [{ id: "88888888-8888-8888-8888-888888888888",
+      periodStart: "2025-12-01", periodEnd: "2025-12-31", totalAmount: 20, currencyCode: "EUR" },
+      { id: "55555555-5555-5555-5555-555555555555",
       periodStart: "2026-01-01", periodEnd: "2026-01-31", totalAmount: 25, currencyCode: "EUR" }],
     changes: [{ id: "66666666-6666-6666-6666-666666666666",
       currentStatementId: "55555555-5555-5555-5555-555555555555",
+      previousStatementId: "88888888-8888-8888-8888-888888888888",
+      hasAnnualizedImpactEvidence: true,
       previousAmount: 20, currentAmount: 25, amountDifference: 5, annualizedImpact: 60,
       currencyCode: "EUR", changeType: "TotalIncrease", confidence: "Confirmed",
-      description: "Synthetic statement evidence", isAcknowledged: false,
+      description: "Your synthetic bill increased by EUR 5.00 per month, or EUR 60.00 per year. Why: a fee changed.", isAcknowledged: false,
       detectedAtUtc: "2026-02-01T00:00:00Z" }]
   };
   const currencyRoute = async route => {
@@ -362,8 +371,35 @@ try {
       assert.ok(detailText.includes("EUR 20.00"));
       assert.ok(detailText.includes("EUR 25.00"));
       assert.ok(detailText.includes("+EUR 60.00"));
+      assert.ok(!detailText.includes("Its monthly and yearly estimates are unverified."));
       assert.ok(!detailText.includes("$20.00") && !detailText.includes("$25.00"));
       await page.screenshot({ path: path.join(outputDir, "bill-detail-currencies-" + width + ".png"), fullPage: true });
+
+      // Old/incomplete API responses must not inherit the positive fixture's
+      // yearly claim. This exercises the real rendered component after reload.
+      delete currencyDetail.changes[0].hasAnnualizedImpactEvidence;
+      await page.goto("/app/bills/" + currencyBillId, { waitUntil: "domcontentloaded" });
+      await settle(".fw-detail-current");
+      const oldResponseText = await page.locator(".app-page").innerText();
+      assert.ok(oldResponseText.includes("Yearly estimate unavailable"));
+      assert.ok(oldResponseText.includes("Earlier saved explanation"));
+      assert.ok(oldResponseText.includes("Its monthly and yearly estimates are unverified."));
+      assert.ok(oldResponseText.includes("Your synthetic bill increased by EUR 5.00 per month, or EUR 60.00 per year. Why: a fee changed."));
+      assert.ok(!oldResponseText.includes("+EUR 60.00"));
+      await page.screenshot({ path: path.join(outputDir, "bill-detail-old-evidence-" + width + ".png"), fullPage: true });
+
+      currencyDetail.changes[0].hasAnnualizedImpactEvidence = true;
+      currencyDetail.changes[0].currencyCode = null;
+      await page.goto("/app/bills/" + currencyBillId, { waitUntil: "domcontentloaded" });
+      await settle(".fw-detail-current");
+      const unknownUnitText = await page.locator(".app-page").innerText();
+      assert.ok(unknownUnitText.includes("Yearly estimate unavailable"));
+      assert.ok(unknownUnitText.includes("Its monthly and yearly estimates are unverified."));
+      assert.ok(unknownUnitText.includes("Your synthetic bill increased by EUR 5.00 per month, or EUR 60.00 per year. Why: a fee changed."));
+      assert.ok(!unknownUnitText.includes("+EUR 60.00"));
+      assert.ok(!unknownUnitText.includes("(Currency unavailable) / year"));
+      currencyDetail.changes[0].currencyCode = "EUR";
+
 
       if (width === 320) {
         // Reproduce the real upload-status markup and its Blazor CSS scope without
@@ -1361,6 +1397,10 @@ try {
   await settle(".app-shell");
 
   await verifyPlanningWorkspace(page, outputDir);
+
+  await (await import("./pwa-performance-baseline.mjs")).verifyPwaPerformance(page, outputDir);
+
+  await (await import("./recovery-localization.test.mjs")).verifyRecoveryLocalization(page, outputDir);
 
   await context.clearCookies();
 

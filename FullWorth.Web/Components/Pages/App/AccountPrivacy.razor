@@ -254,6 +254,7 @@
 @code {
     private IJSObjectReference? _bffModule;
     private IJSObjectReference? _deleteModule;
+    private bool _interactiveReady;
     private bool _isExporting;
     private bool _isDeleting;
     private bool _showExportConfirmation;
@@ -268,7 +269,7 @@
 
     private bool _disposed;
     private long _operationVersion;
-    private bool IsBusy => _isExporting || _isDeleting;
+    private bool IsBusy => !_interactiveReady || _isExporting || _isDeleting;
     private bool CanExport =>
         !_disposed && _showExportConfirmation && !IsBusy &&
         !string.IsNullOrWhiteSpace(
@@ -281,6 +282,15 @@
             _deleteConfirmation,
             "DELETE",
             StringComparison.Ordinal);
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender && !_disposed)
+        {
+            _interactiveReady = true;
+            StateHasChanged();
+        }
+    }
 
     private async Task<IJSObjectReference> GetBffModuleAsync()
     {

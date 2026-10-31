@@ -49,8 +49,7 @@ public sealed class BillStatementAiCandidateConversionService
         var structuredStatement =
             new BillStatementStructuredData(
                 TotalAmount:
-                    RoundMoney(
-                        candidate.TotalDue),
+                    candidate.TotalDue,
 
                 BillingPeriodStart:
                     candidate.BillingPeriodStart,
@@ -282,10 +281,7 @@ public sealed class BillStatementAiCandidateConversionService
                             item.Description.Trim(),
 
                         Amount:
-                            decimal.Round(
-                                item.Amount,
-                                2,
-                                MidpointRounding.AwayFromZero),
+                            item.Amount,
 
                         Category:
                             MapCategory(
@@ -327,20 +323,6 @@ public sealed class BillStatementAiCandidateConversionService
             _ =>
                 null
         };
-    }
-
-    private static decimal? RoundMoney(
-        decimal? amount)
-    {
-        if (!amount.HasValue)
-        {
-            return null;
-        }
-
-        return decimal.Round(
-            amount.Value,
-            2,
-            MidpointRounding.AwayFromZero);
     }
 
     private static string NormalizeCurrencyCode(

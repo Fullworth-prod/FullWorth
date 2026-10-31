@@ -155,15 +155,10 @@ namespace FullWorth.API.Services.Statements
                     candidate.CurrencyCode
                         .Trim();
 
-                if (currencyCode.Length !=
-                        3 ||
-                    currencyCode.Any(
-                        character =>
-                            !char.IsLetter(
-                                character)))
+                if (!StatementCurrencyPolicy.IsRecognized(currencyCode))
                 {
                     errors.Add(
-                        "The currency code must be a three-letter code.");
+                        "The currency code must be a recognized three-letter currency.");
                 }
             }
         }
@@ -267,6 +262,10 @@ namespace FullWorth.API.Services.Statements
                 {
                     errors.Add(
                         $"Line item {index} has an invalid monetary amount.");
+                }
+                else if (!StatementMoneyStoragePolicy.IsSupportedSigned(item.Amount))
+                {
+                    errors.Add($"Line item {index} must have no more than two decimal places.");
                 }
             }
         }
@@ -373,9 +372,14 @@ namespace FullWorth.API.Services.Statements
                  * the model cannot cite text that isn't actually
                  * present in the document supplied to it.
                  */
-                if (!normalizedDocument.Contains(
-                        normalizedExcerpt,
-                        StringComparison.OrdinalIgnoreCase))
+                // Money facts are checked against complete signed numeric source
+                // spans below. Other facts must not crop a source word/year or
+                // identifier; only a genuine account suffix may omit a prefix.
+                var foundInSource = IsMoneyFact(factKey)
+                    ? normalizedDocument.Contains(normalizedExcerpt, StringComparison.OrdinalIgnoreCase)
+                    : ContainsWholeEvidenceValue(normalizedDocument, normalizedExcerpt,
+                        allowLeadingFragment: factKey == BillStatementAiFactKeys.AccountIdentifierSuffix);
+                if (!foundInSource)
                 {
                     errors.Add(
                         $"Evidence item {index} was not found in the source document.");
@@ -398,6 +402,8 @@ namespace FullWorth.API.Services.Statements
                 excerpts.Add(
                     normalizedExcerpt);
             }
+
+            var sourceMoneyTokens = ExtractMoneyTokens(normalizedDocument);
 
             RequireStringEvidence(
                 candidate.ProviderName,
@@ -440,24 +446,32 @@ namespace FullWorth.API.Services.Statements
                 candidate.PreviousBalance,
                 BillStatementAiFactKeys.PreviousBalance,
                 evidenceByFact,
+                normalizedDocument,
+                sourceMoneyTokens,
                 errors);
 
             RequireMoneyEvidence(
                 candidate.Payments,
                 BillStatementAiFactKeys.Payments,
                 evidenceByFact,
+                normalizedDocument,
+                sourceMoneyTokens,
                 errors);
 
             RequireMoneyEvidence(
                 candidate.CurrentCharges,
                 BillStatementAiFactKeys.CurrentCharges,
                 evidenceByFact,
+                normalizedDocument,
+                sourceMoneyTokens,
                 errors);
 
             RequireMoneyEvidence(
                 candidate.TotalDue,
                 BillStatementAiFactKeys.TotalDue,
                 evidenceByFact,
+                normalizedDocument,
+                sourceMoneyTokens,
                 errors);
 
             RequireStringEvidence(
@@ -510,6 +524,8 @@ namespace FullWorth.API.Services.Statements
                         .LineItemAmount(
                             index),
                     evidenceByFact,
+                    normalizedDocument,
+                    sourceMoneyTokens,
                     errors);
             }
         }
@@ -581,21 +597,13 @@ namespace FullWorth.API.Services.Statements
         }
 
         private static void ValidateMoneyValue(
-            decimal? value,
-            string fieldName,
-            ICollection<string> errors)
+            decimal? value, string fieldName, ICollection<string> errors)
         {
-            if (!value.HasValue)
-            {
-                return;
-            }
-
-            if (IsOutsideMoneyRange(
-                    value.Value))
-            {
-                errors.Add(
-                    $"'{fieldName}' contains an invalid monetary value.");
-            }
+            if (!value.HasValue) return;
+            if (IsOutsideMoneyRange(value.Value))
+                errors.Add($"'{fieldName}' contains an invalid monetary value.");
+            else if (!StatementMoneyStoragePolicy.IsSupportedSigned(value.Value))
+                errors.Add($"'{fieldName}' must have no more than two decimal places.");
         }
 
         private static void RequireStringEvidence(
@@ -629,9 +637,31 @@ namespace FullWorth.API.Services.Statements
                 errors);
         }
 
+        private static bool IsMoneyFact(string factKey) =>
+            factKey is BillStatementAiFactKeys.PreviousBalance or BillStatementAiFactKeys.Payments or
+                BillStatementAiFactKeys.CurrentCharges or BillStatementAiFactKeys.TotalDue ||
+            factKey.StartsWith("lineItems[", StringComparison.Ordinal) &&
+                factKey.EndsWith("].amount", StringComparison.Ordinal);
+
+        private static bool IsEvidenceWordCharacter(string text, int index)
+        {
+            // Inspect the full Unicode scalar, including a preceding low
+            // surrogate, so a non-BMP letter/digit cannot fake a boundary.
+            if (index > 0 && char.IsLowSurrogate(text[index]) && char.IsHighSurrogate(text[index - 1]))
+                index--;
+            return CharUnicodeInfo.GetUnicodeCategory(text, index) is
+                UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter or
+                UnicodeCategory.TitlecaseLetter or UnicodeCategory.ModifierLetter or
+                UnicodeCategory.OtherLetter or UnicodeCategory.DecimalDigitNumber or
+                UnicodeCategory.LetterNumber or UnicodeCategory.OtherNumber or
+                UnicodeCategory.NonSpacingMark or UnicodeCategory.SpacingCombiningMark or
+                UnicodeCategory.EnclosingMark or UnicodeCategory.ConnectorPunctuation;
+        }
+
         private static bool ContainsWholeEvidenceValue(
             string excerpt,
-            string normalizedValue)
+            string normalizedValue,
+            bool allowLeadingFragment = false)
         {
             if (string.IsNullOrWhiteSpace(
                     normalizedValue))
@@ -662,16 +692,15 @@ namespace FullWorth.API.Services.Statements
                     normalizedValue.Length;
 
                 var hasWholeLeadingBoundary =
+                    allowLeadingFragment ||
                     index ==
                         0 ||
-                    !char.IsLetterOrDigit(
-                        excerpt[index - 1]);
+                    !IsEvidenceWordCharacter(excerpt, index - 1);
 
                 var hasWholeTrailingBoundary =
                     endIndex ==
                         excerpt.Length ||
-                    !char.IsLetterOrDigit(
-                        excerpt[endIndex]);
+                    !IsEvidenceWordCharacter(excerpt, endIndex);
 
                 if (hasWholeLeadingBoundary &&
                     hasWholeTrailingBoundary)
@@ -725,8 +754,7 @@ namespace FullWorth.API.Services.Statements
 
                 if (endIndex ==
                         excerpt.Length ||
-                    !char.IsLetterOrDigit(
-                        excerpt[endIndex]))
+                    !IsEvidenceWordCharacter(excerpt, endIndex))
                 {
                     return true;
                 }
@@ -965,6 +993,8 @@ namespace FullWorth.API.Services.Statements
             decimal? value,
             string factKey,
             IReadOnlyDictionary<string, List<string>> evidenceByFact,
+            string normalizedDocument,
+            IReadOnlyList<MoneyEvidenceToken> sourceMoneyTokens,
             ICollection<string> errors)
         {
             if (!value.HasValue)
@@ -975,11 +1005,8 @@ namespace FullWorth.API.Services.Statements
             RequireEvidenceValue(
                 factKey,
                 evidenceByFact,
-                excerpt =>
-                    ExtractMoneyValues(
-                            excerpt)
-                        .Contains(
-                            value.Value),
+                excerpt => SupportsSourceMoneyValue(
+                    normalizedDocument, excerpt, value.Value, sourceMoneyTokens),
                 errors);
         }
 
@@ -987,12 +1014,16 @@ namespace FullWorth.API.Services.Statements
             decimal value,
             string factKey,
             IReadOnlyDictionary<string, List<string>> evidenceByFact,
+            string normalizedDocument,
+            IReadOnlyList<MoneyEvidenceToken> sourceMoneyTokens,
             ICollection<string> errors)
         {
             RequireMoneyEvidence(
                 (decimal?)value,
                 factKey,
                 evidenceByFact,
+                normalizedDocument,
+                sourceMoneyTokens,
                 errors);
         }
 
@@ -1024,56 +1055,76 @@ namespace FullWorth.API.Services.Statements
                 $"The verified evidence for '{factKey}' does not contain the extracted value.");
         }
 
-        private static IReadOnlyList<decimal> ExtractMoneyValues(
-            string excerpt)
+        private readonly record struct MoneyEvidenceToken(int Start, int Length, decimal Value);
+
+        private static bool SupportsSourceMoneyValue(
+            string document, string excerpt, decimal expected,
+            IReadOnlyList<MoneyEvidenceToken> sourceTokens)
         {
-            var values =
-                new List<decimal>();
+            var excerptTokens = ExtractMoneyTokens(excerpt)
+                .Where(token => token.Value == expected).ToArray();
+            if (excerptTokens.Length == 0) return false;
 
-            /*
-             * Date components are not monetary evidence. Remove complete
-             * date expressions before scanning their numeric tokens.
-             */
-            var excerptWithoutDates =
-                DateLikeEvidenceRegex.Replace(
-                    excerpt,
-                    " ");
-
-            foreach (Match match in
-                     MoneyValueRegex.Matches(
-                         excerptWithoutDates))
+            // An AI-supplied excerpt can otherwise crop digits, precision or a
+            // negative sign from a genuine source substring. Match its numeric
+            // span to a complete source token with the same signed value.
+            var searchStart = 0;
+            while (searchStart < document.Length)
             {
-                var numericText =
-                    match.Groups["number"]
-                        .Value
-                        .Replace(
-                            ",",
-                            string.Empty,
-                            StringComparison.Ordinal);
-
-                if (!decimal.TryParse(
-                        numericText,
-                        NumberStyles.AllowDecimalPoint,
-                        CultureInfo.InvariantCulture,
-                        out var parsedValue))
+                var index = document.IndexOf(excerpt, searchStart, StringComparison.OrdinalIgnoreCase);
+                if (index < 0) return false;
+                foreach (var token in excerptTokens)
                 {
-                    continue;
+                    var start = index + token.Start;
+                    var end = start + token.Length;
+                    if (MatchesSourceMoneyToken(sourceTokens, start, end, expected))
+                        return true;
                 }
-
-                var isNegative =
-                    match.Groups["signBefore"].Value ==
-                        "-" ||
-                    match.Groups["signAfter"].Value ==
-                        "-" ||
-                    match.Groups["open"].Success &&
-                    match.Groups["close"].Success;
-
-                values.Add(
-                    isNegative
-                        ? -parsedValue
-                        : parsedValue);
+                searchStart = index + 1;
             }
+            return false;
+        }
 
+        private static bool MatchesSourceMoneyToken(
+            IReadOnlyList<MoneyEvidenceToken> tokens, int start, int end, decimal expected)
+        {
+            // Regex tokens are ordered and nonoverlapping. Bound lookup work
+            // even when an excerpt has many misleading source occurrences.
+            var low = 0;
+            var high = tokens.Count - 1;
+            while (low <= high)
+            {
+                var middle = low + (high - low) / 2;
+                var token = tokens[middle];
+                if (token.Start > start) high = middle - 1;
+                else if (token.Start + token.Length <= start) low = middle + 1;
+                else return token.Start + token.Length >= end && token.Value == expected;
+            }
+            return false;
+        }
+
+        private static IReadOnlyList<MoneyEvidenceToken> ExtractMoneyTokens(string text)
+        {
+            var values = new List<MoneyEvidenceToken>();
+            // Mask complete dates without moving the numeric source positions.
+            // A cropped year/day excerpt must not become amount evidence.
+            var withoutDates = DateLikeEvidenceRegex.Replace(text,
+                match => new string(' ', match.Length));
+            foreach (Match match in MoneyValueRegex.Matches(withoutDates))
+            {
+                if (match.Groups["open"].Success != match.Groups["close"].Success)
+                    continue;
+                var number = match.Groups["number"];
+                var numericText = number.Value.Replace(",", string.Empty, StringComparison.Ordinal);
+                if (!decimal.TryParse(numericText, NumberStyles.AllowDecimalPoint,
+                    CultureInfo.InvariantCulture, out var amount))
+                    continue;
+                var negative = match.Groups["signBefore"].Value == "-" ||
+                    match.Groups["signAfter"].Value == "-" ||
+                    match.Groups["open"].Success && match.Groups["close"].Success;
+                values.Add(new MoneyEvidenceToken(number.Index, number.Length,
+                    negative ? -amount : amount));
+            }
             return values;
         }
 

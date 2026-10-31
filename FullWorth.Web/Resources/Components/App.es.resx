@@ -208,4 +208,145 @@
   <data name="Use a recovery code instead" xml:space="preserve"><value>Usar un código de recuperación</value></data>
   <data name="Your sign-in expired. Enter your email and password again." xml:space="preserve"><value>Tu inicio de sesión caducó. Vuelve a introducir tu correo y contraseña.</value></data>
   <data name="Verification failed. Try another method or code." xml:space="preserve"><value>La verificación falló. Prueba otro método o código.</value></data>
+  <data name="Style" xml:space="preserve"><value>Estilo</value></data>
+  <data name="Appearance style" xml:space="preserve"><value>Estilo visual</value></data>
+  <data name="Editorial" xml:space="preserve"><value>Editorial</value></data>
+  <data name="Workspace" xml:space="preserve"><value>Espacio de trabajo</value></data>
+  <data name="Story" xml:space="preserve"><value>Historia</value></data>
+  <data name="Saved on this browser" xml:space="preserve"><value>Guardado en este navegador</value></data>
+  <data name="Style controls unavailable. Reload to try again." xml:space="preserve"><value>Los controles de estilo no están disponibles. Recarga para volver a intentarlo.</value></data>
+  <data name="Evidence" xml:space="preserve"><value>Evidencia</value></data>
+  <data name="The product" xml:space="preserve"><value>El producto</value></data>
+  <data name="FullWorth — Understand your bill changes" xml:space="preserve"><value>FullWorth — Comprende los cambios en tus facturas</value></data>
+  <data name="A clearer view of recurring bills" xml:space="preserve"><value>Una visión más clara de las facturas recurrentes</value></data>
+  <data name="Your bills change." xml:space="preserve"><value>Tus facturas cambian.</value></data>
+  <data name="Your understanding should too." xml:space="preserve"><value>Tu comprensión también debería.</value></data>
+  <data name="Spot a change. Follow the evidence." xml:space="preserve"><value>Detecta un cambio. Sigue la evidencia.</value></data>
+  <data name="From a charge." xml:space="preserve"><value>De un cargo.</value></data>
+  <data name="To a change." xml:space="preserve"><value>A un cambio.</value></data>
+  <data name="To a clearer picture." xml:space="preserve"><value>A una visión más clara.</value></data>
+  <data name="Review recurring charges and the evidence behind meaningful changes." xml:space="preserve"><value>Revisa los cargos recurrentes y la evidencia de los cambios importantes.</value></data>
+  <data name="Open FullWorth" xml:space="preserve"><value>Abrir FullWorth</value></data>
+  <data name="Connect read-only activity" xml:space="preserve"><value>Conecta actividad de solo lectura</value></data>
+  <data name="Review activity from your connected accounts. Available history and coverage can vary." xml:space="preserve"><value>Revisa la actividad de tus cuentas conectadas. El historial y la cobertura disponibles pueden variar.</value></data>
+  <data name="Review supported changes" xml:space="preserve"><value>Revisa cambios respaldados</value></data>
+  <data name="Compare recognized bill charges when the amount, currency and history support it." xml:space="preserve"><value>Compara los cargos de facturas reconocidas cuando el importe, la moneda y el historial lo permitan.</value></data>
+  <data name="Inspect the evidence" xml:space="preserve"><value>Examina la evidencia</value></data>
+  <data name="Open available documents and keep unsupported explanations or renewal details unknown." xml:space="preserve"><value>Abre los documentos disponibles y conserva como desconocidas las explicaciones o renovaciones sin respaldo.</value></data>
+  <data name="Evidence before explanations" xml:space="preserve"><value>La evidencia antes de las explicaciones</value></data>
+  <data name="A transaction shows what you paid." xml:space="preserve"><value>Una transacción muestra lo que pagaste.</value></data>
+  <data name="Available evidence can explain what changed." xml:space="preserve"><value>La evidencia disponible puede explicar qué cambió.</value></data>
+  <data name="An increase over past charges does not establish a merchant rate change or its cause. A payment or active access alone does not prove that a subscription will renew. FullWorth keeps these distinctions visible." xml:space="preserve"><value>Un aumento respecto a cargos anteriores no demuestra un cambio de tarifa del comercio ni su causa. Un pago o acceso activo por sí solos no prueban que una suscripción se renovará. FullWorth mantiene visibles estas diferencias.</value></data>
+  <data name="Start with your own records" xml:space="preserve"><value>Empieza con tus propios registros</value></data>
+  <data name="Designed for financial data" xml:space="preserve"><value>Diseñado para datos financieros</value></data>
+  <data name="Visibility without control of your money." xml:space="preserve"><value>Visibilidad sin controlar tu dinero.</value></data>
+  <data name="FullWorth is designed to monitor and explain financial activity, not move money. Private financial records remain behind authenticated, user-scoped access." xml:space="preserve"><value>FullWorth está diseñado para supervisar y explicar la actividad financiera, no para mover dinero. Los registros financieros privados requieren autenticación y acceso limitado a su propietario.</value></data>
+  <data name="Your bank credentials are handled by Plaid, not entered into FullWorth." xml:space="preserve"><value>Plaid gestiona tus credenciales bancarias; no se introducen en FullWorth.</value></data>
+  <data name="Read the Privacy Notice" xml:space="preserve"><value>Lee el Aviso de Privacidad</value></data>
+  <data name="Illustrative bill comparison" xml:space="preserve"><value>Comparación de facturas de ejemplo</value></data>
+  <data name="Service" xml:space="preserve"><value>Servicio</value></data>
+  <data name="Prior monthly" xml:space="preserve"><value>Mensual anterior</value></data>
+  <data name="Latest monthly" xml:space="preserve"><value>Mensual más reciente</value></data>
+  <data name="Monthly difference" xml:space="preserve"><value>Diferencia mensual</value></data>
+  <data name="Annualized illustration" xml:space="preserve"><value>Ejemplo anualizado</value></data>
+  <data name="Example statement: promotional rate ended" xml:space="preserve"><value>Estado de cuenta de ejemplo: terminó la tarifa promocional</value></data>
+  <data name="Review example evidence" xml:space="preserve"><value>Revisar la evidencia de ejemplo</value></data>
+  <data name="Illustrative statement showing a promotional rate ending." xml:space="preserve"><value>Estado de cuenta de ejemplo que muestra el fin de una tarifa promocional.</value></data>
+  <data name="Illustrative example. Not a customer record or a live merchant check." xml:space="preserve"><value>Ejemplo ilustrativo. No es un registro de cliente ni una consulta en vivo al comercio.</value></data>
+  <data name="Illustrative example" xml:space="preserve"><value>Ejemplo ilustrativo</value></data>
+  <data name="Changes to review" xml:space="preserve"><value>Cambios por revisar</value></data>
+  <data name="Explore three sample charges and what their evidence can establish." xml:space="preserve"><value>Explora tres cargos de ejemplo y lo que su evidencia permite establecer.</value></data>
+  <data name="Choose a sample charge" xml:space="preserve"><value>Elige un cargo de ejemplo</value></data>
+  <data name="Previous charge" xml:space="preserve"><value>Cargo anterior</value></data>
+  <data name="No comparable history" xml:space="preserve"><value>Sin historial comparable</value></data>
+  <data name="Latest charge" xml:space="preserve"><value>Cargo más reciente</value></data>
+  <data name="No increase to project" xml:space="preserve"><value>Sin aumento que proyectar</value></data>
+  <data name="The fictional statement says a promotional rate ended. A bank charge alone would not establish that explanation." xml:space="preserve"><value>El estado de cuenta ficticio indica que terminó una tarifa promocional. Un cargo bancario por sí solo no permitiría establecer esa explicación.</value></data>
+  <data name="No supporting statement is supplied for this sample. A payment alone does not establish recurrence, renewal or a reason for a change." xml:space="preserve"><value>Este ejemplo no incluye un estado de cuenta de respaldo. Un pago por sí solo no establece recurrencia, renovación ni la causa de un cambio.</value></data>
+  <data name="The payment" xml:space="preserve"><value>El pago</value></data>
+  <data name="Illustrative monthly charge" xml:space="preserve"><value>Cargo mensual de ejemplo</value></data>
+  <data name="The comparison" xml:space="preserve"><value>La comparación</value></data>
+  <data name="per month" xml:space="preserve"><value>al mes</value></data>
+  <data name="The evidence" xml:space="preserve"><value>La evidencia</value></data>
+  <data name="Illustrative USD amounts. The annualized illustration assumes the monthly difference continues for 12 months; it is not a forecast for your accounts." xml:space="preserve"><value>Importes de ejemplo en USD. El ejemplo anualizado supone que la diferencia mensual continúa durante 12 meses; no es una previsión para tus cuentas.</value></data>
+  <data name="Read-only activity. No money movement. Details depend on available evidence." xml:space="preserve"><value>Actividad de solo lectura. Sin movimiento de dinero. Los detalles dependen de la evidencia disponible.</value></data>
+  <data name="No increase in compared charges" xml:space="preserve"><value>Sin aumento en los cargos comparados</value></data>
+  <data name="Music" xml:space="preserve"><value>Música</value></data>
+  <data name="Phone" xml:space="preserve"><value>Teléfono</value></data>
+  <data name="Monthly charge increased" xml:space="preserve"><value>El cargo mensual aumentó</value></data>
+  <data name="One illustrative payment" xml:space="preserve"><value>Un pago de ejemplo</value></data>
+  <data name="Review bill changes and available evidence." xml:space="preserve"><value>Revisa los cambios en las facturas y la evidencia disponible.</value></data>
+  <data name="Legal information" xml:space="preserve"><value>Información legal</value></data>
+  <data name="Privacy Notice" xml:space="preserve"><value>Aviso de Privacidad</value></data>
+  <data name="Terms" xml:space="preserve"><value>Términos</value></data>
+  <data name="Switch to light mode" xml:space="preserve"><value>Cambiar al modo claro</value></data>
+  <data name="Switch to dark mode" xml:space="preserve"><value>Cambiar al modo oscuro</value></data>
+  <data name="Review bills" xml:space="preserve"><value>Revisar facturas</value></data>
+  <data name="Financial intelligence" xml:space="preserve"><value>Inteligencia financiera</value></data>
+  <data name="Money" xml:space="preserve"><value>Dinero</value></data>
+  <data name="Manage" xml:space="preserve"><value>Gestionar</value></data>
+  <data name="Menu" xml:space="preserve"><value>Menú</value></data>
+  <data name="Close menu" xml:space="preserve"><value>Cerrar menú</value></data>
+  <data name="More" xml:space="preserve"><value>Más</value></data>
+  <data name="Account and settings" xml:space="preserve"><value>Cuenta y ajustes</value></data>
+  <data name="Your external identity was verified. Finish signing in with a code from your FullWorth authenticator app or one recovery code." xml:space="preserve"><value>Se verificó tu identidad externa. Termina de iniciar sesión con un código de tu aplicación de autenticación de FullWorth o un código de recuperación.</value></data>
+  <data name="FullWorth could not complete that external sign-in. Try again or sign in with email." xml:space="preserve"><value>FullWorth no pudo completar ese inicio de sesión externo. Inténtalo de nuevo o inicia sesión con tu correo electrónico.</value></data>
+  <data name="Enter exactly one authenticator code or recovery code." xml:space="preserve"><value>Introduce un único código de autenticación o de recuperación.</value></data>
+  <data name="Sign in with a passkey" xml:space="preserve"><value>Iniciar sesión con una clave de acceso</value></data>
+  <data name="Sign in with Face ID or a passkey" xml:space="preserve"><value>Iniciar sesión con Face ID o una clave de acceso</value></data>
+  <data name="Already added a passkey to your account? Use Face ID, Touch ID, or your device PIN. No password is sent." xml:space="preserve"><value>¿Ya añadiste una clave de acceso a tu cuenta? Usa Face ID, Touch ID o el PIN de tu dispositivo. No se envía ninguna contraseña.</value></data>
+  <data name="Authenticator code (only if your account uses two-factor authentication)" xml:space="preserve"><value>Código de autenticación (solo si tu cuenta usa autenticación de dos factores)</value></data>
+  <data name="or sign in with your password" xml:space="preserve"><value>o inicia sesión con tu contraseña</value></data>
+  <data name="External sign-in options" xml:space="preserve"><value>Opciones de inicio de sesión externo</value></data>
+  <data name="Continue with Google" xml:space="preserve"><value>Continuar con Google</value></data>
+  <data name="Continue with Apple" xml:space="preserve"><value>Continuar con Apple</value></data>
+  <data name="Continue with Microsoft" xml:space="preserve"><value>Continuar con Microsoft</value></data>
+  <data name="or continue with email" xml:space="preserve"><value>o continúa con tu correo electrónico</value></data>
+  <data name="Finish creating your account with" xml:space="preserve"><value>Termina de crear tu cuenta con</value></data>
+  <data name="Your provider verified your identity. Create a FullWorth password for sensitive account changes and recovery, then accept the current Terms and Privacy Notice." xml:space="preserve"><value>Tu proveedor verificó tu identidad. Crea una contraseña de FullWorth para los cambios sensibles y la recuperación de la cuenta; después acepta los Términos y el Aviso de privacidad vigentes.</value></data>
+  <data name="FullWorth could not create that account through your sign-in provider. Try the provider again or create your account with email." xml:space="preserve"><value>FullWorth no pudo crear esa cuenta mediante tu proveedor de inicio de sesión. Vuelve a intentarlo con el proveedor o crea tu cuenta con tu correo electrónico.</value></data>
+  <data name="Check the password confirmation and accept the current Terms and Privacy Notice." xml:space="preserve"><value>Comprueba la confirmación de la contraseña y acepta los Términos y el Aviso de privacidad vigentes.</value></data>
+  <data name="FullWorth password" xml:space="preserve"><value>Contraseña de FullWorth</value></data>
+  <data name="I agree to the" xml:space="preserve"><value>Acepto los</value></data>
+  <data name="and acknowledge the" xml:space="preserve"><value>y tomo conocimiento del</value></data>
+  <data name="Create FullWorth account" xml:space="preserve"><value>Crear cuenta de FullWorth</value></data>
+  <data name="Use a different sign-up method" xml:space="preserve"><value>Usar otro método de registro</value></data>
+  <data name="External account creation options" xml:space="preserve"><value>Opciones de creación de cuenta con un proveedor externo</value></data>
+  <data name="or create an account with email" xml:space="preserve"><value>o crea una cuenta con tu correo electrónico</value></data>
+  <data name="your sign-in provider" xml:space="preserve"><value>tu proveedor de inicio de sesión</value></data>
+  <data name="Passkeys &amp; security keys — FullWorth" xml:space="preserve"><value>Claves de acceso y llaves de seguridad — FullWorth</value></data>
+  <data name="Passkeys &amp; security keys" xml:space="preserve"><value>Claves de acceso y llaves de seguridad</value></data>
+  <data name="Sign in with Face ID, your device PIN, or a FIDO2 hardware key. FullWorth never receives your face or fingerprint." xml:space="preserve"><value>Inicia sesión con Face ID, el PIN de tu dispositivo o una llave física FIDO2. FullWorth nunca recibe tu rostro ni tu huella dactilar.</value></data>
+  <data name="Back to security settings" xml:space="preserve"><value>Volver a la configuración de seguridad</value></data>
+  <data name="Your keys" xml:space="preserve"><value>Tus claves</value></data>
+  <data name="Changes require your current password and your authenticator code if 2FA is enabled. Your password and recovery options remain available." xml:space="preserve"><value>Los cambios requieren tu contraseña actual y el código de tu autenticador si la autenticación de dos factores está activada. Tu contraseña y las opciones de recuperación siguen disponibles.</value></data>
+  <data name="Current password" xml:space="preserve"><value>Contraseña actual</value></data>
+  <data name="Authenticator code (if enabled)" xml:space="preserve"><value>Código del autenticador (si está activado)</value></data>
+  <data name="Key name" xml:space="preserve"><value>Nombre de la clave</value></data>
+  <data name="My iPhone or security key" xml:space="preserve"><value>Mi iPhone o llave de seguridad</value></data>
+  <data name="Add passkey or security key" xml:space="preserve"><value>Añadir clave de acceso o llave de seguridad</value></data>
+  <data name="Retry loading saved keys" xml:space="preserve"><value>Volver a cargar las claves guardadas</value></data>
+  <data name="Passkey sign-in is not enabled on this installation yet. Your existing sign-in still works." xml:space="preserve"><value>El inicio de sesión con claves de acceso aún no está activado en esta instalación. Tu método de inicio de sesión actual sigue funcionando.</value></data>
+  <data name="Something went wrong — FullWorth" xml:space="preserve"><value>Se produjo un error — FullWorth</value></data>
+  <data name="Something went wrong" xml:space="preserve"><value>Se produjo un error</value></data>
+  <data name="FullWorth hit a snag." xml:space="preserve"><value>FullWorth tuvo un problema.</value></data>
+  <data name="We couldn&apos;t finish that request. Nothing on this page should require you to expose passwords, bank credentials, or security codes." xml:space="preserve"><value>No pudimos completar esa solicitud. Nada en esta página debería pedirte que reveles contraseñas, credenciales bancarias ni códigos de seguridad.</value></data>
+  <data name="Reference" xml:space="preserve"><value>Referencia</value></data>
+  <data name="Return to FullWorth" xml:space="preserve"><value>Volver a FullWorth</value></data>
+  <data name="Back to home" xml:space="preserve"><value>Volver al inicio</value></data>
+  <data name="Page not found — FullWorth" xml:space="preserve"><value>Página no encontrada — FullWorth</value></data>
+  <data name="We couldn&apos;t find that page." xml:space="preserve"><value>No pudimos encontrar esa página.</value></data>
+  <data name="The link may be outdated, or the page may have moved. Your FullWorth data has not been changed." xml:space="preserve"><value>El enlace puede estar desactualizado o la página puede haberse movido. Tus datos de FullWorth no han cambiado.</value></data>
+  <data name="Go to FullWorth" xml:space="preserve"><value>Ir a FullWorth</value></data>
+  <data name="Connection status" xml:space="preserve"><value>Estado de la conexión</value></data>
+  <data name="Rejoining the server..." xml:space="preserve"><value>Volviendo a conectar con el servidor...</value></data>
+  <data name="Rejoin failed... trying again in" xml:space="preserve"><value>No se pudo volver a conectar... se intentará de nuevo en</value></data>
+  <data name="seconds." xml:space="preserve"><value>segundos.</value></data>
+  <data name="Failed to rejoin." xml:space="preserve"><value>No se pudo volver a conectar.</value></data>
+  <data name="Please retry or reload the page." xml:space="preserve"><value>Vuelve a intentarlo o recarga la página.</value></data>
+  <data name="Retry" xml:space="preserve"><value>Reintentar</value></data>
+  <data name="The session has been paused by the server." xml:space="preserve"><value>El servidor ha pausado la sesión.</value></data>
+  <data name="Failed to resume the session." xml:space="preserve"><value>No se pudo reanudar la sesión.</value></data>
+  <data name="Resume" xml:space="preserve"><value>Reanudar</value></data>
+  <data name="Admin" xml:space="preserve"><value>Administración</value></data>
 </root>

@@ -11,10 +11,10 @@ public sealed class BillStatementAiCandidateConversionServiceTests
             """
             MIDCO
             Billing period August 1, 2026 through August 31, 2026
-            Internet service $99.994
+            Internet service $99.99
             Equipment fee $5.00
             AutoPay discount -$10.00
-            Total due $94.994
+            Total due $94.99
             USD
             """;
 
@@ -54,7 +54,7 @@ public sealed class BillStatementAiCandidateConversionServiceTests
                     null,
 
                 TotalDue:
-                    94.994m,
+                    94.99m,
 
                 CurrencyCode:
                     "usd",
@@ -72,7 +72,7 @@ public sealed class BillStatementAiCandidateConversionServiceTests
                                 "Internet service",
 
                             Amount:
-                                99.994m,
+                                99.99m,
 
                             Kind:
                                 BillStatementAiLineItemKind.Service),
@@ -114,7 +114,7 @@ public sealed class BillStatementAiCandidateConversionServiceTests
 
                         Evidence(
                             BillStatementAiFactKeys.TotalDue,
-                            "Total due $94.994"),
+                            "Total due $94.99"),
 
                         Evidence(
                             BillStatementAiFactKeys.CurrencyCode,
@@ -122,11 +122,11 @@ public sealed class BillStatementAiCandidateConversionServiceTests
 
                         Evidence(
                             BillStatementAiFactKeys.LineItemDescription(0),
-                            "Internet service $99.994"),
+                            "Internet service $99.99"),
 
                         Evidence(
                             BillStatementAiFactKeys.LineItemAmount(0),
-                            "Internet service $99.994"),
+                            "Internet service $99.99"),
 
                         Evidence(
                             BillStatementAiFactKeys.LineItemDescription(1),

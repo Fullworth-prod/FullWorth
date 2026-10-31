@@ -13,6 +13,8 @@ root = os.path.abspath(sys.argv[1])
 services_root = os.path.join(root, "FullWorth.API", "Services")
 
 owners = {
+    "SubscriptionReviews": "Bills",
+    "SubscriptionEvidence": "Bills",
     "BillStreams": "Bills",
     "BillAlerts": "Bills",
     "BankConnections": "Plaid",
@@ -42,6 +44,8 @@ owners = {
 modules = {"Accounts", "Admin", "Bills", "Plaid", "Planning", "Statements", "Subscriptions"}
 
 entity_owners = {
+    "SubscriptionReviewEntity": "Bills",
+    "SubscriptionEvidenceEntity": "Bills",
     "BillStreamEntity": "Bills",
     "BillAlertEntity": "Bills",
     "BankConnectionEntity": "Plaid",

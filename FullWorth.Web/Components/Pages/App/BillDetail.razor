@@ -177,7 +177,7 @@
 
                     <div>
                         <span>@L["Annual impact"]</span>
-                        <strong>@FormatSignedMoney(latestChange.AnnualizedImpact, latestChange.CurrencyCode)</strong>
+                        <strong>@FormatAnnualImpact(latestChange)</strong>
                     </div>
                 </div>
                 </div>
@@ -186,7 +186,7 @@
                 <div class="panel-heading">
                     <div>
                         <span class="panel-kicker">@L["Why it changed"]</span>
-                        <h2>@L["FullWorth explanation"]</h2>
+                        <h2>@(HasAnnualEvidence(latestChange) ? L["FullWorth explanation"] : L["Earlier saved explanation"])</h2>
                     </div>
 
                     <span class="@GetConfidenceClass(latestChange.Confidence)">
@@ -195,7 +195,7 @@
                 </div>
 
                 <p class="change-description">
-                    @GetExplanation(latestChange.Description)
+                    @GetExplanation(latestChange)
                 </p>
 
                 <div class="evidence-metadata">
@@ -255,6 +255,12 @@
             {
                 <p role="status">@_keepMessage</p>
             }
+        </section>
+
+        <section class="app-panel">
+            <h2>@L["Subscription verification"]</h2>
+            <p>@L["A posted charge does not confirm that this service will renew. Review access, renewal and supporting documents separately."]</p>
+            <a class="secondary-action" href="@($"/app/subscription-checks?bill={BillStreamId:D}")">@L["Verify subscription"]</a>
         </section>
 
         <StatementUploadPanel @key="BillStreamId" BillStreamId="@BillStreamId"
@@ -348,11 +354,11 @@
                                         </time>
                                     </div>
 
-                                    <p>@GetExplanation(change.Description)</p>
+                                    <p>@GetExplanation(change)</p>
 
                                     <div class="change-history-meta">
                                         <span>@FormatDifference(change.AmountDifference, change.CurrencyCode)</span>
-                                        <span>@FormatSignedMoney(change.AnnualizedImpact, change.CurrencyCode) @L["/ year"]</span>
+                                        <span>@FormatAnnualImpact(change, includeUnit: true)</span>
                                         <span>@FormatConfidence(change.Confidence)</span>
                                     </div>
                                 </div>
@@ -368,6 +374,18 @@
 @code {
     [Parameter]
     public Guid BillStreamId { get; set; }
+
+    private static bool HasAnnualEvidence(BillChangeViewModel change) =>
+        change.HasAnnualizedImpactEvidence &&
+        FinancialAmountFormatter.TryNormalizeCurrency(change.CurrencyCode, out _);
+
+    private string FormatAnnualImpact(BillChangeViewModel change, bool includeUnit = false)
+    {
+        if (!HasAnnualEvidence(change))
+            return L["Yearly estimate unavailable"];
+        var amount = FormatSignedMoney(change.AnnualizedImpact, change.CurrencyCode);
+        return includeUnit ? amount + " " + L["/ year"] : amount;
+    }
 
     private static readonly System.Globalization.CultureInfo UsCulture =
         System.Globalization.CultureInfo.GetCultureInfo("en-US");
@@ -614,15 +632,18 @@
         return LocalizeEnumText(category);
     }
 
-    private string GetExplanation(string? description)
+    private string GetExplanation(BillChangeViewModel change)
     {
+        var description = change.Description;
         if (string.IsNullOrWhiteSpace(description))
         {
             return L["FullWorth detected a change, but the available evidence does not explain the cause confidently."];
         }
 
         // Evidence text is preserved verbatim. Localization must not alter the facts FullWorth extracted.
-        return description.Trim();
+        var saved = description.Trim();
+        return HasAnnualEvidence(change) ? saved
+            : L["Earlier saved explanation. Its monthly and yearly estimates are unverified."] + " " + saved;
     }
 
     private string FormatConfidence(string? confidence)
@@ -792,6 +813,7 @@
         public decimal AmountDifference { get; set; }
         public string? CurrencyCode { get; set; }
         public decimal AnnualizedImpact { get; set; }
+        public bool HasAnnualizedImpactEvidence { get; set; }
         public bool IsAcknowledged { get; set; }
         public DateTimeOffset DetectedAtUtc { get; set; }
     }

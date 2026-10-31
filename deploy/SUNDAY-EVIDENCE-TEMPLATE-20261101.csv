@@ -1,0 +1,1 @@
+test_id,priority,journey,candidate_commit,served_ui_commit,served_api_commit,client_artifact_commit,observed_at_utc,device_os,browser_or_app_mode,preconditions,expected_result,actual_result,status,protected_evidence_reference,sanitized_defect_reference

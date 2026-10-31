@@ -3,6 +3,7 @@
     let serviceWorkerRegistration = null;
     let updateCallback = null;
     let updateAvailable = false;
+    let timedOutUpdateWorker = null;
 
     function announceUpdate() {
         if (updateAvailable) {
@@ -106,6 +107,15 @@
                 return "unavailable";
             }
 
+            // A timed-out request may have activated since its listener expired.
+            // Only a fresh explicit action may reload, and only for that exact worker.
+            if (!registration.waiting && timedOutUpdateWorker &&
+                navigator.serviceWorker.controller === timedOutUpdateWorker) {
+                timedOutUpdateWorker = null;
+                window.location.reload();
+                return "reloaded";
+            }
+
             if (!registration.waiting) {
                 await registration.update();
             }
@@ -119,31 +129,48 @@
 
             return await new Promise(resolve => {
                 let settled = false;
+                let timeout = null;
 
+                const onControllerChange = () => {
+                    if (navigator.serviceWorker.controller === waitingWorker) {
+                        finish("reloaded");
+                    }
+                };
                 const finish = result => {
                     if (settled) {
                         return;
                     }
 
                     settled = true;
+                    timedOutUpdateWorker = result === "timeout" ? waitingWorker : null;
+                    navigator.serviceWorker.removeEventListener(
+                        "controllerchange", onControllerChange);
+                    if (timeout !== null) {
+                        window.clearTimeout(timeout);
+                    }
                     resolve(result);
+
+                    // Only the currently pending, explicit update attempt may
+                    // reload. A timed-out/failed attempt must not reload later.
+                    if (result === "reloaded") {
+                        window.location.reload();
+                    }
                 };
 
                 navigator.serviceWorker.addEventListener(
-                    "controllerchange",
-                    () => {
-                        finish("reloaded");
-                        window.location.reload();
-                    },
-                    { once: true });
+                    "controllerchange", onControllerChange);
+                timeout = window.setTimeout(
+                    () => finish("timeout"), 10000);
 
-                waitingWorker.postMessage({
-                    type: "SKIP_WAITING"
-                });
-
-                window.setTimeout(
-                    () => finish("timeout"),
-                    10000);
+                try {
+                    waitingWorker.postMessage({
+                        type: "SKIP_WAITING"
+                    });
+                } catch {
+                    // A worker can become redundant before the message is sent.
+                    // Clean up this attempt; leave any retry to the user.
+                    finish("unavailable");
+                }
             });
         },
 

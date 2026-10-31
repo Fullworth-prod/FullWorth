@@ -791,7 +791,7 @@ public sealed class ActivityPage : ContentPage
         catch
         {
             ShowError(
-                "FullWorth couldn't dismiss this alert.");
+                "FullWorth couldn't confirm this alert update. Refresh Activity before trying again.");
         }
     }
 

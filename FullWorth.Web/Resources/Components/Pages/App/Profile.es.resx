@@ -38,4 +38,6 @@
   <data name="The profile update could not be confirmed. Check the saved profile before trying again." xml:space="preserve"><value>No se pudo confirmar la actualización del perfil. Comprueba el perfil guardado antes de volver a intentarlo.</value></data>
   <data name="Saved display name" xml:space="preserve"><value>Nombre guardado</value></data>
   <data name="Not set" xml:space="preserve"><value>Sin definir</value></data>
+  <data name="Personal profile" xml:space="preserve"><value>Perfil personal</value></data>
+  <data name="Keep the small amount of personal information FullWorth uses to address you separate from your financial data." xml:space="preserve"><value>Mantén la pequeña cantidad de información personal que FullWorth utiliza para dirigirse a ti separada de tus datos financieros.</value></data>
 </root>

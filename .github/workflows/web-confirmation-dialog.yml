@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - "FullWorth.Web/wwwroot/js/bff.js"
+      - "FullWorth.Web/wwwroot/js/account-security.js"
+      - "FullWorth.Web/wwwroot/js/account-delete.js"
+      - "FullWorth.Web/wwwroot/js/account-export.js"
+      - "FullWorth.Web/wwwroot/js/account-privacy-requests.js"
       - "FullWorth.Web/wwwroot/js/plaid-completion.js"
       - "FullWorth.Web/wwwroot/js/confirmation-dialog.js"
       - "FullWorth.Web/wwwroot/confirmation-dialog.css"
@@ -30,6 +34,27 @@ jobs:
       - name: Install pinned browser test dependencies
         working-directory: FullWorth.VisualTests
         run: npm install --ignore-scripts --no-package-lock
+      - name: Use signed Ubuntu archive for isolated browser dependencies
+        run: |
+          sudo python3 - <<'PY'
+          from pathlib import Path
+          import re
+          candidates = [Path("/etc/apt/sources.list"), Path("/etc/apt/apt-mirrors.txt")]
+          sources = Path("/etc/apt/sources.list.d")
+          candidates += sorted(sources.glob("*.list"))
+          candidates += sorted(sources.glob("*.sources"))
+          changed = 0
+          for mirror_file in candidates:
+              if not mirror_file.is_file():
+                  continue
+              original = mirror_file.read_text()
+              updated = re.sub(r"https?://azure[.]archive[.]ubuntu[.]com/ubuntu",
+                               "https://archive.ubuntu.com/ubuntu", original)
+              if updated != original:
+                  mirror_file.write_text(updated)
+                  changed += 1
+          print(f"Updated {changed} ephemeral runner Ubuntu mirror files; signing configuration preserved.")
+          PY
       - name: Install browser engines
         working-directory: FullWorth.VisualTests
         run: npx playwright install --with-deps chromium webkit
@@ -37,6 +62,14 @@ jobs:
         run: node FullWorth.VisualTests/confirmation-dialog.test.mjs
       - name: Verify BFF response contracts and explicit retry boundaries
         run: node FullWorth.VisualTests/bff-response-boundary.test.mjs
+      - name: Verify single-submit disposable owner setup under form replacement
+        run: node FullWorth.VisualTests/auth-owner-setup.test.mjs
+      - name: Verify single-write passkey removal setup under control replacement
+        run: node FullWorth.VisualTests/passkey-removal-setup.test.mjs
+      - name: Verify account security responses without credential redirects or write replay
+        run: node FullWorth.VisualTests/account-security-response-boundary.test.mjs
+      - name: Verify privacy proof never follows redirects
+        run: node FullWorth.VisualTests/privacy-response-boundary.test.mjs
       - name: Verify explicit fresh-Link recovery and no silent replay
         run: node FullWorth.VisualTests/hosted-link-recovery.test.mjs
       - name: Retain synthetic mobile screenshots

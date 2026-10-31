@@ -21,6 +21,9 @@ public sealed class FullWorthDbContext
     public DbSet<PlaidLinkCompletionAttemptEntity> PlaidLinkCompletionAttempts =>
         Set<PlaidLinkCompletionAttemptEntity>();
 
+    public DbSet<SubscriptionReviewEntity> SubscriptionReviews => Set<SubscriptionReviewEntity>();
+    public DbSet<SubscriptionEvidenceEntity> SubscriptionEvidence => Set<SubscriptionEvidenceEntity>();
+
     public DbSet<BillStreamEntity> BillStreams =>
         Set<BillStreamEntity>();
 
@@ -113,6 +116,7 @@ public sealed class FullWorthDbContext
 
         ConfigureApplicationUser(builder);
         ConfigureBillStream(builder);
+        ConfigureSubscriptionReviews(builder);
         ConfigureBankConnection(builder);
         ConfigureBankAccount(builder);
         ConfigureBankTransaction(builder);
@@ -168,6 +172,50 @@ public sealed class FullWorthDbContext
                 entity.Property(user => user.IsActive)
                     .IsRequired();
             });
+    }
+
+    private static void ConfigureSubscriptionReviews(ModelBuilder builder)
+    {
+        builder.Entity<BankTransactionEntity>()
+            .HasAlternateKey(t => new { t.Id, t.UserId });
+        builder.Entity<SubscriptionReviewEntity>(e =>
+        {
+            e.ToTable("SubscriptionReviews");
+            e.HasKey(r => r.Id);
+            e.HasAlternateKey(r => new { r.Id, r.UserId });
+            e.Property(r => r.Id).ValueGeneratedNever();
+            e.Property(r => r.Revision).IsConcurrencyToken();
+            e.Property(r => r.MerchantName).HasMaxLength(200).IsRequired();
+            e.Property(r => r.PlanLabel).HasMaxLength(100).IsRequired();
+            e.Property(r => r.BillingParty).HasMaxLength(100).IsRequired();
+            e.HasIndex(r => new { r.UserId, r.CreatedAtUtc });
+            e.HasOne(r => r.User).WithMany().HasForeignKey(r => r.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(r => r.BillStream).WithMany()
+                .HasForeignKey(r => new { r.BillStreamId, r.UserId })
+                .HasPrincipalKey(r => new { r.Id, r.UserId }).OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_SubscriptionReviews_Bill_Owner");
+            e.HasOne(r => r.SourceTransaction).WithMany()
+                .HasForeignKey(r => new { r.SourceTransactionId, r.UserId })
+                .HasPrincipalKey(r => new { r.Id, r.UserId }).OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_SubscriptionReviews_Transaction_Owner");
+        });
+        builder.Entity<SubscriptionEvidenceEntity>(e =>
+        {
+            e.ToTable("SubscriptionEvidence");
+            e.HasKey(r => r.Id);
+            e.Property(r => r.Id).ValueGeneratedNever();
+            e.Property(r => r.Source).HasMaxLength(24).IsRequired();
+            e.Property(r => r.FactsJson).HasMaxLength(8000).IsRequired();
+            e.HasIndex(r => new { r.ReviewId, r.UserId });
+            e.HasIndex(r => new { r.SourceUploadId, r.UserId });
+            e.HasOne(r => r.Review).WithMany()
+                .HasForeignKey(r => new { r.ReviewId, r.UserId })
+                .HasPrincipalKey(r => new { r.Id, r.UserId }).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(r => r.SourceUpload).WithMany()
+                .HasForeignKey(r => new { r.SourceUploadId, r.UserId })
+                .HasPrincipalKey(r => new { r.Id, r.UserId }).OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_SubscriptionEvidence_Upload_Owner");
+        });
     }
 
     private static void ConfigureBillStream(

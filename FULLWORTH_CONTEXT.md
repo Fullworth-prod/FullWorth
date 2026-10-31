@@ -1,3 +1,240 @@
+## Verified upload recovery candidate — October 30, 2026
+
+Latest runtime candidate in development: `bb0cdd70abc80f82afae6bd193a5b7549f3bcf56` ([#1020](https://github.com/Fullworth-prod/FullWorth/pull/1020)). This supersedes the older candidate card below; the Sunday goal remains active and prior history is preserved.
+
+Two actual SDK regressions on unchanged production source proved original-file deletion after metadata persistence plus acknowledgement failure/cancellation (run41013048107:2 failed/3,659 passed). The correction preserves originals after uncertain save outcomes, detaches only the candidate and rethrows without save replay or false success. Owner account deletion includes finalized unreferenced originals in its existing quarantine lifecycle; invalid/temp/nested/link entries refuse enumeration. Failed uncommitted originals can remain until controlled account erasure. No timed orphan deletion or real account erasure occurred.
+
+Final source `00eac25bd3be7c222edfc5a42f8b8b46ec0963aa`, tested `6b860dbbd7127b4666576c3b8964a330be1b7b98` and integrated tree `be480f9e58bd93eb52589abb293b2b2ecb720c04` verified. All10 checks passed; [main run41013942600](https://github.com/Fullworth-prod/FullWorth/actions/runs/41013942600) executed3,665 .NET/753 Node with zero failures/skips and zero backend/offline build warnings/errors. All six scoped PostgreSQL checks passed. Container HTTP/parser/security/disposable backup/restore checks passed; this is not real recovery acceptance. Android job was conditional for server scope; no new native artifact is claimed. Strict rules, empty reviews/threads and disabled auto-delete were checked; no bypass. Native client artifacts from #1018 remain separately identified and do not certify this server revision.
+
+[Sunday checklist](deploy/SUNDAY-TESTING-20261101.md) now includes interrupted-upload readback and retention limits. All source reviews remain scoped evidence: bank one-time completion/ownership; discovery sparse/conflicting currency preservation; independent subscription facts; upload ownership/status; refresh-family replay protection. Real provider/private expected bills/payroll/merchant/device/delivery/two-owner/document/privacy/current nonempty both-keyring recovery/legal gates remain open. Gated AI/creator stay off; cleanup unauthorized. Master9540b2616841e9794d8f8c07616edcd1e339982c remains unchanged; its separately recorded deployment has not been freshly host-confirmed. No deployment/promotion/access/account/spending/private export occurred. Candidate availability still requires the separate guarded proposal and approval; integration is not deployment.
+
+---
+
+## Sunday candidate checkpoint — October 29, 2026
+
+The active objective is **FULLWORTH — READY FOR SUNDAY TESTING**, for November 1. This supersedes older active-goal wording below; earlier checkpoints remain historical.
+
+Verified runtime candidate: `c07c5b739487252fdd17282690c6ab8c70257760` in development. [#1017](https://github.com/Fullworth-prod/FullWorth/pull/1017) qualifies yearly statement estimates from owned complete consecutive monthly coverage, usable same currency and matching deterministic math, and orders native detail by billing period. [#1018](https://github.com/Fullworth-prod/FullWorth/pull/1018) rejects malformed native detail snapshots and qualifies unsupported historical explanation estimates while preserving original saved words and raw history. Missing evidence stays unavailable; monitoring does not establish merchant renewal.
+
+#1018 source `2e04866bbcce4d490a00d0d889a2d054a28fbc69`, tested merge candidate `891afab79f5480d52e12b3165741a25e4ffc71df` and integrated runtime tree `a1bdbfbf7dfd9a101c3f203d93a322ef5b7a569c` were verified. All 12 checks passed, including required backend/Android/container/dependency checks, Chromium/WebKit regression, APK/emulator, iOS simulator and unsigned device packaging. [Main run](https://github.com/Fullworth-prod/FullWorth/actions/runs/40843332700) executed 3,659 .NET and 753 Node tests, zero failures/skips; backend/offline builds reported zero warnings/errors. These are overlapping synthetic scopes, not real provider, physical-device or production recovery acceptance. Branch protection remained active, review threads empty and branch auto-deletion disabled.
+
+Fresh repository master: `9540b2616841e9794d8f8c07616edcd1e339982c`. The same separately recorded deployed release has **not** been freshly confirmed from the host in this pass. No deployment or master promotion occurred. A candidate in development is not a served release.
+
+Use [the Sunday checklist](deploy/SUNDAY-TESTING-20261101.md), [private evidence template](deploy/SUNDAY-EVIDENCE-TEMPLATE-20261101.csv) and [separate deployment proposal](deploy/SUNDAY-DEPLOYMENT-PROPOSAL-20261101.md). Candidate availability and remaining journey review must be resolved before calling the entire package ready. Keep real provider/expected-bill/merchant/payroll/device/delivery/two-owner/document/privacy/recovery/legal gates open (#972, #912, #762, #970, #293, #251, #258, #291, #669). Record results privately; no credentials or financial records in public GitHub. Creator/gated AI remain off; cleanup #245 remains unauthorized. Earlier source fixes are completed engineering, not substitutes for external acceptance.
+
+---
+
+## Verified native and browser runtime checkpoint — 2026-10-29 UTC
+
+**Latest verified runtime in development:** `07832c84abf6ee6b7b9a3f35a67322f646b5e63e` ([#1015](https://github.com/Fullworth-prod/FullWorth/pull/1015)), following [#1013](https://github.com/Fullworth-prod/FullWorth/pull/1013) and [#1014](https://github.com/Fullworth-prod/FullWorth/pull/1014). This also includes completed #1010 explicit PWA recovery, #1011 neutral account reads/rate-limit priority and #1012 raw currency safeguards. Master remains `9540b2616841e9794d8f8c07616edcd1e339982c`; the separately recorded deployed release is also9540. No fresh production host inspection, deployment or master promotion occurred. The complete 3,903-character milestones0–8 goal remains active.
+
+**Completed engineering:** native Overview distinguishes known amounts from monthly rates, withholds incomplete annual projections and rejects invalid bill snapshots. Native alerts require confirmed usable snapshots and declared empty204 write receipts; uncertain dismissals ask for a refresh before retry. The native Bills list uses the same known-positive-amount/currency basis and preserves valid changes and separate units. APK/simulator path filters now cover native Services/ViewModels on PR and existing master-push events without changing branch filters, permissions, signing isolation or jobs.
+
+**Executed final-head evidence:** #1013 passed all13 checks (3,567 .NET/748 Node); #1014 all11 (3,597/748); #1015 all13 (3,611/753). Zero failed/skipped and zero backend/offline/actual Android build warnings/errors. Source/tested/integrated trees match and branches remain present. Applicable Hosted Link relational, container HTTP/parser/security/disposable restore, APK/emulator and iOS simulator/unsigned device checks passed. These scopes overlap and are not additive. Local native73 and packaging-path5 cases supplement SDK evidence. Native-scope Web-rendered steps were conditional; last full browser follow-up is #1011. Exact sources, trees, run/job IDs and limits are in [the cleanup audit](deploy/MILESTONE-CLEANUP-AUDIT-20261027.md).
+
+**Next demonstrated source fix:** native statement-detail property probes reproduce late historical detection displacing newer billing coverage and unsupported quarterly/unknown-unit yearly displays. One monthly control passes; three controlled pre-fix cases fail. Web already orders coverage periods, but both detail UIs display stored annualized values directly. Verify API/consumer cases, then qualify each annual basis from owned statement coverage/units/math and align native chronology. No implementation or full-page/provider acceptance is claimed for this next checkpoint.
+
+**Acceptance remains open:** #972/#912 owner/provider Link visibility/recovery; #762 private expected-bill/import/original-unit evidence; #970 consented supported merchant access/renewal/prepaid facts; #293 actual payroll; #251/#258 physical installed Android/iPhone; actual alert receipt and same-release two-owner/document/privacy/security/current nonempty real-statement/database/both-keyring clean-host/protected-backup/deletion-denial/qualified legal gates (#291/#669). Prior separate-runner recovery is partial, not absent. #245 cleanup stays unauthorized/off. MAUI retirement awaits parity/support and a deliberate decision; Financial Home expansion awaits MV-01–MV-06 evidence. Allthree light/dark pairs are implemented. Creator features remain default-off and terms proposed.
+
+This handoff needs its own current protected checks; it does not predeclare its own merge. Earlier heads/pending notes below are preserved as history. No spending/paid activation, new credentials/grants, account/secret changes, outreach/payouts/cancellations, private financial export, destructive operation, other-thread message or hourly automation.
+
+---
+
+## Verified runtime checkpoint — 2026-10-29 UTC
+
+**Runtime integrated in development:** `0c89f56b76f345607d193cb99fb2e791bc0e5704` ([#1007](https://github.com/Fullworth-prod/FullWorth/pull/1007)), following [#1006](https://github.com/Fullworth-prod/FullWorth/pull/1006) source-excerpt boundaries and [#1008](https://github.com/Fullworth-prod/FullWorth/pull/1008) account-export envelopes. Master and the last separately recorded deployment remain `9540b2616841e9794d8f8c07616edcd1e339982c`; this continuation did not inspect or deploy the production host. The complete milestones 0–8 goal remains active.
+
+**Verified behavior:** privacy failures preserve uncertainty unless operation, status and the current declared API receipt agree; explicit PWA update attempts release their listener/timer so a later activation cannot reload after timeout/failure. Export downloads require the current API 1.1 envelope while preserving valid empty accounts and exact bytes. AI excerpts require complete source boundaries; AI stays off. Disposable passkey acceptance enters current-owner proof atomically and distinguishes retained-region success from a replacement region's current empty-key readback.
+
+**Final evidence:** #1007 source `f4ddfb70ddd56f3f3d5ad43889be03182f319108`, tested `2ce79a61f5263928bb01de27d5a86f22d949f11c` and integrated tree `73414e6bafc1c84d7ef5c96dd788ac0d92f50f5b` match. All five checks passed: 3,507 .NET and 663 Node tests, zero failed/skipped; backend/offline and actual Android builds reported zero warnings/errors. Pinned Chromium/WebKit each passed 94 privacy and 9 passkey-fixture cases. Full rendered EN/ES, three theme pairs, responsive/ARIA/recovery pages, virtual passkey, HTTP/parser/secret/cgroup and disposable encrypted restore checks passed. Counts overlap and are not additive. Details and exact evidence are in [the cleanup audit](deploy/MILESTONE-CLEANUP-AUDIT-20261027.md).
+
+**Acceptance remains open:** owner/provider/expected-bill/payroll evidence (#972/#912/#762/#970/#293), physical Android/iPhone (#251/#258), actual alert receipt, same-release two-owner/document/privacy/security, current nonempty real-statement/database/both-keyring clean-host/protected-backup and qualified legal acceptance (#291/#669). Prior separate-runner recovery is partial, not absent. Synthetic CI does not complete these gates. #245 cleanup stays off; MAUI retirement and Financial Home expansion remain deferred for parity/support and MV-01–MV-06 evidence respectively. All three light/dark theme pairs are implemented; older unselected-concept notes below are history.
+
+Next: preserve this verified runtime checkpoint, complete this documentation change's own gates, then continue the highest-priority independently reproducible source work. External acceptance needs its recorded prerequisite; no deployment/master promotion, spending/activation, new grants/secrets/account changes, private export, outreach, destructive action or hourly automation is authorized. Creator features stay default-off and terms proposed. Earlier dated heads/pending checklists below are historical and do not override this checkpoint.
+
+---
+
+## Verified source-evidence and privacy continuation — 2026-10-28 UTC
+
+**Current verified development:** `a161376fb9f712d332e5a166ee198a67f32d9edc`. Master remains `9540b2616841e9794d8f8c07616edcd1e339982c`; the last separately recorded deployment is also9540, not a fresh host inspection. This continuation did not deploy or promote. The complete milestones0–8 autonomous goal remains active.
+
+**Completed and verified in development:** [#1002](https://github.com/Fullworth-prod/FullWorth/pull/1002) rejects unknown/noncurrency AI units and currency excerpts cropped from larger source tokens; [#1003](https://github.com/Fullworth-prod/FullWorth/pull/1003) refuses privacy proof/token redirects and invalid token envelopes; [#1004](https://github.com/Fullworth-prod/FullWorth/pull/1004) binds monetary evidence to complete signed source amounts and checks raw ASCII currency codes before casing in both parsing paths. No model/provider was called or AI enabled. Genuine amounts, incomplete-evidence review, ownership and existing financial safeguards remain.
+
+**Final runtime evidence:** #1004 source `43d8343a4c6a7882b8d218ad3b9e783a642de989`, tested `0021956657501babe2045992a656c56b25ddf88f`, integrated tree `1f8580ce5b17948c4574c2073dacd7ae80014dc4` match. All10 checks passed; actual3,215 .NET and434 Node cases, zero failed/skipped/backend/offline build warnings/errors. Bank26+12focused; Hosted53 plus22focused/12synthetic-provider recovery; monitoring124; confirmation118; subscription17+51focused passed. Counts overlap the full suite and are not additive. Container HTTP/PDF/OCR/cgroup/secret and disposable encrypted restore passed. #1004 native/browser steps were conditional; fresh UI/native evidence is #1003, not physical-device acceptance.
+
+**Privacy/UI evidence:** #1003 source0d6ba4bde24a29d09b9778167c112b2de82a5cb7, testede289bf7609a259c0ed179b562e8ebc9f3813f93f and integratede92f4768822b662e083bf78c7779654dd09320de share tree09d045aae7c350189ad2336871f89788bab6bfd7. All5 checks passed:3,100 .NET/434 Node; actual Android build zero warnings/errors;59 privacy HTTP cases per pinned Chromium/WebKit and existing browser suites; rendered privacy/cancellation/synthetic download,2392/2422 theme assertions,354 geometry/108 state/12 menu cases per engine,12 EN/ES recovery pages and virtual passkey passed. Artifact12843299724 SHA256c3287af5ce3647ec842ac4f0f2b1c898f4bde4787ee5f8ddba862056af0ed2b9 verified; three privacy screens inspected.21 bounded performance samples:10 Chromium shifts0, Bills0.00184,10 WebKit unsupported/null; no duplicate CSS/raw URLs/UUIDs. This is not a zero-shift, field performance or device claim.
+
+All exact changed-file readbacks, tested/integrated trees, strict ruleset24230011 (four required Actions checks, zero required approvals, resolved threads, no bypass), empty reviews/threads and retained branches were verified before/after integration. Prior prepared/failed/pending-head notes below are history. This handoff requires its own final-head checks; it does not predeclare its own integration.
+
+**Implemented, awaiting external acceptance:** keep #972/#912 provider completion/visibility and failure/unknown-commit recovery, #762 private expected-bill/import/history evidence, #970 consented supported merchant renewal/access/prepaid evidence, #293 posted payroll/provider acceptance, #251/#258 physical installed apps and #291/#669 same-release two-owner/document/export/delete/delivery/security/current recovery/protected-backup/legal gates open. CI fixtures do not replace them. Prior separate-runner recovery evidence remains partial; do not call all recovery wholly missing or complete from disposable fixtures. No real private export, new grant/credential or automatic expired-key renewal.
+
+**Deferred:** #245 branch-cleanup activation/deletion remains off and unauthorized; MAUI retirement needs parity/support decisions; Financial Home MV01–MV06 value/economics acceptance and milestones9–12 remain separate. Creator features remain default-off and terms proposed.
+
+**Next source checkpoint:** continue evidence-backed milestone work, including date/account/string excerpt-boundary review and alert/session partial-failure journeys. These are audit targets, not newly proven bugs. Retain the small Bills lab layout observation for reproduction before any rewrite. No speculative features, repeated blocker rediscovery, deployment, spending, paid activation, merchant outreach/payouts, private financial exports, destructive operations or other-thread messages.
+
+---
+
+# Current verified account and statement-currency checkpoint — 2026-10-28 UTC
+
+Development runtime is `74d559cead93ca6073cd469697a1a5e5b31221e6` through [#1000](https://github.com/Fullworth-prod/FullWorth/pull/1000), following [#999](https://github.com/Fullworth-prod/FullWorth/pull/999) at `c556f22ffd51782202b6a3cf9c4ca6fed83977f8`. Both passed their own final-head gates, exact source/tested/integrated tree comparisons and source readback; both branches remain. This documentation revision still requires its own protected checks; it does not predeclare an own merge SHA.
+
+**Completed and verified:** account-security response/token/redirect contracts; truthful already-verified versus email-sent handling; fixed EN/ES uncertainty guidance without application write replay; server session preservation on unexpected success; valid-byte-preserving JSON export checks. Statements preserve recognized explicit currency evidence, withhold conflicting/invalid/unknown units and reject ordinary-word/vertical-separator suffix mistakes. No conversion or historical bulk retagging. Recognition uses bounded installed framework metadata; the legacy no-declaration USD-format fallback remains a documented limitation.
+
+Final #1000 source `10fac283688b9e215a75cc4992956692edd4f109` passed all10 checks:3,062 .NET/368 Node, zero failed/skipped/backend/offline build warnings/errors,53 new parser cases plus6 actual PDF-to-test-database cases and six PostgreSQL scopes. Browser/native stages were conditional for that API-only change. #999 source814153ae passed all5 checks,3,003 .NET/368 Node, fresh Android compilation,8 setup+41 account HTTP cases per pinned engine, full themed/EN/ES/recovery/virtual-key/HTTP/parser/disposable encrypted restore checks. These are CI/build/synthetic results, not provider/physical-device/real delivery/current-release real recovery/legal acceptance.
+
+**Implemented, awaiting external acceptance:** #972 fresh owner Wells Fargo visibility/initial sync; #912 controlled provider lifecycle; #762 private expected-bill/import truth and any older non-USD statement's original-unit review; #970 real subscription/access/renewal/billing-party evidence; #293 real payroll; #251/#258 physical Android/iPhone; #291/#669 same-release two-owner/document/security/deletion/delivery, nonempty real statement/database/both-keyring clean-host/bootstrap/retention and qualified legal proof. Prior authorized read-only clean-runner recovery remains actual partial evidence, not wholly missing or current-release acceptance.
+
+**Deferred:** #245 deletion/cleanup activation is unauthorized; MAUI retirement requires parity/support decision; Financial Home expansion waits for MV-01–MV-06 value/economics. Creator features stay default-off/terms proposed; all three selected light/dark pairs remain implemented.
+
+See [the detailed milestone audit](deploy/MILESTONE-CLEANUP-AUDIT-20261027.md), [account evidence](deploy/ACCOUNT-SECURITY-RESPONSE-BOUNDARIES-20261028.md) and [currency evidence](deploy/STATEMENT-CURRENCY-EVIDENCE-20261028.md). Preserve the full milestones0–8 goal and continue independent reproducible-bug/source review; this batch does not finish the goal or all #934.
+
+Master/last separately recorded deployment remain `9540b2616841e9794d8f8c07616edcd1e339982c`; no fresh host inspection or deployment occurred. No spending/activation, new credentials/grants/settings/secrets, outreach/payouts, real private exports, destructive actions, other-thread messages or hourly automation. Development integration is not deployment. Earlier checkpoints below are retained history; fresh Git refs govern.
+
+---
+
+# Newest verified statement-precision integration — 2026-10-28 UTC
+
+Verified runtime baseline is `2a72b8912e73a157a797c3ceddf6e51694f9d0e6` via [#997](https://github.com/Fullworth-prod/FullWorth/pull/997), following #996. Exact sourced83c678fdb69caa71ea3e35dc1368ddf0ae94437 passed all10 checks; source/tested2f72bcc91915581b1eb087b53f214492e5b9466f/integrated treecbe1c90ecaff4f6e5855bf6538fc0b6fc754139e matched. Five source blobs read back exactly; branch retained.
+
+**Completed and verified:** raw evidence-backed AI candidates1.005/0.005/-0.005 previously passed conversion as1.01/0.01/-0.01 and were marked ready. All four candidate monetary fields and signed line items now enforce the existing two-decimal storage policy before mapping. Converter rounding is removed; accepted values remain exact. Existing narrower AI bounds, zeros/trailing zeros/credits, currency/evidence/completeness guards are retained. The former three-decimal happy fixture is now supported two-decimal evidence, with17 explicit rejection/four preservation cases. No new currency/schema feature or AI activation/inference.
+
+Actual final CI40646521357:2,966 .NET/229 Node, zero failed/skipped/backend/offline warnings/errors. PostgreSQL bank26(+12 focused .NET), Hosted Link durable53, consumed-token recovery12, monitoring124, bill confirmation118 and subscription17(+51 focused .NET) passed. Providers are synthetic and data isolated. Container PDF/OCR/cgroup/HTTP/secret-boundary/disposable encrypted database/file restore passed. Native and browser builds were conditionally skipped for this backend-only change; no fresh physical/provider/private-document/recovery/legal acceptance inferred.
+
+#996 sourceb04cabce / integrated7b780855 previously verified the shared legal footer and six handoff updates:16 EN/ES normal/enlarged legal-navigation states,2,945 .NET/229 Node and full browser/security/disposable recovery. Its21-case report independently repeated the slow390px shift0 after #995; field performance/SLA acceptance remains distinct. The earlier verified headers below retain those exact source/artifact limits.
+
+**Remaining:** audit other authorized journeys against real evidence. Real owner/provider/Wells Fargo/payroll/private expected-bill/statement accuracy, destination receipt, physical installed devices, same-release real recovery/two-owner/security and qualified legal gates remain open on existing issues. Prior authorized read-only clean-runner recovery is actual partial evidence, not wholly absent or current-release acceptance. MAUI retirement/support, Financial Home expansion and branch cleanup activation stay deferred for their recorded prerequisites. All three theme pairs remain selected; creator features default-off/terms proposed.
+
+Master/last separately recorded deployment remains9540b2616841e9794d8f8c07616edcd1e339982c. No deployment/promotion, spending/paid activation, new credentials/grants/secrets/settings, merchant contact, private export, branch deletion, other-thread messages or hourly automation. Goal is active; these verified slices do not complete all milestones. This follow-up only records existing evidence; its own protected PR must pass before integration. Earlier dated material below is preserved history; fresh Git refs govern.
+
+---
+
+# Verified runtime prerequisite and shared-footer follow-up — 2026-10-28 UTC
+
+Verified prerequisite is `4ac115e232a6c912d4c0165b839e69d8e955615e` via [#995](https://github.com/Fullworth-prod/FullWorth/pull/995), after #994 at43388bfc and documentation #993. Exact #995 sourcebe50d1bbf9ca87dce8845d93871e55c36afba3e8 passed all12 checks:2,945 .NET/229 Node, zero failed/skipped/backend/offline build warnings/errors. Source/testedee2a499/integrated tree85a8babf06a32b2f233a31cf8684840bd9cf4a7f matched. Fresh MAUI Android, APK/emulator installation+launch, iOS simulator and unsigned iPhone IPA builds passed; these do not establish physical/signed-device acceptance. Branches retained.
+
+**Completed and verified:** #994 contracted204 passkey confirmation, validated options/CSRF/no redirects/no write replay, read-only ambiguity recovery and secure password/authenticator removal without WebAuthn; five EN/ES recovery surfaces/35 additional Spanish entries;320px Settings headings preserving2× text size/whole words. Its five checks ran2,941 .NET/229 Node. Both engines passed2,392/2,422 assertions and354 geometry/108 financial-state/12 menu cases each;12 recovery pages and disposable virtual-key enrollment/login/removal passed. #995 preserves an unknown zero-baseline percentage without losing supported dollar/currency/complete-month explanation.
+
+**Bounded performance evidence:** #994 repeated the earlier0.216613 slow390px shift and captured loading width362→366/y221→229. #995 moved one shell stylesheet from interactive layout to persistent head; its21-case report recorded0 shift in that slow sample, no observer drops/duplicate stylesheet links. This is laboratory startup stability, not a field/speed/SLA or physical-device pass. Public/auth routes now request the scoped asset; no overall transfer reduction is claimed.
+
+**This revision:** nonhome legal footer links lacked homepage spacing/target styles. Shared wrapping rules give44px targets/20px gaps, bounded labels and keyboard access. Content/destinations remain unchanged. Isolated actual CSS: eight original failures/eight corrected passes across EN/ES320/390 and100/200% text. The real browser suite now covers16 legal-navigation states. Its final-head protected PR supplies this revision's integration evidence; no own merge SHA or physical/legal acceptance is predeclared.
+
+**External acceptance:** #972 fresh owner Wells Fargo/initial sync; #912 controlled provider/error/device lifecycle; #762 private expected-bill/import truth; #970 merchant/subscription/billing-party evidence; #293 real posted payroll; #251/#258 physical Android/iPhone; #291/#669 same-release two-owner/document/deletion/delivery/security, nonempty real statement/database/both-keyring clean-host/bootstrap/retention and qualified legal proof. Prior authorized read-only clean-runner recovery remains actual partial evidence, not wholly missing or current-release acceptance.
+
+**Deferred:** #245 branch deletion/cleanup activation is outside authority; MAUI retirement needs parity/support decision; Financial Home expansion waits for MV-01–MV-06 retained value/economics. Creator features default-off, terms proposed. All three light/dark pairs remain selected.
+
+See [audit](deploy/MILESTONE-CLEANUP-AUDIT-20261027.md), [budget](deploy/PWA-PERFORMANCE-BUDGET-20261027.md), [actual laboratory evidence](deploy/PWA-PERFORMANCE-LAB-20261027.md) and [footer scope](deploy/RECOVERY-FOOTER-NAVIGATION-20261028.md). Preserve the full goal. Verify this revision's final checks/handoff, then audit remaining authorized source work; do not declare all milestones/goal complete from these slices.
+
+Master/last separately recorded deployment remain9540b2616841e9794d8f8c07616edcd1e339982c. No deployment/master promotion, spending/activation, new credentials/grants/secrets/account changes, merchant contact, private export, branch deletion, other-thread messages or hourly automation. Development integration is not deployment. Earlier checkpoints are retained history; fresh Git refs govern.
+
+---
+
+# Verified milestone cleanup and pending security batch — 2026-10-27 UTC
+
+PR [#983](https://github.com/Fullworth-prod/FullWorth/pull/983) squash-merged into development as `11dc0b3d3babded2ac717018b76be30f5c20fcbd`. Exact source `97617ab3046d960a6f8c30b9c2f53f5d36b10c90` passed all 17 checks; tested merge candidate and integrated tree both equal `8029ce5a8fcad14f10ec1892d5085dec73bee1e1`. Main CI 40462649383 executed 2,892 .NET and 127 Node tests with zero failures/skips/backend build warnings. PostgreSQL, Chromium/WebKit, Android emulator and actual iOS simulator install/launch passed. These are CI/simulator results, not private provider, physical device, delivery, recovery or legal acceptance.
+
+Completed and verified: shared complete-month comparison guards; nullable unsupported/mixed-currency stream analysis; source-account ambiguity rejection that preserves existing bill evidence; bounded read-only simulator lookup recovery and early failure evidence. #984/#985 were closed as superseded, not individually merged; #932's unique historical prepend was preserved verbatim in [the milestone audit](deploy/MILESTONE-CLEANUP-AUDIT-20261027.md) before accurate supersession. All branches remain.
+
+Pending integration: existing #979 is being used for .NET 10.0.14 package/runtime and SDK 10.0.403 security maintenance plus the independent #986 statement-category alert correction and #987 trusted-origin reset-email correction. Focused #986 source `bbfafef25eca3dbdececfc98a6cb24be86d9f5e5` passed 2,879 .NET/127 Node; #987 source `8441272b22db10a4ecff42ea3ceadae02e76375e` passed 2,881 .NET/127 Node, zero failures/skips/backend warnings. Their combined dependency head must pass current protected and applicable relational/browser/native checks before integration. Do not claim combined success from focused results. #988 is a separate tests-first currency-ambiguity retention investigation; do not duplicate or call it fixed yet.
+
+Implemented, awaiting external acceptance: #972 fresh owner-initiated Wells Fargo connection/visibility; #912 controlled provider/error/device lifecycle; #762 private expected-obligation/import comparison; #970 actual subscription/billing-party evidence; #293 real payroll; #251/#258 physical Android/iPhone installed flows; #291/#669 the outstanding real nonempty statement/database/both-keyring clean-host/bootstrap/retention, same-release two-owner and qualified legal evidence. Exact minimum prerequisites and prior recovery distinctions are in the milestone audit. Synthetic fixtures do not close these issues. No new grants/private exports/account changes or real delivery are authorized.
+
+Deferred with concrete reason: branch deletion/cleanup activation (#245) is outside the non-destructive scope; new merchant connectors require documented capability/consent; creator activation and unapproved milestone expansion remain default-off/proposed. Continue independent reproducible bug evaluation while checks run; preserve the complete active cleanup objective.
+
+Development integration is not deployment. No production/master promotion, host mutation, spending, paid activation, credential/grant/secret/account change, outreach, destructive operation, private financial export, other-thread message or hourly automation occurred in this cleanup pass. Existing production records below are historical evidence, not a fresh host inspection.
+
+---
+
+# Verified merchant/UI software checkpoint — 2026-10-26 America/Denver
+
+PR [#978](https://github.com/Fullworth-prod/FullWorth/pull/978) squash-merged into development as `ccec80e44c8c2c8be451b2d176ed25c8e983fa91` after all five exact-head checks passed on `d6a828510b69ad9f06e77933dd783a8bee060cd1`. Tested candidate `c3576d286d388430546169d62c459404bd524acc`, final source and integrated tree all equal `b6352dc1d182b9286b9e78ea138fe48e2c94638b`. Branch preserved; active ruleset24230011, strict four required checks, zero required approvals, resolved threads/no bypass verified. No review threads/submissions outstanding.
+
+All three owner-selected families are now implemented as browser-local styles across public Home and signed-in Overview: Editorial serif/open comparison; Workspace cobalt rail/list-detail; Story ivory/charcoal/copper payment→comparison→evidence. Each has light/dark mode, EN/ES, native keyboard controls and safe blocked-storage fallback. Home sample selection/disclosure and account-aware entry work. Existing financial calculations, original currencies, ownership and coverage/timing qualifiers remain. A single payment does not establish renewal; fictional annualized examples stay conditional. Reduced-motion/performance profiles remain respected.
+
+Actual final-source [CI40423941923](https://github.com/Fullworth-prod/FullWorth/actions/runs/40423941923):2,870 .NET +127 Node, zero failed/skipped; backend/offline builds zero warnings/errors; Android compiled. Chromium2,188/WebKit2,212 theme assertions,330 geometry cases per engine **including108 financial-state and12 menu cases**; zero layout/contrast/unexpected errors. Existing responsive672/native-select126/ARIA37/subscription54 per engine and account/security/planning/navigation recovery passed. Separate [confirmation40423941922](https://github.com/Fullworth-prod/FullWorth/actions/runs/40423941922) passed38dialog/74BFF/24Hosted cases; dependency40423941939 passed. Both-engine real disposable preference/admin checks precede bounded GET-only auxiliary fixtures; no production rate-limit/CSP change.24 WebKit screenshot CSP denials matched exact observed tool empty-rule injection. Disposable encrypted recovery fixtures are not real production clean-host acceptance.
+
+Final artifact12699324836 SHA256`c15dedad88ccb6def1d9c212c08aba1a0e40792847a7e88b13d197ca5e9ab863` downloaded and verified. Both final auditJSON files are clear. Six desktop and six phone Home frames are pixel-identical to visually accepted c66e534 captures (artifact12678346695 SHA256`8bee057556e1a00532840526b860262c2e82715ff4ae80fa6e9c135d6fa35d75`). All six matched1487×1058 anonymous full boards, focused typography/layout/color/assets/copy, six Overview frames, six English phone views and enlarged menus were actually inspected. Root `design-qa.md`:passed; only P3 optical font/marker refinement remains, not another required design loop. Same-origin licensed Inter and generated fictional EN/ES statement art have provenance in the runbook.
+
+Owner-private [verified phone/desktop previews](https://drive.google.com/drive/folders/1AXHz6QJBtwVZ6wwakpqhaLXAS3JjoNNk) contain12 actual public example images; list/permission readback verified. The existing [design document](https://docs.google.com/document/d/1saHL9hvcqRpG1NQvAQ0Xe5hywWPfM7BuMS5Gmo8iWUA) retains its gallery and records implementation/preview links. No sharing broadening or private customer export.
+
+Merchant software remains integrated through #971/#977: independent access/renewal/arrangement/dates/amount/currency, source/age/conflict evidence, single-payment review, EN/ES, owner-scoped immutable/idempotent revision-safe writes and export/erasure. Direct merchant verification remains Unavailable; no supported authorized consumer-wide connector was established. Document confirmation uses existing exact-owned linked-bill statements, not a standalone receipt/cancellation upload system or a live merchant check. #970 remains open for real acceptance; #972 remains real fresh Wells Fargo visibility acceptance. Do not close either using fixtures.
+
+**Next checkpoint:** owner review of these implemented previews, then separately authorized release promotion/deployment and actual provider/device/private-financial/recovery/legal acceptance. This completes the authorized merchant/UI software integration, not all #934 or release readiness. Inspect current dependency PRs#979/#980/#981 separately; no upgrade outcome is claimed here. Old handoff#932 remains separate and must not overwrite this newer record. Master remains`9540b2616841e9794d8f8c07616edcd1e339982c`; no production host inspection/deployment occurred. No paid activation/spending/grants/account/secret changes, merchant contact, payouts, branch deletion or hourly automation. Earlier pending-selection/UI and billing-lock checkpoints below are historical.
+
+---
+
+# Verified checkpoint — 2026-10-26: subscription review software integrated; three theme pairs selected
+
+PR #971 merged into development as `7c01abf61034b10d0288ee8efe1eb61361b9d913` after all 18 checks passed on exact source `a0e48340f2fd3b781a457282d7ad61e055e72d37`. Tested merge-candidate `a0e577225a57d064c8a32d52d24d4c3e631e1d0d` and integrated tree both equal `2d011031eab6edea96431b80c8db3f50fe9bdb4e`.
+
+- Independent access/renewal/arrangement/paid-through/next-charge facts, owner-scoped immutable dated evidence, revision/idempotency safeguards, single-payment review links, export/erasure integration and EN/ES review UI are integrated. Financial totals, bank history and recurrence gates remain unchanged.
+- Latest observed evidence from each source stays visible outside capped upload history; newer uploads of old receipts cannot replace or hide newer observations. Unknown/stale/conflicting facts remain explicit. Ambiguous writes recover by explicit reads, without automatic replay.
+- Official merchant capability research is in `deploy/MERCHANT-SUBSCRIPTION-VERIFICATION-970.md`. No supported authorized consumer-wide renewal connector was established. Merchant verification remains Unavailable. Manual/document confirmation is not a live merchant check. Document evidence currently means an existing exact-owned statement upload on a linked bill, not a new standalone receipt/cancellation-upload system.
+- Actual CI 40280400491: 2870 .NET +106 Node, zero failures/skips; backend/offline/Android builds zero warnings/errors. PostgreSQL subscription17+focused51, bank26+focused12, Hosted53+22+12 fault, monitoring124, confirmation118 passed. Chromium/WebKit subscription54 each and ARIA37 each; existing dialog38/BFF74/Hosted browser24 passed. Synthetic fixtures do not establish real merchant/device/private-financial/recovery/legal acceptance.
+- Artifact12631209929 SHA256 `c2a22a0786bad2baf94c268bc715c94d6b78650d6b5ca938c0e10504f187a904` verified; four subscription screenshots inspected across engines/themes/languages/widths. Both themes/EN-ES/320-390px/200% geometry and notice contrast>=4.5:1 passed.
+- Human explicitly chose **all three light/dark pairs as selectable themes** for **both public Home and signed-in Overview**. This supersedes older pending-selection notes. Use the six existing paired references; do not regenerate or choose only one. Plan actual differentiated layouts/type as well as color, preserve financial qualifications, reduced motion and performance.
+- Master/live remains bank hotfix `9540b2616841e9794d8f8c07616edcd1e339982c`. No merchant/UI promotion or deployment occurred. No new grants/secrets/spending/outreach/payments/cancellations; hourly automation remains off. #970 remains open for separately recorded real acceptance; #972 Wells Fargo real connection visibility remains open. Preserve historical PR#932 separately.
+
+---
+
+## Bank-link hotfix deployed and independently verified — 2026-10-25 America/Denver
+
+The owner explicitly approved this guarded deployment. Verified live release and master are
+`9540b2616841e9794d8f8c07616edcd1e339982c`; integrated release tree
+`4a60de3eac68f891887ee017af4b2100ea94649d`. Production checkout is clean and its
+Git HEAD, release marker, environment release ID and running API/Web identities agree.
+
+[#975](https://github.com/Fullworth-prod/FullWorth/pull/975) promoted only #973's bank-link
+cancellation fix, tests and handoff after14 final-source checks passed on6764e155.
+Exact-master CI40257284360, all four CodeQL languages40257284548 and governance40257284186 passed.
+Image artifact12623132717 is nonexpired,365,661,542 bytes, SHA256
+`32595d2e0dd8d942a64ebbe2e81e36efb9a3b33d1564df7dfbc3c8c76fae16b7`.
+Guarded deployment40257893875 actually verified image/SBOM attestations, took fresh encrypted
+backup snapshot63c7835ac56597724bbccdee77a096ed4c4ab98ebc47fccaf1b103dbfbd94037
+before runtime replacement, and passed host/beta/public readiness. Postdeployment auth40258169056
+passed both non-destructive bearer-token and browser-cookie/logout boundaries.
+
+Independent SSH verification passed permissions, release integrity, exposure, runtime and API/Web
+readiness. Private before/after verification found all36 existing tracked environment fields unchanged
+(excluding intended release ID), all five core financial-table counts unchanged, and the same
+latest migration20261025020500_AddPlaidLinkCompletionAttempts. No merchant-verification schema was
+deployed. Private evidence: /home/debian/fullworth-recovery-evidence/predeployment-integrity-bank972-20261025.json
+and postdeployment-integrity-bank972-20261025.json. Counts do not prove private expected-bill truth.
+
+Fresh-host recovery40257392831 succeeded with runner/tools9540b261, restoring the protected
+pre-hotfix source release3fd3aa5 snapshot8067b8e455c187515a36ce7bec89002383021068874bf22144f5a5ced3bc24f6.
+Read-only provider denials were verified; no private recovery artifacts were uploaded.
+This is a current-tooling restore of the prior live release, not a claim of a restored9540 backup,
+nonempty-real-statement acceptance or disaster-bootstrap acceptance.
+
+**Real bank acceptance remains open:** #972's old consumed token stays fenced. The owner has been
+told to start a fresh secure Wells Fargo connection and confirm bank visibility and initial sync.
+Do not replay the old token, reset permits, remove accounts or manufacture a connected result.
+The code fix's passing fixtures and deployment do not prove the owner's actual bank is connected.
+
+**Active goal continues:** complete merchant subscription verification #970/#971 and the newly
+requested full UI overhaul of BOTH the public homepage and signed-in Overview. The owner explicitly
+selected both surfaces and requested a clean, professional system, planned then implemented after
+this deployment. Treat that as the latest design brief; earlier colorful concepts were not selected.
+Audit current screens, document the concrete design, implement and verify responsive/accessibility/
+reduced-motion/performance states while preserving financial behavior. Do not deploy these new
+features or redesign without separate authorization.
+
+Preserve #971 at its actual GitHub head; initial source65ade1d is NOT integrated.
+Its17 PostgreSQL checks passed; its filter quoting and three explicit security inventories/coverage
+registrations still need correction. Additional UI/evidence refinements are conversation scratch,
+not committed or tested. Read current source/failures before resuming, and merge this release
+ancestry into that branch rather than duplicating work.
+
+Hourly automation stays off. Paid/creator activation, new credentials/account grants, secret changes,
+spending/outreach/payouts and private financial exports remain unauthorized. Existing temporary
+read-only recovery access retains its original expiry and scope. Broader provider/device/legal/
+nonempty-statement/two-owner/disaster-bootstrap gates stay open.
+
+- current release candidate on master: `9540b2616841e9794d8f8c07616edcd1e339982c`.
+- Verified live production release: `9540b2616841e9794d8f8c07616edcd1e339982c`.
+
+---
+
 ## Authorized bank-link hotfix release — 2026-10-25 UTC
 
 The owner explicitly approved deploying the tested bank-link fix in this chat. This supersedes

@@ -698,8 +698,15 @@
         if (_securityModule is null || _isBusy || _security?.EmailConfirmed == true) return;
         await RunActionAsync(async () =>
         {
-            await _securityModule.InvokeVoidAsync("resendVerificationEmail");
-            SetSuccess(L["Verification email sent. Check your inbox for the confirmation link."].Value);
+            if (await _securityModule.InvokeAsync<bool>("resendVerificationEmail"))
+            {
+                SetSuccess(L["Verification email sent. Check your inbox for the confirmation link."].Value);
+            }
+            else
+            {
+                await RefreshSecurityAsync();
+                SetSuccess(L["Your email address is already verified."].Value);
+            }
         }, L["We couldn’t send the verification email. Please try again."].Value);
     }
 
@@ -953,6 +960,7 @@
     private string GetSafeActionError(string? technicalMessage, string fallbackMessage)
     {
         if (string.IsNullOrWhiteSpace(technicalMessage)) return fallbackMessage;
+        if (technicalMessage.Contains("FullWorth could not confirm this account update.", StringComparison.Ordinal)) return L["FullWorth could not confirm this account update. Reload settings to check its current state before trying again."].Value;
         if (technicalMessage.Contains("current password is incorrect", StringComparison.OrdinalIgnoreCase)) return L["Your current password is incorrect."].Value;
         if (technicalMessage.Contains("authenticator code", StringComparison.OrdinalIgnoreCase) &&
             (technicalMessage.Contains("isn’t valid", StringComparison.OrdinalIgnoreCase) || technicalMessage.Contains("isn't valid", StringComparison.OrdinalIgnoreCase) || technicalMessage.Contains("invalid", StringComparison.OrdinalIgnoreCase)))

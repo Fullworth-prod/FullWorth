@@ -24,6 +24,61 @@ public sealed class BillStatementProcessingPersistenceTests
     }
 
     [Theory]
+    [InlineData("Currency: CAD", "Total Amount Due: $104.99", "CAD")]
+    [InlineData("Currency: EUR", "Total Amount Due: 104.99", "EUR")]
+    [InlineData("Statement Currency: GBP", "Total Amount Due: 104.99 GBP", "GBP")]
+    public async Task ExplicitCurrency_RealPdfPipelinePreservesStoredUnit(
+        string declaration, string totalLine, string expectedCurrency)
+    {
+        // Isolate this added case's real auth budget, database and worker host.
+        await using var caseFactory = new FullWorthApiFactory();
+        using var client = caseFactory.CreateHttpsClient();
+        var user = await TestUserAuthentication.RegisterAndLoginAsync(client);
+        TestUserAuthentication.Authorize(client, user);
+        var streamId = await CreateBillStreamAsync(client);
+        var uploadId = await UploadAsync(client, streamId, CreatePdf(
+            ["Synthetic Provider", declaration, "Statement Date: 08/10/2026",
+             "Billing Period: 07/01/2026 - 07/31/2026", "Due Date: 08/31/2026", totalLine]));
+        await WaitForStatusAsync(uploadId, BillStatementUploadStatus.Processed, caseFactory);
+        using var scope = caseFactory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FullWorthDbContext>();
+        var upload = await db.BillStatementUploads.AsNoTracking().SingleAsync(item => item.Id == uploadId);
+        Assert.NotNull(upload.BillStatementId);
+        var statement = await db.BillStatements.AsNoTracking().SingleAsync(item => item.Id == upload.BillStatementId);
+        Assert.Equal(expectedCurrency, statement.CurrencyCode);
+        Assert.Equal(104.99m, statement.TotalAmount);
+        Assert.Equal(upload.UserId, statement.UserId);
+        Assert.Equal(streamId, statement.BillStreamId);
+    }
+
+    [Theory]
+    [InlineData("Currency: CAD", "Currency: USD")]
+    [InlineData("Currency:", "Statement Currency: CAD")]
+    [InlineData("Currency: CAD / USD", "")]
+    public async Task UnusableCurrency_RealPdfPipelineStaysInReview(
+        string firstDeclaration, string secondDeclaration)
+    {
+        // Isolate this added case's real auth budget, database and worker host.
+        await using var caseFactory = new FullWorthApiFactory();
+        using var client = caseFactory.CreateHttpsClient();
+        var user = await TestUserAuthentication.RegisterAndLoginAsync(client);
+        TestUserAuthentication.Authorize(client, user);
+        var streamId = await CreateBillStreamAsync(client);
+        var uploadId = await UploadAsync(client, streamId, CreatePdf(
+            ["Synthetic Provider", firstDeclaration, secondDeclaration,
+             "Statement Date: 08/10/2026", "Billing Period: 07/01/2026 - 07/31/2026",
+             "Due Date: 08/31/2026", "Total Amount Due: $104.99"]));
+        await WaitForStatusAsync(uploadId, BillStatementUploadStatus.ReadyForParsing, caseFactory);
+        using var scope = caseFactory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FullWorthDbContext>();
+        var upload = await db.BillStatementUploads.AsNoTracking().SingleAsync(item => item.Id == uploadId);
+        Assert.Null(upload.BillStatementId);
+        Assert.False(await db.BillStatements.AnyAsync(item => item.BillStreamId == streamId));
+        Assert.False(await db.BillChanges.AnyAsync(item => item.BillStreamId == streamId));
+        Assert.False(await db.BillAlerts.AnyAsync(item => item.BillStreamId == streamId));
+    }
+
+    [Theory]
     [InlineData("Total Amount Due: $105.99")]
     [InlineData("Billing Period: 06/01/2026 - 06/30/2026")]
     [InlineData("Due Date: 09/15/2026")]
@@ -423,7 +478,8 @@ public sealed class BillStatementProcessingPersistenceTests
 
     private async Task WaitForStatusAsync(
         Guid uploadId,
-        BillStatementUploadStatus expectedStatus)
+        BillStatementUploadStatus expectedStatus,
+        FullWorthApiFactory? caseFactory = null)
     {
         var deadline =
             DateTimeOffset.UtcNow
@@ -438,7 +494,7 @@ public sealed class BillStatementProcessingPersistenceTests
                deadline)
         {
             using var scope =
-                _factory.Services
+                (caseFactory ?? _factory).Services
                     .CreateScope();
 
             var dbContext =

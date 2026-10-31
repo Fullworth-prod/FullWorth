@@ -63,10 +63,13 @@ public sealed partial class DeterministicBillStatementParser
             DueDateRegex(), extractedText, out var dueConflict);
         if (dueConflict) conflicts.Add(nameof(BillStatementStructuredData.DueDate));
 
+        var currencyCode = TryExtractCurrency(extractedText, out var currencyConflict);
+        if (currencyConflict) conflicts.Add(nameof(BillStatementStructuredData.CurrencyCode));
+
         var missingRequiredFields =
             new List<string>(
                 capacity:
-                    3);
+                    4);
 
         if (!totalAmount.HasValue)
         {
@@ -87,6 +90,11 @@ public sealed partial class DeterministicBillStatementParser
             missingRequiredFields.Add(
                 nameof(
                     BillStatementStructuredData.BillingPeriodEnd));
+        }
+
+        if (string.IsNullOrEmpty(currencyCode))
+        {
+            missingRequiredFields.Add(nameof(BillStatementStructuredData.CurrencyCode));
         }
 
         var confidence = conflicts.Count > 0
@@ -113,7 +121,7 @@ public sealed partial class DeterministicBillStatementParser
                 dueDate,
 
             CurrencyCode:
-                "USD",
+                currencyCode,
 
             Confidence:
                 confidence,
@@ -123,6 +131,30 @@ public sealed partial class DeterministicBillStatementParser
         {
             ConflictingFields = conflicts.AsReadOnly()
         };
+    }
+
+    private static string TryExtractCurrency(string text, out bool conflicting)
+    {
+        var labeled = CurrencyCodeRegex().Matches(text).Cast<Match>()
+            .Select(match => match.Groups["currency"].Value.Trim())
+            .ToArray();
+        var totalCurrencies = TotalAmountRegex().Matches(text).Cast<Match>()
+            .Where(match => match.Groups["currency"].Success)
+            .Select(match => match.Groups["currency"].Value);
+        var rawCurrencies = labeled.Concat(totalCurrencies).ToArray();
+        var currencies = rawCurrencies.Select(value => value.ToUpperInvariant())
+            .Distinct(StringComparer.Ordinal).ToArray();
+        conflicting = currencies.Length > 1;
+
+        // Explicit malformed/competing currency evidence must not fall back to
+        // this parser's legacy USD-style format assumption.
+        if (rawCurrencies.Any(value => !StatementCurrencyPolicy.IsRecognized(value)) ||
+            conflicting)
+        {
+            return string.Empty;
+        }
+
+        return currencies.Length == 1 ? currencies[0] : "USD";
     }
 
     private static decimal? TryExtractTotalAmount(string text, out bool conflicting)
@@ -366,10 +398,16 @@ public sealed partial class DeterministicBillStatementParser
     }
 
     [GeneratedRegex(
-        @"(?im)^\s*(?<label>total\s+amount\s+due|current\s+amount\s+due|total\s+due|amount\s+due|balance\s+due)\s*:?\s*(?<amount>\$?\s*\(?-?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?\)?)\s*(?:USD)?\s*$",
+        @"(?im)^\s*(?<label>total\s+amount\s+due|current\s+amount\s+due|total\s+due|amount\s+due|balance\s+due)\s*:?\s*(?<amount>\$?\s*\(?-?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?\)?)[\p{Zs}\t]*(?<currency>[A-Za-z]{3})?[\p{Zs}\t]*\r?$",
         RegexOptions.CultureInvariant)]
     private static partial Regex
         TotalAmountRegex();
+
+    [GeneratedRegex(
+        @"(?im)^[\p{Zs}\t]*(?:statement[\p{Zs}\t]+currency|billing[\p{Zs}\t]+currency|currency[\p{Zs}\t]+code|currency)[\p{Zs}\t]*:[\p{Zs}\t]*(?<currency>[^\r\n]*)\r?$",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex
+        CurrencyCodeRegex();
 
     [GeneratedRegex(
         @"(?im)^\s*(?:billing\s+period|service\s+period|billing\s+cycle|service\s+dates)\s*:?\s*(?<start>[A-Za-z]{3,9}\s+\d{1,2},?\s+\d{4}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\s*(?:-|–|—|to|through)\s*(?<end>[A-Za-z]{3,9}\s+\d{1,2},?\s+\d{4}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\s*$",

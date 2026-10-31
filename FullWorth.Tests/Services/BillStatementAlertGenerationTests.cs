@@ -543,6 +543,55 @@ public sealed class BillStatementAlertGenerationTests
         }
     }
 
+
+    [Fact]
+    public async Task ConflictingCategoryCorrection_RemovesOnlyUnsupportedTypedAlert()
+    {
+        await using var db = CreateDbContext();
+        var owner = Guid.NewGuid();
+        var stream = CreateBillStream(owner);
+        var previous = CreateStatement(owner, stream.Id, new(2026, 6, 1), new(2026, 6, 30), 80m);
+        var current = CreateStatement(owner, stream.Id, new(2026, 7, 1), new(2026, 7, 31), 105m);
+        db.BillStreams.Add(stream);
+        db.BillStatements.AddRange(previous, current);
+        db.BillLineItems.Add(new BillLineItemEntity
+        {
+            UserId = owner, BillStatementId = current.Id,
+            Description = "Account adjustment", Amount = 25m, Category = "Fee"
+        });
+        await db.SaveChangesAsync();
+        var service = CreateChangeService(db);
+        await service.ReconcileAsync(owner, stream.Id);
+        await db.SaveChangesAsync();
+        var initialAlerts = await db.BillAlerts.ToListAsync();
+        Assert.Equal(2, initialAlerts.Count);
+        var generalId = Assert.Single(initialAlerts, item => item.AlertType == BillAlertType.BillIncrease).Id;
+        Assert.Single(initialAlerts, item => item.AlertType == BillAlertType.NewFee);
+
+        // Newly available evidence exposes the description's conflicting categories.
+        // Preserve the real total increase while retracting the unsupported fee claim.
+        current.TotalAmount = 110m;
+        db.BillLineItems.Add(new BillLineItemEntity
+        {
+            UserId = owner, BillStatementId = current.Id,
+            Description = "account adjustment", Amount = 5m, Category = "Tax"
+        });
+        await db.SaveChangesAsync();
+        await service.ReconcileAsync(owner, stream.Id);
+        await db.SaveChangesAsync();
+        var remaining = Assert.Single(await db.BillAlerts.ToListAsync());
+        Assert.Equal(generalId, remaining.Id);
+        Assert.Equal(BillAlertType.BillIncrease, remaining.AlertType);
+        Assert.Contains("$30.00/month", remaining.Title);
+        Assert.Equal(30m, Assert.Single(await db.BillChanges.ToListAsync()).AmountDifference);
+        Assert.Equal(2, await db.BillLineItems.CountAsync());
+
+        await service.ReconcileAsync(owner, stream.Id);
+        await db.SaveChangesAsync();
+        Assert.Equal(generalId, Assert.Single(await db.BillAlerts.ToListAsync()).Id);
+        Assert.Equal(2, await db.BillLineItems.CountAsync());
+    }
+
     private static BillStatementChangeDetectionService CreateChangeService(
         FullWorthDbContext dbContext) =>
         new(dbContext,

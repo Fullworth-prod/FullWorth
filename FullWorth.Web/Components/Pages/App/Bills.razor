@@ -40,6 +40,8 @@
         }
     </header>
 
+    <p><a class="secondary-action" href="/app/subscription-checks">@L["Verify subscriptions"]</a></p>
+
     @if (!string.IsNullOrWhiteSpace(_refreshError))
     {
         <div class="bill-read-warning" role="status">@_refreshError</div>
@@ -489,6 +491,7 @@
             data.ExcludedMissingMerchantTransactions, data.EligiblePostedTransactions,
             data.SingleObservationGroups, data.GroupsWithoutSupportedMonthlyCadence,
             data.DetectedMonthlyCandidates, data.RejectedCurrencyAmbiguity,
+            data.RejectedSourceAccountAmbiguity, data.BlockedByExistingBillAmbiguity,
             data.RejectedExplicitFallbackCategories, data.RejectedInsufficientTwoObservationEvidence,
             data.RejectedOtherWeakOrVariableEvidence, data.AcceptedCandidates }.All(value => value >= 0) &&
         data.EligiblePostedTransactions <= data.ImportedTransactions &&

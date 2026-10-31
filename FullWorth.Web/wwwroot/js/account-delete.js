@@ -12,12 +12,12 @@ export async function deleteFullWorthAccount(confirmation, currentPassword, twoF
         headers: { Accept: "application/json", "Content-Type": "application/json", "X-CSRF-TOKEN": requestToken },
         body: JSON.stringify({ confirmation, currentPassword,
             twoFactorCode: typeof twoFactorCode === "string" && twoFactorCode.trim() ? twoFactorCode.trim() : null }),
-        cache: "no-store"
+        redirect: "error", cache: "no-store"
     });
-    if (!response.ok) throw new Error(await privacyError(response));
+    if (!response.ok) throw new Error(await privacyError(response, "delete"));
     // The API commits account deletion before either response. A 202 still means
     // quarantined file cleanup is pending; this does not certify immediate file erasure.
-    if (response.status !== 204 && response.status !== 202)
+    if (response.redirected || (response.status !== 204 && response.status !== 202))
         throw new Error("FullWorth could not confirm the deletion result.");
     return true;
 }

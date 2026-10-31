@@ -281,7 +281,7 @@ public sealed class AccountDataExportBuilder(
                                 item.CreatedAtUtc,
                                 item.UpdatedAtUtc,
                                 item.CompletedAtUtc))
-                    .ToArray());
+                    .ToArray()) { SubscriptionReviews = bills.SubscriptionReviews, SubscriptionEvidence = bills.SubscriptionEvidence };
     }
 }
 
@@ -299,7 +299,11 @@ public sealed record AccountDataExportResult(
     IReadOnlyList<BillAlertExport> BillAlerts,
     IReadOnlyList<StatementUploadExport> StatementUploads,
     IReadOnlyList<AiEvaluationExport> AiEvaluations,
-    IReadOnlyList<PlaidLinkSessionExport> PlaidLinkSessions);
+    IReadOnlyList<PlaidLinkSessionExport> PlaidLinkSessions)
+{
+    public IReadOnlyList<SubscriptionReviewExportRecord> SubscriptionReviews { get; init; } = [];
+    public IReadOnlyList<SubscriptionEvidenceExportRecord> SubscriptionEvidence { get; init; } = [];
+}
 
 public sealed record AccountProfileExport(
     string DisplayName,

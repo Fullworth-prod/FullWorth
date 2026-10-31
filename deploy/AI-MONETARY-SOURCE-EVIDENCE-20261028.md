@@ -1,0 +1,29 @@
+## Verified integration — 2026-10-28 UTC
+
+Merged #1004 as a161376fb9f712d332e5a166ee198a67f32d9edc after all10 checks on source43d8343a4c6a7882b8d218ad3b9e783a642de989. Tested0021956657501babe2045992a656c56b25ddf88f and integrated tree1f8580ce5b17948c4574c2073dacd7ae80014dc4 match. Six exact readbacks; current strict rules, reviews/threads and retained branch verified. Actual3,215 .NET/434 Node, zero failures/skips/backend/offline warnings/errors, all six PostgreSQL jobs and container HTTP/PDF/OCR/cgroup/secret/disposable encrypted restore passed. Native/browser were conditional; fresh UI/native evidence is #1003.115 new tests cover95 monetary-source and20 raw ASCII unit cases;198+74 focused local cases passed before final SDK proof. Earlier prepared-head notes below are history. AI off, master9540 unchanged; no production/provider/private/device/recovery/legal acceptance.
+
+---
+
+# AI monetary source evidence boundaries — 2026-10-28
+
+## Reproduced failure
+
+Actual current validator/converter/contracts execution on synthetic documents accepted and marked ready eight wrong-total examples: 110.005 cropped to10.00; a negative or parenthesized104.99 cropped to positive104.99; 1,104.99 or1104.99 cropped to104.99;104.995 cropped to104.99;0.005 cropped to0.00; and an omitted sign after the currency symbol. Storage precision validation did not help when the proposed smaller/cropped amount already fit two decimals. Generic source-substring and within-excerpt matching were insufficient.
+
+The full new regression suite against the original validator produced122 passes and56 failures: all55 cropped-source monetary cases were wrongly accepted plus a dense misleading-source rejection. The other39 new controls and83 previous tests passed. These are regression assertions, not56 independent production incidents. No model/provider/private document was called, and AI extraction remains disabled.
+
+## Change
+
+Tokenize the normalized complete source once, masking dates without shifting positions. Monetary evidence must align its excerpt's numeric span with a complete source token with the exact signed decimal value. This prevents excerpts from dropping larger digits, extra fractional precision, signs, parentheses, separators or date context. Reject unmatched monetary parentheses. Preserve exact valid signed amounts and value-equivalent trailing zeros, and search later genuine complete occurrences rather than accepting a misleading earlier substring.
+
+Use binary lookup over ordered, nonoverlapping source numeric spans to bound repeated-match work. Existing currency/source/ownership/deterministic math and two-decimal storage policies remain. This does not prove semantic field labeling, classify every international money format or resolve every ambiguous invoice context; unsupported evidence stays outside trusted financial persistence, with real document/provider acceptance still required.
+
+## Verification and integration gate
+
+95 new cases:55 cropped amount/date/parenthesis scenarios across previous balance, payments, current charges, total due and line items;38 complete positive/signed/normalized/date-context controls;2 repeated misleading-source cases. All178 focused cases passed after the fix (95 new+38 currency+38 existing validator+7 conversion) using actual source in an isolated in-memory xUnit compilation. Namespace/implicit-using adapters and host-only CS1701 suppression were used; no checkout or repository warning policy changes.
+
+Final-head protected SDK/backend/container and applicable PostgreSQL gates, review/thread/rules checks and integrated-tree verification remain required. Synthetic CI is not private statement/provider/device/delivery/recovery/legal acceptance. Preserve branches/history. No AI activation, production/master deployment, paid activity, credentials/grants/account changes, private export or destructive operation.
+
+## Raw currency alphabet review before final integration
+
+Actual shared-policy execution accepted uſd/ſgd/ſek/bſd because invariant uppercasing maps Unicode long-s to ASCII S. Check the raw trimmed code for exactly three ASCII letters before casing, and retain raw declared tokens until that check in deterministic parsing. Twenty additional tests exercise both parsing paths with ten Unicode aliases and ten valid ASCII casing controls. All198 focused money/currency/AI cases and74 prior parser cases passed locally. No FX conversion or activation; priorc8 evidence is historical for this staged follow-up, which requires the same fresh-base/final-head gates before integration.

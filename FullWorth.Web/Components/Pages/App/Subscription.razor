@@ -191,7 +191,7 @@
                             <button class="subscription-action subscription-plan-action"
                                     disabled="@(_working || _reading || _redemptionUncertain)"
                                     @onclick="() => StartCheckoutAsync(plan.BillingInterval)">
-                                @(_operation == SubscriptionOperation.Checkout ? L["Opening secure checkout…"] : L["Choose {0}", isYearly ? L["yearly"] : L["monthly"]])
+                                @(_operation == SubscriptionOperation.Checkout ? L["Opening secure checkout…"] : L["Choose {0}", isYearly ? L["Yearly"].Value.ToLowerInvariant() : L["Monthly"].Value.ToLowerInvariant()])
                             </button>
                         </article>
                     }

@@ -24,6 +24,7 @@
         <div><dt>@L["Repeat groups without supported monthly timing"]</dt><dd>@Data.GroupsWithoutSupportedMonthlyCadence</dd></div>
         <div><dt>@L["Monthly candidates found"]</dt><dd>@Data.DetectedMonthlyCandidates</dd></div>
         <div><dt>@L["Candidates with mixed or partially missing currencies"]</dt><dd>@Data.RejectedCurrencyAmbiguity</dd></div>
+        <div><dt>@L["Candidates spanning different or partially unknown source accounts"]</dt><dd>@Data.RejectedSourceAccountAmbiguity</dd></div>
         <div><dt>@L["Candidates excluded by category"]</dt><dd>@Data.RejectedExplicitFallbackCategories</dd></div>
         <div><dt>@L["Two-payment candidates needing stronger evidence"]</dt><dd>@Data.RejectedInsufficientTwoObservationEvidence</dd></div>
         <div><dt>@L["Other unclassified candidates with weak or variable evidence"]</dt><dd>@Data.RejectedOtherWeakOrVariableEvidence</dd></div>
@@ -31,6 +32,7 @@
         <div><dt>@L["Accepted candidates blocked by existing bill or transaction associations"]</dt><dd>@Data.BlockedByExistingBillAmbiguity</dd></div>
     </dl>
 
+    <p>@L["Matching merchant names do not prove that payments from different source accounts belong to one obligation. These candidates need private review."]</p>
     <p>@L["Existing-bill conflicts are intentionally held for review to avoid attaching a payment to the wrong recurring obligation. This count does not identify which private transaction is affected."]</p>
     <p>@L["Discovery currently supports monthly timing. Weekly, biweekly, annual, and irregular payments may be missing. Accepted candidates are not the same as your active bill count or total spending."]</p>
     <p>@L["If an expected bill is missing, privately check whether its payments appear in imported transactions. Do not post bank details or screenshots in public issues."]</p>
@@ -64,6 +66,7 @@
         public int RejectedOtherWeakOrVariableEvidence { get; set; }
         public int AcceptedCandidates { get; set; }
         public int RejectedCurrencyAmbiguity { get; set; }
+        public int RejectedSourceAccountAmbiguity { get; set; }
         public int BlockedByExistingBillAmbiguity { get; set; }
     }
 }

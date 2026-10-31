@@ -1,4 +1,27 @@
 (() => {
+    "use strict";
+    const copy = {
+        unsupported: ["This browser does not support passkeys. Use your authenticator code instead.","Este navegador no admite claves de acceso. Usa tu código del autenticador."],
+        prompt: ["Follow your device or security key instructions…","Sigue las instrucciones de tu dispositivo o llave de seguridad…"],
+        signIn: ["Your sign-in expired. Start again.","Tu inicio de sesión ha caducado. Vuelve a empezar."],
+        rate: ["Too many attempts. Wait a minute and try again.","Demasiados intentos. Espera un minuto y vuelve a intentarlo."],
+        verify: ["Unable to verify this passkey. Use an authenticator code or start sign-in again.","No se pudo verificar esta clave de acceso. Usa un código del autenticador o vuelve a iniciar sesión."],
+        unconfirmed: ["FullWorth could not confirm this sign-in. Reload the page to check your session before starting again.","FullWorth no pudo confirmar este inicio de sesión. Recarga la página para comprobar tu sesión antes de volver a empezar."],
+        options: ["Could not start passkey verification. Use an authenticator code or start sign-in again.","No se pudo iniciar la verificación de la clave de acceso. Usa un código del autenticador o vuelve a iniciar sesión."],
+        noKey: ["No passkey was selected. You can still use an authenticator code.","No se seleccionó ninguna clave de acceso. Puedes usar un código del autenticador."],
+        cancelled: ["Cancelled or timed out. You can try again or use an authenticator code.","Se canceló o se agotó el tiempo. Puedes volver a intentarlo o usar un código del autenticador."]
+    };
+    const language = () => /^es(?:-|$)/i.test(document.documentElement.lang || "") ? "es" : "en";
+    const text = key => copy[key][language() === "es" ? 1 : 0];
+    class PasskeyError extends Error {
+        constructor(key) { super(key); this.key = key; }
+    }
+    const fail = key => { throw new PasskeyError(key); };
+    const knownError = (error, fallback) => error instanceof PasskeyError ? text(error.key) : text(fallback);
+    const jsonResponse = response => response.status === 200 && !response.redirected &&
+        /^application\/(?:json|[a-z0-9.+-]+\+json)(?:\s*;|$)/i.test(response.headers.get("content-type") || "");
+    const validToken = token => typeof token === "string" && !!token.trim() && !/[\x00-\x1f\x7f]/.test(token);
+
     let busy = false;
     const bytes = value => Uint8Array.from(atob(value.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0));
     const encode = value => btoa(String.fromCharCode(...new Uint8Array(value)))
@@ -19,15 +42,34 @@
                 userHandle: key.response.userHandle ? encode(key.response.userHandle) : null },
             clientExtensionResults: key.getClientExtensionResults() };
     }
-    async function post(path, body) {
-        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-        if (!token) throw new Error("Your sign-in expired. Start again.");
-        const response = await fetch(path, { method: "POST", credentials: "same-origin", cache: "no-store",
-            headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": token }, body: JSON.stringify(body) });
-        if (!response.ok) throw new Error(response.status === 429
-            ? "Too many attempts. Wait a minute and try again."
-            : "Unable to verify this passkey. Use an authenticator code or start sign-in again.");
-        return response.status === 204 ? null : response.json();
+    async function post(path, body, expectsOptions = false) {
+        let token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        if (!validToken(token)) fail("signIn");
+        const unconfirmed = "unconfirmed";
+        let response;
+        try {
+            response = await fetch(path, { method: "POST", credentials: "same-origin", cache: "no-store",
+                redirect: "error",
+                headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": token },
+                body: JSON.stringify(body) });
+        } catch { fail(expectsOptions ? "options" : unconfirmed); }
+        if (response.redirected) fail(expectsOptions ? "options" : unconfirmed);
+        if (response.status === 429) fail("rate");
+        if ([400, 401, 403, 404, 409, 422].includes(response.status)) fail("verify");
+        // Register, remove and login have explicit 204 contracts. A successful-looking
+        // JSON/HTML response cannot prove a credential write or authenticate navigation.
+        if (!expectsOptions) {
+            if (response.status !== 204) fail(unconfirmed);
+            return null;
+        }
+        if (!jsonResponse(response)) fail("options");
+        let begin;
+        try { begin = await response.json(); } catch { fail("options"); }
+        if (!begin || Array.isArray(begin) || typeof begin.ceremonyId !== "string" ||
+            begin.ceremonyId.length !== 43 || !begin.options || Array.isArray(begin.options) ||
+            typeof begin.options !== "object" || typeof begin.options.challenge !== "string" ||
+            !begin.options.challenge.trim()) fail("options");
+        return begin;
     }
 
     // Never trust a hidden returnUrl after a browser credential ceremony.
@@ -74,23 +116,23 @@
         if (!root || busy) return;
         const status = root.querySelector("[data-password-passkey-status]");
         if (!window.isSecureContext || !window.PublicKeyCredential || !navigator.credentials) {
-            status.textContent = "This browser does not support passkeys. Use your authenticator code instead.";
+            status.textContent = text("unsupported");
             return;
         }
         busy = true;
         button.disabled = true;
-        status.textContent = "Follow your device or security key instructions…";
+        status.textContent = text("prompt");
         try {
-            const begin = await post("/auth/login/passkey-options", {});
+            const begin = await post("/auth/login/passkey-options", {}, true);
             const credential = await navigator.credentials.get({ publicKey: options(begin.options) });
-            if (!credential) throw new Error("No passkey was selected. You can still use an authenticator code.");
+            if (!credential) fail("noKey");
             await post("/auth/login/passkey-complete", { ceremonyId: begin.ceremonyId,
                 credentialJson: JSON.stringify(credentialJSON(credential)) });
             continueAfterPasskey();
         } catch (error) {
             status.textContent = error?.name === "NotAllowedError"
-                ? "Cancelled or timed out. You can try again or use an authenticator code."
-                : error instanceof Error ? error.message : "Unable to verify this sign-in.";
+                ? text("cancelled")
+                : knownError(error, "unconfirmed");
         } finally {
             busy = false;
             if (button.isConnected) button.disabled = false;

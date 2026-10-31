@@ -45,4 +45,18 @@
   <data name="Processing" xml:space="preserve"><value>Procesando</value></data>
   <data name="FullWorth is processing the statement." xml:space="preserve"><value>FullWorth está procesando el estado de cuenta.</value></data>
   <data name="{0} bytes" xml:space="preserve"><value>{0} bytes</value></data>
+  <data name="Checking status…" xml:space="preserve"><value>Comprobando estado…</value></data>
+  <data name="Check statement status" xml:space="preserve"><value>Comprobar el estado del documento</value></data>
+  <data name="Statement still processing" xml:space="preserve"><value>El documento sigue procesándose</value></data>
+  <data name="Check the status of this saved upload. You do not need to send the document again." xml:space="preserve"><value>Comprueba el estado de este documento ya cargado. No necesitas enviar el documento de nuevo.</value></data>
+  <data name="Previous upload status unavailable" xml:space="preserve"><value>Estado de la carga anterior no disponible</value></data>
+  <data name="We could not check previous statement processing. Your saved bill records were not changed." xml:space="preserve"><value>No pudimos comprobar el procesamiento del documento anterior. No se modificaron tus registros de facturas guardados.</value></data>
+  <data name="The existing upload is not finished. Choose Check statement status later; no new upload is needed." xml:space="preserve"><value>La carga existente no ha terminado. Selecciona Comprobar el estado del documento más tarde; no necesitas volver a cargarlo.</value></data>
+  <data name="Status unavailable" xml:space="preserve"><value>Estado no disponible</value></data>
+  <data name="We could not check this saved upload. Try Check statement status again; do not re-upload unless needed." xml:space="preserve"><value>No pudimos comprobar esta carga guardada. Vuelve a seleccionar Comprobar el estado del documento; no lo cargues de nuevo a menos que sea necesario.</value></data>
+  <data name="Statement status unavailable" xml:space="preserve"><value>Estado del documento no disponible</value></data>
+  <data name="FullWorth received the file, but its current processing status could not be verified. Use Check statement status; do not send the document again." xml:space="preserve"><value>FullWorth recibió el archivo, pero no se pudo verificar su estado de procesamiento actual. Usa Comprobar el estado del documento; no envíes el documento de nuevo.</value></data>
+  <data name="Upload not confirmed" xml:space="preserve"><value>Carga no confirmada</value></data>
+  <data name="FullWorth could not confirm whether the file was accepted. Check bill history or refresh this page before trying another upload." xml:space="preserve"><value>FullWorth no pudo confirmar si se aceptó el archivo. Comprueba el historial de facturas o actualiza esta página antes de intentar otra carga.</value></data>
+  <data name="This upload is still processing. Use Check statement status later; do not send the document again." xml:space="preserve"><value>Esta carga sigue procesándose. Usa Comprobar el estado del documento más tarde; no envíes el documento de nuevo.</value></data>
 </root>

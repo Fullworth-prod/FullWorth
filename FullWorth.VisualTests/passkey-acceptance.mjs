@@ -3,6 +3,7 @@ import { createHmac } from "node:crypto";
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
+import { removeOwnedFixturePasskey } from "./passkey-removal-setup.mjs";
 
 // Virtual browser coverage is NOT physical iPhone/Face ID acceptance.
 const baseURL = process.env.FULLWORTH_VISUAL_BASE_URL;
@@ -290,7 +291,116 @@ try {
     cookie.name === "__Host-FullWorth.PendingPassword").length, 0);
   const account = await context.request.get(baseURL + "/bff/account/security/passkeys");
   assert.equal(account.status(), 200, "Browser must have an authenticated session.");
+  const ownedKeys = await account.json();
+  assert.ok(Array.isArray(ownedKeys) && ownedKeys.length === 1 &&
+    typeof ownedKeys[0].id === "string", "Disposable owner must have exactly one saved key.");
+  checkpoint("password-verified removal without browser WebAuthn");
+  // Only the disposable CI owner/key is changed. Removing a saved key uses
+  // password + enrolled authenticator proof; it must not require a local OS ceremony.
+  await context.addCookies([{
+    name: ".AspNetCore.Culture", value: "c=en-US|uic=es",
+    domain: "web.localhost", path: "/", secure: true, sameSite: "Lax"
+  }]);
+  await page.goto("/app/account/security-keys");
+  await management.locator("[data-passkey-list] li").waitFor();
+  await management.getByRole("heading", { name: "Tus claves", exact: true }).waitFor();
+  await page.evaluate(() => {
+    Object.defineProperty(window, "PublicKeyCredential", { configurable: true, value: undefined });
+  });
+  assert.equal(await page.evaluate(() => window.isSecureContext), true);
+  const removed = page.waitForResponse(response =>
+    response.url().endsWith("/bff/account/security/passkeys/remove") &&
+    response.request().method() === "POST");
+  let removalDialogs = 0;
+  page.once("dialog", async dialog => { removalDialogs++; await dialog.accept(); });
+  // Track the root actually clicked, without persisting any proof values.
+  await page.evaluate(() => {
+    const observe = event => {
+      const button = event.target.closest('[data-passkey-action="remove"]');
+      if (!button) return;
+      window.__fullworthCiRemovalRoot = button.closest('[data-passkeys="manage"]');
+      document.removeEventListener("click", observe, true);
+    };
+    document.addEventListener("click", observe, true);
+  });
+  const removalCode = code(setup.sharedKey);
+  // Resolve current owned controls and enter proof/click in one DOM task.
+  // No direct API removal, antiforgery injection or write replay is permitted.
+  await removeOwnedFixturePasskey(page, {
+    credentialId: ownedKeys[0].id, password, twoFactorCode: removalCode
+  });
+  const removal = await removed;
+  const submitted = removal.request().postDataJSON();
+  const proofShape = {
+    exactFields: Object.keys(submitted).sort().join(",") ===
+      "credentialId,currentPassword,twoFactorCode",
+    passwordMatches: submitted.currentPassword === password,
+    codeMatches: submitted.twoFactorCode === removalCode,
+    ownedKeyMatches: submitted.credentialId === ownedKeys[0].id,
+    csrfPresent: !!removal.request().headers()["x-csrf-token"],
+    confirmationDialogs: removalDialogs
+  };
+  // Diagnostics disclose only fixed categories/booleans, never raw proof,
+  // credential IDs, CSRF tokens, provider bodies or arbitrary server messages.
+  if (removal.status() !== 204) {
+    let validationFields = [];
+    try {
+      const problem = await removal.json();
+      validationFields = ["CurrentPassword", "CredentialId", "TwoFactorCode"]
+        .filter(name => Object.prototype.hasOwnProperty.call(problem?.errors || {}, name));
+    } catch { /* Non-JSON bodies are intentionally not printed. */ }
+    console.error("Passkey removal rejected: " + JSON.stringify({
+      status: removal.status(), ...proofShape, validationFields
+    }));
+  }
+  assert.equal(removal.status(), 204, "Password-verified removal must return its exact 204 contract.");
+  assert.ok(proofShape.exactFields && proofShape.passwordMatches &&
+    proofShape.codeMatches && proofShape.ownedKeyMatches && proofShape.csrfPresent &&
+    proofShape.confirmationDialogs === 1, "Removal must use current owner proof and native consent.");
+  // A retained root reports Saved; the existing production ownership guard
+  // refreshes a replacement root without transferring old-operation success.
+  // Require the corresponding Spanish state and the current empty saved-key list.
+  try {
+    await page.waitForFunction(() => {
+      const root = document.querySelector('[data-passkeys="manage"]');
+      if (!root || root.dataset.loaded !== "true" ||
+          root.querySelectorAll("[data-passkey-list] li").length !== 0 ||
+          root.querySelector('[name="currentPassword"]')?.value !== "") return false;
+      const retained = root === window.__fullworthCiRemovalRoot;
+      return root.querySelector("[data-passkey-status]")?.textContent === (retained
+        ? "Guardado. Tu contraseña y las opciones de recuperación siguen funcionando."
+        : "Aún no hay claves registradas.");
+    }, undefined, { timeout: 15000 });
+  } catch (error) {
+    const render = await page.evaluate(() => {
+      const root = document.querySelector('[data-passkeys="manage"]');
+      const status = root?.querySelector("[data-passkey-status]")?.textContent;
+      return {
+        retainedRoot: root === window.__fullworthCiRemovalRoot,
+        spanishDocument: /^es(?:-|$)/i.test(document.documentElement.lang || ""),
+        listLoaded: root?.dataset.loaded === "true",
+        emptyList: root?.querySelectorAll("[data-passkey-list] li").length === 0,
+        passwordCleared: root?.querySelector('[name="currentPassword"]')?.value === "",
+        statusKind: status === "Guardado. Tu contraseña y las opciones de recuperación siguen funcionando."
+          ? "saved-es" : status === "Aún no hay claves registradas." ? "empty-es"
+          : status === "Saved. Your password and recovery options still work." ? "saved-en" : "other"
+      };
+    });
+    console.error("Passkey removal render mismatch: " + JSON.stringify(render));
+    throw error;
+  }
+  const retainedRemovalRoot = await page.evaluate(() =>
+    document.querySelector('[data-passkeys="manage"]') === window.__fullworthCiRemovalRoot);
+  console.log("Passkey removal render confirmed: " +
+    (retainedRemovalRoot ? "retained root saved-es" : "replacement root empty-es"));
+
+  assert.equal(await management.locator("[data-passkey-list] li").count(), 0);
+  assert.equal(await management.locator('input[name="currentPassword"]').inputValue(), "");
+  const remaining = await context.request.get(baseURL + "/bff/account/security/passkeys");
+  assert.equal(remaining.status(), 200);
+  assert.deepEqual(await remaining.json(), []);
+
   await cdp.send("WebAuthn.removeVirtualAuthenticator", { authenticatorId });
   await context.close();
-  console.log("PASS: virtual passkey enrollment, first-factor and password-once sign-in, cancellation/code fallback.");
+  console.log("PASS: virtual passkey enrollment, first-factor/password-once sign-in, cancellation/code fallback and password-verified removal without WebAuthn; Spanish recovery UI.");
 } finally { await browser.close(); clearTimeout(deadline); }

@@ -15,6 +15,15 @@ public sealed class AccountBillDeletionGateway(
         ValidateUserId(
             userId);
 
+        // Remove review/evidence dependencies before statement uploads and bank rows.
+        var evidence = await dbContext.SubscriptionEvidence.Where(e => e.UserId == userId)
+            .ToListAsync(cancellationToken);
+        dbContext.SubscriptionEvidence.RemoveRange(evidence);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        var reviews = await dbContext.SubscriptionReviews.Where(r => r.UserId == userId)
+            .ToListAsync(cancellationToken);
+        dbContext.SubscriptionReviews.RemoveRange(reviews);
+
         var alerts =
             await dbContext.BillAlerts
                 .Where(

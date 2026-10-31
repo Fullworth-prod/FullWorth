@@ -1,3 +1,10 @@
+@font-face {
+    font-family: "FullWorth Display";
+    src: url("/assets/fullworth/fonts/fullworth-display.woff2") format("woff2");
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
 /* FullWorth premium public/authentication UI layer.
    Loaded by MainLayout after the existing isolated layout styles. */
 
@@ -708,4 +715,123 @@ html[data-theme="dark"] .site-shell .auth-card {
         inset: 20px 12px 40px;
         border-radius: 28px;
     }
+}
+
+/* Home composition follows the selected reference; auth/legal layouts remain separate. */
+html[data-design] .home-site-shell { background: var(--pair-canvas); color: var(--pair-ink); }
+html[data-design] .home-site-shell .site-header {
+    position: static; background: var(--pair-canvas); border-bottom: 1px solid var(--pair-line);
+    box-shadow: none; backdrop-filter: none;
+}
+html[data-design] .home-site-shell .header-inner {
+    width: 100%; max-width: 1480px; height: auto; min-height: 100px; margin-inline: auto; padding: 20px 32px;
+    display: flex; align-items: center; gap: 24px;
+}
+html[data-design] .home-site-shell .brand { gap: 14px; color: var(--pair-ink); }
+html[data-design] .home-site-shell .brand-name { color: inherit; font-size: 1.8rem; letter-spacing: -.05em; }
+html[data-design] .home-site-shell .brand-mark { width: 44px; height: 44px; display: block; background: none; box-shadow: none; }
+html[data-design] .home-site-shell .brand-mark-small { width: 32px; height: 32px; }
+html[data-design] .home-site-shell .desktop-nav { display: flex; flex-wrap: wrap; gap: 30px; margin-inline: auto; }
+html[data-design] .home-site-shell .desktop-nav a { color: var(--pair-muted); font-size: .95rem; min-height: 44px; display: inline-flex; align-items: center; }
+html[data-design] .home-site-shell .header-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+html[data-design] .home-site-shell .header-action { color: var(--pair-ink); min-height: 44px; }
+html[data-design="editorial"] .home-site-shell .header-action[href="/register"],
+html[data-design="workspace"] .home-site-shell .header-action[href="/register"] { display: none; }
+html[data-design] .home-site-shell .site-footer { background: var(--pair-canvas); border-top: 1px solid var(--pair-line); color: var(--pair-muted); }
+html[data-design] .home-site-shell .footer-inner { max-width: 1440px; margin-inline: auto; padding: 32px; gap: 24px; }
+html[data-design="workspace"] .home-site-shell .site-header {
+    position: fixed; inset: 0 auto 0 0; width: 276px; height: 100dvh; overflow-y: auto;
+    background: #1455df; color: #ffffff; border: 0; z-index: 20;
+    --bw-text: #ffffff; --bw-text-secondary: #e5eeff; --bw-surface: #1646ad; --bw-border-strong: #a8c5ff;
+}
+html[data-design="workspace"] .home-site-shell .header-inner {
+    height: auto; width: 100%; min-height: 100dvh; flex-direction: column; align-items: stretch;
+    padding: 32px 20px; gap: 24px;
+}
+html[data-design="workspace"] .home-site-shell .brand { color: #ffffff; }
+html[data-design="workspace"] .home-site-shell .desktop-nav { display: grid; margin: 18px 0 0; gap: 14px; }
+html[data-design="workspace"] .home-site-shell .desktop-nav a {
+    color: #ffffff; min-height: 52px; padding: 8px 14px; border-radius: 10px;
+}
+html[data-design="workspace"] .home-site-shell .desktop-nav a:hover { background: #2b6ae9; }
+html[data-design="workspace"] .home-site-shell .header-actions { margin-top: auto; gap: 10px; }
+html[data-design="workspace"] .home-site-shell .header-action { color: #ffffff; }
+html[data-design="workspace"] .home-site-shell main,
+html[data-design="workspace"] .home-site-shell .site-footer { margin-inline-start: 276px; }
+html[data-design] .home-site-shell a:focus-visible,
+html[data-design] .home-site-shell button:focus-visible { outline: 3px solid currentColor; outline-offset: 4px; }
+@media(max-width: 1050px) {
+    html[data-design] .home-site-shell .header-inner { flex-wrap: wrap; gap: 12px; padding-inline: 24px; }
+    html[data-design] .home-site-shell .desktop-nav { gap: 18px; }
+    html[data-design="workspace"] .home-site-shell .header-inner { padding-inline: 20px; }
+}
+@media(max-width: 760px) {
+    html[data-design] .home-site-shell .site-header { position: static; width: auto; height: auto; }
+    html[data-design] .home-site-shell .header-inner {
+        display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; padding: 16px 20px;
+        width: 100%; height: auto; min-height: 0;
+    }
+    html[data-design] .home-site-shell .brand-name { font-size: 1.4rem; }
+    html[data-design] .home-site-shell .brand-mark { width: 34px; height: 34px; }
+    html[data-design] .home-site-shell .header-actions { grid-column: 1 / -1; margin: 0; justify-content: space-between; }
+    html[data-design] .home-site-shell .desktop-nav { grid-column: 1 / -1; display: flex; justify-content: space-between; margin: 0; gap: 8px; }
+    html[data-design] .home-site-shell .desktop-nav a { font-size: .8rem; padding: 4px 0; min-height: 44px; }
+    html[data-design="workspace"] .home-site-shell main,
+    html[data-design="workspace"] .home-site-shell .site-footer { margin-inline-start: 0; }
+    html[data-design] .home-site-shell .footer-inner { padding: 28px 20px; }
+}
+
+.home-site-shell .product-nav { display: none !important; }
+html[data-design="workspace"] .home-site-shell .product-nav { display: inline-flex !important; background: #2b6ae9; }
+
+/* Legal navigation is shared by home, authentication and recovery pages. */
+.site-shell .footer-legal-links { display: flex; flex-wrap: wrap; gap: 20px; }
+.site-shell .footer-legal-links a {
+    color: var(--pair-muted, var(--bw-text-muted));
+    min-height: 44px;
+    min-width: 44px;
+    max-width: 100%;
+    padding-inline: 4px;
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+}
+
+html[data-design] .home-site-shell .footer-inner { width: 100%; }
+
+html[data-design] .home-site-shell main { background: var(--pair-canvas); }
+html[data-design] .home-site-shell .desktop-nav { padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+html[data-design] .home-site-shell .header-action { border: 0; background: none; box-shadow: none; border-radius: 0; }
+html[data-design="story"] .home-site-shell .header-action[href="/register"] { background: #2854e8; color: #ffffff; border-radius: 12px; padding: 12px 22px; }
+
+html[data-design] .home-site-shell .brand { max-width: 100%; }
+html[data-design] .home-site-shell .brand-name { min-width: 0; overflow-wrap: anywhere; }
+html[data-design] .home-site-shell .desktop-nav a { white-space: normal; overflow-wrap: anywhere; }
+html[data-design="workspace"] .home-site-shell .brand-name { font-size: 2rem; }
+html[data-design="workspace"] .home-site-shell .desktop-nav a { font-size: 1.1rem; }
+@media(max-width:760px) {
+    html[data-design="workspace"] .home-site-shell .brand-name { font-size: 1.4rem; }
+    html[data-design="workspace"] .home-site-shell .desktop-nav a { font-size: .8rem; }
+}
+
+html[data-design] .home-site-shell .brand { flex-wrap: wrap; }
+html[data-design] .home-site-shell .footer-inner { grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); align-items: start; }
+html[data-design] .home-site-shell .footer-status,
+html[data-design] .home-site-shell .footer-copy { white-space: normal; overflow-wrap: anywhere; }
+
+.home-site-shell .home-nav-icon { display: none; }
+@media(min-width: 761px) {
+    html[data-design="workspace"] .home-site-shell .desktop-nav { width: 100%; margin-inline: 0; align-self: stretch; }
+    html[data-design="workspace"] .home-site-shell .desktop-nav a { width: 100%; gap: 22px; font-weight: 500; }
+    html[data-design="workspace"] .home-site-shell .home-nav-icon { display: block; width: 26px; height: 26px; flex: 0 0 auto; }
+}
+
+@media(min-width:761px) {
+    html[data-design="workspace"] .home-site-shell .desktop-nav { grid-template-columns: minmax(0, 1fr); justify-content: stretch; justify-items: stretch; }
+}
+
+/* Keep the mode glyph readable on the Workspace rail in both modes. */
+html[data-design="workspace"] .home-site-shell .site-header {
+    --bw-surface-soft: #1646ad; --bw-surface-hover: #0d3a92;
 }

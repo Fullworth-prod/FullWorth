@@ -1,0 +1,21 @@
+## Verified integration status — 2026-10-29 UTC
+
+Verified in final #1007 sourcef4dd:9 actual-script fixture cases passed per pinned Chromium/WebKit; full disposable virtual passkey test passed with204/exactproof/native consent, replacement root empty-es, cleared proof/current empty list/authenticated readback. The existing ownership guard was preserved. Old failed runs are not retrospectively diagnosed or counted as success.3,507 .NET/663 Node and all5 final-head checks passed; no physical-device acceptance.
+
+The detailed current ledger is in MILESTONE-CLEANUP-AUDIT-20261027.md. Original preparation notes below are preserved as history; this documentation change requires its own checks. No production deployment or new real acceptance is implied.
+
+---
+
+# Disposable passkey-removal acceptance setup — 2026-10-29 UTC
+
+The #1007 Linux container job 123066203242 (run 40759111954, source 1ff1ae4d43c4d6536ba6afa0d8bb6e2ddc7602bf) reached virtual passkey removal and returned 400 rather than the required 204. Earlier rendered privacy checks, including EN/ES uncertain server-error responses, passed. The original response body/proof-shape diagnostics were absent; the actual CI rejection's cause remains unconfirmed. Do not call the failed container job successful or infer a production authentication defect.
+
+An isolated HTTP fixture using actual production passkeys.js demonstrates a controlled counterexample: replacing management controls between password fill and click loses the password, and the synthetic server returns 400. The acceptance setup now resolves the one current owned credential's visible enabled controls, fills proof and invokes the real button in one DOM task. Synchronous replacement during input events abandons setup before a click and may retry readiness only. An evaluation exception after a click propagates without replay. The fixture does not bypass the native confirmation dialog, production handler, antiforgery fetch, password/TOTP authorization, response contract or subsequent saved-key readback. Production passkey/authentication code is unchanged.
+
+Seven cases per Chromium/WebKit cover the split-setup 400 counterexample, completed replacement, synchronous replacement during proof setup, wrong owned key, disabled control, invalid proof, and observation loss after click without a second write. Browser and server resources close on failures. Installed local Chromium passed all seven cases against actual source; pinned CI engines and full container acceptance remain required on the revised final head. Synthetic credentials/virtual authenticators do not establish physical device or real-owner acceptance.
+
+Full acceptance retains exact 204 and Spanish saved/empty-list assertions, verifies the single enrolled owner's credential and native consent, and reports only fixed validation-field categories and proof-presence/equality booleans for a rejected response. No secret values, credential IDs or raw response bodies are logged. No unchanged failed jobs were rerun. #1007 must pass every required final-head check and review requirement before development integration; no production deployment is authorized by this change.
+
+## Revised-head diagnosis
+
+Source41c31f77a0eee83b8ddf1a9fe48c020ada0d0e05 passed actual removal204, exact submitted proof/owned credential/native consent, then timed out waiting for the transient Spanish Saved message. It did not fail HTTP removal. Existing production code intentionally avoids moving an abandoned root's operation-success message into a replacement management region: it refreshes the current owner's saved keys instead. The acceptance oracle now records the actual clicked root and requires Saved in Spanish for a retained root, or the current Spanish empty-state readback for a replacement root, together with cleared proof, empty visible list and authenticated API empty-list verification. Wrong-language/loaded/nonempty/unknown states still fail with fixed-category diagnostics. No removal is replayed. Two actual-source HTTP cases separately verify retained-root Spanish Saved and delayed-204 replacement-root Spanish empty state without copying old success/proof. The actual41c render cause remains unconfirmed until root diagnostics execute; no blanket success-message alternative is accepted.

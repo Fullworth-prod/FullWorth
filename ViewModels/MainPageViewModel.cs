@@ -134,7 +134,9 @@ public sealed class MainPageViewModel : INotifyPropertyChanged
         TotalMonthlyBills;
 
     public string AnnualBillsText =>
-        TotalAnnualBills + " per year monitored";
+        _hasAnnualBillProjection
+            ? TotalAnnualBills + " per year at current monthly amounts"
+            : TotalAnnualBills;
 
     public string AnnualImpactHeadline
     {
@@ -164,17 +166,18 @@ public sealed class MainPageViewModel : INotifyPropertyChanged
             if (_hasAnnualIncrease)
             {
                 return
-                    "New annual cost detected";
+                    "Estimated yearly increase";
             }
 
             if (_hasAnnualDecrease)
             {
                 return
-                    "Annual cost reduction detected";
+                    "Estimated yearly reduction";
             }
 
-            return
-                "No meaningful cost change detected";
+            return ChangesDetected > 0
+                ? "Change detected; yearly estimate unavailable"
+                : "No meaningful cost change detected";
         }
     }
 
@@ -360,81 +363,69 @@ public sealed class MainPageViewModel : INotifyPropertyChanged
         }
     }
 
+    private bool _hasAnnualBillProjection;
     private bool _hasAnnualIncrease;
     private bool _hasAnnualDecrease;
 
     private void ApplyBillSummary(
         IReadOnlyList<BillStreamResult> billStreams)
     {
-        BillsMonitored =
-            billStreams.Count;
+        var active = billStreams.Where(stream => stream.IsActive).ToArray();
+        BillsMonitored = active.Length;
 
-        TotalMonthlyBills = FinancialAmountFormatter.FormatTotals(billStreams
-            .Where(stream => stream.HasTransactionEvidence)
-            .Select(stream => (stream.CurrentAmount, stream.CurrencyCode))) ?? "Amount unavailable";
-        var monthly = billStreams.Where(stream => stream.HasTransactionEvidence).ToArray();
-        TotalAnnualBills = monthly.Length > 0 && monthly.All(stream => stream.HasMonthlyCadenceEvidence)
-            ? FinancialAmountFormatter.FormatTotals(monthly.Select(stream => (stream.CurrentAmount, stream.CurrencyCode)), 12m)
+        // These API amounts describe posted debits. A missing/default/credit
+        // value or unknown unit is not evidence of a recurring obligation.
+        var known = active.Where(stream => stream.HasTransactionEvidence &&
+            stream.CurrentAmount > 0m &&
+            FinancialAmountFormatter.TryNormalizeCurrency(stream.CurrencyCode, out _)).ToArray();
+
+        // Legacy binding name retained; MainPage labels this as known bill
+        // amounts, never a monthly total inferred from an unknown cadence.
+        TotalMonthlyBills = FinancialAmountFormatter.FormatTotals(
+            known.Select(stream => (stream.CurrentAmount, stream.CurrencyCode))) ?? "Amount unavailable";
+
+        _hasAnnualBillProjection = active.Length > 0 && known.Length == active.Length &&
+            known.All(stream => stream.HasMonthlyCadenceEvidence);
+        TotalAnnualBills = _hasAnnualBillProjection
+            ? FinancialAmountFormatter.FormatTotals(
+                known.Select(stream => (stream.CurrentAmount, stream.CurrencyCode)), 12m)
                 ?? "Yearly estimate unavailable"
             : "Yearly estimate unavailable";
 
-        /*
-         * Keep the same deterministic "meaningful change" threshold
-         * used by the Bills experience.
-         *
-         * Home performs arithmetic only; it does not invent causes.
-         */
-        var meaningfulChanges =
-            billStreams
-                .Where(
-                    stream =>
-                        stream.PreviousAverage >
-                        0m)
-                .Select(
-                    stream =>
-                    {
-                        var monthlyChange =
-                            decimal.Round(
-                                stream.CurrentAmount -
-                                stream.PreviousAverage,
-                                2,
-                                MidpointRounding.AwayFromZero);
+        // Keep existing deterministic materiality, but never turn missing
+        // evidence into a zero balance or an unsupported decrease.
+        var meaningfulChanges = known
+            .Where(stream => stream.PreviousAverage > 0m)
+            .Select(stream => new DashboardBillChange(
+                decimal.Round(stream.CurrentAmount - stream.PreviousAverage, 2,
+                    MidpointRounding.AwayFromZero), stream.PreviousAverage)
+            {
+                CurrencyCode = stream.CurrencyCode,
+                HasMonthlyCadenceEvidence = stream.HasMonthlyCadenceEvidence
+            })
+            .Where(change => Math.Abs(change.MonthlyChange) >= 5m &&
+                Math.Abs(change.MonthlyChange / change.PreviousAmount) >= 0.10m)
+            .ToArray();
+        ChangesDetected = meaningfulChanges.Length;
 
-                        return new DashboardBillChange(
-                            MonthlyChange:
-                                monthlyChange,
-
-                            PreviousAmount:
-                                stream.PreviousAverage)
-                        {
-                            CurrencyCode = stream.CurrencyCode,
-                            HasMonthlyCadenceEvidence = stream.HasMonthlyCadenceEvidence
-                        };
-                    })
-                .Where(
-                    change =>
-                        Math.Abs(
-                            change.MonthlyChange) >=
-                            5m &&
-                        Math.Abs(
-                            change.MonthlyChange /
-                            change.PreviousAmount) >=
-                            0.10m)
-                .ToList();
-
-        ChangesDetected =
-            meaningfulChanges.Count;
-
-        var annualIncreases = meaningfulChanges.Where(change => change.MonthlyChange > 0m &&
-            change.HasMonthlyCadenceEvidence).ToArray();
-        var annualDecreases = meaningfulChanges.Where(change => change.MonthlyChange < 0m &&
-            change.HasMonthlyCadenceEvidence).ToArray();
-        AddedAnnualCost = FinancialAmountFormatter.FormatTotals(annualIncreases
-            .Select(change => (change.MonthlyChange, change.CurrencyCode)), 12m) ?? "Yearly estimate unavailable";
-        ReducedAnnualCost = FinancialAmountFormatter.FormatTotals(annualDecreases
-            .Select(change => (Math.Abs(change.MonthlyChange), change.CurrencyCode)), 12m) ?? "Yearly estimate unavailable";
-        _hasAnnualIncrease = annualIncreases.Length > 0;
-        _hasAnnualDecrease = annualDecreases.Length > 0;
+        // Do not silently drop unprojectable changes to manufacture a partial
+        // annual headline, including one in the opposite direction.
+        var canAnnualizeChanges = meaningfulChanges.Length > 0 &&
+            meaningfulChanges.All(change => change.HasMonthlyCadenceEvidence);
+        var increases = meaningfulChanges.Where(change => change.MonthlyChange > 0m).ToArray();
+        var decreases = meaningfulChanges.Where(change => change.MonthlyChange < 0m).ToArray();
+        var added = canAnnualizeChanges && increases.Length > 0
+            ? FinancialAmountFormatter.FormatTotals(
+                increases.Select(change => (change.MonthlyChange, change.CurrencyCode)), 12m)
+            : null;
+        var reduced = canAnnualizeChanges && decreases.Length > 0
+            ? FinancialAmountFormatter.FormatTotals(
+                decreases.Select(change => (Math.Abs(change.MonthlyChange), change.CurrencyCode)), 12m)
+            : null;
+        AddedAnnualCost = added ?? "Yearly estimate unavailable";
+        ReducedAnnualCost = reduced ?? "Yearly estimate unavailable";
+        _hasAnnualIncrease = added is not null;
+        _hasAnnualDecrease = reduced is not null;
     }
 
     private void ApplyAlertSummary(

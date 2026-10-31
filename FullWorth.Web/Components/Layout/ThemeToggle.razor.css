@@ -1,6 +1,8 @@
 .theme-toggle {
-    width: 39px;
-    height: 39px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     padding: 0;
     display: grid;
     place-items: center;
@@ -27,7 +29,7 @@
     }
 
     .theme-toggle:focus-visible {
-        outline: 3px solid rgba(91, 118, 255, 0.28);
+        outline: 3px solid var(--bw-text);
         outline-offset: 2px;
     }
 

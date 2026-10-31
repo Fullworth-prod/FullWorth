@@ -345,7 +345,8 @@ public sealed class RecurringBillDiscoveryPersistenceService
                 _merchantNormalizer.Normalize(
                     existingStream.ProviderName);
 
-            if (ambiguousProviders.Contains(normalizedExistingProvider)) continue;
+            if (ambiguousProviders.Contains(normalizedExistingProvider) ||
+                analysis.AmbiguousEvidenceProviders.Contains(normalizedExistingProvider)) continue;
 
             if (discoveredProviderNames.Contains(
                     normalizedExistingProvider))
@@ -734,6 +735,8 @@ public sealed class RecurringBillDiscoveryPersistenceService
         var rejectedTwoObservationEvidence = 0;
         var rejectedOtherWeakEvidence = 0;
         var rejectedCurrencyAmbiguity = 0;
+        var rejectedSourceAccountAmbiguity = 0;
+        var ambiguousEvidenceProviders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var detectedStream in
                  detectedStreams)
@@ -752,6 +755,20 @@ public sealed class RecurringBillDiscoveryPersistenceService
             if (currencyUnits > 1)
             {
                 rejectedCurrencyAmbiguity++;
+                ambiguousEvidenceProviders.Add(detectedStream.ProviderName);
+                continue;
+            }
+
+            // Merchant identity is not an obligation identity. Do not assemble
+            // monthly cadence from different (or partly unknown) source accounts.
+            var sourceAccounts = matchingTransactions
+                .Select(transaction => transaction.BankAccountId is { } account && account != Guid.Empty
+                    ? (Guid?)account : null)
+                .Distinct().Count();
+            if (sourceAccounts > 1)
+            {
+                rejectedSourceAccountAmbiguity++;
+                ambiguousEvidenceProviders.Add(detectedStream.ProviderName);
                 continue;
             }
 
@@ -861,21 +878,24 @@ public sealed class RecurringBillDiscoveryPersistenceService
                 RejectedOtherWeakOrVariableEvidence: rejectedOtherWeakEvidence,
                 AcceptedCandidates: acceptedDiscoveries.Count)
         {
-            RejectedCurrencyAmbiguity = rejectedCurrencyAmbiguity
+            RejectedCurrencyAmbiguity = rejectedCurrencyAmbiguity,
+            RejectedSourceAccountAmbiguity = rejectedSourceAccountAmbiguity
         };
 
         return new DiscoveryAnalysis(
             coreTransactions.Count,
             detectedStreams.Count,
             acceptedDiscoveries,
-            diagnostics);
+            diagnostics,
+            ambiguousEvidenceProviders);
     }
 
     private sealed record DiscoveryAnalysis(
         int TransactionsAnalyzed,
         int DetectedMonthlyCandidates,
         IReadOnlyList<AcceptedRecurringDiscovery> AcceptedDiscoveries,
-        RecurringBillDiscoveryDiagnostics Diagnostics);
+        RecurringBillDiscoveryDiagnostics Diagnostics,
+        IReadOnlySet<string> AmbiguousEvidenceProviders);
 
     private BillCategory ResolveBillCategory(
         IReadOnlyCollection<DiscoveryTransaction>
@@ -1183,6 +1203,8 @@ public sealed record RecurringBillDiscoveryDiagnostics(
     int AcceptedCandidates)
 {
     public int RejectedCurrencyAmbiguity { get; init; }
+
+    public int RejectedSourceAccountAmbiguity { get; init; }
 
     // Counts category/cadence-eligible candidates that cannot be attached
     // safely because multiple owned streams share a provider identity or

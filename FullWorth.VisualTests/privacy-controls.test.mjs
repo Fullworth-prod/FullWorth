@@ -28,8 +28,10 @@ export async function verifyPrivacyControls(page, outputDir) {
     assert.ok(route.request().headers()["x-csrf-token"]);
     deletes++;
     if (deleteMode === "uncertain") return route.abort("failed");
+    if (deleteMode === "server-proof") return route.fulfill({ status: 500, contentType: "application/problem+json",
+      body: JSON.stringify({ title: "Current password is incorrect." }) });
     return route.fulfill({ status: 409, contentType: "application/json",
-      body: JSON.stringify({ message: "Staff accounts cannot be self-deleted." }) });
+      body: JSON.stringify({ message: "FullWorth staff accounts cannot be self-deleted while privileged roles are assigned. Remove the staff roles through the authorized admin workflow first." }) });
   };
   await page.route("**/bff/account/export", exportRoute);
   await page.route(/\/bff\/account$/, deleteRoute);
@@ -171,7 +173,36 @@ export async function verifyPrivacyControls(page, outputDir) {
     await page.waitForTimeout(500);
     assert.equal(downloads, before, "Leaving privacy must not trigger a late export download.");
     assert.equal(deletes, 2);
-    console.log("Privacy controls: exclusive operations, proof clearing, safe failure copy, real synthetic download, disposal and responsive forms passed.");
+    // A 5xx proof-like body must preserve uncertainty in both real localized pages.
+    const origin = new URL(page.url()).origin;
+    for (const [culture, expected] of [
+      ["en-US", "may or may not have been deleted"],
+      ["es", "Es posible que tu cuenta se haya eliminado o que no"]
+    ]) {
+      await page.context().addCookies([{ name: ".AspNetCore.Culture",
+        value: encodeURIComponent("c=" + culture + "|uic=" + culture), url: origin,
+        secure: true, sameSite: "Lax" }]);
+      await page.goto("/app/account/privacy", { waitUntil: "domcontentloaded" });
+      await page.locator(".danger-button").waitFor();
+      await page.locator(".danger-button").click();
+      await page.locator(".delete-confirmation").waitFor();
+      await page.locator(".delete-confirmation input[type=password]").fill(proof);
+      await page.locator(".delete-confirmation input[inputmode=numeric]").fill("123456");
+      await page.locator(".delete-confirmation input[autocomplete=off]").fill("DELETE");
+      const beforeDelete = deletes;
+      deleteMode = "server-proof";
+      await page.locator(".final-delete-button").click();
+      await page.locator(".delete-confirmation [role=alert]").waitFor();
+      const message = (await page.locator(".delete-confirmation .privacy-message").innerText()).trim();
+      assert.ok(message.includes(expected), "Server errors must not be relabeled as incorrect proof: " + culture);
+      assert.equal(deletes, beforeDelete + 1, "No automatic deletion replay.");
+      await emptyProof(".delete-confirmation");
+      assert.equal(new URL(page.url()).pathname, "/app/account/privacy");
+      await page.screenshot({ path: path.join(outputDir, "privacy-server-error-unknown-" + culture + "-390.png"), fullPage: true });
+    }
+    await page.context().addCookies([{ name: ".AspNetCore.Culture", value: encodeURIComponent("c=en-US|uic=en-US"),
+      url: origin, secure: true, sameSite: "Lax" }]);
+    console.log("Privacy controls: exclusive operations, proof clearing, safe failure copy, real synthetic download, disposal, EN/ES server-failure uncertainty and responsive forms passed.");
   } catch (error) {
     await page.screenshot({ path: path.join(outputDir, "privacy-controls-failure.png"), fullPage: true });
     throw error;

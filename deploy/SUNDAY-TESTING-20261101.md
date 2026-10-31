@@ -1,3 +1,9 @@
+## Current release identity — October 31, 2026
+
+Preferred development correction: ca848ad1e61f72a1408b7d87d4d656dbcd9dacec (#1026), verified but not promoted/deployed. The earlier approved masterccdb0cc6 and freshly verified live9540 remain distinct. The additional zero-swap configuration needs a distinct promotion decision; no new approval is inferred.
+
+---
+
 ## Verified upload recovery candidate — October 30, 2026
 
 Latest runtime candidate in development: `bb0cdd70abc80f82afae6bd193a5b7549f3bcf56` ([#1020](https://github.com/Fullworth-prod/FullWorth/pull/1020)). The release card below uses this same runtime candidate; the Sunday goal remains active and prior history is preserved.
@@ -12,28 +18,24 @@ Final source `00eac25bd3be7c222edfc5a42f8b8b46ec0963aa`, tested `6b860dbbd7127b4
 
 # FullWorth Sunday testing package — November 1, 2026
 
-## Release card: fill before testing
+## Release card: verify before testing
 
-Status: VERIFIED DEVELOPMENT CANDIDATE; remaining journey review and served availability are pending. This package does not authorize deployment.
+Status: VERIFIED DEVELOPMENT CORRECTION; NEW PROMOTION DECISION PENDING. Prior approval for masterccdb0cc6 remains recorded; it does not silently include the later configuration fix. This checklist grants no broader authorization.
 
-- Candidate commit: bb0cdd70abc80f82afae6bd193a5b7549f3bcf56.
-- Final source: 00eac25bd3be7c222edfc5a42f8b8b46ec0963aa (#1020); all 10 checks passed. Main run: https://github.com/Fullworth-prod/FullWorth/actions/runs/41013942600 (3,665 .NET / 753 Node, zero failures/skips).
-- Tested and integrated runtime tree: be480f9e58bd93eb52589abb293b2b2ecb720c04.
-- Website entry: https://fullworth.org/ (existing production; not a candidate preview).
-- API served commit and observation time: not freshly verified.
-- Last separately recorded production release:9540b2616841e9794d8f8c07616edcd1e339982c.
-- Android: [APK build run](https://github.com/Fullworth-prod/FullWorth/actions/runs/40843332683), artifact 12884610408, built from tested merge 891afab79f5480d52e12b3165741a25e4ffc71df (earlier #1018 native build, not the #1020 server candidate). Archive SHA256: 0b389d6f2b46f6c190a4e6783547406607a4f3d1f8b892c1b59f6da29dea54f1; expires November 12, 08:43 UTC. Metadata verified; archive not independently downloaded in this pass. Requires existing GitHub access; installing on a physical device remains owner acceptance.
-- iPhone: Safari Add to Home Screen on the confirmed served website. An unsigned IPA is not proof of installability on a physical iPhone.
-- Browser/native client version and API version must both be recorded. A new native build pointing to the older API does not test new server features; absent annual-evidence flags should show unavailable.
-- Rollback target: identify the independently verified previously served release and protected backup evidence in the separate deployment proposal. Do not deploy or restore from this checklist.
-
-Until the intended release is actually available at an approved test entry point, new-feature cases are BLOCKED, not passed. Observations on current production can diagnose that release but cannot certify the candidate.
+- One preferred development runtime: `ca848ad1e61f72a1408b7d87d4d656dbcd9dacec` (#1026), containing the financial/statement candidate plus the durable no-swap correction. Source9cfaa61e5b71822ef0a72b58eab8ce32979ded93/tested2e8c6661b00a01434f5affc534eafbdb627ca4e2/integrated tree146aa3a0242c0fa353306214ae0c5c69ed843eb0 verified. All5 checks passed; [main41234428815](https://github.com/Fullworth-prod/FullWorth/actions/runs/41234428815) executed3,665.NET/753Node0failed/skipped, backend/offline/actual Android0warnings/errors; all-three actual manager-reload persistence, full rendered/pinned/virtual-passkey and disposable restore passed. This runtime is not promoted or deployed.
+- Earlier approved master: `ccdb0cc6be4ae649c0292d2e1bf0a2a97bd71cb4` via #1023, containing preserved financial runtimebb0cdd70. Its artifacts/checks below establish only that master/client identity. A new master merge must pass fresh exact-master CI and cryptographic artifact verification before use.
+- All23 final promotion PR-head checks passed; source/tested/integrated tree `8799ac7c7b50a856f01fb5f622e929e0046ca495` matches. Exact-master [CI41166392224](https://github.com/Fullworth-prod/FullWorth/actions/runs/41166392224) executed3,665 .NET/753 Node tests, zero failures/skips and zero backend/offline build warnings/errors. All14 observed master check-runs passed. Earlier scoped PostgreSQL/browser checks remain separately recorded supporting evidence; they are not newly executed master jobs.
+- Website entry: https://fullworth.org/ . Fresh host/API/parser/Web revision verification on October31 identifies served release `9540b2616841e9794d8f8c07616edcd1e339982c`. Full production and automated beta-host preflight passed after repairing the existing parser swap boundary. The intended new release has not been deployed.
+- Android: [master APK run](https://github.com/Fullworth-prod/FullWorth/actions/runs/41166392034), [artifact13029368725](https://github.com/Fullworth-prod/FullWorth/actions/runs/41166392034/artifacts/13029368725), expires November14 at04:01:48UTC. Archive SHA256 `01700614d2845098b4222d3cedb2af89462df2169cde929f940dfbe294d35ec3`; APK SHA256 `03b5cffc375f4fe6f4d111c82a384c19356448ad3eedc15bca256c0329df2dc0`. Archive and its exact two-file set were independently downloaded/verified; APK checksum matches. Existing GitHub access is required. Do not uninstall an existing client or clear its data to resolve a signing mismatch; stop and record it. Internal signing is ephemeral and emulator launch is not physical acceptance.
+- iPhone: Safari Add to Home Screen on the confirmed served website. [Master simulator run](https://github.com/Fullworth-prod/FullWorth/actions/runs/41166392039) passed; its simulator artifact is not a physical iPhone install package or acceptance.
+- Record browser/native client and API identities independently. This master APK currently reaches the older served API; native app files were unchanged by #1026, but no new #1026 native package is claimed. New-server cases stay BLOCKED until the intended server release is verified available.
+- [Deployment evidence and remaining checkpoint](SUNDAY-RELEASE-CHECKPOINT-20261031.md); [approved conditional deployment/rollback proposal](SUNDAY-DEPLOYMENT-PROPOSAL-20261101.md). Do not restore data or down-migrate from this checklist.
 
 ## Before Sunday
 
 Engineering: #1017, #1018 and #1020 are merged after final-head checks and tree verification. Owned coverage/unit/math, old responses, native chronology and historical explanation qualification have regression coverage. Continue the bank/bill/statement/alert/auth/device journey review. Freeze one candidate after actionable defects are resolved; preserve source branches.
 
-Operator: prepare a concrete promotion/deployment/rollback proposal for separate approval. No approval is inferred from this goal. Identify database/migration compatibility, current recovery evidence, proposed smoke checks and stop conditions; never assume restoring a database is a safe ordinary rollback.
+Operator: prior promotion/conditional deployment approval for masterccdb0cc6 was received and is preserved. The additional verified development correctionca848ad1 needs a distinct promotion decision because it changes the frozen configuration. Prepare that concrete protected PR/proposal, then require its own final-head and exact-master artifacts/target/backup/migration/served-identity checks. Do not deploy a different SHA under the old approval. Keep data-restore/down-migration boundaries and real recovery limitations explicit.
 
 Owner: have the Android/iPhone available, bank login under your own control, a private list of expected bills and representative statements you consent to process. Keep a small expected-fact sheet privately: merchant/bill, posted debit date, currency, billing period and expected result. No passwords, tokens or account numbers in chat/issues.
 

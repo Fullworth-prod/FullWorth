@@ -1,3 +1,13 @@
+## Verified development correction after promotion — October 31, 2026
+
+Development runtime `ca848ad1e61f72a1408b7d87d4d656dbcd9dacec` includes [#1026](https://github.com/Fullworth-prod/FullWorth/pull/1026): explicit OCI zero-swap properties for the three services already configured with equal memory/memswap limits. The isolated runtime regression verified manager/kernel zero for API/parser/Web before and after an actual systemd reload, unchanged processes and parser readiness. No global host drop-in or weakened resource/readiness rule. Source `9cfaa61e5b71822ef0a72b58eab8ce32979ded93`, tested `2e8c6661b00a01434f5affc534eafbdb627ca4e2` and integrated tree `146aa3a0242c0fa353306214ae0c5c69ed843eb0` match; all five final-head checks passed. [Main41234428815](https://github.com/Fullworth-prod/FullWorth/actions/runs/41234428815) executed3,665 .NET/753 Node with zero failed/skipped; backend/offline/actual Android builds0warnings/errors. Full rendered/pinned Chromium/WebKit, virtual-passkey and disposable encrypted restore passed. No financial PostgreSQL workflow was triggered by this operational/test scope; earlier financial evidence remains separately scoped.
+
+The prior human approval applies to master `ccdb0cc6be4ae649c0292d2e1bf0a2a97bd71cb4`; this additional configuration has not been promoted or deployed. Live `9540b2616841e9794d8f8c07616edcd1e339982c` is freshly verified healthy after aligning its existing scope manager properties to the already configured zero without restart. [#1024](https://github.com/Fullworth-prod/FullWorth/issues/1024) stays open until durable same-release live verification. [#1027](https://github.com/Fullworth-prod/FullWorth/issues/1027) records an earlier isolated passkey timeout that did not reproduce on the corrected head; diagnostics preserve the original assertions/submission/timeout, and no root-cause fix is claimed.
+
+Use the updated [Sunday checklist](deploy/SUNDAY-TESTING-20261101.md), [release checkpoint](deploy/SUNDAY-RELEASE-CHECKPOINT-20261031.md) and [conditional proposal](deploy/SUNDAY-DEPLOYMENT-PROPOSAL-20261101.md). The new development correction needs a distinct promotion decision. Existing master Android artifact remains a separately identified client build; no physical/device/provider/current real recovery/legal acceptance is inferred. No new credential/access, spending, private export, activation, destructive recovery or hourly automation. Older dated cards below preserve earlier source/approval states.
+
+---
+
 ## Approved Sunday promotion and verified live preflight — October 31, 2026
 
 `master` is the release branch at candidate `ccdb0cc6be4ae649c0292d2e1bf0a2a97bd71cb4`.

@@ -6,6 +6,11 @@ x-logging: &default-logging
     max-file: "5"
     max-size: 10m
 
+# Keep the service manager's swap boundary aligned with the explicit
+# memory/memswap limits, including on runc versions that omit zero swap.
+x-no-swap-annotations: &no-swap-annotations
+  org.systemd.property.MemorySwapMax: "uint64 0"
+
 services:
   api:
     image: billwatch-api:${BILLWATCH_RELEASE_ID:?Set BILLWATCH_RELEASE_ID}
@@ -27,6 +32,7 @@ services:
     cpus: ${BILLWATCH_API_CPU_LIMIT:-2.0}
     mem_limit: ${BILLWATCH_API_MEMORY_LIMIT:-1g}
     memswap_limit: ${BILLWATCH_API_MEMORY_LIMIT:-1g}
+    annotations: *no-swap-annotations
     depends_on:
       database:
         condition: service_healthy
@@ -111,15 +117,12 @@ services:
     # before the HTTP worker starts.
     user: "0:0"
     cgroup: host
-    # Equal memory/memswap limits must also be owned by systemd. Older runc
-    # skips its zero-swap property, so daemon-reload can otherwise erase it.
-    annotations:
-      org.systemd.property.MemorySwapMax: "uint64 0"
     read_only: true
     pids_limit: 64
     cpus: ${BILLWATCH_PARSER_CPU_LIMIT:-1.0}
     mem_limit: ${BILLWATCH_PARSER_MEMORY_LIMIT:-512m}
     memswap_limit: ${BILLWATCH_PARSER_MEMORY_LIMIT:-512m}
+    annotations: *no-swap-annotations
     cap_drop:
       - ALL
     cap_add:
@@ -179,6 +182,7 @@ services:
     cpus: ${BILLWATCH_WEB_CPU_LIMIT:-1.0}
     mem_limit: ${BILLWATCH_WEB_MEMORY_LIMIT:-512m}
     memswap_limit: ${BILLWATCH_WEB_MEMORY_LIMIT:-512m}
+    annotations: *no-swap-annotations
     depends_on:
       api:
         condition: service_healthy

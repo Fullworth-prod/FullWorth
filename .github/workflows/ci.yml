@@ -1414,6 +1414,12 @@ jobs:
         if: steps.visual_changes.outputs.required == 'true'
         run: npm --prefix FullWorth.VisualTests exec -- playwright install --with-deps chromium webkit
 
+      - name: Verify native authentication fields through startup
+        if: steps.visual_changes.outputs.required == 'true'
+        env:
+          FULLWORTH_VISUAL_BASE_URL: https://web.localhost
+        run: node FullWorth.VisualTests/native-auth-startup-acceptance.mjs
+
       - name: Capture visual acceptance screenshots
         if: steps.visual_changes.outputs.required == 'true'
         env:

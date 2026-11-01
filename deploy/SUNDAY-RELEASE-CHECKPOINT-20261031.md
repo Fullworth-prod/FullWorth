@@ -1,3 +1,13 @@
+## Verified development auth fix and current release boundary — November 1, 2026
+
+Login preservation #1031 is integrated as `291ca6c17ebb2cd17d2926dfc982f546d39b057a`; final source2fc844f3/testedcf133aa4/integrated treebc76022b808a99eb671ec227d8906baadc77dc91 match. All five final-head checks passed: main41284071141, pinned browser41284071267, dependency41284071133; actual3,665 .NET/753 Node zero failed/skipped/backend+offline warnings/errors. Both engines preserve login fields through actual startup and completed appearance changes; native invalid refusal, one valid transport and the original full real disposable virtual-passkey/MFA/removal flow passed. Downloaded/hash-verified visual artifact13073879482 and inspected desktop-login/mobile-two-factor screenshots support bounded UI acceptance, not physical devices.
+
+#1032 adds six actual registration/recovery/reset startup counterexamples: CI41285330965/job124785360770 found entered fields/consent lost on all three unchanged pages in Chromium/WebKit, with zero submissions and no account/mail/password changes. The proposed three-page static native-form correction still needs its own final-head checks. Do not certify a prepared fix or close the issue from earlier login tests alone.
+
+Frozen master remains `b424cd9c08d612d9eadef57839f0dca8c81f2841`; independently verified production remains `9540b2616841e9794d8f8c07616edcd1e339982c`. These newer development fixes are not in that master artifact or live. Preserve the master bundle and existing guarded release path. Deployment/master promotion, private recovery/new access and all external acceptance need their existing prerequisites and separate authorization; this record grants none. #1024 stays open for intended-release durable live verification. Earlier cards below are historical.
+
+---
+
 ## Current master and served-release disposition — November 1, 2026
 
 Owner-merged [#1029](https://github.com/Fullworth-prod/FullWorth/pull/1029) is master `b424cd9c08d612d9eadef57839f0dca8c81f2841`; exact-master CI41281607324 and eight observed checks passed. Source/tested/integrated tree4b4e74699fbc6d34bf4ad040d5ca5d49f99a278d matches. Production remains independently verified `9540b2616841e9794d8f8c07616edcd1e339982c`. Promotion is complete; deployment and durable live #1024 acceptance are not. Do not request promotion of the already merged #1029 or use the old ccdb artifact for the new master.

@@ -62,7 +62,14 @@ export async function verifyLoginHydration(browser, baseURL, engine) {
     // The appearance controls hydrate independently; exercising them must not
     // replace the native cookie-authentication form or erase entered proof.
     await page.locator(".design-picker select").selectOption("workspace");
+    await page.waitForFunction(() => document.documentElement.dataset.design === "workspace");
+    const previousTheme = await page.locator("html").getAttribute("data-theme");
+    assert.ok(["light", "dark"].includes(previousTheme));
     await page.locator(".theme-toggle").click();
+    await page.waitForFunction(previous => {
+      const current = document.documentElement.dataset.theme;
+      return ["light", "dark"].includes(current) && current !== previous;
+    }, previousTheme);
     assert.ok(Object.values(await observe()).every(Boolean),
       "Appearance changes must preserve the entered login fields.");
     let proofShape;

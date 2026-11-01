@@ -1,3 +1,15 @@
+## Current master and served-release disposition — November 1, 2026
+
+Owner-merged [#1029](https://github.com/Fullworth-prod/FullWorth/pull/1029) is master `b424cd9c08d612d9eadef57839f0dca8c81f2841`; exact-master CI41281607324 and eight observed checks passed. Source/tested/integrated tree4b4e74699fbc6d34bf4ad040d5ca5d49f99a278d matches. Production remains independently verified `9540b2616841e9794d8f8c07616edcd1e339982c`. Promotion is complete; deployment and durable live #1024 acceptance are not. Do not request promotion of the already merged #1029 or use the old ccdb artifact for the new master.
+
+Fresh artifact13073795897 expires November8 06:40:09UTC. ZIP SHA256 `94a86b473b2d85ca2c396a8c6935b8763e77ba7f454c56027e4731c3a59fccba`, three image revisions and published subject hashes were independently checked after download. Cryptographic provenance/SPDX verification must still pass through the existing guarded workflow before any use. Master container reload/HTTP/parser/disposable restore passed; master visual/passkey steps were conditional/skipped. This is not physical/provider/current-real-recovery acceptance.
+
+Login-hydration input loss is reproduced in #1031; its proposed static native-login correction and two-engine/full-auth regression results remain pending. Preserve #1027's original failing record; a plausible mechanism does not certify its exact historical cause. This newer development correction is not deployed or included in the frozen master. Record candidate, client and served identities independently.
+
+Browser control is available; no separate Cloud Work task is required or created. No deployment, new access, spending, activation, private financial export or destructive operation is authorized here. Current nonempty real-statement/database/both-keyring clean-host and all existing external acceptance prerequisites remain open. Earlier dated decisions/approval/tooling statements below retain their historical scope; they do not override this disposition.
+
+---
+
 ## Current release identity — October 31, 2026
 
 Preferred development correction: ca848ad1e61f72a1408b7d87d4d656dbcd9dacec (#1026), verified but not promoted/deployed. The earlier approved masterccdb0cc6 and freshly verified live9540 remain distinct. The additional zero-swap configuration needs a distinct promotion decision; no new approval is inferred.
@@ -82,6 +94,7 @@ Run on each actual device; emulator results are supporting engineering evidence 
 
 - Installed launch and return from background.
 - Sign-in, refresh and session-expiry/recovery without exposing another account.
+- On the intended corrected release, enter login fields promptly during a normal cold load; they must stay entered when appearance controls become available. Verify remember-me remains selected and one intentional submit proceeds. Do not disable networking, disrupt services, record credentials or repeat an unresolved submission to force this test.
 - Keyboard: fields and submit controls remain usable; focus is visible.
 - Small-screen/safe-area layout, scrolling, navigation/back and file selection/upload.
 - EN/ES text and all three light/dark pairs; reduced-motion behavior under device preference.

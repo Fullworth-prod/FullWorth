@@ -1,3 +1,11 @@
+## Merged release and new-issue checkpoint — November 1, 2026
+
+The owner merged [#1029](https://github.com/Fullworth-prod/FullWorth/pull/1029) into master `b424cd9c08d612d9eadef57839f0dca8c81f2841`. Its tree `4b4e74699fbc6d34bf4ad040d5ca5d49f99a278d` matches source development `2218fec6a29f3c58c0009a0a274c37bc6f2c2b34`. Exact-master [CI41281607324](https://github.com/Fullworth-prod/FullWorth/actions/runs/41281607324) and all eight observed checks passed, including four CodeQL analyses. Container manager/kernel swap persistence and disposable encrypted restore ran; rendered visual/passkey steps were conditional and skipped on this push, so prior PR evidence remains separately scoped. Production image artifact13073795897 has digest `sha256:94a86b473b2d85ca2c396a8c6935b8763e77ba7f454c56027e4731c3a59fccba`, expires November8 06:40:09UTC, and is metadata-proven only here; no artifact bytes or deployment are certified by this documentation.
+
+Last independently verified live production remains `9540b2616841e9794d8f8c07616edcd1e339982c`. Master integration is not deployment. #1024 stays open for authorized same-release live identity, manager/kernel limits and readiness verification. #1027 stays open: a controlled isolated login-hydration regression is under investigation; do not claim the cause or a fix before its actual result. Existing provider, private expected-bill, physical-device, actual-delivery, real recovery and qualified legal acceptance remain open. No production/access/account/spending/export/destructive change or hourly automation is authorized. Prior dated cards below are historical.
+
+---
+
 ## Verified development correction after promotion — October 31, 2026
 
 Development runtime `ca848ad1e61f72a1408b7d87d4d656dbcd9dacec` includes [#1026](https://github.com/Fullworth-prod/FullWorth/pull/1026): explicit OCI zero-swap properties for the three services already configured with equal memory/memswap limits. The isolated runtime regression verified manager/kernel zero for API/parser/Web before and after an actual systemd reload, unchanged processes and parser readiness. No global host drop-in or weakened resource/readiness rule. Source `9cfaa61e5b71822ef0a72b58eab8ce32979ded93`, tested `2e8c6661b00a01434f5affc534eafbdb627ca4e2` and integrated tree `146aa3a0242c0fa353306214ae0c5c69ed843eb0` match; all five final-head checks passed. [Main41234428815](https://github.com/Fullworth-prod/FullWorth/actions/runs/41234428815) executed3,665 .NET/753 Node with zero failed/skipped; backend/offline/actual Android builds0warnings/errors. Full rendered/pinned Chromium/WebKit, virtual-passkey and disposable encrypted restore passed. No financial PostgreSQL workflow was triggered by this operational/test scope; earlier financial evidence remains separately scoped.
@@ -12,7 +20,7 @@ Use the updated [Sunday checklist](deploy/SUNDAY-TESTING-20261101.md), [release 
 
 Current release candidate on `master`:
 
-`ccdb0cc6be4ae649c0292d2e1bf0a2a97bd71cb4`
+`b424cd9c08d612d9eadef57839f0dca8c81f2841`
 
 Current verified live production release marker:
 

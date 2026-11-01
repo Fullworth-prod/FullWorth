@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { removeOwnedFixturePasskey } from "./passkey-removal-setup.mjs";
+import { verifyLoginHydration } from "./login-hydration-acceptance.mjs";
 
 // Virtual browser coverage is NOT physical iPhone/Face ID acceptance.
 const baseURL = process.env.FULLWORTH_VISUAL_BASE_URL;
@@ -39,6 +40,8 @@ function checkpoint(next) {
 }
 const browser = await chromium.launch({ args: ["--ignore-certificate-errors"] });
 try {
+  checkpoint("controlled login hydration");
+  await verifyLoginHydration(browser, baseURL);
   const context = await browser.newContext({
     baseURL, ignoreHTTPSErrors: true, viewport: { width: 390, height: 844 }
   });

@@ -704,6 +704,33 @@ Owner-selected intended offer, updated 2026-10-24: **USD 7.99/month or USD 59.99
 
 Measure actual payment/Billing fees, provider usage, trial/dormant-connection costs, support and infrastructure before concluding that the intended offer is viable. Earlier fee/variable-cost scenarios are not current contracts or measured costs. See [Payments](https://stripe.com/pricing) and [Billing](https://stripe.com/billing/pricing); actual agreements control. Keep annual cash and service-period revenue separate, and do not stack App Store and web fees on the same sale.
 
+### Plaid production onboarding and cost controls — planned (November 1, 2026)
+
+The owner-supplied Plaid **Pay As You Go** submission screen displayed the following product prices. These are **onboarding-screen estimates, not an executed contract, approved production access, invoice or permission to incur charges**. Reconcile product eligibility, pricing units, taxes/minimums/discounts and any future changes against the final Plaid pricing schedule before enabling production billing. An Item generally refers to a financial-institution connection; confirm the actual billing unit and product usage for our integration rather than assuming every linked account or transaction is independently billed.
+
+| Draft-selected product | Screenshot rate (USD) | FullWorth activation policy to validate |
+| --- | --- | --- |
+| Transactions | $0.30 / Item / month | Primary posted-transaction and bill-recognition feed; request only where needed and consented. |
+| Recurring Transactions | $0.15 / Item / month | Supporting recurring-payment signal; retain deterministic validation rather than treating predictions as truth. |
+| Balance | $0.10 / call | Use only for intentional freshness requirements; cache appropriately and never poll per page view. |
+| Liabilities | $0.20 / Item / month | Optional obligations feature, not the default requirement for first bill-change value. |
+| Investments — Holdings | $0.18 / Item / month | Optional portfolio feature; gate per eligible, consented Item. |
+| Investments — Transactions | $0.35 / Item / month | Optional portfolio history; do not activate merely because Investments was selected. |
+| Investments Refresh | $0.12 / successful call | **Draft selection needs review**: defer unless a justified, measured on-demand use case exists. |
+| Transactions Refresh | $0.12 / successful call | Bounded explicit recovery/manual freshness use; do not refresh automatically on navigation. |
+
+**Execution and release gates (MV-04 supplier-cost work; unchecked until verified):**
+
+- [ ] **Verify onboarding and contracts:** confirm the exact selected products, provider approvals, final executed Pay As You Go rates, billing account, authorization/consent, and production access. No signature, payment method, product activation or submission is established by the screenshot; none is authorized by this roadmap edit.
+- [ ] **Inventory actual link-token and product requests in current source:** distinguish configured dashboard access from products requested at Link creation and later additions; map product, Item, user ownership, consent, purpose, and expected charge before changing any code. Keep Plaid credentials/tokens server-side.
+- [ ] **Default to minimum necessary data:** prioritize Transactions and, when useful, Recurring Transactions for the recurring-bill promise; request Balance, Liabilities, and Investment features only for supported, consented workflows with measured user value. Do not fetch unneeded investment holdings or history for ordinary bill-monitoring Items.
+- [ ] **Make refresh spend bounded:** server-side per-user/Item rate limits, cooldown and in-flight deduplication for chargeable calls; no automatic refresh on reload/navigation; stale-data and recoverable-error UI must not claim fresh data. Test retries, timeouts, reconnections, and concurrent requests without accidental extra chargeable operations.
+- [ ] **Build a sanitized usage/cost ledger and monitoring:** account for recurring billable Items, active/trial/dormant/errored connections, product enrollments, Balance calls, successful refresh calls, provider invoice corrections, and support cost. Alert on cost spikes and agreed budget thresholds; do not log credentials, raw financial transactions, full account numbers, private statements, or tokens.
+- [ ] **Test connection lifecycle and economics:** distinguish hiding, disconnecting, revoking and Plaid Item removal; verify provider billing termination and retention obligations from actual contract/invoices before presenting any cancellation as cost elimination. Avoid automatic destructive Item removal to control spend.
+- [ ] **Gate paid pilot on evidence:** reconcile actual Plaid invoices to server-side usage and the intended subscriber prices, include unpaid and errored Items, and show measured per-activated-user and per-paying-customer contribution. Obtain explicit authorization before paid activation or new commitments; do not infer margin from screenshot rates.
+
+This plan adds no product, credential, consent, spending, provider account mutation, production change, or completed test claim. Preserve the current release/security acceptance gates.
+
 ### Creator referral acquisition — planned after trust and revenue gates
 
 Owner request, 2026-10-24: plan creator codes/links, attributed subscription collections, commission liabilities and monitoring. The [creator referral specification](CREATOR_REFERRAL_PROGRAM.md) defines the proposed rules, data boundaries, reporting and acceptance cases. Writing this plan does not implement the feature, enable billing, authorize outreach, select a payout provider or move funds.

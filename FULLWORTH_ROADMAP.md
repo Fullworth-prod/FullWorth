@@ -1,8 +1,20 @@
-## Merged release and new-issue checkpoint — November 1, 2026
+## Active issue-cleanup and merged-release checkpoint — November 1, 2026
 
-The owner merged [#1029](https://github.com/Fullworth-prod/FullWorth/pull/1029) into master `b424cd9c08d612d9eadef57839f0dca8c81f2841`. Its tree `4b4e74699fbc6d34bf4ad040d5ca5d49f99a278d` matches source development `2218fec6a29f3c58c0009a0a274c37bc6f2c2b34`. Exact-master [CI41281607324](https://github.com/Fullworth-prod/FullWorth/actions/runs/41281607324) and all eight observed checks passed, including four CodeQL analyses. Container manager/kernel swap persistence and disposable encrypted restore ran; rendered visual/passkey steps were conditional and skipped on this push, so prior PR evidence remains separately scoped. Production image artifact13073795897 has digest `sha256:94a86b473b2d85ca2c396a8c6935b8763e77ba7f454c56027e4731c3a59fccba`, expires November8 06:40:09UTC, and is metadata-proven only here; no artifact bytes or deployment are certified by this documentation.
+`master` is the release branch at candidate `b424cd9c08d612d9eadef57839f0dca8c81f2841`.
 
-Last independently verified live production remains `9540b2616841e9794d8f8c07616edcd1e339982c`. Master integration is not deployment. #1024 stays open for authorized same-release live identity, manager/kernel limits and readiness verification. #1027 stays open: a controlled isolated login-hydration regression is under investigation; do not claim the cause or a fix before its actual result. Existing provider, private expected-bill, physical-device, actual-delivery, real recovery and qualified legal acceptance remain open. No production/access/account/spending/export/destructive change or hourly automation is authorized. Prior dated cards below are historical.
+Currently verified live production release: `9540b2616841e9794d8f8c07616edcd1e339982c` (fresh read-only November1 verification; master is not deployed).
+
+The owner merged [#1029](https://github.com/Fullworth-prod/FullWorth/pull/1029); source development `2218fec6a29f3c58c0009a0a274c37bc6f2c2b34`, tested promotion `40d55590fac80e4955a2f07a7628d54756d88ecb` and integrated master share tree `4b4e74699fbc6d34bf4ad040d5ca5d49f99a278d`. Exact-master [CI41281607324](https://github.com/Fullworth-prod/FullWorth/actions/runs/41281607324) and all eight observed checks passed, including four CodeQL analyses. Actual backend: 3,665 .NET and 753 Node cases, zero failed/skipped; backend/offline builds zero warnings/errors. API/parser/Web no-swap persistence across disposable systemd reload and disposable encrypted restore `8effbb74656dfdcb0663c2f699f5e3a444c6f228ef58a33d2f2b233aa4769908` passed. Rendered visual/passkey steps were conditional and skipped on this master push; earlier PR/browser evidence is separate.
+
+Production image artifact13073795897 was downloaded and its ZIP SHA256 `94a86b473b2d85ca2c396a8c6935b8763e77ba7f454c56027e4731c3a59fccba` matched GitHub metadata. Exactly three image tars and three SPDX documents were present. All three manifest-referenced image configs identify master `b424cd9c08d612d9eadef57839f0dca8c81f2841`; tar hashes match published SBOM/provenance subjects. Artifact expires November8 at06:40:09UTC. Signature/provenance/SPDX cryptographic verification remains required by the guarded deployment workflow; byte hashes and published attestation records are not that verification.
+
+New [#1031](https://github.com/Fullworth-prod/FullWorth/pull/1031) investigates [#1027](https://github.com/Fullworth-prod/FullWorth/issues/1027). On unchanged application source, [run41282814390/job124778013121](https://github.com/Fullworth-prod/FullWorth/actions/runs/41282814390/job/124778013121) held the real Blazor startup script, entered valid native fields, then released hydration. Email/password/remember-me changed from matching/valid to cleared/invalid, with zero login submissions. This demonstrates a mechanism for the prior no-response timeout; the original failing state was not captured, so its exact historical cause remains unproven. The proposed correction renders the cookie-login page statically and hydrates appearance controls independently, following [the framework's documented auth-page pattern](https://learn.microsoft.com/en-us/aspnet/core/blazor/components/render-modes?view=aspnetcore-10.0#static-ssr-pages-in-an-interactive-app). Corrected Chromium/WebKit preservation, native validation/one-submission and full virtual-passkey results are pending. No increased waits/timeouts, atomic test-only login workaround, assertion relaxation or write replay.
+
+[#1030](https://github.com/Fullworth-prod/FullWorth/pull/1030) merged as `0823e1a1ecbdf2a33e9f63719461272157eca466` after all four required final-head checks, empty reviews/threads and source/tested/integrated tree `1d27d45b9d2d8c66fcfc35dcdd7ad1f8f9b65bc5` matched. It adds proposed Plaid cost controls and explicitly unverified screenshot rates only; no provider setting or spending changed.
+
+Fresh read-only production verification passed on the older live release above. No deployment, production reload/restart, resource mutation, runtime upgrade, new grant/credential, spending, activation, financial export, destructive recovery, branch deletion or hourly automation occurred. #1024 stays open for durable intended-release live identity, annotations, manager/kernel limits and readiness. Browser tooling is available; a separate Cloud Work chat is not a technical prerequisite and none was created or messaged. A master merge does not authorize deployment or private recovery. Existing nonempty real-statement/database/both-keyring clean-host, provider/private expected-bill/payroll/merchant, physical-device, actual delivery, two-owner/privacy/security and qualified legal acceptance remain open. Keep creator/gated AI off and terms proposed.
+
+The active goal is **FIX NEW ISSUES AND FINISH RELEASE PREPARATION**. Preserve this candidate and original evidence; continue demonstrated source fixes and protected development integration. Older dated cards below are historical.
 
 ---
 
@@ -18,7 +30,7 @@ Use the updated [Sunday checklist](deploy/SUNDAY-TESTING-20261101.md), [release 
 
 ## Approved Sunday promotion and verified live preflight — October 31, 2026
 
-`master` is the release branch at candidate `b424cd9c08d612d9eadef57839f0dca8c81f2841`.
+`master` is the release branch at candidate `ccdb0cc6be4ae649c0292d2e1bf0a2a97bd71cb4`.
 
 Currently verified live production release: `9540b2616841e9794d8f8c07616edcd1e339982c` (fresh October31 host verification; approved new candidate not deployed).
 
@@ -711,6 +723,33 @@ Owner-selected intended offer, updated 2026-10-24: **USD 7.99/month or USD 59.99
 [Plaid billing documentation](https://plaid.com/docs/account/billing/) describes subscriptions that can remain billable for errored or unused Items; [Item removal](https://plaid.com/docs/api/items/) has a separate lifecycle. Hiding a connection is not cost/access termination. Verify the actual contract and products.
 
 Measure actual payment/Billing fees, provider usage, trial/dormant-connection costs, support and infrastructure before concluding that the intended offer is viable. Earlier fee/variable-cost scenarios are not current contracts or measured costs. See [Payments](https://stripe.com/pricing) and [Billing](https://stripe.com/billing/pricing); actual agreements control. Keep annual cash and service-period revenue separate, and do not stack App Store and web fees on the same sale.
+
+### Plaid production onboarding and cost controls — planned (November 1, 2026)
+
+The owner-supplied Plaid **Pay As You Go** submission screen displayed the following product prices. These are **onboarding-screen estimates, not an executed contract, approved production access, invoice or permission to incur charges**. Reconcile product eligibility, pricing units, taxes/minimums/discounts and any future changes against the final Plaid pricing schedule before enabling production billing. An Item generally refers to a financial-institution connection; confirm the actual billing unit and product usage for our integration rather than assuming every linked account or transaction is independently billed.
+
+| Draft-selected product | Screenshot rate (USD) | FullWorth activation policy to validate |
+| --- | --- | --- |
+| Transactions | $0.30 / Item / month | Primary posted-transaction and bill-recognition feed; request only where needed and consented. |
+| Recurring Transactions | $0.15 / Item / month | Supporting recurring-payment signal; retain deterministic validation rather than treating predictions as truth. |
+| Balance | $0.10 / call | Use only for intentional freshness requirements; cache appropriately and never poll per page view. |
+| Liabilities | $0.20 / Item / month | Optional obligations feature, not the default requirement for first bill-change value. |
+| Investments — Holdings | $0.18 / Item / month | Optional portfolio feature; gate per eligible, consented Item. |
+| Investments — Transactions | $0.35 / Item / month | Optional portfolio history; do not activate merely because Investments was selected. |
+| Investments Refresh | $0.12 / successful call | **Draft selection needs review**: defer unless a justified, measured on-demand use case exists. |
+| Transactions Refresh | $0.12 / successful call | Bounded explicit recovery/manual freshness use; do not refresh automatically on navigation. |
+
+**Execution and release gates (MV-04 supplier-cost work; unchecked until verified):**
+
+- [ ] **Verify onboarding and contracts:** confirm the exact selected products, provider approvals, final executed Pay As You Go rates, billing account, authorization/consent, and production access. No signature, payment method, product activation or submission is established by the screenshot; none is authorized by this roadmap edit.
+- [ ] **Inventory actual link-token and product requests in current source:** distinguish configured dashboard access from products requested at Link creation and later additions; map product, Item, user ownership, consent, purpose, and expected charge before changing any code. Keep Plaid credentials/tokens server-side.
+- [ ] **Default to minimum necessary data:** prioritize Transactions and, when useful, Recurring Transactions for the recurring-bill promise; request Balance, Liabilities, and Investment features only for supported, consented workflows with measured user value. Do not fetch unneeded investment holdings or history for ordinary bill-monitoring Items.
+- [ ] **Make refresh spend bounded:** server-side per-user/Item rate limits, cooldown and in-flight deduplication for chargeable calls; no automatic refresh on reload/navigation; stale-data and recoverable-error UI must not claim fresh data. Test retries, timeouts, reconnections, and concurrent requests without accidental extra chargeable operations.
+- [ ] **Build a sanitized usage/cost ledger and monitoring:** account for recurring billable Items, active/trial/dormant/errored connections, product enrollments, Balance calls, successful refresh calls, provider invoice corrections, and support cost. Alert on cost spikes and agreed budget thresholds; do not log credentials, raw financial transactions, full account numbers, private statements, or tokens.
+- [ ] **Test connection lifecycle and economics:** distinguish hiding, disconnecting, revoking and Plaid Item removal; verify provider billing termination and retention obligations from actual contract/invoices before presenting any cancellation as cost elimination. Avoid automatic destructive Item removal to control spend.
+- [ ] **Gate paid pilot on evidence:** reconcile actual Plaid invoices to server-side usage and the intended subscriber prices, include unpaid and errored Items, and show measured per-activated-user and per-paying-customer contribution. Obtain explicit authorization before paid activation or new commitments; do not infer margin from screenshot rates.
+
+This plan adds no product, credential, consent, spending, provider account mutation, production change, or completed test claim. Preserve the current release/security acceptance gates.
 
 ### Creator referral acquisition — planned after trust and revenue gates
 

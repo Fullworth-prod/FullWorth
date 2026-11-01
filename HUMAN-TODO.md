@@ -1,8 +1,24 @@
-## Merged release and new-issue checkpoint — November 1, 2026
+## Active issue-cleanup and merged-release checkpoint — November 1, 2026
 
-The owner merged [#1029](https://github.com/Fullworth-prod/FullWorth/pull/1029) into master `b424cd9c08d612d9eadef57839f0dca8c81f2841`. Its tree `4b4e74699fbc6d34bf4ad040d5ca5d49f99a278d` matches source development `2218fec6a29f3c58c0009a0a274c37bc6f2c2b34`. Exact-master [CI41281607324](https://github.com/Fullworth-prod/FullWorth/actions/runs/41281607324) and all eight observed checks passed, including four CodeQL analyses. Container manager/kernel swap persistence and disposable encrypted restore ran; rendered visual/passkey steps were conditional and skipped on this push, so prior PR evidence remains separately scoped. Production image artifact13073795897 has digest `sha256:94a86b473b2d85ca2c396a8c6935b8763e77ba7f454c56027e4731c3a59fccba`, expires November8 06:40:09UTC, and is metadata-proven only here; no artifact bytes or deployment are certified by this documentation.
+Current release candidate on `master`:
 
-Last independently verified live production remains `9540b2616841e9794d8f8c07616edcd1e339982c`. Master integration is not deployment. #1024 stays open for authorized same-release live identity, manager/kernel limits and readiness verification. #1027 stays open: a controlled isolated login-hydration regression is under investigation; do not claim the cause or a fix before its actual result. Existing provider, private expected-bill, physical-device, actual-delivery, real recovery and qualified legal acceptance remain open. No production/access/account/spending/export/destructive change or hourly automation is authorized. Prior dated cards below are historical.
+`b424cd9c08d612d9eadef57839f0dca8c81f2841`
+
+Current verified live production release marker:
+
+`9540b2616841e9794d8f8c07616edcd1e339982c`
+
+The owner merged [#1029](https://github.com/Fullworth-prod/FullWorth/pull/1029); source development `2218fec6a29f3c58c0009a0a274c37bc6f2c2b34`, tested promotion `40d55590fac80e4955a2f07a7628d54756d88ecb` and integrated master share tree `4b4e74699fbc6d34bf4ad040d5ca5d49f99a278d`. Exact-master [CI41281607324](https://github.com/Fullworth-prod/FullWorth/actions/runs/41281607324) and all eight observed checks passed, including four CodeQL analyses. Actual backend: 3,665 .NET and 753 Node cases, zero failed/skipped; backend/offline builds zero warnings/errors. API/parser/Web no-swap persistence across disposable systemd reload and disposable encrypted restore `8effbb74656dfdcb0663c2f699f5e3a444c6f228ef58a33d2f2b233aa4769908` passed. Rendered visual/passkey steps were conditional and skipped on this master push; earlier PR/browser evidence is separate.
+
+Production image artifact13073795897 was downloaded and its ZIP SHA256 `94a86b473b2d85ca2c396a8c6935b8763e77ba7f454c56027e4731c3a59fccba` matched GitHub metadata. Exactly three image tars and three SPDX documents were present. All three manifest-referenced image configs identify master `b424cd9c08d612d9eadef57839f0dca8c81f2841`; tar hashes match published SBOM/provenance subjects. Artifact expires November8 at06:40:09UTC. Signature/provenance/SPDX cryptographic verification remains required by the guarded deployment workflow; byte hashes and published attestation records are not that verification.
+
+New [#1031](https://github.com/Fullworth-prod/FullWorth/pull/1031) investigates [#1027](https://github.com/Fullworth-prod/FullWorth/issues/1027). On unchanged application source, [run41282814390/job124778013121](https://github.com/Fullworth-prod/FullWorth/actions/runs/41282814390/job/124778013121) held the real Blazor startup script, entered valid native fields, then released hydration. Email/password/remember-me changed from matching/valid to cleared/invalid, with zero login submissions. This demonstrates a mechanism for the prior no-response timeout; the original failing state was not captured, so its exact historical cause remains unproven. The proposed correction renders the cookie-login page statically and hydrates appearance controls independently, following [the framework's documented auth-page pattern](https://learn.microsoft.com/en-us/aspnet/core/blazor/components/render-modes?view=aspnetcore-10.0#static-ssr-pages-in-an-interactive-app). Corrected Chromium/WebKit preservation, native validation/one-submission and full virtual-passkey results are pending. No increased waits/timeouts, atomic test-only login workaround, assertion relaxation or write replay.
+
+[#1030](https://github.com/Fullworth-prod/FullWorth/pull/1030) merged as `0823e1a1ecbdf2a33e9f63719461272157eca466` after all four required final-head checks, empty reviews/threads and source/tested/integrated tree `1d27d45b9d2d8c66fcfc35dcdd7ad1f8f9b65bc5` matched. It adds proposed Plaid cost controls and explicitly unverified screenshot rates only; no provider setting or spending changed.
+
+Fresh read-only production verification passed on the older live release above. No deployment, production reload/restart, resource mutation, runtime upgrade, new grant/credential, spending, activation, financial export, destructive recovery, branch deletion or hourly automation occurred. #1024 stays open for durable intended-release live identity, annotations, manager/kernel limits and readiness. Browser tooling is available; a separate Cloud Work chat is not a technical prerequisite and none was created or messaged. A master merge does not authorize deployment or private recovery. Existing nonempty real-statement/database/both-keyring clean-host, provider/private expected-bill/payroll/merchant, physical-device, actual delivery, two-owner/privacy/security and qualified legal acceptance remain open. Keep creator/gated AI off and terms proposed.
+
+The active goal is **FIX NEW ISSUES AND FINISH RELEASE PREPARATION**. Preserve this candidate and original evidence; continue demonstrated source fixes and protected development integration. Older dated cards below are historical.
 
 ---
 
@@ -20,7 +36,7 @@ Use the updated [Sunday checklist](deploy/SUNDAY-TESTING-20261101.md), [release 
 
 Current release candidate on `master`:
 
-`b424cd9c08d612d9eadef57839f0dca8c81f2841`
+`ccdb0cc6be4ae649c0292d2e1bf0a2a97bd71cb4`
 
 Current verified live production release marker:
 

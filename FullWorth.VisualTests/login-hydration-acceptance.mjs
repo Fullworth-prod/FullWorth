@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 
-// Read-only controlled reproduction on the disposable CI host. No login POST,
-// credentials, tokens, response bodies or raw URLs are recorded.
-export async function verifyLoginHydration(browser, baseURL) {
+// Controlled reproduction on the disposable CI host. Native transport is
+// intercepted only after preservation assertions; no authentication is faked.
+// Credentials, tokens, response bodies and raw URLs are never recorded.
+export async function verifyLoginHydration(browser, baseURL, engine) {
   assert.equal(process.env.GITHUB_ACTIONS, "true");
   assert.equal(baseURL, "https://web.localhost");
   const context = await browser.newContext({
@@ -53,10 +54,44 @@ export async function verifyLoginHydration(browser, baseURL) {
     release();
     await page.locator(".design-picker select:not([disabled])").waitFor();
     const after = await observe();
-    console.log("Controlled login hydration: " + JSON.stringify({ before, after, submissions }));
+    console.log("Controlled login hydration: " + JSON.stringify({ engine, before, after, submissions }));
     assert.equal(submissions, 0, "Hydration observation must not submit credentials.");
     assert.ok(Object.values(after).every(Boolean),
       "Interactive hydration must preserve the email, password and remember-me choice entered before startup.");
+
+    // The appearance controls hydrate independently; exercising them must not
+    // replace the native cookie-authentication form or erase entered proof.
+    await page.locator(".design-picker select").selectOption("workspace");
+    await page.locator(".theme-toggle").click();
+    assert.ok(Object.values(await observe()).every(Boolean),
+      "Appearance changes must preserve the entered login fields.");
+    let proofShape;
+    await page.route("**/auth/login", async route => {
+      if (route.request().method() !== "POST") return route.continue();
+      const fields = new URLSearchParams(route.request().postData());
+      proofShape = {
+        emailMatches: fields.get("email") === sample.email,
+        passwordMatches: fields.get("password") === sample.password,
+        rememberMe: fields.get("rememberMe") === "on",
+        antiforgeryPresent: !!fields.get("__RequestVerificationToken")
+      };
+      await route.fulfill({ status: 200, contentType: "text/html",
+        body: "<!doctype html><title>Synthetic native transport observation</title>" });
+    });
+    // Invalid input must still be blocked by native constraint validation.
+    await page.locator('input[name="email"]').fill("");
+    await page.locator('.auth-form button[type="submit"]').click();
+    assert.equal(submissions, 0);
+    assert.equal(await page.locator('input[name="email"]').evaluate(input => input.validity.valueMissing), true);
+    await page.locator('input[name="email"]').fill(sample.email);
+    const receipt = page.waitForResponse(response =>
+      new URL(response.url()).pathname === "/auth/login" && response.request().method() === "POST");
+    await page.locator('.auth-form button[type="submit"]').click();
+    await receipt;
+    assert.equal(submissions, 1, "Valid native input must produce exactly one submission.");
+    assert.ok(Object.values(proofShape).every(Boolean), "Native transport must retain proof, choice and antiforgery.");
+    console.log("PASS: " + engine + " login startup preservation, interactive appearance, native invalid refusal and one proof-bearing submission.");
+
   } finally {
     release();
     await context.close();

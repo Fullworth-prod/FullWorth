@@ -46,11 +46,11 @@
     <link rel="stylesheet" href="/confirmation-dialog.css" />
     <link rel="stylesheet" href="/app-polish.css" />
     <ImportMap nonce="@CspNonce" />
-    <HeadOutlet @rendermode="InteractiveServer" />
+    <HeadOutlet @rendermode="PageRenderMode" />
 </head>
 
 <body>
-    <Routes @rendermode="InteractiveServer" />
+    <Routes @rendermode="PageRenderMode" />
     <ReconnectModal />
     <script src="/js/pwa.js"></script>
     <script src="/js/passkeys.js"></script>
@@ -63,6 +63,11 @@
 @code {
     [CascadingParameter]
     private HttpContext? HttpContext { get; set; }
+
+    // Native cookie-authentication forms must not be replaced by an interactive
+    // render after the user has already entered a password or verification code.
+    private IComponentRenderMode? PageRenderMode =>
+        HttpContext?.AcceptsInteractiveRouting() == false ? null : InteractiveServer;
 
     private string? CspNonce =>
         HttpContext?.Items[

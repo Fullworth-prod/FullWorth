@@ -12,7 +12,7 @@
         @Body
 
         <div class="legal-theme-control">
-            <ThemeToggle />
+            <ThemeToggle @rendermode="InteractiveServer" />
         </div>
     </div>
 }
@@ -56,8 +56,8 @@ else
                 </nav>
 
                 <div class="header-actions">
-                    <DesignStylePicker />
-                    <ThemeToggle />
+                    <DesignStylePicker @rendermode="InteractiveServer" />
+                    <ThemeToggle @rendermode="InteractiveServer" />
 
                     <AuthorizeView>
                         <Authorized>

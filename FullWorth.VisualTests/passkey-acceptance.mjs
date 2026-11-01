@@ -1,4 +1,4 @@
-import { chromium } from "playwright";
+import { chromium, webkit } from "playwright";
 import { createHmac } from "node:crypto";
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
@@ -41,7 +41,10 @@ function checkpoint(next) {
 const browser = await chromium.launch({ args: ["--ignore-certificate-errors"] });
 try {
   checkpoint("controlled login hydration");
-  await verifyLoginHydration(browser, baseURL);
+  await verifyLoginHydration(browser, baseURL, "chromium");
+  const webkitBrowser = await webkit.launch();
+  try { await verifyLoginHydration(webkitBrowser, baseURL, "webkit"); }
+  finally { await webkitBrowser.close(); }
   const context = await browser.newContext({
     baseURL, ignoreHTTPSErrors: true, viewport: { width: 390, height: 844 }
   });

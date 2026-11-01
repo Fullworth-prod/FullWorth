@@ -1,3 +1,31 @@
+# Additional Sunday correction — AWAITING DISTINCT PROMOTION APPROVAL
+
+Preferred verified development runtime: `ca848ad1e61f72a1408b7d87d4d656dbcd9dacec` (#1026). It adds the documented per-container no-swap manager property to API/parser/Web, where equal memory/memswap already intended zero. The actual isolated reload regression, unchanged-process/readiness proof and all5 final-head checks passed. Source9cfaa61e5b71822ef0a72b58eab8ce32979ded93/tested2e8c6661b00a01434f5affc534eafbdb627ca4e2/integrated tree146aa3a0242c0fa353306214ae0c5c69ed843eb0 match. [Evidence](PARSER-SWAP-PERSISTENCE-20261031.md) and [release checkpoint](SUNDAY-RELEASE-CHECKPOINT-20261031.md) retain exact results and limitations.
+
+The human's earlier approval covered preserved runtimebb0cdd70 and promoted masterccdb0cc6. That approval remains valid for its recorded scope; do not ask for it again or silently expand it to this later correction. Propose the new verified runtime and associated documentation through one protected master PR, then obtain a distinct decision before merging/deploying it. Preparing a draft PR is not promotion. Preserve old master/source branches and do not deploy merely to publish handoff docs.
+
+Production still runs9540b2616841e9794d8f8c07616edcd1e339982c and passed fresh full production/beta-host verifiers. Existing manager/kernel zero was aligned without service restart/manager reload. The durable Compose correction is not live. #1024 remains open for that verification; #1027 remains open for an undiagnosed prior isolated passkey timeout despite bounded non-reproduction on final9cf. No security gate was weakened or retry/timeout added.
+
+After distinct authorization, use only the existing guarded workflow with the resulting exact verified master SHA, confirmed target, fresh unexpired provenance/SPDX-verified images, protected backup/migration prerequisites and exact running identity/readiness. Current ccdb image artifacts cannot certify a different master commit. No new grant/key, spending, activation, secret/account changes, financial export, down-migration, database restore or destructive rollback is included. Existing migration/rollback limits below still apply; actual real recovery, provider, physical-device and legal acceptance stay separate.
+
+---
+
+## Earlier approved master proposal (historical scope)
+
+# Sunday deployment decision — APPROVED CONDITIONALLY, NOT DEPLOYED
+
+The human explicitly approved promoting runtime candidatebb0cdd70 through the protected master PR and then using the existing guarded deployment after exact-master CI, attested artifacts, target identity and backup/migration prerequisites pass. Do not request that same approval again. Approval does not extend to new credentials/grants, spending, paid activation, secret/account changes, destructive rollback, down-migration or database restore.
+
+[#1023](https://github.com/Fullworth-prod/FullWorth/pull/1023) promoted master to `ccdb0cc6be4ae649c0292d2e1bf0a2a97bd71cb4` after23 PR-head checks; source/tested/integrated tree8799ac7c7b50a856f01fb5f622e929e0046ca495 matches. Exact-master CI41166392224 passed and produced unexpired attested image artifact13029104536. [Current release checkpoint](SUNDAY-RELEASE-CHECKPOINT-20261031.md) records identity, tests, hashes, expiry, live host preflight and recovery limits.
+
+Production remains9540b2616841e9794d8f8c07616edcd1e339982c. Parser resource drift was repaired without restart; full production and automated beta-host preflight passed on that older release. Guarded deployment has not run. The remaining execution blocker is workflow dispatch access: the connector lacks dispatch, local browser use is disabled, and the separate Cloud Work task choice is pending. Preserve the approved master and use its existing workflow; do not replace it with an ad hoc deployment or change credentials.
+
+The additive subscription-verification migration below is still pending. Existing backup snapshot metadata and passing host checks are not proof of a current nonempty real-statement/both-keyring clean-host restore. Historical partial separate-runner recovery remains partial. A code-only rollback after new evidence-table writes remains unproven; stop and inspect rather than execute destructive Down or restore.
+
+---
+
+## Historical proposal prepared before approval
+
 # Sunday candidate deployment and recovery proposal — NOT APPROVED
 
 This is a preparation document. It grants no production/master promotion, deployment, spending, new credential/grant, secret/account change, private financial export or destructive recovery authorization.

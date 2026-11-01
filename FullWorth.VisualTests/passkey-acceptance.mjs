@@ -72,11 +72,34 @@ try {
     await page.locator('input[name="email"]').fill(email);
     await page.locator('input[name="password"]').fill(password);
     await page.locator('input[name="rememberMe"]').check();
-    await Promise.all([
-      page.waitForResponse(response => response.url().endsWith("/auth/login") &&
-        response.request().method() === "POST"),
-      page.locator('.auth-form button[type="submit"]').click()
-    ]);
+    try {
+      await Promise.all([
+        page.waitForResponse(response => response.url().endsWith("/auth/login") &&
+          response.request().method() === "POST"),
+        page.locator('.auth-form button[type="submit"]').click()
+      ]);
+    } catch (error) {
+      // Fixed categories and booleans only. Never log proofs, credentials,
+      // arbitrary server messages, raw URLs or the fixture password/email.
+      const state = await page.evaluate(({ email, password }) => {
+        const form = document.querySelector('form[action="/auth/login"]');
+        const emailInput = form?.querySelector('input[name="email"]');
+        const passwordInput = form?.querySelector('input[name="password"]');
+        return {
+          loginPath: location.pathname === "/login",
+          twoFactorStep: new URL(location.href).searchParams.get("twoFactor") === "true",
+          formPresent: !!form,
+          formValid: form?.checkValidity() === true,
+          emailMatches: emailInput?.value === email,
+          passwordMatches: passwordInput?.value === password,
+          rememberMe: form?.querySelector('input[name="rememberMe"]')?.checked === true,
+          submitDisabled: form?.querySelector('button[type="submit"]')?.disabled === true,
+          errorVisible: !!document.querySelector('.auth-error')
+        };
+      }, { email, password }).catch(() => ({ observationUnavailable: true }));
+      console.error("Password fixture submission state: " + JSON.stringify({ stage, ...state }));
+      throw error;
+    }
   }
   checkpoint("password enrollment session");
   await passwordStep();

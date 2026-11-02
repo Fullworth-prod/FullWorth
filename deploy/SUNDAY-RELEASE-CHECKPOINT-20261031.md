@@ -1,3 +1,56 @@
+## Current verified preparation evidence — November 2, 2026
+
+| Identity | Current evidence |
+| --- | --- |
+| Preserved master | `b424cd9c08d612d9eadef57839f0dca8c81f2841`; exact-master CI41281607324 completed successfully, not rerun |
+| Verified development runtime candidate | `e0821b2ea78c5cf066d45de815a7715605181677`; latest code-bearing protected integration |
+| Last independently verified served release | `9540b2616841e9794d8f8c07616edcd1e339982c`; November 1 read-only observation, no new host inspection |
+| Latest source / tested merge / integrated tree | `16acd439279b1fa30adee73722a6d9935e6a1a74` / `15d1e74548b673e99b47845fb4a108c27196dd0c` / `f83d5c06a1b9eb9c010466e8859ec9c2c415222f`; trees match |
+
+### Integrated behavior and review
+
+- #1031/#1032 preserve native login/registration/consent/recovery fields through actual framework startup without credential persistence, higher waits/limits, disabled assertions or submission replay. #1027 is closed for that demonstrated current-source defect; its original failing form state was not captured, so exact historical attribution remains limited.
+- #1037 merged as30a9952 with the existing Contents-read/Metadata-read token, after actual hosted governance41508052055 and all protected checks. The historical unauthenticated403 lacks headers; its exact rate/policy cause is unproven.
+- #1036 source394962b/tested1f20108/integrated73a803b share treee4e9f97. The successful final-head CI41509984685 and independent six-signature public b424 verification protect SPDX2.3, exact source/ref/workflow/hosted runner/repository/owner/run/attempt and signed JSON/image content. The merge call timed out: source integration is proven, but GitHub kept merged=false. The redundant source PR was CLOSED-as-integrated after its own acceptance, with that anomaly and retained branch explicit; no merge replay/fabricated merged event/bypass.
+- #1035 merged normally as321ca444: source31ce5ac4/testeda14e6aae/integrated treefd961d1 match. Pinned Redis8.10.3 and its actual server/image/authentication plus Web-session compatibility passed. Repository configuration does not enable clustering; no live exposure or deployed mitigation is inferred.
+- #1034 merged normally as`e0821b2ea78c5cf066d45de815a7715605181677`: the only source delta from321ca444 is the PostgreSQL18-alpine backup-client digest. The runtime database remains PostgreSQL17; permission/encryption/retention behavior is unchanged. Source/tested/integrated trees above match.
+
+All merges used current required final-head checks, clear reviews/threads and active strict rules with no bypass. No force-push or deletion was performed. The Redis source branch was observed absent after merge despite auto-delete=false and restored exactly to31ce5ac4; retained refs were verified. The backup ref update returned an internal GraphQL error; authoritative old-ref read justified one non-forced SHA-guarded retry, then exact readback. This was not an unchanged CI rerun or an ambiguous financial write replay.
+
+### Executed evidence and limits
+
+Latest main [41518745341](https://github.com/Fullworth-prod/FullWorth/actions/runs/41518745341) plus dependency41518745336 passed all four required checks on source16acd439. Actual3,665 .NET/753 Node, zero failed/skipped, backend/offline zero warnings/errors; twelve signed-policy and five CI-refusal cases passed. The build log identifies backup base digest10a5c69, and disposable encrypted database/original fixture files/both-keyring restore `35d51ad3ce59e9a7829a7710c16373e28a37f88870a8c42d24a15bfde6dc7a72` passed. No financial PostgreSQL workflow or new native/browser execution is claimed for this backup-only diff.
+
+Separately, [#1035 CI41515313517](https://github.com/Fullworth-prod/FullWorth/actions/runs/41515313517) passed the same backend totals and actual Android build with zero warnings/errors. Both engines passed six native-auth startup cases total,354 geometry/108 state/12 menu cases per engine,672 responsive cases per engine, EN/ES/three theme pairs, preserved virtual-passkey/MFA/password-removal and isolated no-swap/parser/HTTP/disposable restore. WebKit's30 known capture-only CSP denials remained bounded to verified empty-rule insertions; application policy stayed enforced. These are automated disposable scopes, not physical-device or merchant/provider acceptance.
+
+The focused cache test passed in both full-browser (#1035) and non-browser (#1034) contexts: exact configured image/version; no-auth denial/authenticated PING; actual disposable Web form login, app/BFF reads, CSRF, synthetic-owner export secret boundary and protected logout, trusting only the disposable edge CA. No real financial export, delivery, new grant, TLS bypass, machine trust change, higher auth wait/limit or automatic write replay.
+
+### Preserved artifacts and outstanding security evidence
+
+Fresh metadata confirms production artifact13073795897 from master CI41281607324 is unexpired, expires **November 8 06:40:09 UTC**, ZIP SHA256 `94a86b473b2d85ca2c396a8c6935b8763e77ba7f454c56027e4731c3a59fccba`. Prior independent download/official checksum-verified GitHub CLI2.103.3 validated all six actual API/parser/Web provenance/SPDX signatures, supplied SBOM predicates and embedded b424 revisions with exact immutable certificate/run policy. Offline public-bundle transport is distinct from deployment's online lookup.
+
+#1033 stays OPEN: PR jobs correctly skip master-only signing/publication; the newly produced master must execute the shared consumer before publication. No new master artifact, promotion or deployment is claimed. Four b424 CodeQL analyses passed, but the latest old-source governance failure and uninspected security queues prevent an all-security-green claim. Current Work settings disable browser use and connected GitHub has no alert reader; no access/settings change was made. An authorized owner can record Security queue commit/time/count/severity/disposition without secret values.
+
+Separately identified Android artifact13029368725 is still unexpired, from ccdb0cc6/run41166392034, expires November14 04:01:48 UTC, archive SHA256 `01700614d2845098b4222d3cedb2af89462df2169cde929f940dfbe294d35ec3`. It is an earlier client artifact, not a new e082 APK/IPA or physical-device result.
+
+### Real acceptance still required
+
+| Gate | Smallest missing evidence/action |
+| --- | --- |
+| #1033/#1024 release availability/durability | Separate exact-candidate promotion/deployment authorization after existing prerequisites; actual new master signing/consumer plus live image/OCI annotation, manager/kernel zero-swap and readiness. No production reload solely to close an issue. |
+| #972/#912 bank visibility/recovery | Owner outcome from a fresh secure Link, visible bank/initial sync; controlled provider Sandbox/error and installed-device recovery. Old consumed tokens remain fenced. |
+| #762 missed bills/cadence/duplicates | Privately compare one owner-known posted debit with account/date coverage, freshness, cadence/account/currency ambiguity and actual rejection result; GitHub gets only aggregate reasons/protected reference. |
+| #970/#293 subscription/payroll | Real dated account/plan/billing-party renewal/prepaid facts or provider payroll outcomes; payment/access does not establish another charge. |
+| #251/#258 physical mobile | Exact client/served identities on Android/iPhone; installation, safe areas, EN/ES, three theme pairs, enlarged text/reduced motion, keyboard/VoiceOver and recovery. |
+| #291/#669 security/alerts/recovery/legal | Same-release controlled two-owner/document/privacy/security checks; actual destination receipt; qualified exact Terms/Privacy/license review; provider-protected real nonempty database/original-statements/both-keyring clean-host proof. Prior read-only recovery40257392831 remains real partial prior-release evidence, not current nonempty-statement acceptance. No expired grant renewal. |
+| #245 branch cleanup | Explicitly unauthorized; retain branches/history. |
+
+The sixteen-column [evidence template](SUNDAY-EVIDENCE-TEMPLATE-20261101.csv) has eighteen NOT_RUN real cases, with identity/actual/protected-evidence fields blank until observed. Source fixtures, manifests and prepared documents do not establish these facts. No master promotion, deployment, production restart/reload/runtime change, new credential/grant, spending/activation, private financial export, destructive recovery, branch deletion or other-thread work occurred. Gated AI/creator features stay off and creator terms remain proposed. Test readiness is not launch approval.
+
+Earlier dated cards below preserve history; the current identities and evidence above supersede older pending/master/live/tool-access statements.
+
+---
+
 ## Release verification correction — November 2, 2026
 
 Master remains `b424cd9c08d612d9eadef57839f0dca8c81f2841`; last independently verified live remains `9540b2616841e9794d8f8c07616edcd1e339982c`. No new live inspection or deployment occurred in this continuation. Auth correction baseline `6e739bc6026c45140552c6609863a3fa3799b848` contains the completed #1031/#1032 auth corrections; #1027 is closed for that demonstrated startup defect. Earlier pending-auth cards below are historical.

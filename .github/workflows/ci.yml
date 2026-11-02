@@ -418,6 +418,7 @@ jobs:
           sh deploy/tests/file-backed-secret-tests.sh
           sh deploy/tests/runtime-watchdog-tests.sh
           sh deploy/tests/production-auth-smoke-workflow-tests.sh
+          sh deploy/tests/web-session-cache-ci-guard-tests.sh
 
       - name: Validate clean-host recovery drill
         if: steps.container_changes.outputs.required == 'true'
@@ -1656,6 +1657,11 @@ jobs:
              test -z "$(find /var/lib/billwatch/statements -xdev -type d ! -perm 700 -print -quit)" &&
              test -z "$(find /var/lib/billwatch/statements -xdev -type f ! -perm 600 -print -quit)" &&
              test -n "$(find /var/lib/billwatch/statements -type f -size +0c -print -quit)"'
+
+      - name: Verify actual Web session cache compatibility
+        if: steps.container_changes.outputs.required == 'true'
+        timeout-minutes: 2
+        run: sh deploy/tests/web-session-cache-ci.sh
 
       - name: Build recovery image
         if: steps.container_changes.outputs.required == 'true'

@@ -384,7 +384,9 @@ jobs:
 
       - name: Verify signed provenance gate configuration
         if: steps.container_changes.outputs.required == 'true'
-        run: bash deploy/tests/signed-build-provenance-tests.sh
+        run: |
+          bash deploy/tests/signed-build-provenance-tests.sh
+          python3 -m unittest discover -s deploy/tests -p test_release_attestations.py -v
 
       - name: Validate production operation scripts
         if: steps.container_changes.outputs.required == 'true'
@@ -708,6 +710,14 @@ jobs:
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
         with:
           subject-path: provenance/*.tar
+
+      - name: Verify signed release artifacts with deployment consumer
+        if: steps.container_changes.outputs.required == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 deploy/verify-release-attestations.py
+          provenance "${{ github.sha }}" "${{ github.run_id }}" "${{ github.run_attempt }}"
 
       - name: Upload attested production image artifacts
         if: steps.container_changes.outputs.required == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'

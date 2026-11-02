@@ -37,8 +37,11 @@ grep -Fq '/branches/${branch}' "$verifier" ||
     fail "verifier does not read the GitHub branch resource."
 grep -Fq '/rulesets?includes_parents=true' "$verifier" ||
     fail "verifier does not inspect applicable repository rulesets."
-grep -Fq 'request_public_json' "$verifier" ||
-    fail "ruleset inspection must use the public read-only API."
+if grep -Fq 'request_public_json' "$verifier"; then
+    fail "ruleset reads must use the existing metadata-read token."
+fi
+grep -Fq 'request_json "${api_url}/repos/${repository}/rulesets' "$verifier" ||
+    fail "ruleset inspection must use authenticated read-only requests."
 grep -Fq 'FullWorth protected branches' "$verifier" ||
     fail "verifier does not require the named active ruleset."
 grep -Fq 'required_approving_review_count' "$verifier" ||
@@ -67,10 +70,17 @@ cat > "$mock_dir/curl" <<'MOCK_CURL'
 set -eu
 
 url=
+authenticated=false
 for argument do
+    [ "$argument" != 'Authorization: Bearer test-token' ] || authenticated=true
     url=$argument
 done
 
+[ "$authenticated" = true ] || exit 22
+if [ "${MOCK_MODE:-valid}" = denied ]; then
+    printf '%s\n' '{"message":"Forbidden"}'
+    exit 22
+fi
 case "$url" in
     */branches/*)
         if [ "${MOCK_MODE:-valid}" = unprotected ]; then
@@ -158,7 +168,7 @@ run_verifier valid >/dev/null ||
 run_verifier reviewed_pr >/dev/null ||\
     fail "stronger reviewed-PR policy was rejected."
 
-for mode in unprotected missing_ruleset missing_branch_target excluded_target inactive_detail missing_pr missing_approval_count invalid_approval_count string_approval_count missing_backend_check missing_maui_check missing_container_check missing_dependency_check workflow_names_only non_strict_checks; do
+for mode in denied unprotected missing_ruleset missing_branch_target excluded_target inactive_detail missing_pr missing_approval_count invalid_approval_count string_approval_count missing_backend_check missing_maui_check missing_container_check missing_dependency_check workflow_names_only non_strict_checks; do
     if run_verifier "$mode" >/dev/null 2>&1; then
         fail "unsafe governance fixture '$mode' was accepted."
     fi

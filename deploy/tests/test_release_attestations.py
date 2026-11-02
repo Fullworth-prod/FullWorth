@@ -144,6 +144,19 @@ class ReleaseAttestationsTests(unittest.TestCase):
             verifier.validate_receipt(receipt(verifier.SPDX, "digest", signed),
                                       verifier.SPDX, "digest", supplied, SHA, RUN, ATTEMPT)
 
+    def test_distinct_decimal_content_cannot_collapse_through_float_parsing(self):
+        for signed_number, supplied_number in [
+            ("1.00000000000000001", "1.0"), ("1e999", "1e1000"),
+        ]:
+            with self.subTest(signed=signed_number, supplied=supplied_number):
+                signed = verifier.decode_json(('{"n":' + signed_number + '}').encode())
+                supplied = verifier.decode_json(('{"n":' + supplied_number + '}').encode())
+                with self.assertRaises(ValueError):
+                    verifier.validate_receipt(receipt(verifier.SPDX, "digest", signed),
+                                              verifier.SPDX, "digest", supplied, SHA, RUN, ATTEMPT)
+        self.assertEqual(verifier.json_identity(verifier.decode_json(b'{"n":1.0}')),
+                         verifier.json_identity(verifier.decode_json(b'{"n":1}')))
+
     def test_wrong_image_revision_refused_before_signature_transport(self):
         self.make_image("billwatch-api", "b" * 40)
         with self.assertRaises(ValueError):

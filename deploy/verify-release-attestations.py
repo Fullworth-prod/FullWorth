@@ -5,6 +5,7 @@ Only gh's successful cryptographic verification output is inspected. Raw bundle
 JSON is never accepted as a verification receipt. No production access occurs.
 """
 import argparse
+from decimal import Decimal, InvalidOperation
 import hashlib
 import json
 from pathlib import Path
@@ -36,8 +37,25 @@ def unique_object(pairs):
 
 
 def decode_json(data):
-    return json.loads(data.decode("utf-8"), object_pairs_hook=unique_object,
+    return json.loads(data.decode("utf-8"), object_pairs_hook=unique_object, parse_float=Decimal,
                       parse_constant=lambda _: require(False, "non-finite JSON number"))
+
+
+def json_identity(value):
+    # Preserve JSON types and exact decimal values. Python bool/int equality
+    # and binary floating point must not erase changes to signed content.
+    if isinstance(value, dict):
+        return ("object", tuple((key, json_identity(item)) for key, item in sorted(value.items())))
+    if isinstance(value, list):
+        return ("array", tuple(json_identity(item) for item in value))
+    if isinstance(value, bool):
+        return ("boolean", value)
+    if isinstance(value, (int, Decimal)):
+        return ("number", Decimal(value))
+    if value is None:
+        return ("null",)
+    require(isinstance(value, str), "unsupported JSON value")
+    return ("string", value)
 
 
 def sha256(path):
@@ -82,9 +100,7 @@ def validate_receipt(receipt, predicate_type, digest, sbom, release, run_id, att
         if not any(subject.get("digest", {}).get("sha256") == digest
                    for subject in statement.get("subject", [])):
             continue
-        # Python object equality treats False == 0; JSON identity must retain
-        # those distinct types. Canonical serialization also ignores key order.
-        if predicate_type == SPDX and json.dumps(statement.get("predicate"), sort_keys=True) != json.dumps(sbom, sort_keys=True):
+        if predicate_type == SPDX and json_identity(statement.get("predicate")) != json_identity(sbom):
             continue
         matched = True
     require(matched, "no verified attestation satisfies the complete release policy")
@@ -149,7 +165,7 @@ def main():
     args = parser.parse_args()
     try:
         verify_directory(args.directory, args.release, args.run_id, args.attempt)
-    except (ValueError, KeyError, TypeError, OSError, tarfile.TarError,
+    except (ValueError, InvalidOperation, KeyError, TypeError, OSError, tarfile.TarError,
             subprocess.CalledProcessError) as error:
         # Do not print untrusted JSON fields or raw attestation payloads.
         print(f"Release attestation verification refused ({type(error).__name__}).", file=sys.stderr)

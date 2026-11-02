@@ -82,7 +82,9 @@ def validate_receipt(receipt, predicate_type, digest, sbom, release, run_id, att
         if not any(subject.get("digest", {}).get("sha256") == digest
                    for subject in statement.get("subject", [])):
             continue
-        if predicate_type == SPDX and statement.get("predicate") != sbom:
+        # Python object equality treats False == 0; JSON identity must retain
+        # those distinct types. Canonical serialization also ignores key order.
+        if predicate_type == SPDX and json.dumps(statement.get("predicate"), sort_keys=True) != json.dumps(sbom, sort_keys=True):
             continue
         matched = True
     require(matched, "no verified attestation satisfies the complete release policy")

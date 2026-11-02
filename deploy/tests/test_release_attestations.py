@@ -137,6 +137,13 @@ class ReleaseAttestationsTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.verify()
 
+    def test_sbom_boolean_cannot_be_replaced_with_numeric_value(self):
+        signed = {"spdxVersion": "SPDX-2.3", "filesAnalyzed": False}
+        supplied = {"spdxVersion": "SPDX-2.3", "filesAnalyzed": 0}
+        with self.assertRaises(ValueError):
+            verifier.validate_receipt(receipt(verifier.SPDX, "digest", signed),
+                                      verifier.SPDX, "digest", supplied, SHA, RUN, ATTEMPT)
+
     def test_wrong_image_revision_refused_before_signature_transport(self):
         self.make_image("billwatch-api", "b" * 40)
         with self.assertRaises(ValueError):

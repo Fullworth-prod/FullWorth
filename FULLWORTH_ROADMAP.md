@@ -1,3 +1,19 @@
+## Verified planning fix and release checkpoint — November 3, 2026
+
+Verified development runtime candidate: `b56d9f62780c41d0f63d6113c0849ae4e02e3386` ([#1039](https://github.com/Fullworth-prod/FullWorth/pull/1039)). Exact source `dd083f1f5b0639f1ee604555e7d1f38b3f40e323`, tested merge `ee2be5e5fab67cd8e63c0c032cb9ac385f445f47` and integrated commit share tree `3984fc0386680dd2bc4b0aaf13fc00e54c20a6ee`. All eighteen final-head checks passed before the normal protected squash merge; reviews/threads and active strict rules were checked, and the source branch is retained.
+
+Raw unsupported Unicode currency aliases are now refused before casing or financial arithmetic in planning, allocations, change-watch and new alerts. ASCII case/whitespace compatibility and immutable saved-plan replay/history remain intact. Unsupported units display Currency unavailable / Moneda no disponible and Needs review / Necesita revisión; no FX, retrospective retagging or financial-history repair is performed. Previously canonicalized history requires independent original evidence for any correction.
+
+Preserved master remains `b424cd9c08d612d9eadef57839f0dca8c81f2841`. A fresh November3 read-only production verifier passed configuration, permissions, integrity, exposure, runtime identity and public API/Web readiness on served `9540b2616841e9794d8f8c07616edcd1e339982c`. The development candidate is not promoted or deployed.
+
+The verified source evidence and exact remaining actions are in the [current release checkpoint](deploy/SUNDAY-RELEASE-CHECKPOINT-20261031.md). The evidence template now has sixteen columns and **nineteen NOT_RUN cases**, including explicit PAYROLL-PLAN acceptance (#293). Its candidate_commit is prefilled only as the planned b56d9f6 target; served/client identities, observed UTC, actual result and protected receipts remain blank. A planned candidate is not a deployment observation. Private/provider/device cases require their existing authorization and prerequisites; no source/CI result fills a real acceptance row.
+
+#1033 remains open for actual newly signed master publisher/consumer execution; #1024 remains open for separately authorized intended-release image/OCI, manager/kernel zero-swap and readiness evidence. Real provider/private bill/subscription/payroll facts, physical Android/iPhone, actual alert receipt, controlled two-owner/document/security, current nonempty database/original-statements/both-keyring protected clean-host recovery and qualified legal review remain open. Disposable encrypted CI restore is not that real recovery. #1036 remains CLOSED as already integrated with its recorded merged=false timeout anomaly; do not relabel it as a normal PR merge or replay it.
+
+No master promotion, deployment, host restart/reload, new access/credentials, spending, paid activation, private financial export, destructive recovery or branch deletion occurred. Gated AI/creator features stay off and creator terms stay proposed. Earlier dated cards below retain history; this checkpoint supersedes their older identities, counts and pending source-validation statements.
+
+---
+
 ## Verified source checkpoint; release acceptance remains open — November 2, 2026
 
 `master` is the release branch at candidate `b424cd9c08d612d9eadef57839f0dca8c81f2841`.

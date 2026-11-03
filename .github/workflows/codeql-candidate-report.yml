@@ -35,6 +35,10 @@ jobs:
        github.event.pull_request.head.repo.id == github.event.repository.id)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # Pinned-action opt-outs: scan the complete candidate, not PR diff/overlay results.
+      CODEQL_ACTION_DIFF_INFORMED_QUERIES: 'false'
+      CODEQL_ACTION_OVERLAY_ANALYSIS: 'false'
     strategy:
       fail-fast: false
       matrix:
@@ -112,10 +116,13 @@ jobs:
                       raise SystemExit("Analysis invocation is incomplete or unsuccessful.")
                   if not isinstance(run.get("results"), list):
                       raise SystemExit("Missing explicit analysis result collection.")
+                  if run.get("properties", {}).get("incrementalMode") != "none":
+                      raise SystemExit("Incremental/diff-informed analysis cannot certify a full candidate report.")
               reports.append({
                   "file": file.name,
                   "sha256": hashlib.sha256(file.read_bytes()).hexdigest(),
                   "results": sum(len(run["results"]) for run in runs),
+                  "incremental_modes": [run["properties"]["incrementalMode"] for run in runs],
                   "tool_execution_notifications": sum(
                       len(i.get("toolExecutionNotifications", []))
                       for run in runs for i in run["invocations"]),
@@ -136,6 +143,7 @@ jobs:
               "codeql_version": os.environ["CODEQL_VERSION"],
               "codeql_action_revision": os.environ["ACTION_REVISION"],
               "build_mode": "none",
+              "analysis_mode": "full-source; incremental modes refused",
               "query_suite": "security-extended",
               "code_scanning_upload": False,
               "database_upload": False,

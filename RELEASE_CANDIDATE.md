@@ -1,3 +1,28 @@
+## Preserved master and verified development runtime — November 2, 2026
+
+| Identity | Verified value | Scope |
+| --- | --- | --- |
+| Preserved master | `b424cd9c08d612d9eadef57839f0dca8c81f2841` | Exact-master CI41281607324 passed; not a deployment claim |
+| Development runtime candidate | `e0821b2ea78c5cf066d45de815a7715605181677` | Protected source integration; not promoted/deployed |
+| Last independently verified live | `9540b2616841e9794d8f8c07616edcd1e339982c` | November 1 read-only observation; no new host inspection |
+| Latest source / tested / integrated tree | `16acd439279b1fa30adee73722a6d9935e6a1a74` / `15d1e74548b673e99b47845fb4a108c27196dd0c` / `f83d5c06a1b9eb9c010466e8859ec9c2c415222f` | All three trees match |
+
+#1036 is CLOSED as already integrated at `73a803bbdadbe3644a7bd0119a7e988c2b0537ea`, with its GitHub `merged=false` timeout anomaly explicitly retained; no merge replay or fabricated merged event. #1037's existing-token governance correction is integrated. #1031/#1032 auth-startup corrections are integrated and #1027 is closed for the demonstrated source defect; the original uncaptured failing-state attribution remains limited.
+
+Latest [CI41518745341](https://github.com/Fullworth-prod/FullWorth/actions/runs/41518745341) passed 3,665 .NET/753 Node, zero failed/skipped and zero backend/offline warnings/errors, twelve signature-policy tests, five CI refusal contexts, actual Redis/Web-BFF compatibility and disposable encrypted restore. Browser/native-build steps were conditional for this backup-only diff; full Chromium/WebKit/native-auth/virtual-passkey and actual Android evidence is separately recorded on #1035 source `31ce5ac4`, [CI41515313517](https://github.com/Fullworth-prod/FullWorth/actions/runs/41515313517). No new APK/IPA packaging or physical-device acceptance is claimed.
+
+Compared with frozen master, the reviewed source changes are native-auth rendering/preservation, supply-chain/governance/CI tests, handoffs and pinned Redis/backup-client images; no new API or EF financial-schema file change was found. Existing migration/recovery/rollback prerequisites from the older live release still apply.
+
+Master image artifact13073795897 remains unexpired through November 8 06:40:09 UTC, archive SHA256 `94a86b473b2d85ca2c396a8c6935b8763e77ba7f454c56027e4731c3a59fccba`. Its six real b424 signatures/SBOM-content/image identities were independently verified; this is not new-candidate publication. The separately identified ccdb Android artifact13029368725 expires November 14 04:01:48 UTC; it is not a new client build for this operations checkpoint.
+
+#1033 stays open until a newly produced master executes the shared signed publisher/consumer gate. #1024 stays open for separately authorized intended-release live image/annotation, manager/kernel zero-swap and readiness proof. Provider/private expected-bill/subscription/payroll facts, physical Android/iPhone, actual alert receipt, controlled same-release security/document checks, nonempty database/original-statements/both-keyring protected clean-host recovery and qualified legal review remain open. The sixteen-column evidence template has eighteen NOT_RUN rows; no source/fixture result fills a real acceptance row.
+
+Use the [current release checkpoint](deploy/SUNDAY-RELEASE-CHECKPOINT-20261031.md), testing checklist and private evidence template. No master promotion, deployment, production restart/reload/runtime change, new credential/grant, spending/activation, private financial export, destructive recovery, branch deletion or other-thread work occurred. Gated AI/creator features stay off and creator terms remain proposed. Test readiness is not launch approval.
+
+Earlier dated cards below preserve history; the current identities and evidence above supersede older pending/master/live/tool-access statements.
+
+---
+
 ## Verified development auth fix and current release boundary — November 1, 2026
 
 Login preservation #1031 is integrated as `291ca6c17ebb2cd17d2926dfc982f546d39b057a`; final source2fc844f3/testedcf133aa4/integrated treebc76022b808a99eb671ec227d8906baadc77dc91 match. All five final-head checks passed: main41284071141, pinned browser41284071267, dependency41284071133; actual3,665 .NET/753 Node zero failed/skipped/backend+offline warnings/errors. Both engines preserve login fields through actual startup and completed appearance changes; native invalid refusal, one valid transport and the original full real disposable virtual-passkey/MFA/removal flow passed. Downloaded/hash-verified visual artifact13073879482 and inspected desktop-login/mobile-two-factor screenshots support bounded UI acceptance, not physical devices.

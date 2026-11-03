@@ -1,3 +1,36 @@
+## Current source and remaining owner evidence — November 2, 2026
+
+Current release candidate on `master`:
+
+`b424cd9c08d612d9eadef57839f0dca8c81f2841`
+
+Current verified live production release marker:
+
+`9540b2616841e9794d8f8c07616edcd1e339982c`
+
+The live identity is the last independent November 1 verification, not a new host inspection.
+
+Verified development runtime candidate: `e0821b2ea78c5cf066d45de815a7715605181677`. Latest source `16acd439279b1fa30adee73722a6d9935e6a1a74`, tested merge `15d1e74548b673e99b47845fb4a108c27196dd0c` and integrated source share tree `f83d5c06a1b9eb9c010466e8859ec9c2c415222f`. [#1034](https://github.com/Fullworth-prod/FullWorth/pull/1034) and [#1035](https://github.com/Fullworth-prod/FullWorth/pull/1035) merged normally after their current four required checks, clear reviews/threads and strict rules. Their backup-client/Redis pins passed actual disposable restore and Web-session compatibility; the runtime database remains PostgreSQL 17. This candidate is not promoted or deployed.
+
+#1036 is CLOSED as already integrated at `73a803bbdadbe3644a7bd0119a7e988c2b0537ea`, with its GitHub `merged=false` timeout anomaly explicitly retained; no merge replay or fabricated merged event. #1037's existing-token governance correction is integrated. #1031/#1032 auth-startup corrections are integrated and #1027 is closed for the demonstrated source defect; the original uncaptured failing-state attribution remains limited.
+
+The [current release checkpoint](deploy/SUNDAY-RELEASE-CHECKPOINT-20261031.md) records exact source/tested/integrated trees, actual tests, artifact expiry and the source-PR transaction exception. Existing source branches/history are retained; the Redis source ref was observed absent after its merge and restored to its reviewed head without changing repository settings.
+
+Smallest remaining actions, only through the appropriate authorized/private path:
+
+- For #1033/#1024, separately authorize the intended frozen master promotion/deployment after existing recovery/release prerequisites, then verify new signing/consumer execution and intended live identity/OCI/manager/kernel/readiness. Current work authorizes neither action; no production reload is a substitute.
+- For #972, report whether an owner-started fresh secure Link appears and initial sync progresses; do not replay the old consumed token. #912 also needs controlled provider Sandbox and installed-device recovery outcomes.
+- For #762/#970/#293, compare one privately known posted obligation/subscription/payroll case with actual account/date coverage, cadence/duplicates/rejection or dated account/plan/billing-party evidence. Record only protected evidence references and aggregate reasons in GitHub.
+- For #251/#258, exercise the physical Android/iPhone modes on exact client/served identities, including EN/ES, all three theme pairs, enlarged text/reduced motion, keyboard/VoiceOver and nonzero safe areas.
+- For #291/#669, gather same-release two-owner/document/security checks, actual destination receipt, qualified Terms/Privacy/license review, provider protection and real nonempty database/original-statements/both-keyring clean-host evidence. Prior protected read-only recovery40257392831 is real partial prior-release evidence, not absent and not current nonempty-statement acceptance; do not renew expired access.
+- Security alert queues remain uninspected: connected GitHub has no alert reader and current Work settings disable browser use. An authorized owner can read Code scanning/Dependabot/secret-alert queues and record commit/time/count/severity/disposition without secrets; passing CodeQL checks alone do not establish empty queues.
+
+The sixteen-column template's eighteen real acceptance cases remain NOT_RUN. No master promotion, deployment, production restart/reload/runtime change, new credential/grant, spending/activation, private financial export, destructive recovery, branch deletion or other-thread work occurred. Gated AI/creator features stay off and creator terms remain proposed. Test readiness is not launch approval.
+
+Earlier dated cards below preserve history; the current identities and evidence above supersede older pending/master/live/tool-access statements.
+
+---
+
 ## Release verification correction — November 2, 2026
 
 Master remains `b424cd9c08d612d9eadef57839f0dca8c81f2841`; last independently verified live remains `9540b2616841e9794d8f8c07616edcd1e339982c`. No new live inspection or deployment occurred in this continuation. Auth correction baseline `6e739bc6026c45140552c6609863a3fa3799b848` contains the completed #1031/#1032 auth corrections; #1027 is closed for that demonstrated startup defect. Earlier pending-auth cards below are historical.

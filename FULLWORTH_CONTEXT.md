@@ -1,3 +1,23 @@
+## Verified development candidate and release boundary — November 2, 2026
+
+Repository master is the current release candidate `b424cd9c08d612d9eadef57839f0dca8c81f2841`.
+
+Verified live production release: `9540b2616841e9794d8f8c07616edcd1e339982c` (last independent read-only verification November 1; no new host inspection in this continuation).
+
+Verified development runtime candidate: `e0821b2ea78c5cf066d45de815a7715605181677`. Latest source `16acd439279b1fa30adee73722a6d9935e6a1a74`, tested merge `15d1e74548b673e99b47845fb4a108c27196dd0c` and integrated source share tree `f83d5c06a1b9eb9c010466e8859ec9c2c415222f`. [#1034](https://github.com/Fullworth-prod/FullWorth/pull/1034) and [#1035](https://github.com/Fullworth-prod/FullWorth/pull/1035) merged normally after their current four required checks, clear reviews/threads and strict rules. Their backup-client/Redis pins passed actual disposable restore and Web-session compatibility; the runtime database remains PostgreSQL 17. This candidate is not promoted or deployed.
+
+#1036 is CLOSED as already integrated at `73a803bbdadbe3644a7bd0119a7e988c2b0537ea`, with its GitHub `merged=false` timeout anomaly explicitly retained; no merge replay or fabricated merged event. #1037's existing-token governance correction is integrated. #1031/#1032 auth-startup corrections are integrated and #1027 is closed for the demonstrated source defect; the original uncaptured failing-state attribution remains limited.
+
+Latest [CI41518745341](https://github.com/Fullworth-prod/FullWorth/actions/runs/41518745341) passed 3,665 .NET/753 Node, zero failed/skipped and zero backend/offline warnings/errors, twelve signature-policy tests, five CI refusal contexts, actual Redis/Web-BFF compatibility and disposable encrypted restore. Browser/native-build steps were conditional for this backup-only diff; full Chromium/WebKit/native-auth/virtual-passkey and actual Android evidence is separately recorded on #1035 source `31ce5ac4`, [CI41515313517](https://github.com/Fullworth-prod/FullWorth/actions/runs/41515313517). No new APK/IPA packaging or physical-device acceptance is claimed.
+
+#1033 stays open until a newly produced master executes the shared signed publisher/consumer gate. #1024 stays open for separately authorized intended-release live image/annotation, manager/kernel zero-swap and readiness proof. Provider/private expected-bill/subscription/payroll facts, physical Android/iPhone, actual alert receipt, controlled same-release security/document checks, nonempty database/original-statements/both-keyring protected clean-host recovery and qualified legal review remain open. The sixteen-column evidence template has eighteen NOT_RUN rows; no source/fixture result fills a real acceptance row.
+
+See the [current release checkpoint](deploy/SUNDAY-RELEASE-CHECKPOINT-20261031.md) for exact run/tree/artifact evidence and the smallest remaining external actions. No master promotion, deployment, production restart/reload/runtime change, new credential/grant, spending/activation, private financial export, destructive recovery, branch deletion or other-thread work occurred. Gated AI/creator features stay off and creator terms remain proposed. Test readiness is not launch approval.
+
+Earlier dated cards below preserve history; the current identities and evidence above supersede older pending/master/live/tool-access statements.
+
+---
+
 ## Release verification correction — November 2, 2026
 
 Master remains `b424cd9c08d612d9eadef57839f0dca8c81f2841`; last independently verified live remains `9540b2616841e9794d8f8c07616edcd1e339982c`. No new live inspection or deployment occurred in this continuation. Auth correction baseline `6e739bc6026c45140552c6609863a3fa3799b848` contains the completed #1031/#1032 auth corrections; #1027 is closed for that demonstrated startup defect. Earlier pending-auth cards below are historical.

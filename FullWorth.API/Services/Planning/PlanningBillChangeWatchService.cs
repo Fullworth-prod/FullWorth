@@ -1,3 +1,4 @@
+using FullWorth.Core.Formatting;
 using FullWorth.API.Services.Contracts;
 
 namespace FullWorth.API.Services.Planning;
@@ -245,25 +246,14 @@ public sealed class PlanningBillChangeWatchService(
         string? currencyCode,
         out string? normalized)
     {
-        normalized =
-            currencyCode?
-                .Trim()
-                .ToUpperInvariant();
-
-        if (normalized is null ||
-            normalized.Length !=
-                3 ||
-            normalized.Any(
-                character =>
-                    character is < 'A' or > 'Z'))
+        if (FinancialAmountFormatter.TryNormalizeCurrency(currencyCode, out var currency))
         {
-            normalized =
-                null;
-
-            return false;
+            normalized = currency;
+            return true;
         }
 
-        return true;
+        normalized = null;
+        return false;
     }
 
     private static bool IsMoney(

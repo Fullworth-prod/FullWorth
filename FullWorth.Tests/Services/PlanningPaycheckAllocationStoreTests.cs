@@ -808,7 +808,7 @@ public sealed class PlanningPaycheckAllocationStoreTests
                 date, 1000m, raw, 0m, 1000m, 0m), []));
         Assert.Empty(await db.PlanningPaycheckAllocations.ToListAsync());
         Assert.Empty(await db.PlanningPaycheckPlanRuns.ToListAsync());
-        Assert.Empty(db.ChangeTracker.Entries().Where(e => e.State == EntityState.Added));
+        Assert.DoesNotContain(db.ChangeTracker.Entries(), e => e.State == EntityState.Added);
     }
 
     [Theory]

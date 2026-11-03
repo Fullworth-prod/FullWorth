@@ -110,6 +110,26 @@ export async function verifyPlanningWorkspace(page, outputDir) {
       if (width === 390 && theme === "dark" && !large && language === "en-US")
         await page.screenshot({ path: path.join(outputDir, "planning-phone-preview.png"), fullPage: false });
     }
+    // An invalid historical unit must stay explicit, never fold into dollars.
+    const oldPlanUnit = plans[0].currencyCode, oldItemUnit = plans[0].items[0].currencyCode;
+    const oldChangeUnit = changes[0].currencyCode;
+    plans[0].currencyCode = plans[0].items[0].currencyCode = changes[0].currencyCode = "uſd";
+    const beforeUnitReads = writes.length;
+    for (const language of ["en-US", "es"]) {
+      await page.context().addCookies([{ name: ".AspNetCore.Culture", value: encodeURIComponent("c=en-US|uic=" + language), url: new URL(page.url()).origin, secure: true, sameSite: "Lax" }]);
+      await goto();
+      const label = language === "es" ? "Moneda no disponible" : "Currency unavailable";
+      const history = await panel("recent").textContent(), impact = await panel("changes").textContent();
+      assert.ok(history.includes(label) && impact.includes(label), "Unsupported units require localized uncertainty.");
+      assert.ok(!history.includes("USD") && !impact.includes("USD"), "Historical invalid unit cannot become dollars.");
+      assert.ok(history.includes("255.00 EUR"), "The independent supported currency remains unchanged.");
+      await checkLayout();
+      await photo("planning-invalid-unit-" + language);
+    }
+    assert.equal(writes.length, beforeUnitReads, "Reading invalid historical units must not rewrite financial history.");
+    assert.equal(plans[0].currencyCode, "uſd");
+    plans[0].currencyCode = oldPlanUnit; plans[0].items[0].currencyCode = oldItemUnit;
+    changes[0].currencyCode = oldChangeUnit;
     await page.context().addCookies([{ name: ".AspNetCore.Culture", value: encodeURIComponent("c=en-US|uic=en-US"), url: new URL(page.url()).origin, secure: true, sameSite: "Lax" }]);
     await page.setViewportSize({ width: 390, height: 1000 });
     await goto();

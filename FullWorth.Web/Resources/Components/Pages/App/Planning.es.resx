@@ -112,4 +112,5 @@
   <data name="These bills were not included in the recorded amount or shortfall. Review missing evidence before relying on this plan." xml:space="preserve"><value>Estas facturas no se incluyeron en el importe ni en el déficit registrados. Revisa la evidencia faltante antes de basarte en este plan.</value></data>
   <data name="No bill was excluded from the active bills evaluated at generation. This does not prove that every real-world bill was imported." xml:space="preserve"><value>No se excluyó ninguna de las facturas activas evaluadas al generar el plan. Esto no demuestra que se importaran todas las facturas reales.</value></data>
   <data name="No allocations were recorded for this paycheck. This does not prove that no bills were due." xml:space="preserve"><value>No se registraron asignaciones para este pago de nómina. Esto no demuestra que no hubiera facturas que pagar.</value></data>
+  <data name="Currency unavailable" xml:space="preserve"><value>Moneda no disponible</value></data>
 </root>

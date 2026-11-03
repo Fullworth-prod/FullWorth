@@ -1,3 +1,15 @@
+## Planning raw-currency boundary — November 3, 2026
+
+[#1039](https://github.com/Fullworth-prod/FullWorth/pull/1039) addresses a demonstrated planning-unit defect. Tests-only source `7322b60e3439c2b13b48e5a53b7853b9746f5305` left application code unchanged; [CI41671456831/job126040614422](https://github.com/Fullworth-prod/FullWorth/actions/runs/41671456831/job/126040614422) failed eleven new cases, with 3,671 passing and zero skipped. Unicode long-s in an invalid unit could fold into USD/SEK before validation: allocation writes were accepted, invalid payroll/bill units entered recommendations, legacy allocations were subtracted and change-watch reported Ready. ASCII compatibility controls passed. This is a synthetic source counterexample, not evidence of an affected private account or production incident.
+
+The focused correction reuses FinancialAmountFormatter's existing raw ASCII-letter validator before canonicalization in the core generator, planning service, allocation/run persistence, change-watch and new-alert creation. Invalid payroll is unsupported; invalid statement/prior allocation units retain currency-conflict outcomes and are excluded from arithmetic. Saved-plan replay and original amounts/units remain immutable; malformed historical units are not retrospectively relabeled or repaired. Already-canonicalized historical values cannot reveal their original input and require independent source evidence for any later correction.
+
+Planning Web history and change amounts now show localized Currency unavailable / Moneda no disponible for unsupported units and mark affected saved plans for review. Added controls cover valid ASCII casing/whitespace and distinct units without conversion, idempotent saves, legacy history preservation, alert refusal and EN/ES rendered display with zero writes. Alert/display additions extend the demonstrated mechanism; they were not part of the initial eleven failing cases. Exact final-head test, review and protected integration evidence belongs to #1039; do not infer success from the patch or reuse the failed run.
+
+Preserve master `b424cd9c08d612d9eadef57839f0dca8c81f2841` and last independently verified live `9540b2616841e9794d8f8c07616edcd1e339982c` separately. #1024/#1033 and real provider/private expected-bill/payroll/subscription/statement, physical-device, actual delivery, two-owner/security, nonempty protected clean-host recovery and qualified legal acceptance remain open. The existing eighteen real evidence-template cases stay NOT_RUN. No production/master promotion, deployment, provider/account action, new access, private export, financial-history rewrite or branch deletion is authorized. Gated AI/creator stay off and creator terms remain proposed.
+
+---
+
 ## Verified development candidate and release boundary — November 2, 2026
 
 Repository master is the current release candidate `b424cd9c08d612d9eadef57839f0dca8c81f2841`.

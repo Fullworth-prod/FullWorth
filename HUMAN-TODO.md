@@ -1,3 +1,19 @@
+## Verified planning fix and release checkpoint — November 3, 2026
+
+Verified development runtime candidate: `b56d9f62780c41d0f63d6113c0849ae4e02e3386` ([#1039](https://github.com/Fullworth-prod/FullWorth/pull/1039)). Exact source `dd083f1f5b0639f1ee604555e7d1f38b3f40e323`, tested merge `ee2be5e5fab67cd8e63c0c032cb9ac385f445f47` and integrated commit share tree `3984fc0386680dd2bc4b0aaf13fc00e54c20a6ee`. All eighteen final-head checks passed before the normal protected squash merge; reviews/threads and active strict rules were checked, and the source branch is retained.
+
+Preserved master remains `b424cd9c08d612d9eadef57839f0dca8c81f2841`. A fresh November3 read-only production verifier passed configuration, permissions, integrity, exposure, runtime identity and public API/Web readiness on served `9540b2616841e9794d8f8c07616edcd1e339982c`. The development candidate is not promoted or deployed.
+
+The evidence template now has sixteen columns and **nineteen NOT_RUN cases**, including explicit PAYROLL-PLAN acceptance (#293). Its candidate_commit is prefilled only as the planned b56d9f6 target; served/client identities, observed UTC, actual result and protected receipts remain blank. A planned candidate is not a deployment observation. Private/provider/device cases require their existing authorization and prerequisites; no source/CI result fills a real acceptance row.
+
+Smallest remaining steps: owner-controlled fresh bank/provider and private bill/subscription/payroll facts (#972/#912/#762/#970/#293); physical installed Android/iPhone (#251/#258); actual receipt, controlled two-owner/document checks, protected nonempty clean-host recovery and qualified legal review (#291/#669). Record the exact served/client release and protected receipt after each authorized observation. #1033 remains open for actual newly signed master publisher/consumer execution; #1024 remains open for separately authorized intended-release image/OCI, manager/kernel zero-swap and readiness evidence. Real provider/private bill/subscription/payroll facts, physical Android/iPhone, actual alert receipt, controlled two-owner/document/security, current nonempty database/original-statements/both-keyring protected clean-host recovery and qualified legal review remain open. Disposable encrypted CI restore is not that real recovery. #1036 remains CLOSED as already integrated with its recorded merged=false timeout anomaly; do not relabel it as a normal PR merge or replay it.
+
+Read-only authenticated GitHub security inventory on November3 found Dependabot 0 open/1 closed, secret scanning 0 open/0 closed, and Code scanning on master 0 open/1 closed. The explicit development filter says **This branch hasn't been scanned yet** (0/0 is not a clean scan). No secret matches were accessed and no alerts/settings/grants were changed. This removes the former UI-access blocker but does not establish development CodeQL, a full vulnerability assessment or same-release two-owner/security acceptance.
+
+No master promotion, deployment, host restart/reload, new access/credentials, spending, paid activation, private financial export, destructive recovery or branch deletion occurred. Gated AI/creator features stay off and creator terms stay proposed. Earlier dated cards below retain history; this checkpoint supersedes their older identities, counts and pending source-validation statements.
+
+---
+
 ## Current source and remaining owner evidence — November 2, 2026
 
 Current release candidate on `master`:

@@ -1,3 +1,29 @@
+## Verified planning fix and release checkpoint — November 3, 2026
+
+Verified development runtime candidate: `b56d9f62780c41d0f63d6113c0849ae4e02e3386` ([#1039](https://github.com/Fullworth-prod/FullWorth/pull/1039)). Exact source `dd083f1f5b0639f1ee604555e7d1f38b3f40e323`, tested merge `ee2be5e5fab67cd8e63c0c032cb9ac385f445f47` and integrated commit share tree `3984fc0386680dd2bc4b0aaf13fc00e54c20a6ee`. All eighteen final-head checks passed before the normal protected squash merge; reviews/threads and active strict rules were checked, and the source branch is retained.
+
+Raw unsupported Unicode currency aliases are now refused before casing or financial arithmetic in planning, allocations, change-watch and new alerts. ASCII case/whitespace compatibility and immutable saved-plan replay/history remain intact. Unsupported units display Currency unavailable / Moneda no disponible and Needs review / Necesita revisión; no FX, retrospective retagging or financial-history repair is performed. Previously canonicalized history requires independent original evidence for any correction.
+
+[Final CI41675448713](https://github.com/Fullworth-prod/FullWorth/actions/runs/41675448713) executed 3,693 .NET and 753 Node tests with zero failed/skipped; backend/offline/actual Android builds had zero warnings/errors. All financial PostgreSQL suites, Chromium/WebKit regressions, full rendered theme/language/responsive and native-auth/virtual-passkey flows passed. Android emulator/internal APK, iOS simulator and unsigned iPhone packaging passed; these are not physical-device or signed-install acceptance. Final visual artifact13251572297 was downloaded and SHA256 verified (`3732e3376cb1e9407b39833cbe4a8be922f237f1b19fd979a4ef5ddd8cdf129d`); actual EN/ES screenshots were inspected.
+
+Final-head additional workflows passed: bank41675448981 (26 lifecycle +12 focused), monitoring41675448673 (124 PostgreSQL), confirmation41675448666 (118), Hosted Link41675448887 (53 durable plus consumed-token recovery and 12 relational fault cases), subscription41675448935 (17 PostgreSQL +51 focused), pinned browser41675448731, dependency41675448793, Android41675448712, iOS simulator41675448814 and unsigned iPhone41675449144. Provider scenarios are controlled/synthetic; no real institution/device outcome follows from them. Disposable encrypted restore SHA256 `04103554a87aac79e303263c1e75c11cbf6d186e6c90415e174f425e9dee5447` passed.
+
+The tests-only negative head `7322b60e3439c2b13b48e5a53b7853b9746f5305` produced eleven failures with unchanged application code (3,671 passed/zero skipped). Final visual inspection rejected the earlier Ready-to-replan contradiction; final EN/ES assertions and screenshots show Needs review. Responsive reports had 672 checks/zero issues per engine; theme reports had 354 geometry, 108 state and 12 menu checks per engine with zero layout issues/errors. Known Playwright screenshot-only empty-style CSP messages remain distinguished from application errors; CSP was not weakened.
+
+Preserved master remains `b424cd9c08d612d9eadef57839f0dca8c81f2841`. A fresh November3 read-only production verifier passed configuration, permissions, integrity, exposure, runtime identity and public API/Web readiness on served `9540b2616841e9794d8f8c07616edcd1e339982c`. The development candidate is not promoted or deployed.
+
+Read-only authenticated GitHub security inventory on November3 found Dependabot 0 open/1 closed, secret scanning 0 open/0 closed, and Code scanning on master 0 open/1 closed. The explicit development filter says **This branch hasn't been scanned yet** (0/0 is not a clean scan). No secret matches were accessed and no alerts/settings/grants were changed. This removes the former UI-access blocker but does not establish development CodeQL, a full vulnerability assessment or same-release two-owner/security acceptance.
+
+Older master public artifact13073795897 ZIP SHA256 `94a86b473b2d85ca2c396a8c6935b8763e77ba7f454c56027e4731c3a59fccba` expires November8 06:40:09UTC. Six actual public-bundle cryptographic verifications passed for b424 only; a newly signed master publisher/consumer run is still required by #1033.
+
+The evidence template now has sixteen columns and **nineteen NOT_RUN cases**, including explicit PAYROLL-PLAN acceptance (#293). Its candidate_commit is prefilled only as the planned b56d9f6 target; served/client identities, observed UTC, actual result and protected receipts remain blank. A planned candidate is not a deployment observation. Private/provider/device cases require their existing authorization and prerequisites; no source/CI result fills a real acceptance row.
+
+#1033 remains open for actual newly signed master publisher/consumer execution; #1024 remains open for separately authorized intended-release image/OCI, manager/kernel zero-swap and readiness evidence. Real provider/private bill/subscription/payroll facts, physical Android/iPhone, actual alert receipt, controlled two-owner/document/security, current nonempty database/original-statements/both-keyring protected clean-host recovery and qualified legal review remain open. Disposable encrypted CI restore is not that real recovery. #1036 remains CLOSED as already integrated with its recorded merged=false timeout anomaly; do not relabel it as a normal PR merge or replay it.
+
+No master promotion, deployment, host restart/reload, new access/credentials, spending, paid activation, private financial export, destructive recovery or branch deletion occurred. Gated AI/creator features stay off and creator terms stay proposed. Earlier dated cards below retain history; this checkpoint supersedes their older identities, counts and pending source-validation statements.
+
+---
+
 ## Current verified preparation evidence — November 2, 2026
 
 | Identity | Current evidence |

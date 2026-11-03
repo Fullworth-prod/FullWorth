@@ -371,6 +371,20 @@ public sealed class PlanningWorkspaceTests
         await page.DisposeAsync();
     }
 
+    [Theory]
+    [InlineData("uſd", "Needs review", "needs-review")]
+    [InlineData("ſek", "Needs review", "needs-review")]
+    [InlineData(" usd ", "Ready to replan", "is-ready")]
+    public void UnsupportedChangeUnit_CannotClaimReadyToReplan(
+        string raw, string label, string cssClass)
+    {
+        var page = Page(new Module());
+        Assert.Equal(label, typeof(Planning).GetMethod("GetStatusLabel", Flags)!
+            .Invoke(page, ["Ready", raw]));
+        Assert.Equal(cssClass, typeof(Planning).GetMethod("GetStatusClass",
+            BindingFlags.Static | BindingFlags.NonPublic)!.Invoke(null, ["Ready", raw]));
+    }
+
     [Fact]
     public async Task MissingBillResponse_DoesNotBecomeNoActiveBills()
     {

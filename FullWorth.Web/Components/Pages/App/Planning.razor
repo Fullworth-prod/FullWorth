@@ -388,8 +388,8 @@
                                     <strong>@(string.IsNullOrWhiteSpace(change.ProviderName) ? L["Recurring bill"].Value : change.ProviderName)</strong>
                                     <span>@change.Description</span>
                                 </div>
-                                <span class="planning-change-status @GetStatusClass(change.RecalculationStatus)">
-                                    @GetStatusLabel(change.RecalculationStatus)
+                                <span class="planning-change-status @GetStatusClass(change.RecalculationStatus, change.CurrencyCode)">
+                                    @GetStatusLabel(change.RecalculationStatus, change.CurrencyCode)
                                 </span>
                             </div>
                             <div class="planning-change-values">
@@ -725,11 +725,14 @@
             "d",
             System.Globalization.CultureInfo.CurrentCulture);
 
-    private string GetStatusLabel(string? status) =>
-        status == "Ready" ? L["Ready to replan"].Value : L["Needs review"].Value;
+    private string GetStatusLabel(string? status, string? currencyCode) =>
+        IsReadyChange(status, currencyCode) ? L["Ready to replan"].Value : L["Needs review"].Value;
 
-    private static string GetStatusClass(string? status) =>
-        status == "Ready" ? "is-ready" : "needs-review";
+    private static string GetStatusClass(string? status, string? currencyCode) =>
+        IsReadyChange(status, currencyCode) ? "is-ready" : "needs-review";
+
+    private static bool IsReadyChange(string? status, string? currencyCode) =>
+        status == "Ready" && FinancialAmountFormatter.TryNormalizeCurrency(currencyCode, out _);
 
 
     private static async ValueTask ReleaseAsync(IJSObjectReference module)

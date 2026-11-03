@@ -123,6 +123,10 @@ export async function verifyPlanningWorkspace(page, outputDir) {
       assert.ok(history.includes(label) && impact.includes(label), "Unsupported units require localized uncertainty.");
       assert.ok(!history.includes("USD") && !impact.includes("USD"), "Historical invalid unit cannot become dollars.");
       assert.ok(history.includes("255.00 EUR"), "The independent supported currency remains unchanged.");
+      assert.equal(await panel("changes").locator(".planning-change-status").textContent(),
+        language === "es" ? "Necesita revisión" : "Needs review",
+        "An unusable unit must not claim readiness to replan.");
+      assert.equal(await panel("changes").locator(".planning-change-status.is-ready").count(), 0);
       await checkLayout();
       await photo("planning-invalid-unit-" + language);
     }

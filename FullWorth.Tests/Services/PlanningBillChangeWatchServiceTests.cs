@@ -257,6 +257,38 @@ public sealed class PlanningBillChangeWatchServiceTests
             item.RemainingAmountToPlan);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task GetAsync_RejectsUnicodeCurrentAndLegacyPriorCurrency(bool prior)
+    {
+        var owner = Guid.NewGuid();
+        var stream = Guid.NewGuid();
+        var statement = Guid.NewGuid();
+        var period = new DateOnly(2026, 10, 31);
+        await using var harness = Harness.Create(owner, stream, statement, period,
+            600m, 500m, currentCurrency: prior ? "USD" : "uſd");
+        if (prior)
+        {
+            await harness.Store.SavePaycheckPlanAsync(owner, Guid.NewGuid(),
+                new DateOnly(2026, 9, 25),
+                [new PlanningPaycheckAllocationDraft(stream, statement, period,
+                    new DateOnly(2026, 11, 15), 200m, "USD")]);
+            var historical = await harness.DbContext.PlanningPaycheckAllocations.SingleAsync();
+            historical.CurrencyCode = "uſd";
+            await harness.DbContext.SaveChangesAsync();
+        }
+        var item = Assert.Single(await harness.Service.GetAsync(owner));
+        Assert.Equal(prior ? PlanningBillChangeWatchRecalculationStatus.PriorCurrencyConflict
+            : PlanningBillChangeWatchRecalculationStatus.UnsupportedCurrentBillFact,
+            item.RecalculationStatus);
+        Assert.Null(item.AlreadyPlanned);
+        Assert.Null(item.RemainingAmountToPlan);
+        if (!prior) Assert.Null(item.CurrencyCode);
+        else Assert.Equal("uſd",
+            (await harness.DbContext.PlanningPaycheckAllocations.SingleAsync()).CurrencyCode);
+    }
+
     private sealed class Harness : IAsyncDisposable
     {
         private Harness(
@@ -287,7 +319,8 @@ public sealed class PlanningBillChangeWatchServiceTests
             DateOnly periodEnd,
             decimal currentAmount,
             decimal previousAmount,
-            Guid? changeCurrentStatementId = null)
+            Guid? changeCurrentStatementId = null,
+            string currentCurrency = "USD")
         {
             var options =
                 new DbContextOptionsBuilder<FullWorthDbContext>()
@@ -319,7 +352,7 @@ public sealed class PlanningBillChangeWatchServiceTests
                     billStreamId,
                     statementId,
                     currentAmount,
-                    "USD",
+                    currentCurrency,
                     new DateOnly(
                         2026,
                         11,

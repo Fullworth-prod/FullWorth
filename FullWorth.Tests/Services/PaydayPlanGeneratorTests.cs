@@ -328,6 +328,34 @@ public sealed class PaydayPlanGeneratorTests
                             [])));
     }
 
+    [Theory]
+    [InlineData("uſd", true)]
+    [InlineData("uſd", false)]
+    [InlineData("ſek", true)]
+    [InlineData("ſek", false)]
+    public void Generate_RejectsUnicodeCurrencyBeforeCombiningMoney(string raw, bool payroll)
+    {
+        var request = new PaydayPlanRequest(1000m, new DateOnly(2026, 11, 20),
+            payroll ? raw : "USD", BiweeklySchedule(),
+            [Bill("Synthetic bill", 100m, 0m, new DateOnly(2026, 12, 18),
+                currencyCode: payroll ? "USD" : raw)]);
+        Assert.Throws<ArgumentException>(() => PaydayPlanGenerator.Generate(request));
+    }
+
+    [Theory]
+    [InlineData(" usd ", "USD")]
+    [InlineData("sEk", "SEK")]
+    [InlineData("XYZ", "XYZ")]
+    public void Generate_PreservesAsciiUnitsWithoutConversion(string raw, string expected)
+    {
+        var result = PaydayPlanGenerator.Generate(new PaydayPlanRequest(
+            1000m, new DateOnly(2026, 11, 20), raw, BiweeklySchedule(),
+            [Bill("Synthetic bill", 100m, 0m, new DateOnly(2026, 12, 18), currencyCode: raw)]));
+        Assert.Equal(expected, result.CurrencyCode);
+        Assert.Equal(expected, Assert.Single(result.Bills).CurrencyCode);
+        Assert.Equal(50m, result.RecommendedSetAside);
+    }
+
     private static PayScheduleDefinition BiweeklySchedule(
         DateOnly? anchorPayDate = null) =>
         new(

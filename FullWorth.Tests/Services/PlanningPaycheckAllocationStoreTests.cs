@@ -792,6 +792,48 @@ public sealed class PlanningPaycheckAllocationStoreTests
                     ]));
     }
 
+    [Theory]
+    [InlineData("uſd")]
+    [InlineData("ſek")]
+    public async Task Save_RejectsUnicodeRunAndAllocationUnitsBeforeWriting(string raw)
+    {
+        await using var db = new FullWorthDbContext(Options());
+        var store = new PlanningPaycheckAllocationStore(db, TimeProvider.System);
+        var owner = Guid.NewGuid();
+        var date = new DateOnly(2026, 9, 25);
+        await Assert.ThrowsAsync<ArgumentException>(() => store.SavePaycheckPlanAsync(
+            owner, Guid.NewGuid(), date, [Draft(100m, raw)]));
+        await Assert.ThrowsAsync<ArgumentException>(() => store.SaveCompletePaycheckPlanAsync(
+            owner, Guid.NewGuid(), new PlanningPaycheckPlanRunDraft(
+                date, 1000m, raw, 0m, 1000m, 0m), []));
+        Assert.Empty(await db.PlanningPaycheckAllocations.ToListAsync());
+        Assert.Empty(await db.PlanningPaycheckPlanRuns.ToListAsync());
+        Assert.DoesNotContain(db.ChangeTracker.Entries(), e => e.State == EntityState.Added);
+    }
+
+    [Theory]
+    [InlineData(" usd ", "USD")]
+    [InlineData("sEk", "SEK")]
+    [InlineData("XYZ", "XYZ")]
+    public async Task Save_PreservesAsciiCurrencyAndIdempotentReplay(string raw, string expected)
+    {
+        await using var db = new FullWorthDbContext(Options());
+        var store = new PlanningPaycheckAllocationStore(db, TimeProvider.System);
+        var owner = Guid.NewGuid();
+        var payroll = Guid.NewGuid();
+        var run = new PlanningPaycheckPlanRunDraft(new DateOnly(2026, 9, 25),
+            1000m, raw, 100m, 900m, 0m);
+        var draft = Draft(100m, raw);
+        var saved = await store.SaveCompletePaycheckPlanAsync(owner, payroll, run, [draft]);
+        var replay = await store.SaveCompletePaycheckPlanAsync(owner, payroll, run, [draft]);
+        Assert.Equal(expected, saved.Run.CurrencyCode);
+        Assert.Equal(expected, Assert.Single(saved.Allocations).CurrencyCode);
+        Assert.True(replay.WasExisting);
+        Assert.Equal(Assert.Single(saved.Allocations).Id, Assert.Single(replay.Allocations).Id);
+        Assert.Single(await db.PlanningPaycheckPlanRuns.ToListAsync());
+        Assert.Single(await db.PlanningPaycheckAllocations.ToListAsync());
+    }
+
     private static DbContextOptions<FullWorthDbContext> Options() =>
         new DbContextOptionsBuilder<FullWorthDbContext>()
             .UseInMemoryDatabase(

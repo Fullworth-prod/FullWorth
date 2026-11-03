@@ -1,3 +1,4 @@
+using FullWorth.Core.Formatting;
 using System.Runtime.ExceptionServices;
 using System.Globalization;
 using FullWorth.API.Services.Contracts;
@@ -156,17 +157,12 @@ public sealed class PlanningPaydayAlertRefreshService(
     {
         if (plan.Status !=
                 PlanningPaydayPlanStatus.Ready ||
-            string.IsNullOrWhiteSpace(
-                plan.CurrencyCode))
+            !FinancialAmountFormatter.TryNormalizeCurrency(
+                plan.CurrencyCode, out var currency))
         {
             throw new InvalidOperationException(
                 "Only complete payday plans can create alerts.");
         }
-
-        var currency =
-            plan.CurrencyCode
-                .Trim()
-                .ToUpperInvariant();
 
         if (plan.Shortfall >
             0m)

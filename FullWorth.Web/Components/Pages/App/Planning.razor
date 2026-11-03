@@ -1,4 +1,5 @@
 @page "/app/planning"
+@using FullWorth.Core.Formatting
 
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @layout AppLayout
@@ -260,6 +261,8 @@
                                 <span class="planning-change-status @(RequiresPlanReview(plan) ? "needs-review" : "is-ready")">
                                     @(plan.Shortfall > 0m
                                         ? $"{L["Shortfall"].Value} {FormatAmount(plan.Shortfall, plan.CurrencyCode)}"
+                                        : !HasUsablePlanCurrency(plan)
+                                            ? L["Currency unavailable"].Value
                                         : plan.Coverage is null
                                             ? L["Coverage unknown"].Value
                                             : plan.Coverage.SkippedBillCount > 0
@@ -385,8 +388,8 @@
                                     <strong>@(string.IsNullOrWhiteSpace(change.ProviderName) ? L["Recurring bill"].Value : change.ProviderName)</strong>
                                     <span>@change.Description</span>
                                 </div>
-                                <span class="planning-change-status @GetStatusClass(change.RecalculationStatus)">
-                                    @GetStatusLabel(change.RecalculationStatus)
+                                <span class="planning-change-status @GetStatusClass(change.RecalculationStatus, change.CurrencyCode)">
+                                    @GetStatusLabel(change.RecalculationStatus, change.CurrencyCode)
                                 </span>
                             </div>
                             <div class="planning-change-values">
@@ -700,18 +703,18 @@
         finally { bill.IsBusy = false; Notify(); }
     }
 
-    private static string FormatAmount(decimal amount, string? currencyCode)
+    private string FormatAmount(decimal amount, string? currencyCode)
     {
-        var currency = string.IsNullOrWhiteSpace(currencyCode)
-            ? string.Empty
-            : currencyCode.Trim().ToUpperInvariant();
+        var currency = FinancialAmountFormatter.TryNormalizeCurrency(currencyCode, out var normalized)
+            ? normalized
+            : L["Currency unavailable"].Value;
         return amount.ToString(
                    "N2",
                    System.Globalization.CultureInfo.CurrentCulture) +
                (currency.Length == 0 ? string.Empty : " " + currency);
     }
 
-    private static string FormatImpact(decimal amount, string? currencyCode)
+    private string FormatImpact(decimal amount, string? currencyCode)
     {
         var sign = amount > 0m ? "+" : amount < 0m ? "−" : string.Empty;
         return sign + FormatAmount(Math.Abs(amount), currencyCode);
@@ -722,11 +725,14 @@
             "d",
             System.Globalization.CultureInfo.CurrentCulture);
 
-    private string GetStatusLabel(string? status) =>
-        status == "Ready" ? L["Ready to replan"].Value : L["Needs review"].Value;
+    private string GetStatusLabel(string? status, string? currencyCode) =>
+        IsReadyChange(status, currencyCode) ? L["Ready to replan"].Value : L["Needs review"].Value;
 
-    private static string GetStatusClass(string? status) =>
-        status == "Ready" ? "is-ready" : "needs-review";
+    private static string GetStatusClass(string? status, string? currencyCode) =>
+        IsReadyChange(status, currencyCode) ? "is-ready" : "needs-review";
+
+    private static bool IsReadyChange(string? status, string? currencyCode) =>
+        status == "Ready" && FinancialAmountFormatter.TryNormalizeCurrency(currencyCode, out _);
 
 
     private static async ValueTask ReleaseAsync(IJSObjectReference module)
@@ -776,7 +782,12 @@
     }
 
     private static bool RequiresPlanReview(PlanningRecentPaydayPlanViewModel plan) =>
-        plan.Shortfall > 0m || plan.Coverage is null || plan.Coverage.SkippedBillCount > 0;
+        plan.Shortfall > 0m || plan.Coverage is null || plan.Coverage.SkippedBillCount > 0 ||
+        !HasUsablePlanCurrency(plan);
+
+    private static bool HasUsablePlanCurrency(PlanningRecentPaydayPlanViewModel plan) =>
+        FinancialAmountFormatter.TryNormalizeCurrency(plan.CurrencyCode, out _) &&
+        plan.Items.All(item => FinancialAmountFormatter.TryNormalizeCurrency(item.CurrencyCode, out _));
 
     private sealed class PlanningCoverageViewModel
     {

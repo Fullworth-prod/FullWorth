@@ -252,6 +252,41 @@ public sealed class PlanningPaydayAlertRefreshServiceTests
             alert.Message);
     }
 
+    [Theory]
+    [InlineData("uſd", false)]
+    [InlineData("ſek", false)]
+    [InlineData(" usd ", true)]
+    [InlineData("sEk", true)]
+    public async Task RefreshAsync_LegacyPlanCannotManufactureCurrencyInNewAlert(
+        string raw, bool supported)
+    {
+        await using var harness = await Harness.CreateAsync();
+        harness.DbContext.PlanningPaycheckPlanRuns.Add(new PlanningPaycheckPlanRunEntity
+        {
+            UserId = harness.UserId, PayrollTransactionId = harness.PayrollTransactionId,
+            PaycheckPostedDate = new DateOnly(2026, 9, 25), PaycheckAmount = 1000m,
+            CurrencyCode = raw, RecommendedSetAside = 0m,
+            PaycheckRemainingAfterPlan = 1000m, Shortfall = 0m
+        });
+        await harness.DbContext.SaveChangesAsync();
+        if (supported)
+        {
+            var result = await harness.RefreshService.RefreshAsync(harness.UserId);
+            Assert.Equal(1, result.ReadyPlansEnsured);
+            var alert = Assert.Single(await harness.DbContext.BillAlerts.ToListAsync());
+            Assert.Contains(raw.Contains('k') ? "1000.00 SEK" : "1000.00 USD", alert.Message);
+        }
+        else
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                harness.RefreshService.RefreshAsync(harness.UserId));
+            Assert.Empty(await harness.DbContext.BillAlerts.ToListAsync());
+        }
+        var historical = Assert.Single(await harness.DbContext.PlanningPaycheckPlanRuns.ToListAsync());
+        Assert.Equal(raw, historical.CurrencyCode);
+        Assert.Equal(1000m, historical.PaycheckAmount);
+    }
+
     private sealed class Harness : IAsyncDisposable
     {
         private Harness(

@@ -136,13 +136,13 @@ public sealed class PaydayPlanCapacityBoundaryTests
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<FullWorthDbContext>();
         await SeedAsync(scope.ServiceProvider, owner, failedPayroll, 501);
-        db.BankTransactions.Add(Payroll(owner, savedPayroll, Posted.AddDays(-1)));
+        db.BankTransactions.Add(Payroll(owner, savedPayroll, Posted.AddDays(1)));
         await db.SaveChangesAsync();
         await new PlanningPaycheckAllocationStore(db, TimeProvider.System)
             .SaveCompletePaycheckPlanAsync(owner, savedPayroll,
-                new PlanningPaycheckPlanRunDraft(Posted.AddDays(-1), 1000m, "USD", 0m, 1000m, 0m)
+                new PlanningPaycheckPlanRunDraft(Posted.AddDays(1), 1000m, "USD", 0m, 1000m, 0m)
                 { Coverage = new(0, 0, 0, 0, 0, 0) }, []);
-        var clock = new FixedClock(new DateTimeOffset(2026, 9, 25, 12, 0, 0, TimeSpan.Zero));
+        var clock = new FixedClock(new DateTimeOffset(2026, 9, 26, 12, 0, 0, TimeSpan.Zero));
         var refresh = new PlanningPaydayAlertRefreshService(
             scope.ServiceProvider.GetRequiredService<PlanningPaydayPlanService>(),
             new PlaidPlanningPostedPayrollFactsGateway(db),
@@ -154,6 +154,51 @@ public sealed class PaydayPlanCapacityBoundaryTests
         Assert.Equal(savedPayroll,
             Assert.Single(await db.PlanningPaycheckPlanRuns.AsNoTracking().ToListAsync()).PayrollTransactionId);
         Assert.Empty(await db.PlanningPaycheckAllocations.AsNoTracking().ToListAsync());
+    }
+
+    [Fact]
+    public async Task CapacityRefusal_DoesNotFlushOrDiscardPendingCallerWork()
+    {
+        await using var factory = new FullWorthApiFactory();
+        using var client = factory.CreateHttpsClient();
+        var login = await TestUserAuthentication.RegisterAndLoginAsync(client);
+        var owner = await TestUserAuthentication.GetUserIdAsync(factory, login.Email);
+        var payroll = Guid.NewGuid();
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<FullWorthDbContext>();
+        await SeedAsync(scope.ServiceProvider, owner, payroll, 501);
+        var retained = await db.BankConnections.SingleAsync();
+        var originalName = retained.InstitutionName;
+        retained.InstitutionName = "Pending caller edit";
+        var added = new BankConnectionEntity { UserId = owner, InstitutionName = "Pending caller addition" };
+        db.Add(added);
+        db.ChangeTracker.DetectChanges();
+        var countBefore = db.ChangeTracker.Entries().Count();
+
+        var result = await scope.ServiceProvider.GetRequiredService<PlanningPaydayPlanService>()
+            .GenerateAsync(owner, payroll, Posted);
+
+        Assert.Equal("BillLimitExceeded", result.Status.ToString());
+        Assert.Empty(result.Items);
+        Assert.Null(result.Coverage);
+        Assert.Equal(0m, result.RecommendedSetAside);
+        Assert.Equal(countBefore, db.ChangeTracker.Entries().Count());
+        Assert.Equal(EntityState.Modified, db.Entry(retained).State);
+        Assert.Equal(originalName,
+            db.Entry(retained).OriginalValues.GetValue<string>(nameof(retained.InstitutionName)));
+        Assert.Equal(EntityState.Added, db.Entry(added).State);
+        await using (var verify = factory.Services.CreateAsyncScope())
+        {
+            var durable = verify.ServiceProvider.GetRequiredService<FullWorthDbContext>();
+            Assert.Equal(originalName,
+                (await durable.BankConnections.AsNoTracking().SingleAsync()).InstitutionName);
+            Assert.False(await durable.BankConnections.AnyAsync(x => x.Id == added.Id));
+            Assert.Empty(await durable.PlanningPaycheckPlanRuns.ToListAsync());
+        }
+        await db.SaveChangesAsync();
+        Assert.Empty(await db.PlanningPaycheckPlanRuns.AsNoTracking().ToListAsync());
+        Assert.Empty(await db.PlanningPaycheckAllocations.AsNoTracking().ToListAsync());
+        Assert.Equal(2, await db.BankConnections.CountAsync());
     }
 
     private static async Task SeedAsync(IServiceProvider services, Guid owner, Guid payroll, int activeCount)

@@ -110,6 +110,13 @@ public sealed class PlanningPaydayAlertRefreshService(
                         break;
 
 
+                    // Capacity is an incomplete generation, not a ready or
+                    // silently skipped paycheck. The existing per-paycheck
+                    // failure isolation still attempts independent saved plans.
+                    case PlanningPaydayPlanStatus.BillLimitExceeded:
+                        throw new InvalidOperationException(
+                            "Payday plan exceeds the supported bill limit.");
+
                     case PlanningPaydayPlanStatus.PayrollNotFound:
                     case PlanningPaydayPlanStatus.PayrollFactUnsupported:
                         skipped++;

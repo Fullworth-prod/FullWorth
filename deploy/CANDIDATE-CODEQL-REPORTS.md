@@ -1,3 +1,17 @@
+## Compiled backend companion and visible diagnostics — November 3, 2026
+
+The source-only C# report on sourceee634ae6be151f80d09fdadfa324b596b166c7b5 completed but retained116 extraction-error diagnostics. A successful report producer did not establish complete C# coverage. The original all-source C# target is retained, including platform/native files and all unfiltered diagnostics.
+
+A separate csharp-backend target now requests manual CodeQL tracing and compiles FullWorth.Tests plus its API/Core/Web/ParserWorker references, test-linked native logic, and the offline AiEvaluation runner. Compiler sharing and incremental/build-server reuse are disabled so the trace observes compilation. This companion does not silently replace source coverage and does not claim complete MAUI platform/native coverage; the source target's limits remain visible. No-build native coverage and physical-device/security acceptance remain independent.
+
+Reports now identify target, language, actual requested build mode and scope, diagnostic error/warning counts and a coverage-review state. Errors are prominent in the job summary and a workflow warning; raw notifications and findings are preserved. Even zero error diagnostics means scope-review-required, never complete-security acceptance. Producer job names explicitly say report, and the five target artifacts cannot overwrite one another. Alert/database uploads and repository settings/permissions remain unchanged.
+
+Source-only #1043 evidence: all four ZIP/source/tree/raw hashes and absence of incremental markers were verified. Actions/Python had zero findings and warning-error diagnostics; JavaScript had two worker-origin findings. C# had one client-consent-condition finding and116 extraction errors, distinct from actual clean compiled application builds. See introducing PR#1043 and issue#291 for precise triage; nothing is suppressed or dismissed.
+
+Current compiled-companion execution is pending. A prepared workflow is not coverage evidence. [GitHub's C# build guidance](https://docs.github.com/en/code-security/reference/code-scanning/codeql/build-options-for-compiled-languages) explains the tracing requirement for UseSharedCompilation=false. [dotnet build options](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-build) define the rebuild and no-dependencies behavior.
+
+---
+
 # Candidate CodeQL reports
 
 The existing GitHub default setup remains the source of GitHub's Code scanning alert queue. The authenticated development view reported that the branch had not been scanned, and the existing default CodeQL workflow offered no manual Run control. This workflow provides an independent exact-candidate static report without switching setup type or adding security-events permissions.

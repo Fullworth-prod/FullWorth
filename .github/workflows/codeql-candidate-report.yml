@@ -1,0 +1,161 @@
+name: FullWorth candidate CodeQL report
+
+on:
+  pull_request:
+    branches: [development]
+    paths:
+      - '**/*.cs'
+      - '**/*.csproj'
+      - '**/*.props'
+      - '**/*.targets'
+      - '**/*.py'
+      - '**/*.js'
+      - '**/*.mjs'
+      - '**/*.ts'
+      - '**/*.tsx'
+      - '**/*.razor'
+      - '**/*.yml'
+      - '**/*.yaml'
+      - 'deploy/CANDIDATE-CODEQL-REPORTS.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: candidate-codeql-report-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  candidate-report:
+    name: Candidate CodeQL (${{ matrix.language }})
+    if: >-
+      github.repository_id == '1344061157' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.id == github.event.repository.id)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [actions, csharp, javascript-typescript, python]
+    steps:
+      - name: Check out exact candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Install C# analysis SDK
+        if: matrix.language == 'csharp'
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Initialize source analysis
+        id: init
+        uses: github/codeql-action/init@1fc58d04a4d4374f921bdac573c3811c240f9c26
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          tools: linked
+          queries: security-extended
+          trap-caching: false
+          dependency-caching: false
+
+      - name: Analyze without code-scanning or database upload
+        id: analyze
+        uses: github/codeql-action/analyze@1fc58d04a4d4374f921bdac573c3811c240f9c26
+        with:
+          output: candidate-codeql-report
+          upload: never
+          upload-database: false
+          wait-for-processing: false
+          category: candidate-report/${{ matrix.language }}
+
+      - name: Record exact source and report integrity
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          REPORT_LANGUAGE: ${{ matrix.language }}
+          CODEQL_VERSION: ${{ steps.init.outputs.codeql-version }}
+          ACTION_REVISION: 1fc58d04a4d4374f921bdac573c3811c240f9c26
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+
+          directory = Path("candidate-codeql-report")
+          files = sorted(directory.glob("*.sarif"))
+          if not files:
+              raise SystemExit("No SARIF report was produced; analysis is not verified.")
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          if head != os.environ["EXPECTED_SHA"]:
+              raise SystemExit("Analyzed source differs from the intended candidate.")
+          tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip()
+          reports = []
+          for file in files:
+              data = json.loads(file.read_text(encoding="utf-8"))
+              runs = data.get("runs", [])
+              if data.get("version") != "2.1.0" or not runs:
+                  raise SystemExit("Missing SARIF analysis runs.")
+              for run in runs:
+                  driver = run.get("tool", {}).get("driver", {})
+                  invocations = run.get("invocations", [])
+                  components = [driver, *run.get("tool", {}).get("extensions", [])]
+                  if driver.get("name") != "CodeQL" or not any(c.get("rules") for c in components):
+                      raise SystemExit("Missing CodeQL query metadata.")
+                  if not invocations or any(i.get("executionSuccessful") is not True for i in invocations):
+                      raise SystemExit("Analysis invocation is incomplete or unsuccessful.")
+                  if not isinstance(run.get("results"), list):
+                      raise SystemExit("Missing explicit analysis result collection.")
+              reports.append({
+                  "file": file.name,
+                  "sha256": hashlib.sha256(file.read_bytes()).hexdigest(),
+                  "results": sum(len(run["results"]) for run in runs),
+                  "tool_execution_notifications": sum(
+                      len(i.get("toolExecutionNotifications", []))
+                      for run in runs for i in run["invocations"]),
+                  "tool_configuration_notifications": sum(
+                      len(i.get("toolConfigurationNotifications", []))
+                      for run in runs for i in run["invocations"])
+              })
+          manifest = {
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "repository_id": os.environ["GITHUB_REPOSITORY_ID"],
+              "source_commit": head,
+              "source_tree": tree,
+              "workflow_commit": os.environ["GITHUB_SHA"],
+              "workflow_ref": os.environ["GITHUB_WORKFLOW_REF"],
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "language": os.environ["REPORT_LANGUAGE"],
+              "codeql_version": os.environ["CODEQL_VERSION"],
+              "codeql_action_revision": os.environ["ACTION_REVISION"],
+              "build_mode": "none",
+              "query_suite": "security-extended",
+              "code_scanning_upload": False,
+              "database_upload": False,
+              "reports": reports,
+              "acceptance": "Source analysis only. Findings and extraction diagnostics require review; this is not complete security, device, provider or release acceptance."
+          }
+          (directory / "manifest.json").write_text(
+              json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write(f"Candidate source: {head}\n\n")
+              summary.write(f"Language: {manifest['language']}; source-only build mode; query suite: security-extended.\n\n")
+              summary.write(f"Raw findings: {sum(r['results'] for r in reports)}. Review raw SARIF and extraction diagnostics before disposition.\n\n")
+              summary.write("This report does not update GitHub code-scanning alerts or establish full security acceptance.\n")
+          PY
+
+      - name: Preserve raw reports and source manifest
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: candidate-codeql-${{ matrix.language }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: candidate-codeql-report/
+          if-no-files-found: error
+          retention-days: 7

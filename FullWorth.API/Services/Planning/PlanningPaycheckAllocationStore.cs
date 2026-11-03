@@ -69,7 +69,7 @@ public sealed class PlanningPaycheckAllocationStore(
     FullWorthDbContext dbContext,
     TimeProvider timeProvider)
 {
-    private const int MaximumBillsPerPaycheck = 500;
+    internal const int MaximumBillsPerPaycheck = 500;
 
     public async Task<IReadOnlyList<PlanningPaycheckPlanRunSnapshot>>
         GetRecentPaycheckPlanRunsAsync(

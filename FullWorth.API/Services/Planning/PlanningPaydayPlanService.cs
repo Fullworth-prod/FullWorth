@@ -10,7 +10,8 @@ public enum PlanningPaydayPlanStatus
     Ready = 1,
     PayrollNotFound = 2,
     PayScheduleRequired = 3,
-    PayrollFactUnsupported = 4
+    PayrollFactUnsupported = 4,
+    BillLimitExceeded = 5
 }
 
 public enum PlanningPaydayPlanSkipReason
@@ -171,6 +172,19 @@ public sealed class PlanningPaydayPlanService(
         {
             return Empty(
                 PlanningPaydayPlanStatus.PayScheduleRequired,
+                payrollTransactionId,
+                postedDate,
+                payroll.Amount,
+                payrollCurrency);
+        }
+
+        // A new plan must cover the complete owned active set. Do not let a
+        // bounded adapter throw, truncate the bills or persist partial coverage.
+        // Saved replay above remains independent of the current active count.
+        if (activeBills.Count > PlanningPaycheckAllocationStore.MaximumBillsPerPaycheck)
+        {
+            return Empty(
+                PlanningPaydayPlanStatus.BillLimitExceeded,
                 payrollTransactionId,
                 postedDate,
                 payroll.Amount,

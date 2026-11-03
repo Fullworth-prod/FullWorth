@@ -395,6 +395,14 @@ public sealed class PlanningController(
                             "This payroll transaction cannot be used for payday planning."
                     }),
 
+            PlanningPaydayPlanStatus.BillLimitExceeded =>
+                UnprocessableEntity(
+                    new
+                    {
+                        message =
+                            "This payday plan exceeds the supported bill limit. No plan was saved."
+                    }),
+
             _ =>
                 throw new InvalidOperationException(
                     "Planning payday plan status is invalid.")

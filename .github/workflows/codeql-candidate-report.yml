@@ -92,6 +92,10 @@ jobs:
           from pathlib import Path
           import subprocess
 
+          # The pinned action omits incrementalMode for full analysis and adds it
+          # only for diff-informed/overlay runs. Require both controls as well.
+          if os.environ.get("CODEQL_ACTION_DIFF_INFORMED_QUERIES") != "false" or os.environ.get("CODEQL_ACTION_OVERLAY_ANALYSIS") != "false":
+              raise SystemExit("Full-source analysis controls are not enabled.")
           directory = Path("candidate-codeql-report")
           files = sorted(directory.glob("*.sarif"))
           if not files:
@@ -116,13 +120,13 @@ jobs:
                       raise SystemExit("Analysis invocation is incomplete or unsuccessful.")
                   if not isinstance(run.get("results"), list):
                       raise SystemExit("Missing explicit analysis result collection.")
-                  if run.get("properties", {}).get("incrementalMode") != "none":
+                  if "incrementalMode" in run.get("properties", {}):
                       raise SystemExit("Incremental/diff-informed analysis cannot certify a full candidate report.")
               reports.append({
                   "file": file.name,
                   "sha256": hashlib.sha256(file.read_bytes()).hexdigest(),
                   "results": sum(len(run["results"]) for run in runs),
-                  "incremental_modes": [run["properties"]["incrementalMode"] for run in runs],
+                  "incremental_modes": [run.get("properties", {}).get("incrementalMode") for run in runs],
                   "tool_execution_notifications": sum(
                       len(i.get("toolExecutionNotifications", []))
                       for run in runs for i in run["invocations"]),
@@ -143,7 +147,9 @@ jobs:
               "codeql_version": os.environ["CODEQL_VERSION"],
               "codeql_action_revision": os.environ["ACTION_REVISION"],
               "build_mode": "none",
-              "analysis_mode": "full-source; incremental modes refused",
+              "analysis_mode": "full-source; incremental properties refused",
+              "diff_informed_queries_control": os.environ["CODEQL_ACTION_DIFF_INFORMED_QUERIES"],
+              "overlay_analysis_control": os.environ["CODEQL_ACTION_OVERLAY_ANALYSIS"],
               "query_suite": "security-extended",
               "code_scanning_upload": False,
               "database_upload": False,

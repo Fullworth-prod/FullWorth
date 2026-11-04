@@ -1,3 +1,15 @@
+## Verified bill-evidence retention checkpoint — November 4, 2026
+
+Verified development runtime candidate: `4bcee5b7a4e23fc09720c32d4e8a905c76c5b122` ([#1047](https://github.com/Fullworth-prod/FullWorth/pull/1047)). Duplicate posting dates that reject cadence now preserve an existing bill's state, timestamps and original transaction links. Existing monthly-candidate currency/account checks and fully covered sparse-history retirement remain; no history repair, reactivation or cancellation claim is inferred.
+
+Final source `c3736869a80043d805675fcf5ae20848a1eea29a`, tested merge `112da0c993702c25f7bc19a01d4cf7571ab33847` and integrated commit share tree `d010d4251baa86f62bdf04317a69ed34447d71f5`. All 15 final-head checks passed, reviews/threads were clear, strict rules/no bypass verified, six files read back exactly and the source branch is retained. Actual CI41892072296 passed **3,719 .NET / 769 Node**, zero failed/skipped/backend+offline warnings/errors. All six relational checks passed, including 38 bank/retention cases (12 new durable cases). Container session/parser/HTTP/no-swap/disposable restore passed; browser/native builds were conditional. [Source and security-report evidence](deploy/BILL-AMBIGUITY-RETENTION-20261104.md) preserves the original ten failures, intermediate one-case policy regression, bounded correction and report limitations.
+
+Master remains `b424cd9c08d612d9eadef57839f0dca8c81f2841`; last independent November 3 served verification remains `9540b2616841e9794d8f8c07616edcd1e339982c`. No promotion/deployment or new host inspection. The master image artifact remains unexpired through November 8 06:40:09 UTC; intended release still needs separately authorized promotion/deployment and fresh signing/consumer/live durability evidence.
+
+The 16-column template retains **19 NOT_RUN cases**. Only the planned candidate is advanced; actual/served/client/time/receipt fields stay blank. Real private/provider/payroll/subscription/statement, physical-device, actual delivery, two-owner/security, protected nonempty database/original-statements/both-keyring clean-host recovery and qualified legal gates remain open. Candidate reports retain C# extraction errors and known contextual warnings; current alert-queue refresh is unavailable because local browser access is disabled. November 3 queue observations remain historical. AI/creator stay off; terms proposed. Earlier dated cards below preserve history.
+
+---
+
 ## Verified payday-capacity correction and release checkpoint — November 3, 2026
 
 Verified development runtime candidate: `c12521834346340abd5b812d9553a16837e2a7f6` ([#1041](https://github.com/Fullworth-prod/FullWorth/pull/1041)). Source `c2ac0b0aaf4ebeb01e674ea6991fb74ffd89b77d`, tested merge `65ee9272b06b99c5c06d6eb95b5c69b8469be1e8` and integrated commit share tree `ae43bfe0fc864c63b9380e49990c02f22b992cc3`. All ten final-head checks passed before the normal protected squash merge; reviews/threads were clear, strict rules/no bypass were verified, and the source branch remains present.

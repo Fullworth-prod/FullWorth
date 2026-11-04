@@ -1,3 +1,13 @@
+## Final repository handoff — November 4, 2026
+
+Preserved development code candidate: `75df865b787394c7a6a83f24497376a1206b9602` ([#1050](https://github.com/Fullworth-prod/FullWorth/pull/1050)). Explicit types on the seven existing external-auth delegates repair compiled CodeQL binding while preserving handlers/routes/security metadata. All nine source-head checks passed: **3,719 .NET / 769 Node**, zero failed/skipped/backend+offline+Android warnings/errors; full Chromium/WebKit rendered/native-auth/virtual-passkey/MFA and container recovery passed. Source/tested/integrated tree `c3ea4a237a7d7fc5e11bf1900851a463f697576f` matches; files read back exactly and branches retained.
+
+Compiled extractor rows/error notifications are now **0/0**, with a regression guard. Source-only/native extraction remains partial (**4,062 rows / 115 summarized notifications**); contextual consent/dedicated-worker findings remain. [Verified reports and exact evidence](deploy/CANDIDATE-CODEQL-REPORTS.md) preserve these limits.
+
+Master remains `b424cd9c08d612d9eadef57839f0dca8c81f2841`; last independently verified November 3 served release remains `9540b2616841e9794d8f8c07616edcd1e339982c`. No promotion/deployment. The existing template retains **19 NOT_RUN cases** with planned candidate only and actual fields blank. Provider/private/device/delivery/two-owner/security/nonempty protected recovery/legal launch gates remain in the existing checklist and HUMAN-TODO; no launch approval is inferred. AI/creator stay off; terms proposed. Earlier dated cards below preserve history.
+
+---
+
 ## Verified bill-evidence retention checkpoint — November 4, 2026
 
 Verified development runtime candidate: `4bcee5b7a4e23fc09720c32d4e8a905c76c5b122` ([#1047](https://github.com/Fullworth-prod/FullWorth/pull/1047)). Duplicate posting dates that reject cadence now preserve an existing bill's state, timestamps and original transaction links. Existing monthly-candidate currency/account checks and fully covered sparse-history retirement remain; no history repair, reactivation or cancellation claim is inferred.

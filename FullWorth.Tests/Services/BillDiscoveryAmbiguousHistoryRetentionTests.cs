@@ -1,6 +1,7 @@
 using FullWorth.API.Data;
 using FullWorth.API.Data.Entities;
 using FullWorth.API.Services.Bills;
+using FullWorth.API.Services.Contracts;
 using FullWorth.API.Services.Plaid;
 using FullWorth.Core.Models;
 using Microsoft.EntityFrameworkCore;
@@ -35,12 +36,14 @@ public sealed class BillDiscoveryAmbiguousHistoryRetentionTests
         if (ambiguity == "currency-conflict") extra.IsoCurrencyCode = "EUR";
         if (ambiguity == "unknown-currency") extra.IsoCurrencyCode = null;
         if (ambiguity == "account-conflict") extra.BankAccountId = Guid.NewGuid();
-        if (ambiguity == "unknown-account") extra.BankAccountId = null;
         db.BankTransactions.Add(extra);
         await db.SaveChangesAsync();
         db.ChangeTracker.Clear();
 
-        var service = Service(db);
+        var service = ambiguity == "unknown-account"
+            ? new RecurringBillDiscoveryPersistenceService(db,
+                new UnknownAccountGateway(db, extra.Id), new BillTransactionAssociationGateway(db))
+            : Service(db);
         var before = await service.GetDiagnosticsAsync(owner);
         Assert.Equal(0, before.DetectedMonthlyCandidates);
         Assert.Equal(1, before.GroupsWithoutSupportedMonthlyCadence);
@@ -169,6 +172,21 @@ public sealed class BillDiscoveryAmbiguousHistoryRetentionTests
             link => link.BankTransactionId == old.Id);
     }
 
+    // The persistence model requires a concrete FK. Unknown source-account
+    // evidence belongs to the nullable gateway contract, not an invalid DB row.
+    private sealed class UnknownAccountGateway(FullWorthDbContext db, Guid transactionId)
+        : IBankTransactionDiscoveryGateway
+    {
+        public async Task<IReadOnlyList<BankTransactionDiscoveryRecord>> GetDiscoveryTransactionsAsync(
+            Guid userId, CancellationToken cancellationToken = default)
+        {
+            var records = await new PlaidBankTransactionDiscoveryGateway(db)
+                .GetDiscoveryTransactionsAsync(userId, cancellationToken);
+            return records.Select(record => record.TransactionId == transactionId
+                ? record with { BankAccountId = null } : record).ToArray();
+        }
+    }
+
     private static FullWorthDbContext CreateDb() => new(
         new DbContextOptionsBuilder<FullWorthDbContext>()
             .UseInMemoryDatabase($"ambiguous-history-retention-{Guid.NewGuid():N}").Options);
@@ -206,7 +224,7 @@ public sealed class BillDiscoveryAmbiguousHistoryRetentionTests
             CreatedAtUtc = OriginalTime, UpdatedAtUtc = OriginalTime
         });
 
-    private static BankTransactionEntity Charge(Guid owner, Guid? account, DateOnly date) => new() {
+    private static BankTransactionEntity Charge(Guid owner, Guid account, DateOnly date) => new() {
         Id = Guid.NewGuid(), UserId = owner, BankAccountId = account,
         PlaidTransactionId = Guid.NewGuid().ToString("N"),
         Name = "Synthetic recurring service", MerchantName = "Synthetic recurring service",

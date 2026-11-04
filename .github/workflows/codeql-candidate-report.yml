@@ -259,6 +259,9 @@ jobs:
               summary.write("This report does not update GitHub code-scanning alerts or establish full security acceptance.\n")
           if diagnostic_errors:
               print(f"::warning::Report produced with {diagnostic_errors} diagnostic errors; extraction coverage is incomplete. Review the raw SARIF.")
+          if os.environ["REPORT_TARGET"] == "csharp-backend" and (
+              diagnostic_errors or manifest["extractor_location_report"]["extractor_error_rows"]):
+              raise SystemExit("Compiled C# extraction is incomplete; preserve and investigate the raw diagnostics.")
           PY
 
       - name: Preserve raw reports and source manifest

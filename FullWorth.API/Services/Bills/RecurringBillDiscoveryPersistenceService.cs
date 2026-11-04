@@ -739,11 +739,11 @@ public sealed class RecurringBillDiscoveryPersistenceService
         // Retention must not depend on cadence succeeding first. Duplicate
         // dates can reject cadence before the per-candidate currency/account
         // gates run; that uncertainty cannot retire an existing obligation
-        // or detach its original evidence.
+        // or detach its original evidence. Keep the existing covered-stale
+        // retirement policy for sparse, distinct-date histories; candidate-level
+        // currency/account conflicts are still protected below.
         var ambiguousEvidenceProviders = candidateTransactionsByProvider
             .Where(pair =>
-                HasAmbiguousCurrencyEvidence(pair.Value) ||
-                HasAmbiguousSourceAccountEvidence(pair.Value) ||
                 pair.Value.Select(transaction => transaction.PostedDate)
                     .Distinct().Count() != pair.Value.Count)
             .Select(pair => pair.Key)

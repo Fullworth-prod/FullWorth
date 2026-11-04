@@ -12,9 +12,13 @@ Intermediate corrected-source attempt `8ae0f3bcdadfb769541f51aed7a4e006d5e762a4`
 
 ## Correction
 
-Retention protection now derives from every eligible normalized merchant group, independently of whether cadence returns a candidate. Mixed normalized currency, mixed known/unknown source accounts and duplicate posting dates protect an existing obligation and its original evidence from automatic deactivation/unlinking. Existing currency/account normalization semantics are shared with the per-candidate guards.
+Duplicate-date retention protection now derives from every eligible normalized merchant group, independently of whether cadence returns a candidate. Duplicate posting dates protect an existing obligation and its original evidence from automatic deactivation/unlinking. Existing monthly-candidate currency/account conflict protection remains, with normalization semantics shared by its guards. Sparse histories with distinct posting dates retain the existing source-account coverage and retirement policy.
 
 New ambiguous candidates remain unpromoted. Existing active/inactive state, timestamps and links remain intact; no extra association or alert is created for the rejected group. Normal rediscovery, supported categories/cadence, foreign-owner exclusion and the existing unambiguous covered-stale retirement policy remain. A later authoritative source correction can restore ordinary rediscovery. No history row is edited by discovery, no financial value/unit is guessed, no FX conversion or cancellation claim is added.
+
+## Existing-policy regression and bounded correction
+
+Source `44a38be8b9bf73c08d37fef8b507588c5be41427` built with zero warnings/errors and passed all six relational checks, but [CI41792208158/backend126448275653](https://github.com/Fullworth-prod/FullWorth/actions/runs/41792208158/job/126448275653) executed **1 failed / 3,718 passed / 0 skipped**. The existing `EveryLinkedAccount_MustMeetMinimumCoverage(60, true)` case expected retirement after complete coverage of both linked accounts; the new broad pre-cadence account guard incorrectly retained that sparse, distinct-date history. Its assertions are preserved. The correction narrows the new pre-cadence veto to the demonstrated duplicate-date condition and retains existing per-candidate currency/account protection. This avoids expanding the retirement policy without supporting recurrence evidence. Final combined execution is required.
 
 ## Targeted verification
 

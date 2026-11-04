@@ -1,3 +1,17 @@
+## Verified worker-message correction and release boundary — November 4, 2026
+
+Verified development runtime candidate: `40aa3c2c0394f36f12cf8b55fab87620b902b06c` ([#1045](https://github.com/Fullworth-prod/FullWorth/pull/1045)). Source `0a8a9a5911e7277677f1e03f7471e267860db40e`, tested merge `9f6111f6951a0ecc248bf80da55faa709d21bd6a` and integrated commit share tree `f96f0e3a3b937f5d7ddfe5c1a7bb3af16cb6d971`. All 10 final-head checks passed under strict rules; reviews/threads were clear, no bypass, source branches retained.
+
+The PWA receiver now requires its exact origin for the existing explicit update command. Actual-source Node VM tests reproduced 9 failures/7 passes before the guard and 16 passes afterward. Final CI passed 3700 .NET/769 Node, zero failed/skipped, with actual Android/container checks. Chromium/WebKit passed 12 new worker scenarios plus the existing regressions: native message metadata, dedicated private-channel separation and 500/501 preservation, exact waiting-worker activation and actual single explicit reload. No timeout, replay or automatic-update policy changed.
+
+[#1044](https://github.com/Fullworth-prod/FullWorth/pull/1044) added compiled C# reports alongside full-source/native diagnostics. Both retain partial extraction (1 compiled error / 116 source errors); no clean security verdict is claimed. Final-source JS retains the dedicated-worker contextual warning; the guarded service-worker warning is absent. C# consent-gate warning remains, with no authentication bypass established. No suppression, alert upload/configuration or access change. See [verified source/report evidence](WORKER-MESSAGE-BOUNDARIES-20261104.md).
+
+Master remains `b424cd9c08d612d9eadef57839f0dca8c81f2841`; last independent November 3 read-only served verification remains `9540b2616841e9794d8f8c07616edcd1e339982c`. No promotion/deployment/new host inspection. The older master artifact expires November 8 06:40:09UTC; intended release needs separately authorized promotion/deployment and fresh exact-master signing/consumer proof.
+
+The 16-column template retains 19 NOT_RUN cases: planned candidate only; actual/served/client/time/receipt fields blank. Physical-device rows now explicitly require an observed intended-worker upgrade/one explicit reload/no surprise pre-consent reload. #1033/#1024 and real provider/private bill/subscription/payroll/statement, physical devices, actual receipt, controlled two-owner/document/security, nonempty protected clean-host database/statements/both-keyring recovery and qualified legal acceptance remain open. AI/creator stay off; terms proposed. Older dated current-state cards below are historical.
+
+---
+
 ## Verified payday-capacity correction and release checkpoint — November 3, 2026
 
 Verified development runtime candidate: `c12521834346340abd5b812d9553a16837e2a7f6` ([#1041](https://github.com/Fullworth-prod/FullWorth/pull/1041)). Source `c2ac0b0aaf4ebeb01e674ea6991fb74ffd89b77d`, tested merge `65ee9272b06b99c5c06d6eb95b5c69b8469be1e8` and integrated commit share tree `ae43bfe0fc864c63b9380e49990c02f22b992cc3`. All ten final-head checks passed before the normal protected squash merge; reviews/threads were clear, strict rules/no bypass were verified, and the source branch remains present.

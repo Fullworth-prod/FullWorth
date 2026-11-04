@@ -1,3 +1,22 @@
+## Verified integration — November 4, 2026
+
+PR #1047 merged normally into development as `4bcee5b7a4e23fc09720c32d4e8a905c76c5b122`. Source `c3736869a80043d805675fcf5ae20848a1eea29a`, tested merge `112da0c993702c25f7bc19a01d4cf7571ab33847` and integration share tree `d010d4251baa86f62bdf04317a69ed34447d71f5`; all six integrated files read back exactly. Source branch `codex/bill-ambiguity-retention-20261104` is retained. Current strict four app15368 checks/PR/thread rules and no bypass were verified; reviews/threads were empty and repository auto-delete remains false.
+
+[Final CI41892072296](https://github.com/Fullworth-prod/FullWorth/actions/runs/41892072296) passed 3,719 .NET and 769 Node tests, zero failed/skipped and zero backend/offline build warnings/errors. All 19 new service cases passed alongside the unchanged source-account coverage-retirement test. All six financial check-runs passed. [Bank lifecycle41892072167](https://github.com/Fullworth-prod/FullWorth/actions/runs/41892072167) executed 38 durable lifecycle/retention cases (12 new) and 12 preflight tests. Actual configured Redis/version/auth boundary and synthetic-owner Web/BFF smoke, parser/HTTP/no-swap and disposable encrypted restore passed. Restore receipt: `6012b461d11499748dd8fbf74a9acfc0abfcbd41611298d5d3e0375ff99e762b`. Native/browser builds were conditional for this backend diff, so earlier scoped device/browser evidence is not relabeled as new execution.
+
+All five [candidate report41892072294](https://github.com/Fullworth-prod/FullWorth/actions/runs/41892072294) jobs completed. Downloaded archive hashes match metadata:
+- compiled C#13354782214: `0957e3a2761868115720ee4e31834943d3677d6faa90144fabce4f9d846c0ce7`;
+- full-source C#13353997220: `749915864cca7beefacd441632fa2aa970b2d04eeaa23a8dd3a37d267f385551`;
+- JavaScript13353667535: `35b3afa6e12f123bca5ceb8f74bf5e9ba97fe93275a5fb76eab8b4fac62ded02`;
+- Actions13353802354: `1ea38af0e9d3c40e36a2e314ed4235426612f111adc9b3e4ccf02f21aea6b68f`;
+- Python13354116771: `8a66c71c39659f255d293a1b9f59558063044947824ca0d5390c5cb4ab657592`.
+
+C# retains partial extraction: one compiled /116 full-source error notifications. Both retain `cs/user-controlled-bypass` at ExternalIdentityController.cs:157 (existing consent-gate context); JS retains `js/missing-origin-check` at transaction-filter-worker.js:55 (dedicated private-channel context). Actions/Python have no query findings. These results preserve prior limitations and are not a clean vulnerability verdict or uploaded/default development scan. No suppression, scan setting, alert disposition or permission changed.
+
+No current private/production incident or release acceptance is inferred. Master b424 and last November3 independently served9540 remain unchanged. The following development history is preserved; pending statements below refer to earlier attempts.
+
+---
+
 # Existing bill ambiguity retention — 2026-11-04
 
 ## Demonstrated source defect

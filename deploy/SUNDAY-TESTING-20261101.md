@@ -8,6 +8,18 @@ Master remains `b424cd9c08d612d9eadef57839f0dca8c81f2841`; last independent Nove
 
 The 16-column template retains **19 NOT_RUN cases**. Only the planned candidate is advanced; actual/served/client/time/receipt fields stay blank. Real private/provider/payroll/subscription/statement, physical-device, actual delivery, two-owner/security, protected nonempty database/original-statements/both-keyring clean-host recovery and qualified legal gates remain open. Candidate reports retain C# extraction errors and known contextual warnings; current alert-queue refresh is unavailable because local browser access is disabled. November 3 queue observations remain historical. AI/creator stay off; terms proposed. Earlier dated cards below preserve history.
 
+
+### Bill-evidence retention acceptance
+
+The source and disposable PostgreSQL results above do not fill a real acceptance row. After existing authorization and exact intended served-release verification, use a controlled approved case with privately known original bill state and evidence; do not alter financial history to create a test result.
+
+- For a duplicate posting date that makes cadence unavailable, compare the existing owned bill and original linked evidence before and after the approved discovery/sync. An active bill stays active; an inactive bill stays inactive. Original link identities and update times stay intact.
+- Include same-unit duplicates and, where the approved case actually contains them, conflicting or unknown currency/account evidence. The rejected extra transaction must not attach, create another obligation or generate a new-bill alert.
+- Confirm independent valid owned obligations still progress and foreign evidence is never read or linked. Preserve the existing fully covered sparse-history retirement policy; retention of uncertain evidence is not proof of recurrence or cancellation.
+- Only after a separately authorized authoritative source correction is observed, verify ordinary rediscovery resumes without repairing or retagging history automatically.
+
+Record only actual result, observed UTC, exact served/client identities and a protected evidence reference in the existing BILL-DUPLICATES row. Its planned candidate is not a served observation. Keep NOT_RUN until that evidence exists; keep private transaction/account facts out of GitHub and chat.
+
 ---
 
 ## Verified worker-message correction and release boundary — November 4, 2026

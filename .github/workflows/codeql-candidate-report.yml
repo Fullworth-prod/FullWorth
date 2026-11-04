@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   candidate-report:
-    name: Candidate CodeQL (${{ matrix.language }})
+    name: Candidate CodeQL report (${{ matrix.target }})
     if: >-
       github.repository_id == '1344061157' &&
       (github.event_name != 'pull_request' ||
@@ -42,7 +42,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [actions, csharp, javascript-typescript, python]
+        include:
+          - target: actions
+            language: actions
+            build_mode: none
+            scope: source workflows
+          - target: csharp-source
+            language: csharp
+            build_mode: none
+            scope: all C# source including native; extraction errors may limit coverage
+          - target: csharp-backend
+            language: csharp
+            build_mode: manual
+            scope: compiled Tests/API/Core/Web/ParserWorker and AiEvaluation; includes test-linked native logic, not complete platform entrypoints
+          - target: javascript-typescript
+            language: javascript-typescript
+            build_mode: none
+            scope: source JavaScript/TypeScript
+          - target: python
+            language: python
+            build_mode: none
+            scope: source Python and recognized inline scripts
     steps:
       - name: Check out exact candidate
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -61,11 +81,18 @@ jobs:
         uses: github/codeql-action/init@1fc58d04a4d4374f921bdac573c3811c240f9c26
         with:
           languages: ${{ matrix.language }}
-          build-mode: none
+          build-mode: ${{ matrix.build_mode }}
           tools: linked
           queries: security-extended
           trap-caching: false
           dependency-caching: false
+
+      - name: Compile backend and shared C# under CodeQL tracing
+        if: matrix.build_mode == 'manual'
+        shell: bash
+        run: |
+          dotnet build FullWorth.Tests/FullWorth.Tests.csproj --configuration Release --no-incremental --disable-build-servers /p:UseSharedCompilation=false
+          dotnet build FullWorth.AiEvaluation/FullWorth.AiEvaluation.csproj --configuration Release --no-dependencies --no-incremental --disable-build-servers /p:UseSharedCompilation=false
 
       - name: Analyze without code-scanning or database upload
         id: analyze
@@ -75,12 +102,15 @@ jobs:
           upload: never
           upload-database: false
           wait-for-processing: false
-          category: candidate-report/${{ matrix.language }}
+          category: candidate-report/${{ matrix.target }}
 
       - name: Record exact source and report integrity
         env:
           EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           REPORT_LANGUAGE: ${{ matrix.language }}
+          REPORT_TARGET: ${{ matrix.target }}
+          REPORT_BUILD_MODE: ${{ matrix.build_mode }}
+          REPORT_SCOPE: ${{ matrix.scope }}
           CODEQL_VERSION: ${{ steps.init.outputs.codeql-version }}
           ACTION_REVISION: 1fc58d04a4d4374f921bdac573c3811c240f9c26
         shell: bash
@@ -122,10 +152,18 @@ jobs:
                       raise SystemExit("Missing explicit analysis result collection.")
                   if "incrementalMode" in run.get("properties", {}):
                       raise SystemExit("Incremental/diff-informed analysis cannot certify a full candidate report.")
+              notifications = [
+                  notification
+                  for run in runs for invocation in run["invocations"]
+                  for key in ("toolExecutionNotifications", "toolConfigurationNotifications")
+                  for notification in invocation.get(key, [])
+              ]
               reports.append({
                   "file": file.name,
                   "sha256": hashlib.sha256(file.read_bytes()).hexdigest(),
                   "results": sum(len(run["results"]) for run in runs),
+                  "diagnostic_errors": sum(n.get("level") == "error" for n in notifications),
+                  "diagnostic_warnings": sum(n.get("level") == "warning" for n in notifications),
                   "incremental_modes": [run.get("properties", {}).get("incrementalMode") for run in runs],
                   "tool_execution_notifications": sum(
                       len(i.get("toolExecutionNotifications", []))
@@ -134,6 +172,8 @@ jobs:
                       len(i.get("toolConfigurationNotifications", []))
                       for run in runs for i in run["invocations"])
               })
+          diagnostic_errors = sum(report["diagnostic_errors"] for report in reports)
+          diagnostic_warnings = sum(report["diagnostic_warnings"] for report in reports)
           manifest = {
               "repository": os.environ["GITHUB_REPOSITORY"],
               "repository_id": os.environ["GITHUB_REPOSITORY_ID"],
@@ -144,9 +184,14 @@ jobs:
               "run_id": os.environ["GITHUB_RUN_ID"],
               "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
               "language": os.environ["REPORT_LANGUAGE"],
+              "target": os.environ["REPORT_TARGET"],
+              "analysis_scope": os.environ["REPORT_SCOPE"],
               "codeql_version": os.environ["CODEQL_VERSION"],
               "codeql_action_revision": os.environ["ACTION_REVISION"],
-              "build_mode": "none",
+              "build_mode": os.environ["REPORT_BUILD_MODE"],
+              "diagnostic_error_count": diagnostic_errors,
+              "diagnostic_warning_count": diagnostic_warnings,
+              "coverage_review_state": "partial-extraction" if diagnostic_errors else "scope-review-required",
               "analysis_mode": "full-source; incremental properties refused",
               "diff_informed_queries_control": os.environ["CODEQL_ACTION_DIFF_INFORMED_QUERIES"],
               "overlay_analysis_control": os.environ["CODEQL_ACTION_OVERLAY_ANALYSIS"],
@@ -160,16 +205,20 @@ jobs:
               json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
               summary.write(f"Candidate source: {head}\n\n")
-              summary.write(f"Language: {manifest['language']}; source-only build mode; query suite: security-extended.\n\n")
+              summary.write(f"Target: {manifest['target']}; language: {manifest['language']}; build mode: {manifest['build_mode']}; query suite: security-extended.\n\n")
+              summary.write(f"Scope: {manifest['analysis_scope']}.\n\n")
+              summary.write(f"Diagnostic errors: {diagnostic_errors}; warnings: {diagnostic_warnings}; coverage state: {manifest['coverage_review_state']}.\n\n")
               summary.write(f"Raw findings: {sum(r['results'] for r in reports)}. Review raw SARIF and extraction diagnostics before disposition.\n\n")
               summary.write("This report does not update GitHub code-scanning alerts or establish full security acceptance.\n")
+          if diagnostic_errors:
+              print(f"::warning::Report produced with {diagnostic_errors} diagnostic errors; extraction coverage is incomplete. Review the raw SARIF.")
           PY
 
       - name: Preserve raw reports and source manifest
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: candidate-codeql-${{ matrix.language }}-${{ github.event.pull_request.head.sha || github.sha }}
+          name: candidate-codeql-${{ matrix.target }}-${{ github.event.pull_request.head.sha || github.sha }}
           path: candidate-codeql-report/
           if-no-files-found: error
           retention-days: 7

@@ -1,3 +1,17 @@
+## Explicit Web route delegate experiment — November 4, 2026
+
+Merged diagnostic capture #1049 is development7e362e3510e441c7fa1d4f96a583e191e0475bc0, with source2e7ea88f90cf3e162ad3179b4c9262382848c24d/tested95fca636c2a27f6c19834ca2b67b62d01782d995/integrated tree22b9b43c67f75aa5f847574f9041dbbd012e92af matching, four files read back exactly and branch retained. All nine checks passed: actual3719.NET/769Node0failed/skipped/backend+offline+Android0warnings/errors, container session/parser/HTTP/disposable restore. Raw five report ZIP/SARIF hashes and both CSV hashes matched their source manifests.
+
+The compiled CSV contains **seven** extractor rows, all Failed to resolve name on the seven MapGet/MapPost registrations in ExternalAuthenticationEndpointMappings.cs (lines143/148/153/160/165/172/177 at this source). Its one SARIF error notification was a summarized diagnostic, not one underlying error. Compiled ZIP13371134666 SHA2561c95d8c9119f227f582eeb27475e84262114c1d2c4bfcaf173e15bfb5112f4c9; CSV SHA256e75f741ed659c096c631067a4ec6235bfd5cf9169bad4605e4194c552a82f5fd.
+
+Source-only CSV retains4069 extractor rows, while its SARIF reports116 summarized diagnostic notifications. Source ZIP13372651290 SHA256f81be48879a6fdeb9cd62619445820c266b29eab48fbcf27aefbb590325d95cf; CSV SHA25608852cc5780c0355751c58dd65eefacda12fcad4e6e3150bd76906cdd746d8d0. Native/source-only coverage remains partial. These different counts are retained explicitly; no errors were suppressed.
+
+The proposed source change explicitly types the existing seven delegates. Handler bodies, route strings, argument order and authorization/rate metadata are unchanged. Actual compiled extraction must demonstrate whether this resolves the binding errors; it is currently a hypothesis, not a verified fix. The compiled target will now fail after preserving its manifest/artifact if either raw extractor rows or diagnostic error notifications remain. The independent source-only target retains its disclosed errors and full scope. Query findings remain unfiltered; zero extraction errors would not establish complete native/device/provider/security acceptance.
+
+No master promotion/deployment, new credentials/grants/settings, provider access or private data is used.
+
+---
+
 ## Locate remaining extractor errors — November 4, 2026
 
 The actual compiled report on c3736869 retains one extractor error: Failed to resolve name in ExternalAuthenticationEndpointMappings.cs. The standard CodeQL diagnostic query selects only a message and severity, discarding its available location. No source vulnerability or runtime failure is inferred from that tool diagnostic.

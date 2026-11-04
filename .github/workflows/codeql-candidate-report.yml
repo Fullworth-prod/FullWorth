@@ -17,6 +17,7 @@ on:
       - '**/*.yml'
       - '**/*.yaml'
       - 'deploy/CANDIDATE-CODEQL-REPORTS.md'
+      - '.github/codeql/**'
   workflow_dispatch:
 
 permissions:
@@ -103,6 +104,37 @@ jobs:
           upload-database: false
           wait-for-processing: false
           category: candidate-report/${{ matrix.target }}
+
+      - name: Retain C# extractor locations
+        if: matrix.language == 'csharp'
+        env:
+          CODEQL_BINARY: ${{ steps.init.outputs.codeql-path }}
+          CODEQL_DATABASES: ${{ steps.analyze.outputs.db-locations }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+
+          codeql = Path(os.environ["CODEQL_BINARY"]).resolve(strict=True)
+          database = json.loads(os.environ["CODEQL_DATABASES"])["csharp"]
+          query = Path(".github/codeql/extraction-locations/ExtractorLocations.ql")
+          output = Path("candidate-codeql-report")
+          bqrs = output / "csharp-extraction-locations.bqrs"
+          subprocess.run([
+              str(codeql), "query", "run", "--database", database,
+              "--search-path", str(codeql.parent / "qlpacks"),
+              "--output", str(bqrs), str(query)
+          ], check=True)
+          subprocess.run([
+              str(codeql), "bqrs", "decode", "--format=csv",
+              "--output", str(output / "csharp-extraction-locations.csv"), str(bqrs)
+          ], check=True)
+          # Retain only the decoded diagnostics, never the database or BQRS.
+          bqrs.unlink()
+          PY
 
       - name: Record exact source and report integrity
         env:
@@ -198,9 +230,24 @@ jobs:
               "query_suite": "security-extended",
               "code_scanning_upload": False,
               "database_upload": False,
+              "extractor_location_report": None,
               "reports": reports,
               "acceptance": "Source analysis only. Findings and extraction diagnostics require review; this is not complete security, device, provider or release acceptance."
           }
+          if os.environ["REPORT_LANGUAGE"] == "csharp":
+              import csv
+              diagnostic_file = directory / "csharp-extraction-locations.csv"
+              with diagnostic_file.open(encoding="utf-8", newline="") as source:
+                  reader = csv.DictReader(source)
+                  if reader.fieldnames != ["path", "start_line", "start_column", "origin", "message"]:
+                      raise SystemExit("Missing or malformed C# extractor location report.")
+                  locations = list(reader)
+              manifest["extractor_location_report"] = {
+                  "file": diagnostic_file.name,
+                  "sha256": hashlib.sha256(diagnostic_file.read_bytes()).hexdigest(),
+                  "extractor_error_rows": len(locations),
+                  "scope": "All ExtractorError rows; standard SARIF and its diagnostic count remain unfiltered."
+              }
           (directory / "manifest.json").write_text(
               json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:

@@ -103,6 +103,7 @@ try {
                     const observed = [];
                     await new Promise(resolve => {
                         const receive = event => {
+                            if (event.origin !== location.origin && event.origin !== outsiderOrigin) return;
                             if (!event.data?.fixtureWindow) return;
                             observed.push(event.origin);
                             if (observed.includes(location.origin) && observed.includes(outsiderOrigin)) {

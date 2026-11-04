@@ -8,6 +8,8 @@ Four already linked monthly owned charges span January through April. An extra s
 
 Initial tests-only source `c8646f595c09b79804afd5a65568dc5f4323b3e7` did not execute: CI41790740434/job126443270634 had two fixture compile errors and one warning from incorrectly treating the persisted account FK as nullable. The corrected baseline keeps persisted FKs concrete and models unknown account evidence through the actual nullable discovery-gateway contract. The compile-failed run is not application-failure evidence.
 
+Intermediate corrected-source attempt `8ae0f3bcdadfb769541f51aed7a4e006d5e762a4` actually passed the twelve new PostgreSQL cases and all26 original lifecycle cases in CI41791828826/job126446733117. Follow-up builds then found a missing explicit source link: the main test project excludes the PostgreSQL executable directory and selectively includes reusable scenario files. The new helper was not yet linked there. That produced CS0103 in the focused/main test builds; the run is not final combined success. The correction adds only the reusable helper to the existing explicit includes, preserving generated-source exclusions and fixture safety tests.
+
 ## Correction
 
 Retention protection now derives from every eligible normalized merchant group, independently of whether cadence returns a candidate. Mixed normalized currency, mixed known/unknown source accounts and duplicate posting dates protect an existing obligation and its original evidence from automatic deactivation/unlinking. Existing currency/account normalization semantics are shared with the per-candidate guards.

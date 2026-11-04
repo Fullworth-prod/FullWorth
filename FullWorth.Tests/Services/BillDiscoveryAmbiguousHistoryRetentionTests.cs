@@ -172,6 +172,72 @@ public sealed class BillDiscoveryAmbiguousHistoryRetentionTests
             link => link.BankTransactionId == old.Id);
     }
 
+    [Fact]
+    public async Task ResolvedDuplicate_ResumesNormalRediscoveryWithoutAnotherAlert()
+    {
+        await using var db = CreateDb();
+        var owner = Guid.NewGuid();
+        var account = Guid.NewGuid();
+        var stream = AddStream(db, owner, true);
+        AddLinkedHistory(db, owner, account, stream.Id);
+        var duplicate = Charge(owner, account, new DateOnly(2026, 4, 5));
+        db.BankTransactions.Add(duplicate);
+        await db.SaveChangesAsync();
+
+        var service = Service(db);
+        var ambiguous = await service.DiscoverAndSaveAsync(owner);
+        Assert.Equal(0, ambiguous.TransactionsUnlinked);
+        Assert.True(stream.IsActive);
+
+        // Simulate an authoritative source removal; discovery never performs
+        // this history correction itself.
+        duplicate.IsRemoved = true;
+        await db.SaveChangesAsync();
+        var recovered = await service.DiscoverAndSaveAsync(owner);
+        Assert.Equal(1, recovered.BillsDiscovered);
+        Assert.Equal(0, recovered.BillStreamsCreated);
+        Assert.Equal(0, recovered.TransactionsLinked);
+        Assert.Equal(0, recovered.TransactionsUnlinked);
+        Assert.Equal(4, await db.BillTransactionAssociations.CountAsync());
+        Assert.True(stream.IsActive);
+        Assert.Equal(OriginalTime, stream.UpdatedAtUtc);
+        Assert.Empty(await db.BillAlerts.ToListAsync());
+    }
+
+    [Fact]
+    public async Task AmbiguousProvider_DoesNotBlockIndependentValidDiscovery()
+    {
+        await using var db = CreateDb();
+        var owner = Guid.NewGuid();
+        var account = Guid.NewGuid();
+        var existing = AddStream(db, owner, true);
+        var originalIds = AddLinkedHistory(db, owner, account, existing.Id);
+        db.BankTransactions.Add(Charge(owner, account, new DateOnly(2026, 4, 5)));
+        for (var month = 1; month <= 4; month++)
+        {
+            var valid = Charge(owner, account, new DateOnly(2026, month, 10));
+            valid.Name = "Synthetic independent utility";
+            valid.MerchantName = valid.Name;
+            db.BankTransactions.Add(valid);
+        }
+        await db.SaveChangesAsync();
+
+        var result = await Service(db).DiscoverAndSaveAsync(owner);
+        Assert.Equal(1, result.BillsDiscovered);
+        Assert.Equal(1, result.BillStreamsCreated);
+        Assert.Equal(0, result.BillStreamsDeactivated);
+        Assert.Equal(0, result.TransactionsUnlinked);
+        Assert.Equal(4, result.TransactionsLinked);
+        Assert.Equal(1, result.NewBillAlertsCreated);
+        Assert.True(existing.IsActive);
+        Assert.Equal(OriginalTime, existing.UpdatedAtUtc);
+        var links = await db.BillTransactionAssociations
+            .Where(link => link.BillStreamId == existing.Id).ToListAsync();
+        Assert.Equal(originalIds.Order(), links.Select(link => link.BankTransactionId).Order());
+        var independent = await db.BillStreams.SingleAsync(stream => stream.Id != existing.Id);
+        Assert.Equal(independent.Id, Assert.Single(await db.BillAlerts.ToListAsync()).BillStreamId);
+    }
+
     // The persistence model requires a concrete FK. Unknown source-account
     // evidence belongs to the nullable gateway contract, not an invalid DB row.
     private sealed class UnknownAccountGateway(FullWorthDbContext db, Guid transactionId)

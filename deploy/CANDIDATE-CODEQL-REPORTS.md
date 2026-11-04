@@ -1,3 +1,13 @@
+## Locate remaining extractor errors — November 4, 2026
+
+The actual compiled report on c3736869 retains one extractor error: Failed to resolve name in ExternalAuthenticationEndpointMappings.cs. The standard CodeQL diagnostic query selects only a message and severity, discarding its available location. No source vulnerability or runtime failure is inferred from that tool diagnostic.
+
+Both C# targets now run a separate table query over the same analyzed database to preserve every ExtractorError's file, line, column, origin and message as CSV. The existing raw SARIF, full-source controls, query suite, compiler trace, scope, diagnostic count and partial-extraction status remain unchanged. The manifest hashes the additional CSV. Database/BQRS uploads remain disabled; no permission, scan setting or authentication code changes. An actual report with the retained error's location is required before deciding on any source correction.
+
+Uses the pinned bundle's library search path and the documented [query run](https://docs.github.com/en/code-security/reference/code-scanning/codeql/codeql-cli-manual/query-run) and [BQRS decode](https://docs.github.com/en/code-security/reference/code-scanning/codeql/codeql-cli-manual/bqrs-decode) commands. This is diagnostic evidence collection; execution and review remain pending.
+
+---
+
 ## Compiled backend companion and visible diagnostics — November 3, 2026
 
 The source-only C# report on sourceee634ae6be151f80d09fdadfa324b596b166c7b5 completed but retained116 extraction-error diagnostics. A successful report producer did not establish complete C# coverage. The original all-source C# target is retained, including platform/native files and all unfiltered diagnostics.

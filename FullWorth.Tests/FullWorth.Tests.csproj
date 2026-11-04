@@ -72,5 +72,6 @@
     <Compile Remove="RelationalHostedRecovery/**" />
     <Compile Remove="RelationalSubscriptionVerification/**" />
     <Compile Include="RelationalBankLifecycle/BankLifecycleRaceChecks.cs" />
+    <Compile Include="RelationalBankLifecycle/BillAmbiguousHistoryChecks.cs" />
   </ItemGroup>
 </Project>

@@ -1,3 +1,22 @@
+## Verified final binding correction — November 4, 2026
+
+[#1049](https://github.com/Fullworth-prod/FullWorth/pull/1049) integrated diagnostic capture as7e362e3510e441c7fa1d4f96a583e191e0475bc0. [#1050](https://github.com/Fullworth-prod/FullWorth/pull/1050) then integrated the demonstrated correction as `75df865b787394c7a6a83f24497376a1206b9602`. Source `aff578a6ddd479badc0f311e398998947da5a2c7`, tested merge `8b481791036075781a79be1af5377109c1331ca4` and integration share tree `c3ea4a237a7d7fc5e11bf1900851a463f697576f`. All three integrated files read back exactly and both source branches are retained.
+
+The seven original compiled unresolved-name rows are gone after explicit delegate typing. Handler bodies, paths, argument order and authorization/rate metadata remain unchanged. Compiled rows/diagnostic notifications: **7/1 before; 0/0 after**. Source-only rows/notifications: **4,069/116 before; 4,062/115 after**, preserving the remaining native/source coverage limitation. The new compiled zero-error guard passed. Existing `cs/user-controlled-bypass` consent-gate finding at ExternalIdentityController.cs:157 and `js/missing-origin-check` dedicated-worker finding at transaction-filter-worker.js:55 remain visible; no suppression, dismissal or complete-security claim.
+
+All nine final-head checks passed under current strict rules/no bypass and clear reviews/threads: [CI41932749130](https://github.com/Fullworth-prod/FullWorth/actions/runs/41932749130), dependency41932748907, [reports41932749037](https://github.com/Fullworth-prod/FullWorth/actions/runs/41932749037). Actual3,719.NET/769Node zero failed/skipped/backend+offline+Android warnings/errors. Full Chromium/WebKit EN/ES/all-three-theme/responsive/ARIA/privacy/subscription/native-auth startup, password-once/virtual-passkey/MFA/removal, session/parser/HTTP/no-swap and disposable encrypted restore passed. Restore receipt `e66edaa7f527e9b4d9cfcbfce8c1da74b3621cdb91f3c7d1bd9b251d297aab59` is CI evidence, not real protected recovery. No new APK/IPA packaging or physical-device/provider acceptance is claimed.
+
+All five downloaded archive/raw SARIF hashes, source/tree/run manifests and both CSV hashes match:
+- compiled C#13371259386 ZIP `81f4a5ae36d7079a1a9c8b8f8ddcdd9d991cae5919fec2daa45b26372c3ff0c6`; zero-row CSV `c21007310741e348ef112120e87801d2fce12b60c5f11986417feec5e1eccead`;
+- source C#13372318195 ZIP `529da3c970bf2a01b7911d3d0a0cd075f5705bb5cc6740a47c881cb6944213a9`; CSV `79893cfb66e3ebc4ed8a4c454ddfd1d09196c0e1e01b9a6f2bee6b70bcc5ebff`;
+- JavaScript13372930828 ZIP `55d8d6dccb2f35cfebdcb28f4c1e6f7fc38055d5d1396a6f31bcb20e68d3e7cb`;
+- Actions13372342687 ZIP `64fc84b741867b9f9914c793d5f879f405dd91f72559942e5cc4f9fd899dc2f3`;
+- Python13371459475 ZIP `722f768a867a4162728486156abd8c5d28ea4d270e351a6c8125c7779cf4a272`.
+
+This closes the bounded repository analysis correction. Default alert queues, native/source-only completeness and real same-release security/provider/device/recovery/legal acceptance are separate; nineteen real cases remain NOT_RUN. Masterb424 and last independently November3 served9540 remain unchanged. No promotion/deployment, new grant/credential/scan setting, private export or branch deletion occurred. Earlier pending/experiment statements below are dated development history.
+
+---
+
 ## Explicit Web route delegate experiment — November 4, 2026
 
 Merged diagnostic capture #1049 is development7e362e3510e441c7fa1d4f96a583e191e0475bc0, with source2e7ea88f90cf3e162ad3179b4c9262382848c24d/tested95fca636c2a27f6c19834ca2b67b62d01782d995/integrated tree22b9b43c67f75aa5f847574f9041dbbd012e92af matching, four files read back exactly and branch retained. All nine checks passed: actual3719.NET/769Node0failed/skipped/backend+offline+Android0warnings/errors, container session/parser/HTTP/disposable restore. Raw five report ZIP/SARIF hashes and both CSV hashes matched their source manifests.

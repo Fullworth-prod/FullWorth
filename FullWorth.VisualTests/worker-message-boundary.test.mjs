@@ -138,36 +138,46 @@ try {
 
                 version = 2;
                 await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update(); });
-                // Retain the exact waiting-worker object returned by the poll.
-                // Looking up registration.waiting in a second async task can race
-                // a worker transition, incorrectly turning an assertion into a TypeError.
-                const waitingForProbe = await page.waitForFunction(async () =>
-                    (await navigator.serviceWorker.getRegistration())?.waiting ?? null);
-                await page.evaluate(waiting => {
-                    window.oldController = navigator.serviceWorker.controller;
-                    if (!waiting || waiting.state !== "installed") {
-                        throw new Error("Exact waiting worker is not installed: " + (waiting?.state ?? "missing"));
+                // Observe and message the worker atomically in the page's main world.
+                // A ServiceWorker JSHandle returned from Playwright's polling world
+                // cannot safely be passed back as a page.evaluate argument.
+                await page.evaluate(async () => {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    const deadline = Date.now() + 10000;
+                    while (!registration?.waiting) {
+                        if (Date.now() >= deadline) {
+                            throw new Error("Expected installed waiting worker, but none appeared.");
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 20));
                     }
+                    const waiting = registration.waiting;
+                    if (waiting.state !== "installed") {
+                        throw new Error("Waiting worker is not installed: " + waiting.state);
+                    }
+                    window.fixtureWaitingWorker = waiting;
+                    window.oldController = navigator.serviceWorker.controller;
                     waiting.postMessage({ type: "UNKNOWN", fixtureProbe: "unknown" });
-                }, waitingForProbe);
-                await waitingForProbe.dispose();
+                });
                 await page.waitForFunction(() => window.swObserved.some(m => m.probe === "unknown"));
                 const ignored = await page.evaluate(async () => ({
                     waiting: (await navigator.serviceWorker.getRegistration()).waiting?.state,
                     sameController: navigator.serviceWorker.controller === window.oldController,
+                    sameWaitingWorker: (await navigator.serviceWorker.getRegistration()).waiting === window.fixtureWaitingWorker,
                     metadata: window.swObserved.find(m => m.probe === "unknown")
                 }));
                 assert.equal(ignored.waiting, "installed");
                 assert.equal(ignored.sameController, true);
+                assert.equal(ignored.sameWaitingWorker, true);
                 assert.equal(ignored.metadata.origin, origin);
                 assert.equal(ignored.metadata.sourceType, "window");
                 passed(engine, "native same-origin WindowClient metadata and unknown-command refusal", { metadata: ignored.metadata });
 
-                const waitingForActivation = await page.waitForFunction(async () =>
-                    (await navigator.serviceWorker.getRegistration())?.waiting ?? null);
-                const activated = await page.evaluate(async waiting => {
-                    if (!waiting || waiting.state !== "installed") {
-                        throw new Error("Exact waiting worker is not installed: " + (waiting?.state ?? "missing"));
+                const activated = await page.evaluate(async () => {
+                    const waiting = window.fixtureWaitingWorker;
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    if (!waiting || registration?.waiting !== waiting ||
+                        waiting.state !== "installed") {
+                        throw new Error("The exact waiting worker did not remain installed.");
                     }
                     return await new Promise(resolve => {
                         const changed = () => {
@@ -178,8 +188,7 @@ try {
                         navigator.serviceWorker.addEventListener("controllerchange", changed);
                         waiting.postMessage({ type: "SKIP_WAITING", fixtureProbe: "activate" });
                     });
-                }, waitingForActivation);
-                await waitingForActivation.dispose();
+                });
                 await page.waitForFunction(() => window.swObserved.some(m => m.probe === "activate"));
                 assert.equal(activated.exactWaitingController, true);
                 const activationMetadata = await page.evaluate(() => window.swObserved.find(m => m.probe === "activate"));

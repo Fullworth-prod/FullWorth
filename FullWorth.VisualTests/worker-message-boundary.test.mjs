@@ -138,26 +138,47 @@ try {
 
                 version = 2;
                 await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update(); });
-                await page.waitForFunction(async () => !!(await navigator.serviceWorker.getRegistration())?.waiting);
+                // Observe and message the worker atomically in the page's main world.
+                // A ServiceWorker JSHandle returned from Playwright's polling world
+                // cannot safely be passed back as a page.evaluate argument.
                 await page.evaluate(async () => {
                     const registration = await navigator.serviceWorker.getRegistration();
+                    const deadline = Date.now() + 10000;
+                    while (!registration?.waiting) {
+                        if (Date.now() >= deadline) {
+                            throw new Error("Expected installed waiting worker, but none appeared.");
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 20));
+                    }
+                    const waiting = registration.waiting;
+                    if (waiting.state !== "installed") {
+                        throw new Error("Waiting worker is not installed: " + waiting.state);
+                    }
+                    window.fixtureWaitingWorker = waiting;
                     window.oldController = navigator.serviceWorker.controller;
-                    registration.waiting.postMessage({ type: "UNKNOWN", fixtureProbe: "unknown" });
+                    waiting.postMessage({ type: "UNKNOWN", fixtureProbe: "unknown" });
                 });
                 await page.waitForFunction(() => window.swObserved.some(m => m.probe === "unknown"));
                 const ignored = await page.evaluate(async () => ({
                     waiting: (await navigator.serviceWorker.getRegistration()).waiting?.state,
                     sameController: navigator.serviceWorker.controller === window.oldController,
+                    sameWaitingWorker: (await navigator.serviceWorker.getRegistration()).waiting === window.fixtureWaitingWorker,
                     metadata: window.swObserved.find(m => m.probe === "unknown")
                 }));
                 assert.equal(ignored.waiting, "installed");
                 assert.equal(ignored.sameController, true);
+                assert.equal(ignored.sameWaitingWorker, true);
                 assert.equal(ignored.metadata.origin, origin);
                 assert.equal(ignored.metadata.sourceType, "window");
                 passed(engine, "native same-origin WindowClient metadata and unknown-command refusal", { metadata: ignored.metadata });
 
                 const activated = await page.evaluate(async () => {
-                    const waiting = (await navigator.serviceWorker.getRegistration()).waiting;
+                    const waiting = window.fixtureWaitingWorker;
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    if (!waiting || registration?.waiting !== waiting ||
+                        waiting.state !== "installed") {
+                        throw new Error("The exact waiting worker did not remain installed.");
+                    }
                     return await new Promise(resolve => {
                         const changed = () => {
                             if (navigator.serviceWorker.controller !== waiting) return;
@@ -184,7 +205,36 @@ try {
                     page.locator("#apply").click()
                 ]);
                 await page.waitForLoadState("load");
-                await page.waitForFunction(() => navigator.serviceWorker.controller?.state === "activated");
+                try {
+                    await page.waitForFunction(() => navigator.serviceWorker.controller?.state === "activated");
+                } catch (error) {
+                    // This is an acceptance assertion, not a timeout workaround.
+                    // Capture the browser's post-reload worker state before teardown,
+                    // preserving the original failure when control is not established.
+                    const workerState = await page.evaluate(async () => {
+                        const registration = await navigator.serviceWorker.getRegistration();
+                        return {
+                            location: location.href,
+                            readyState: document.readyState,
+                            controller: navigator.serviceWorker.controller?.state ?? null,
+                            active: registration?.active?.state ?? null,
+                            waiting: registration?.waiting?.state ?? null,
+                            installing: registration?.installing?.state ?? null,
+                            scriptLoaded: Boolean(window.FullWorthPwa)
+                        };
+                    });
+                    records.push({
+                        engine,
+                        name: "actual PWA caller preserves explicit single reload after guarded activation",
+                        outcome: "failed",
+                        phase: "post-reload-controller",
+                        documentLoads,
+                        workerState
+                    });
+                    throw new Error(
+                        "Post-reload controller did not activate: " +
+                        JSON.stringify({ documentLoads, workerState }), { cause: error });
+                }
                 assert.equal(documentLoads, 2, "The actual explicit PWA update reloads exactly once.");
                 passed(engine, "actual PWA caller preserves explicit single reload after guarded activation");
             } finally { await context.close(); }

@@ -33,14 +33,18 @@ async function harness({ waiting = true, workerThrows = false, unsupported = fal
     const callbacks = [];
     const messages = [];
     let nextTimer = 0, reloads = 0, updates = 0;
-    const worker = { postMessage(message) {
+    const worker = new Events();
+    worker.state = "installed";
+    worker.postMessage = message => {
         messages.push(message.type);
         if (workerThrows) throw new Error("synthetic redundant worker");
         if (synchronousChange) {
             serviceWorker.controller = worker;
             void serviceWorker.dispatch("controllerchange");
+            worker.state = "activated";
+            void worker.dispatch("statechange");
         }
-    }};
+    };
     registration.waiting = waiting ? worker : null;
     registration.update = async () => { updates++; };
     serviceWorker.controller = {};
@@ -66,7 +70,14 @@ async function harness({ waiting = true, workerThrows = false, unsupported = fal
     return {
         api: window.FullWorthPwa, registration, serviceWorker, worker, timers, callbacks, messages,
         reloads: () => reloads, updates: () => updates,
-        activate(target = worker) { serviceWorker.controller = target; return serviceWorker.dispatch("controllerchange"); },
+        async activate(target = worker) {
+            serviceWorker.controller = target;
+            await serviceWorker.dispatch("controllerchange");
+            if (target instanceof Events) {
+                target.state = "activated";
+                await target.dispatch("statechange");
+            }
+        },
         expire() {
             for (const [id, callback] of [...timers]) {
                 timers.delete(id); callback();
@@ -78,6 +89,8 @@ function clean(h) {
     assert.equal(h.timers.size, 0, "A settled attempt must not retain its timeout.");
     assert.equal(h.serviceWorker.count("controllerchange"), 0,
         "A settled attempt must not retain a reload listener.");
+    assert.equal(h.worker.count("statechange"), 0,
+        "A settled attempt must not retain an activation listener.");
 }
 test("explicit update reloads once and releases the listener/timer", async () => {
     const h = await harness();
@@ -182,6 +195,7 @@ test("explicit retry reloads the exact requested worker if it activated after ti
     assert.equal(await first, "timeout");
     h.registration.waiting = null;
     h.serviceWorker.controller = h.worker;
+    h.worker.state = "activated";
     await h.serviceWorker.dispatch("controllerchange");
     assert.equal(h.reloads(), 0, "Late activation must not reload without a fresh user action.");
     assert.equal(await h.api.applyUpdate(), "reloaded");
@@ -218,13 +232,18 @@ test("a newer waiting worker takes priority over reloading a previously requeste
     h.expire();
     assert.equal(await first, "timeout");
     h.serviceWorker.controller = h.worker;
-    const next = { postMessage(message) { h.messages.push("new:" + message.type); } };
+    const next = new Events();
+    next.state = "installed";
+    next.postMessage = message => { h.messages.push("new:" + message.type); };
     h.registration.waiting = next;
     const pending = h.api.applyUpdate();
     assert.equal(h.reloads(), 0);
     assert.deepEqual(h.messages, ["SKIP_WAITING", "new:SKIP_WAITING"]);
     h.serviceWorker.controller = next;
     await h.serviceWorker.dispatch("controllerchange");
+    assert.equal(h.reloads(), 0, "Changing controller before activation must not reload.");
+    next.state = "activated";
+    await next.dispatch("statechange");
     assert.equal(await pending, "reloaded");
     assert.equal(h.reloads(), 1);
     clean(h);
@@ -238,6 +257,68 @@ test("an unrelated controller change cannot confirm the requested waiting worker
     assert.equal(h.serviceWorker.count("controllerchange"), 1);
     await h.activate(h.worker);
     assert.equal(await pending, "reloaded");
+    assert.equal(h.reloads(), 1);
+    clean(h);
+});
+
+test("controllerchange during activating waits for the exact worker's activated state", async () => {
+    const h = await harness();
+    const pending = h.api.applyUpdate();
+    h.worker.state = "activating";
+    h.serviceWorker.controller = h.worker;
+    await h.serviceWorker.dispatch("controllerchange");
+    assert.equal(h.reloads(), 0, "Activating must not trigger a premature navigation.");
+    assert.equal(h.worker.count("statechange"), 1);
+    h.worker.state = "activated";
+    await h.worker.dispatch("statechange");
+    assert.equal(await pending, "reloaded");
+    assert.equal(h.reloads(), 1);
+    clean(h);
+});
+
+test("activated state preceding exact controllerchange also reloads once", async () => {
+    const h = await harness();
+    const pending = h.api.applyUpdate();
+    h.worker.state = "activated";
+    await h.worker.dispatch("statechange");
+    assert.equal(h.reloads(), 0, "State alone must not authorize a reload.");
+    h.serviceWorker.controller = h.worker;
+    await h.serviceWorker.dispatch("controllerchange");
+    assert.equal(await pending, "reloaded");
+    assert.equal(h.reloads(), 1);
+    clean(h);
+});
+
+test("activating worker timeout cannot reload later without another explicit action", async () => {
+    const h = await harness();
+    const pending = h.api.applyUpdate();
+    h.worker.state = "activating";
+    h.serviceWorker.controller = h.worker;
+    await h.serviceWorker.dispatch("controllerchange");
+    h.expire();
+    assert.equal(await pending, "timeout");
+    h.worker.state = "activated";
+    await h.worker.dispatch("statechange");
+    await h.serviceWorker.dispatch("controllerchange");
+    assert.equal(h.reloads(), 0);
+    clean(h);
+});
+
+test("fresh retry of timed-out worker waits for activation before reload", async () => {
+    const h = await harness();
+    const pending = h.api.applyUpdate();
+    h.expire();
+    assert.equal(await pending, "timeout");
+    h.registration.waiting = null;
+    h.worker.state = "activating";
+    h.serviceWorker.controller = h.worker;
+    await h.serviceWorker.dispatch("controllerchange");
+    assert.equal(await h.api.applyUpdate(), "unavailable");
+    assert.equal(h.reloads(), 0);
+    h.worker.state = "activated";
+    await h.worker.dispatch("statechange");
+    assert.equal(h.reloads(), 0, "Activation alone cannot replay a stale update.");
+    assert.equal(await h.api.applyUpdate(), "reloaded");
     assert.equal(h.reloads(), 1);
     clean(h);
 });

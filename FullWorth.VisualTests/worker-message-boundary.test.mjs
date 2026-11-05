@@ -44,6 +44,12 @@ await new Promise(resolve => outsider.listen(0, "127.0.0.1", resolve));
 const outsiderOrigin = "http://127.0.0.1:" + outsider.address().port;
 const engines = (process.env.FULLWORTH_TEST_BROWSERS ?? "chromium,webkit").split(",");
 assert.ok(engines.length > 0 && engines.every(name => ["chromium", "webkit"].includes(name)));
+function assertWorkerInstalled(worker) {
+    if (!worker || worker.state !== "installed") {
+        throw new Error("The exact waiting worker was not installed before the explicit command; state=" +
+            (worker?.state ?? "missing"));
+    }
+}
 function passed(engine, name, evidence = {}) {
     records.push({ engine, name, outcome: "passed", ...evidence });
     console.log(engine + ": " + name + " passed");
@@ -138,12 +144,17 @@ try {
 
                 version = 2;
                 await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update(); });
-                await page.waitForFunction(async () => !!(await navigator.serviceWorker.getRegistration())?.waiting);
-                await page.evaluate(async () => {
-                    const registration = await navigator.serviceWorker.getRegistration();
+                // Retain the exact waiting-worker object returned by the poll.
+                // Looking up registration.waiting in a second async task can race
+                // a worker transition, incorrectly turning an assertion into a TypeError.
+                const waitingForProbe = await page.waitForFunction(async () =>
+                    (await navigator.serviceWorker.getRegistration())?.waiting ?? null);
+                await page.evaluate(waiting => {
                     window.oldController = navigator.serviceWorker.controller;
-                    registration.waiting.postMessage({ type: "UNKNOWN", fixtureProbe: "unknown" });
-                });
+                    assertWorkerInstalled(waiting);
+                    waiting.postMessage({ type: "UNKNOWN", fixtureProbe: "unknown" });
+                }, waitingForProbe);
+                await waitingForProbe.dispose();
                 await page.waitForFunction(() => window.swObserved.some(m => m.probe === "unknown"));
                 const ignored = await page.evaluate(async () => ({
                     waiting: (await navigator.serviceWorker.getRegistration()).waiting?.state,
@@ -156,8 +167,10 @@ try {
                 assert.equal(ignored.metadata.sourceType, "window");
                 passed(engine, "native same-origin WindowClient metadata and unknown-command refusal", { metadata: ignored.metadata });
 
-                const activated = await page.evaluate(async () => {
-                    const waiting = (await navigator.serviceWorker.getRegistration()).waiting;
+                const waitingForActivation = await page.waitForFunction(async () =>
+                    (await navigator.serviceWorker.getRegistration())?.waiting ?? null);
+                const activated = await page.evaluate(async waiting => {
+                    assertWorkerInstalled(waiting);
                     return await new Promise(resolve => {
                         const changed = () => {
                             if (navigator.serviceWorker.controller !== waiting) return;
@@ -167,7 +180,8 @@ try {
                         navigator.serviceWorker.addEventListener("controllerchange", changed);
                         waiting.postMessage({ type: "SKIP_WAITING", fixtureProbe: "activate" });
                     });
-                });
+                }, waitingForActivation);
+                await waitingForActivation.dispose();
                 await page.waitForFunction(() => window.swObserved.some(m => m.probe === "activate"));
                 assert.equal(activated.exactWaitingController, true);
                 const activationMetadata = await page.evaluate(() => window.swObserved.find(m => m.probe === "activate"));

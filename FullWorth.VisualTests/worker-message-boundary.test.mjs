@@ -44,12 +44,6 @@ await new Promise(resolve => outsider.listen(0, "127.0.0.1", resolve));
 const outsiderOrigin = "http://127.0.0.1:" + outsider.address().port;
 const engines = (process.env.FULLWORTH_TEST_BROWSERS ?? "chromium,webkit").split(",");
 assert.ok(engines.length > 0 && engines.every(name => ["chromium", "webkit"].includes(name)));
-function assertWorkerInstalled(worker) {
-    if (!worker || worker.state !== "installed") {
-        throw new Error("The exact waiting worker was not installed before the explicit command; state=" +
-            (worker?.state ?? "missing"));
-    }
-}
 function passed(engine, name, evidence = {}) {
     records.push({ engine, name, outcome: "passed", ...evidence });
     console.log(engine + ": " + name + " passed");
@@ -151,7 +145,9 @@ try {
                     (await navigator.serviceWorker.getRegistration())?.waiting ?? null);
                 await page.evaluate(waiting => {
                     window.oldController = navigator.serviceWorker.controller;
-                    assertWorkerInstalled(waiting);
+                    if (!waiting || waiting.state !== "installed") {
+                        throw new Error("Exact waiting worker is not installed: " + (waiting?.state ?? "missing"));
+                    }
                     waiting.postMessage({ type: "UNKNOWN", fixtureProbe: "unknown" });
                 }, waitingForProbe);
                 await waitingForProbe.dispose();
@@ -170,7 +166,9 @@ try {
                 const waitingForActivation = await page.waitForFunction(async () =>
                     (await navigator.serviceWorker.getRegistration())?.waiting ?? null);
                 const activated = await page.evaluate(async waiting => {
-                    assertWorkerInstalled(waiting);
+                    if (!waiting || waiting.state !== "installed") {
+                        throw new Error("Exact waiting worker is not installed: " + (waiting?.state ?? "missing"));
+                    }
                     return await new Promise(resolve => {
                         const changed = () => {
                             if (navigator.serviceWorker.controller !== waiting) return;

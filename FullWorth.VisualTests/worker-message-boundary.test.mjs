@@ -184,7 +184,36 @@ try {
                     page.locator("#apply").click()
                 ]);
                 await page.waitForLoadState("load");
-                await page.waitForFunction(() => navigator.serviceWorker.controller?.state === "activated");
+                try {
+                    await page.waitForFunction(() => navigator.serviceWorker.controller?.state === "activated");
+                } catch (error) {
+                    // This is an acceptance assertion, not a timeout workaround.
+                    // Capture the browser's post-reload worker state before teardown,
+                    // preserving the original failure when control is not established.
+                    const workerState = await page.evaluate(async () => {
+                        const registration = await navigator.serviceWorker.getRegistration();
+                        return {
+                            location: location.href,
+                            readyState: document.readyState,
+                            controller: navigator.serviceWorker.controller?.state ?? null,
+                            active: registration?.active?.state ?? null,
+                            waiting: registration?.waiting?.state ?? null,
+                            installing: registration?.installing?.state ?? null,
+                            scriptLoaded: Boolean(window.FullWorthPwa)
+                        };
+                    });
+                    records.push({
+                        engine,
+                        name: "actual PWA caller preserves explicit single reload after guarded activation",
+                        outcome: "failed",
+                        phase: "post-reload-controller",
+                        documentLoads,
+                        workerState
+                    });
+                    throw new Error(
+                        "Post-reload controller did not activate: " +
+                        JSON.stringify({ documentLoads, workerState }), { cause: error });
+                }
                 assert.equal(documentLoads, 2, "The actual explicit PWA update reloads exactly once.");
                 passed(engine, "actual PWA caller preserves explicit single reload after guarded activation");
             } finally { await context.close(); }

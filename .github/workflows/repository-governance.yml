@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - development
+    paths:
+      - .github/workflows/repository-governance.yml
+      - deploy/verify-github-branch-governance.sh
+      - deploy/tests/repository-governance-workflow-tests.sh
   schedule:
     - cron: "17 8 * * *"
   workflow_dispatch:

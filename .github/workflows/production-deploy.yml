@@ -155,14 +155,9 @@ jobs:
             }
           done
 
-          for image in billwatch-api billwatch-parser-worker billwatch-web; do
-            gh attestation verify "release-artifacts/$image.tar" \
-              --repo "$GITHUB_REPOSITORY" \
-              --predicate-type https://slsa.dev/provenance/v1
-            gh attestation verify "release-artifacts/$image.tar" \
-              --repo "$GITHUB_REPOSITORY" \
-              --predicate-type https://spdx.dev/Document
-          done
+          run_attempt="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" --jq '.run_attempt')"
+          python3 deploy/verify-release-attestations.py \
+            release-artifacts "$RELEASE_SHA" "$run_id" "$run_attempt"
 
           (
             cd release-artifacts

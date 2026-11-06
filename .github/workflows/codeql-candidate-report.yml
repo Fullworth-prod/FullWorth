@@ -1,0 +1,274 @@
+name: FullWorth candidate CodeQL report
+
+on:
+  pull_request:
+    branches: [development]
+    paths:
+      - '**/*.cs'
+      - '**/*.csproj'
+      - '**/*.props'
+      - '**/*.targets'
+      - '**/*.py'
+      - '**/*.js'
+      - '**/*.mjs'
+      - '**/*.ts'
+      - '**/*.tsx'
+      - '**/*.razor'
+      - '**/*.yml'
+      - '**/*.yaml'
+      - 'deploy/CANDIDATE-CODEQL-REPORTS.md'
+      - '.github/codeql/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: candidate-codeql-report-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  candidate-report:
+    name: Candidate CodeQL report (${{ matrix.target }})
+    if: >-
+      github.repository_id == '1344061157' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.id == github.event.repository.id)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Pinned-action opt-outs: scan the complete candidate, not PR diff/overlay results.
+      CODEQL_ACTION_DIFF_INFORMED_QUERIES: 'false'
+      CODEQL_ACTION_OVERLAY_ANALYSIS: 'false'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: actions
+            language: actions
+            build_mode: none
+            scope: source workflows
+          - target: csharp-source
+            language: csharp
+            build_mode: none
+            scope: all C# source including native; extraction errors may limit coverage
+          - target: csharp-backend
+            language: csharp
+            build_mode: manual
+            scope: compiled Tests/API/Core/Web/ParserWorker and AiEvaluation; includes test-linked native logic, not complete platform entrypoints
+          - target: javascript-typescript
+            language: javascript-typescript
+            build_mode: none
+            scope: source JavaScript/TypeScript
+          - target: python
+            language: python
+            build_mode: none
+            scope: source Python and recognized inline scripts
+    steps:
+      - name: Check out exact candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Install C# analysis SDK
+        if: matrix.language == 'csharp'
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Initialize source analysis
+        id: init
+        uses: github/codeql-action/init@1fc58d04a4d4374f921bdac573c3811c240f9c26
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build_mode }}
+          tools: linked
+          queries: security-extended
+          trap-caching: false
+          dependency-caching: false
+
+      - name: Compile backend and shared C# under CodeQL tracing
+        if: matrix.build_mode == 'manual'
+        shell: bash
+        run: |
+          dotnet build FullWorth.Tests/FullWorth.Tests.csproj --configuration Release --no-incremental --disable-build-servers /p:UseSharedCompilation=false
+          dotnet build FullWorth.AiEvaluation/FullWorth.AiEvaluation.csproj --configuration Release --no-dependencies --no-incremental --disable-build-servers /p:UseSharedCompilation=false
+
+      - name: Analyze without code-scanning or database upload
+        id: analyze
+        uses: github/codeql-action/analyze@1fc58d04a4d4374f921bdac573c3811c240f9c26
+        with:
+          output: candidate-codeql-report
+          upload: never
+          upload-database: false
+          wait-for-processing: false
+          category: candidate-report/${{ matrix.target }}
+
+      - name: Retain C# extractor locations
+        if: matrix.language == 'csharp'
+        env:
+          CODEQL_BINARY: ${{ steps.init.outputs.codeql-path }}
+          CODEQL_DATABASES: ${{ steps.analyze.outputs.db-locations }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+
+          codeql = Path(os.environ["CODEQL_BINARY"]).resolve(strict=True)
+          database = json.loads(os.environ["CODEQL_DATABASES"])["csharp"]
+          query = Path(".github/codeql/extraction-locations/ExtractorLocations.ql")
+          output = Path("candidate-codeql-report")
+          bqrs = output / "csharp-extraction-locations.bqrs"
+          subprocess.run([
+              str(codeql), "query", "run", "--database", database,
+              "--search-path", str(codeql.parent / "qlpacks"),
+              "--output", str(bqrs), str(query)
+          ], check=True)
+          subprocess.run([
+              str(codeql), "bqrs", "decode", "--format=csv",
+              "--output", str(output / "csharp-extraction-locations.csv"), str(bqrs)
+          ], check=True)
+          # Retain only the decoded diagnostics, never the database or BQRS.
+          bqrs.unlink()
+          PY
+
+      - name: Record exact source and report integrity
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          REPORT_LANGUAGE: ${{ matrix.language }}
+          REPORT_TARGET: ${{ matrix.target }}
+          REPORT_BUILD_MODE: ${{ matrix.build_mode }}
+          REPORT_SCOPE: ${{ matrix.scope }}
+          CODEQL_VERSION: ${{ steps.init.outputs.codeql-version }}
+          ACTION_REVISION: 1fc58d04a4d4374f921bdac573c3811c240f9c26
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+
+          # The pinned action omits incrementalMode for full analysis and adds it
+          # only for diff-informed/overlay runs. Require both controls as well.
+          if os.environ.get("CODEQL_ACTION_DIFF_INFORMED_QUERIES") != "false" or os.environ.get("CODEQL_ACTION_OVERLAY_ANALYSIS") != "false":
+              raise SystemExit("Full-source analysis controls are not enabled.")
+          directory = Path("candidate-codeql-report")
+          files = sorted(directory.glob("*.sarif"))
+          if not files:
+              raise SystemExit("No SARIF report was produced; analysis is not verified.")
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          if head != os.environ["EXPECTED_SHA"]:
+              raise SystemExit("Analyzed source differs from the intended candidate.")
+          tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip()
+          reports = []
+          for file in files:
+              data = json.loads(file.read_text(encoding="utf-8"))
+              runs = data.get("runs", [])
+              if data.get("version") != "2.1.0" or not runs:
+                  raise SystemExit("Missing SARIF analysis runs.")
+              for run in runs:
+                  driver = run.get("tool", {}).get("driver", {})
+                  invocations = run.get("invocations", [])
+                  components = [driver, *run.get("tool", {}).get("extensions", [])]
+                  if driver.get("name") != "CodeQL" or not any(c.get("rules") for c in components):
+                      raise SystemExit("Missing CodeQL query metadata.")
+                  if not invocations or any(i.get("executionSuccessful") is not True for i in invocations):
+                      raise SystemExit("Analysis invocation is incomplete or unsuccessful.")
+                  if not isinstance(run.get("results"), list):
+                      raise SystemExit("Missing explicit analysis result collection.")
+                  if "incrementalMode" in run.get("properties", {}):
+                      raise SystemExit("Incremental/diff-informed analysis cannot certify a full candidate report.")
+              notifications = [
+                  notification
+                  for run in runs for invocation in run["invocations"]
+                  for key in ("toolExecutionNotifications", "toolConfigurationNotifications")
+                  for notification in invocation.get(key, [])
+              ]
+              reports.append({
+                  "file": file.name,
+                  "sha256": hashlib.sha256(file.read_bytes()).hexdigest(),
+                  "results": sum(len(run["results"]) for run in runs),
+                  "diagnostic_errors": sum(n.get("level") == "error" for n in notifications),
+                  "diagnostic_warnings": sum(n.get("level") == "warning" for n in notifications),
+                  "incremental_modes": [run.get("properties", {}).get("incrementalMode") for run in runs],
+                  "tool_execution_notifications": sum(
+                      len(i.get("toolExecutionNotifications", []))
+                      for run in runs for i in run["invocations"]),
+                  "tool_configuration_notifications": sum(
+                      len(i.get("toolConfigurationNotifications", []))
+                      for run in runs for i in run["invocations"])
+              })
+          diagnostic_errors = sum(report["diagnostic_errors"] for report in reports)
+          diagnostic_warnings = sum(report["diagnostic_warnings"] for report in reports)
+          manifest = {
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "repository_id": os.environ["GITHUB_REPOSITORY_ID"],
+              "source_commit": head,
+              "source_tree": tree,
+              "workflow_commit": os.environ["GITHUB_SHA"],
+              "workflow_ref": os.environ["GITHUB_WORKFLOW_REF"],
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "language": os.environ["REPORT_LANGUAGE"],
+              "target": os.environ["REPORT_TARGET"],
+              "analysis_scope": os.environ["REPORT_SCOPE"],
+              "codeql_version": os.environ["CODEQL_VERSION"],
+              "codeql_action_revision": os.environ["ACTION_REVISION"],
+              "build_mode": os.environ["REPORT_BUILD_MODE"],
+              "diagnostic_error_count": diagnostic_errors,
+              "diagnostic_warning_count": diagnostic_warnings,
+              "coverage_review_state": "partial-extraction" if diagnostic_errors else "scope-review-required",
+              "analysis_mode": "full-source; incremental properties refused",
+              "diff_informed_queries_control": os.environ["CODEQL_ACTION_DIFF_INFORMED_QUERIES"],
+              "overlay_analysis_control": os.environ["CODEQL_ACTION_OVERLAY_ANALYSIS"],
+              "query_suite": "security-extended",
+              "code_scanning_upload": False,
+              "database_upload": False,
+              "extractor_location_report": None,
+              "reports": reports,
+              "acceptance": "Source analysis only. Findings and extraction diagnostics require review; this is not complete security, device, provider or release acceptance."
+          }
+          if os.environ["REPORT_LANGUAGE"] == "csharp":
+              import csv
+              diagnostic_file = directory / "csharp-extraction-locations.csv"
+              with diagnostic_file.open(encoding="utf-8", newline="") as source:
+                  reader = csv.DictReader(source)
+                  if reader.fieldnames != ["path", "start_line", "start_column", "origin", "message"]:
+                      raise SystemExit("Missing or malformed C# extractor location report.")
+                  locations = list(reader)
+              manifest["extractor_location_report"] = {
+                  "file": diagnostic_file.name,
+                  "sha256": hashlib.sha256(diagnostic_file.read_bytes()).hexdigest(),
+                  "extractor_error_rows": len(locations),
+                  "scope": "All ExtractorError rows; standard SARIF and its diagnostic count remain unfiltered."
+              }
+          (directory / "manifest.json").write_text(
+              json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write(f"Candidate source: {head}\n\n")
+              summary.write(f"Target: {manifest['target']}; language: {manifest['language']}; build mode: {manifest['build_mode']}; query suite: security-extended.\n\n")
+              summary.write(f"Scope: {manifest['analysis_scope']}.\n\n")
+              summary.write(f"Diagnostic errors: {diagnostic_errors}; warnings: {diagnostic_warnings}; coverage state: {manifest['coverage_review_state']}.\n\n")
+              summary.write(f"Raw findings: {sum(r['results'] for r in reports)}. Review raw SARIF and extraction diagnostics before disposition.\n\n")
+              summary.write("This report does not update GitHub code-scanning alerts or establish full security acceptance.\n")
+          if diagnostic_errors:
+              print(f"::warning::Report produced with {diagnostic_errors} diagnostic errors; extraction coverage is incomplete. Review the raw SARIF.")
+          if os.environ["REPORT_TARGET"] == "csharp-backend" and (
+              diagnostic_errors or manifest["extractor_location_report"]["extractor_error_rows"]):
+              raise SystemExit("Compiled C# extraction is incomplete; preserve and investigate the raw diagnostics.")
+          PY
+
+      - name: Preserve raw reports and source manifest
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: candidate-codeql-${{ matrix.target }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: candidate-codeql-report/
+          if-no-files-found: error
+          retention-days: 7

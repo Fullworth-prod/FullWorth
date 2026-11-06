@@ -142,41 +142,41 @@ public static class ExternalAuthenticationEndpointMappings
 
         endpoints.MapGet(
                 "/auth/external/{provider}",
-                BeginExternalSignInAsync)
+                (Func<HttpContext, string, IAuthenticationSchemeProvider, Task<IResult>>)BeginExternalSignInAsync)
             .AllowAnonymous();
 
         endpoints.MapGet(
                 "/auth/external/complete",
-                CompleteExternalSignInAsync)
+                (Func<HttpContext, string?, IHttpClientFactory, CancellationToken, Task<IResult>>)CompleteExternalSignInAsync)
             .AllowAnonymous();
 
         endpoints.MapPost(
                 "/auth/external/two-factor",
-                CompleteExternalSecondFactorAsync)
+                (Func<HttpContext, IAntiforgery, IHttpClientFactory, Task<IResult>>)CompleteExternalSecondFactorAsync)
             .RequireRateLimiting(
                 AuthEndpointMappings.AuthenticationRateLimitPolicy)
             .AllowAnonymous();
 
         endpoints.MapGet(
                 "/auth/external/{provider}/register",
-                BeginExternalRegistrationAsync)
+                (Func<string, IAuthenticationSchemeProvider, Task<IResult>>)BeginExternalRegistrationAsync)
             .AllowAnonymous();
 
         endpoints.MapPost(
                 "/auth/external/register/complete",
-                CompleteExternalRegistrationAsync)
+                (Func<HttpContext, IAntiforgery, IHttpClientFactory, Task<IResult>>)CompleteExternalRegistrationAsync)
             .RequireRateLimiting(
                 AuthEndpointMappings.AuthenticationRateLimitPolicy)
             .AllowAnonymous();
 
         endpoints.MapGet(
                 "/auth/external/{provider}/link",
-                BeginExternalLinkAsync)
+                (Func<string, IAuthenticationSchemeProvider, Task<IResult>>)BeginExternalLinkAsync)
             .RequireAuthorization();
 
         endpoints.MapPost(
                 "/bff/account/external/link",
-                CompleteExternalLinkAsync)
+                (Func<HttpContext, IAntiforgery, AdminBffWriteProxyService, ExternalIdentityLinkBffRequest, CancellationToken, Task<IResult>>)CompleteExternalLinkAsync)
             .RequireAuthorization();
 
         return endpoints;

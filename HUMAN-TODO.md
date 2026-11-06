@@ -1,3 +1,164 @@
+## Final repository handoff — November 4, 2026
+
+Preserved development code candidate: `75df865b787394c7a6a83f24497376a1206b9602` ([#1050](https://github.com/Fullworth-prod/FullWorth/pull/1050)). Explicit types on the seven existing external-auth delegates repair compiled CodeQL binding while preserving handlers/routes/security metadata. All nine source-head checks passed: **3,719 .NET / 769 Node**, zero failed/skipped/backend+offline+Android warnings/errors; full Chromium/WebKit rendered/native-auth/virtual-passkey/MFA and container recovery passed. Source/tested/integrated tree `c3ea4a237a7d7fc5e11bf1900851a463f697576f` matches; files read back exactly and branches retained.
+
+Compiled extractor rows/error notifications are now **0/0**, with a regression guard. Source-only/native extraction remains partial (**4,062 rows / 115 summarized notifications**); contextual consent/dedicated-worker findings remain. [Verified reports and exact evidence](deploy/CANDIDATE-CODEQL-REPORTS.md) preserve these limits.
+
+Master remains `b424cd9c08d612d9eadef57839f0dca8c81f2841`; last independently verified November 3 served release remains `9540b2616841e9794d8f8c07616edcd1e339982c`. No promotion/deployment. The existing template retains **19 NOT_RUN cases** with planned candidate only and actual fields blank. Provider/private/device/delivery/two-owner/security/nonempty protected recovery/legal launch gates remain in the existing checklist and HUMAN-TODO; no launch approval is inferred. AI/creator stay off; terms proposed. Earlier dated cards below preserve history.
+
+---
+
+## Verified bill-evidence retention checkpoint — November 4, 2026
+
+Verified development runtime candidate: `4bcee5b7a4e23fc09720c32d4e8a905c76c5b122` ([#1047](https://github.com/Fullworth-prod/FullWorth/pull/1047)). Duplicate posting dates that reject cadence now preserve an existing bill's state, timestamps and original transaction links. Existing monthly-candidate currency/account checks and fully covered sparse-history retirement remain; no history repair, reactivation or cancellation claim is inferred.
+
+Final source `c3736869a80043d805675fcf5ae20848a1eea29a`, tested merge `112da0c993702c25f7bc19a01d4cf7571ab33847` and integrated commit share tree `d010d4251baa86f62bdf04317a69ed34447d71f5`. All 15 final-head checks passed, reviews/threads were clear, strict rules/no bypass verified, six files read back exactly and the source branch is retained. Actual CI41892072296 passed **3,719 .NET / 769 Node**, zero failed/skipped/backend+offline warnings/errors. All six relational checks passed, including 38 bank/retention cases (12 new durable cases). Container session/parser/HTTP/no-swap/disposable restore passed; browser/native builds were conditional. [Source and security-report evidence](deploy/BILL-AMBIGUITY-RETENTION-20261104.md) preserves the original ten failures, intermediate one-case policy regression, bounded correction and report limitations.
+
+Master remains `b424cd9c08d612d9eadef57839f0dca8c81f2841`; last independent November 3 served verification remains `9540b2616841e9794d8f8c07616edcd1e339982c`. No promotion/deployment or new host inspection. The master image artifact remains unexpired through November 8 06:40:09 UTC; intended release still needs separately authorized promotion/deployment and fresh signing/consumer/live durability evidence.
+
+The 16-column template retains **19 NOT_RUN cases**. Only the planned candidate is advanced; actual/served/client/time/receipt fields stay blank. Real private/provider/payroll/subscription/statement, physical-device, actual delivery, two-owner/security, protected nonempty database/original-statements/both-keyring clean-host recovery and qualified legal gates remain open. Candidate reports retain C# extraction errors and known contextual warnings; current alert-queue refresh is unavailable because local browser access is disabled. November 3 queue observations remain historical. AI/creator stay off; terms proposed. Earlier dated cards below preserve history.
+
+---
+
+## Verified worker-message correction and release boundary — November 4, 2026
+
+Verified development runtime candidate: `40aa3c2c0394f36f12cf8b55fab87620b902b06c` ([#1045](https://github.com/Fullworth-prod/FullWorth/pull/1045)). Source `0a8a9a5911e7277677f1e03f7471e267860db40e`, tested merge `9f6111f6951a0ecc248bf80da55faa709d21bd6a` and integrated commit share tree `f96f0e3a3b937f5d7ddfe5c1a7bb3af16cb6d971`. All 10 final-head checks passed under strict rules; reviews/threads were clear, no bypass, source branches retained.
+
+The PWA receiver now requires its exact origin for the existing explicit update command. Actual-source Node VM tests reproduced 9 failures/7 passes before the guard and 16 passes afterward. Final CI passed 3700 .NET/769 Node, zero failed/skipped, with actual Android/container checks. Chromium/WebKit passed 12 new worker scenarios plus the existing regressions: native message metadata, dedicated private-channel separation and 500/501 preservation, exact waiting-worker activation and actual single explicit reload. No timeout, replay or automatic-update policy changed.
+
+[#1044](https://github.com/Fullworth-prod/FullWorth/pull/1044) added compiled C# reports alongside full-source/native diagnostics. Both retain partial extraction (1 compiled error / 116 source errors); no clean security verdict is claimed. Final-source JS retains the dedicated-worker contextual warning; the guarded service-worker warning is absent. C# consent-gate warning remains, with no authentication bypass established. No suppression, alert upload/configuration or access change. See [verified source/report evidence](deploy/WORKER-MESSAGE-BOUNDARIES-20261104.md).
+
+Master remains `b424cd9c08d612d9eadef57839f0dca8c81f2841`; last independent November 3 read-only served verification remains `9540b2616841e9794d8f8c07616edcd1e339982c`. No promotion/deployment/new host inspection. The older master artifact expires November 8 06:40:09UTC; intended release needs separately authorized promotion/deployment and fresh exact-master signing/consumer proof.
+
+The 16-column template retains 19 NOT_RUN cases: planned candidate only; actual/served/client/time/receipt fields blank. Physical-device rows now explicitly require an observed intended-worker upgrade/one explicit reload/no surprise pre-consent reload. #1033/#1024 and real provider/private bill/subscription/payroll/statement, physical devices, actual receipt, controlled two-owner/document/security, nonempty protected clean-host database/statements/both-keyring recovery and qualified legal acceptance remain open. AI/creator stay off; terms proposed. Older dated current-state cards below are historical.
+
+---
+
+## Verified payday-capacity correction and release checkpoint — November 3, 2026
+
+Verified development runtime candidate: `c12521834346340abd5b812d9553a16837e2a7f6` ([#1041](https://github.com/Fullworth-prod/FullWorth/pull/1041)). Source `c2ac0b0aaf4ebeb01e674ea6991fb74ffd89b77d`, tested merge `65ee9272b06b99c5c06d6eb95b5c69b8469be1e8` and integrated commit share tree `ae43bfe0fc864c63b9380e49990c02f22b992cc3`. All ten final-head checks passed before the normal protected squash merge; reviews/threads were clear, strict rules/no bypass were verified, and the source branch remains present.
+
+New payday requests above the existing 500-owned-active-bill limit now return explicit HTTP422 before bounded reads or financial staging. No partial snapshot or truncated bill list is saved. Saved immutable replay stays available after later bill growth. Monitoring keeps capacity failure observable while continuing independent saved paychecks; pending caller changes survive without being flushed or discarded. The financial allocation/coverage limits are unchanged.
+
+The tests-only source063a8ca8faba45b5fafd2f4e3d30f4d5abb734e4 reproduced HTTP500 at501/750 bills and an adapter range exception in monitoring: [CI41730380265/job126245820811](https://github.com/Fullworth-prod/FullWorth/actions/runs/41730380265/job/126245820811), three failed/3,696 passed/zero skipped. Corrected [CI41731055480](https://github.com/Fullworth-prod/FullWorth/actions/runs/41731055480) passed **3,700 .NET/753 Node**, zero failed/skipped/backend+offline warnings/errors, including seven capacity/ownership/replay/monitoring/caller-state cases. Actual Redis/Web-BFF session, signature/context refusal, HTTP/parser/no-swap and disposable encrypted restore passed. Browser/native builds were conditional for this backend-only diff; retain #1039's separate Web/native evidence without relabeling it as a new run.
+
+Master remains `b424cd9c08d612d9eadef57839f0dca8c81f2841`; the last independent November3 read-only production verifier passed on served `9540b2616841e9794d8f8c07616edcd1e339982c`. No new host inspection or runtime mutation accompanied this capacity fix. This candidate is not promoted/deployed. The older master artifact expires November8 06:40:09UTC; any separately authorized future promotion needs fresh exact-master CI/artifacts and signed publisher/consumer execution.
+
+The sixteen-column evidence template retains **nineteen NOT_RUN cases**. Only its planned candidate_commit is advanced to c125218; actual/served/client/time/receipt fields remain blank. #1033/#1024 and real provider/private bill/subscription/payroll, physical devices, actual delivery, controlled two-owner/document/security, current nonempty database/statements/both-keyring protected clean-host recovery and qualified legal acceptance remain open. Development CodeQL is unscanned; the existing default workflow UI has no manual Run control. No scan configuration/grant was changed. CI/disposable recovery is not real acceptance.
+
+This metadata handoff preserves prior dated history and the complete goal. No master promotion/deployment, spending/activation, new access/credentials, private financial export, destructive recovery or branch deletion. AI/creator stay off and terms proposed. Earlier identities and pending source statements below are historical.
+
+---
+
+## Verified planning fix and release checkpoint — November 3, 2026
+
+Verified development runtime candidate: `b56d9f62780c41d0f63d6113c0849ae4e02e3386` ([#1039](https://github.com/Fullworth-prod/FullWorth/pull/1039)). Exact source `dd083f1f5b0639f1ee604555e7d1f38b3f40e323`, tested merge `ee2be5e5fab67cd8e63c0c032cb9ac385f445f47` and integrated commit share tree `3984fc0386680dd2bc4b0aaf13fc00e54c20a6ee`. All eighteen final-head checks passed before the normal protected squash merge; reviews/threads and active strict rules were checked, and the source branch is retained.
+
+Preserved master remains `b424cd9c08d612d9eadef57839f0dca8c81f2841`. A fresh November3 read-only production verifier passed configuration, permissions, integrity, exposure, runtime identity and public API/Web readiness on served `9540b2616841e9794d8f8c07616edcd1e339982c`. The development candidate is not promoted or deployed.
+
+The evidence template now has sixteen columns and **nineteen NOT_RUN cases**, including explicit PAYROLL-PLAN acceptance (#293). Its candidate_commit is prefilled only as the planned b56d9f6 target; served/client identities, observed UTC, actual result and protected receipts remain blank. A planned candidate is not a deployment observation. Private/provider/device cases require their existing authorization and prerequisites; no source/CI result fills a real acceptance row.
+
+Smallest remaining steps: owner-controlled fresh bank/provider and private bill/subscription/payroll facts (#972/#912/#762/#970/#293); physical installed Android/iPhone (#251/#258); actual receipt, controlled two-owner/document checks, protected nonempty clean-host recovery and qualified legal review (#291/#669). Record the exact served/client release and protected receipt after each authorized observation. #1033 remains open for actual newly signed master publisher/consumer execution; #1024 remains open for separately authorized intended-release image/OCI, manager/kernel zero-swap and readiness evidence. Real provider/private bill/subscription/payroll facts, physical Android/iPhone, actual alert receipt, controlled two-owner/document/security, current nonempty database/original-statements/both-keyring protected clean-host recovery and qualified legal review remain open. Disposable encrypted CI restore is not that real recovery. #1036 remains CLOSED as already integrated with its recorded merged=false timeout anomaly; do not relabel it as a normal PR merge or replay it.
+
+Read-only authenticated GitHub security inventory on November3 found Dependabot 0 open/1 closed, secret scanning 0 open/0 closed, and Code scanning on master 0 open/1 closed. The explicit development filter says **This branch hasn't been scanned yet** (0/0 is not a clean scan). No secret matches were accessed and no alerts/settings/grants were changed. This removes the former UI-access blocker but does not establish development CodeQL, a full vulnerability assessment or same-release two-owner/security acceptance.
+
+No master promotion, deployment, host restart/reload, new access/credentials, spending, paid activation, private financial export, destructive recovery or branch deletion occurred. Gated AI/creator features stay off and creator terms stay proposed. Earlier dated cards below retain history; this checkpoint supersedes their older identities, counts and pending source-validation statements.
+
+---
+
+## Current source and remaining owner evidence — November 2, 2026
+
+Current release candidate on `master`:
+
+`b424cd9c08d612d9eadef57839f0dca8c81f2841`
+
+Current verified live production release marker:
+
+`9540b2616841e9794d8f8c07616edcd1e339982c`
+
+The live identity is the last independent November 1 verification, not a new host inspection.
+
+Verified development runtime candidate: `e0821b2ea78c5cf066d45de815a7715605181677`. Latest source `16acd439279b1fa30adee73722a6d9935e6a1a74`, tested merge `15d1e74548b673e99b47845fb4a108c27196dd0c` and integrated source share tree `f83d5c06a1b9eb9c010466e8859ec9c2c415222f`. [#1034](https://github.com/Fullworth-prod/FullWorth/pull/1034) and [#1035](https://github.com/Fullworth-prod/FullWorth/pull/1035) merged normally after their current four required checks, clear reviews/threads and strict rules. Their backup-client/Redis pins passed actual disposable restore and Web-session compatibility; the runtime database remains PostgreSQL 17. This candidate is not promoted or deployed.
+
+#1036 is CLOSED as already integrated at `73a803bbdadbe3644a7bd0119a7e988c2b0537ea`, with its GitHub `merged=false` timeout anomaly explicitly retained; no merge replay or fabricated merged event. #1037's existing-token governance correction is integrated. #1031/#1032 auth-startup corrections are integrated and #1027 is closed for the demonstrated source defect; the original uncaptured failing-state attribution remains limited.
+
+The [current release checkpoint](deploy/SUNDAY-RELEASE-CHECKPOINT-20261031.md) records exact source/tested/integrated trees, actual tests, artifact expiry and the source-PR transaction exception. Existing source branches/history are retained; the Redis source ref was observed absent after its merge and restored to its reviewed head without changing repository settings.
+
+Smallest remaining actions, only through the appropriate authorized/private path:
+
+- For #1033/#1024, separately authorize the intended frozen master promotion/deployment after existing recovery/release prerequisites, then verify new signing/consumer execution and intended live identity/OCI/manager/kernel/readiness. Current work authorizes neither action; no production reload is a substitute.
+- For #972, report whether an owner-started fresh secure Link appears and initial sync progresses; do not replay the old consumed token. #912 also needs controlled provider Sandbox and installed-device recovery outcomes.
+- For #762/#970/#293, compare one privately known posted obligation/subscription/payroll case with actual account/date coverage, cadence/duplicates/rejection or dated account/plan/billing-party evidence. Record only protected evidence references and aggregate reasons in GitHub.
+- For #251/#258, exercise the physical Android/iPhone modes on exact client/served identities, including EN/ES, all three theme pairs, enlarged text/reduced motion, keyboard/VoiceOver and nonzero safe areas.
+- For #291/#669, gather same-release two-owner/document/security checks, actual destination receipt, qualified Terms/Privacy/license review, provider protection and real nonempty database/original-statements/both-keyring clean-host evidence. Prior protected read-only recovery40257392831 is real partial prior-release evidence, not absent and not current nonempty-statement acceptance; do not renew expired access.
+- Security alert queues remain uninspected: connected GitHub has no alert reader and current Work settings disable browser use. An authorized owner can read Code scanning/Dependabot/secret-alert queues and record commit/time/count/severity/disposition without secrets; passing CodeQL checks alone do not establish empty queues.
+
+The sixteen-column template's eighteen real acceptance cases remain NOT_RUN. No master promotion, deployment, production restart/reload/runtime change, new credential/grant, spending/activation, private financial export, destructive recovery, branch deletion or other-thread work occurred. Gated AI/creator features stay off and creator terms remain proposed. Test readiness is not launch approval.
+
+Earlier dated cards below preserve history; the current identities and evidence above supersede older pending/master/live/tool-access statements.
+
+---
+
+## Release verification correction — November 2, 2026
+
+Master remains `b424cd9c08d612d9eadef57839f0dca8c81f2841`; last independently verified live remains `9540b2616841e9794d8f8c07616edcd1e339982c`. No new live inspection or deployment occurred in this continuation. Auth correction baseline `6e739bc6026c45140552c6609863a3fa3799b848` contains the completed #1031/#1032 auth corrections; #1027 is closed for that demonstrated startup defect. Earlier pending-auth cards below are historical.
+
+#1033 is a reproduced release blocker: the old deployment consumer requests unversioned SPDX while the actual signed predicate is SPDX 2.3. Proposed shared consumer now enforces six cryptographic verifications, exact SHA/master/CI signer/hosted runner, immutable repository/owner IDs and selected push run/attempt; supplied UTF-8/unambiguous SPDX content must equal its signed predicate, and image config/tag must match the intended release. The same consumer runs after signing and before master artifact publication. It retains exact successful-master CI selection, existing target approval, signatures and runtime gates.
+
+Executed locally: twelve synthetic policy/transport tests passed. Separately, official checksum-verified GitHub CLI 2.103.3 verified all six actual signatures from public artifact13073795897 using downloaded public bundles and the shared consumer policy. Every signed SBOM matched its supplied document and all three embedded revisions matched master. ZIP SHA256 `94a86b473b2d85ca2c396a8c6935b8763e77ba7f454c56027e4731c3a59fccba`; expiry November8 06:40:09UTC. Offline public-bundle transport is explicitly distinct from deployment's online repository lookup. Protected final-head CI/integration and a future newly signed master publisher/consumer execution remain required; #1033 stays open.
+
+Repository-governance run41501154849 failed on HTTP403 reading unauthenticated public rulesets. #1037 is now integrated in development as30a9952f1b8a04aa5f380d33fc751560300e7004 after all five checks passed, with source/tested/integrated treef6102f103923069db2673c98522aba0c2acbea21 matching. Actual authenticated governance41508052055 passed using existing Contents-read/Metadata-read permissions, and existing failure predicates/denied-access regression passed; no new grant or fallback. Exact historical403 cause remains unproven because its headers were not captured. Main exact-master CI41281607324 remains successful, and four CodeQL analyses passed; do not call every current master check green. Connected GitHub read of active ruleset24230011 confirms strict four checks, PR requirement, thread resolution and no bypass. Diagnose the HTTP failure without new grants or weakening governance; no unchanged rerun was triggered.
+
+#1024 remains open until separately authorized deployment proves intended image identity, durable OCI annotation, manager/kernel zero-swap and readiness. Real provider/private expected bills/merchant/payroll, physical Android/iPhone, actual alert delivery, two-owner/privacy, current nonempty database/statements/both-keyring clean-host recovery and qualified legal acceptance remain separate. Keep gated AI/creator off and terms proposed. No production mutation, master promotion, new access, spending, private export, destructive recovery or branch deletion.
+
+---
+
+## Adjacent native-auth startup reproduction — November 1, 2026
+
+On unchanged adjacent application pages, #1032 source `56c204f1538b3edc64a4efebce9aaabc8c7802b2` [CI41285330965/container124785360770](https://github.com/Fullworth-prod/FullWorth/actions/runs/41285330965/job/124785360770) produced all six counterexamples: registration, password-recovery request and password reset in Chromium/WebKit. Entered fields were matching/native-valid before the real framework startup and cleared/invalid afterward; antiforgery remained present, and submissions stayed zero. Registration's required consent was among the lost fields. No registration, mail or password reset occurred. The step failed before the long rendered suite as intended; do not rerun that unchanged failing head.
+
+The proposed correction extends the already verified native-login static-rendering attribute to these three native POST pages. Existing HTTP handlers, validation, antiforgery, owner/account controls, consent requirements and one-use recovery proofs are unchanged. Corrected final-head six-case/runtime/full-auth execution is pending; source changes are not a PASS. No actual reset link, customer password, private document or provider access is used.
+
+---
+
+## Verified login-startup correction in development — November 1, 2026
+
+[#1031](https://github.com/Fullworth-prod/FullWorth/pull/1031) merged as `291ca6c17ebb2cd17d2926dfc982f546d39b057a`. Source `2fc844f3b9440d90e4c13be359dbadeb575e75fa`, tested `cf133aa47946be041db5b23306c5d8d3a064bec3` and integrated tree `bc76022b808a99eb671ec227d8906baadc77dc91` match. All five final-head checks passed: main41284071141, pinned browser41284071267 and dependency41284071133. Actual3,665 .NET/753 Node, zero failed/skipped/backend+offline warnings/errors. The controlled Chromium/WebKit startup tests preserve entered email/password/remember-me, exercise completed appearance changes, refuse invalid native input and observe exactly one valid proof/CSRF-bearing native transport. The original full real disposable API/virtual-passkey/MFA-code+passkey/removal flow passed unchanged, including the previously failing later-password stage. No increased waits/timeouts, credential persistence or automatic write replay.
+
+Full rendered suites and container no-swap reload/HTTP/parser/containment plus disposable encrypted restore79c0ef70f6bcaef6721e03a53921183fd9ff34e77c6c747ee6d53ce151fc9ab3 passed. No new financial PostgreSQL or native packaging execution is claimed for this Web change. Visual artifact13073879482 was downloaded/hash-verified: SHA256 `1e467fa8857e52c054ff86963ad79fd116bab1f47eb24f73aee0196cb6eca5df`; responsive672/0 per engine and theme354geometry/108state/12menu per engine, no layoutIssues/errors. Desktop login and390px two-factor screenshots inspected. All30 WebKit capture-only CSP denials matched verified Playwright empty-rule style insertions; application policy remained enforced. Physical safe-area/device and real provider/recovery/legal acceptance remain open.
+
+Source branch retained; current strict four required Actions checks, zero required approvals, empty reviews/threads and no auto-delete verified. Master remains `b424cd9c08d612d9eadef57839f0dca8c81f2841`, independently verified live remains `9540b2616841e9794d8f8c07616edcd1e339982c`. This development fix is not deployed or included in the frozen master. #1024 remains open for authorized durable live verification. #1027's historical failure lacks its original form snapshot; the demonstrated mechanism is fixed, exact historical attribution remains limited.
+
+Next independent source investigation: native registration and password-recovery forms still use interactive routing. A six-case Chromium/WebKit real-startup hold probes their entered fields and registration consent before/after hydration, without any POST, registration, mail delivery or password reset. Its actual result is pending; do not claim those adjacent forms fixed. The new guarded step runs before the long rendered-page suite for prompt failure evidence and preserves every existing auth/visual/recovery gate.
+
+No deployment/master promotion, production reload/restart/resource change, spending/activation, credentials/grants/settings, private financial export, destructive recovery, branch deletion, other-thread messages or hourly automation. Existing real evidence gates remain open; creator/gated AI off and terms proposed. Prior dated cards below are historical.
+
+---
+
+## Active issue-cleanup and merged-release checkpoint — November 1, 2026
+
+Current release candidate on `master`:
+
+`b424cd9c08d612d9eadef57839f0dca8c81f2841`
+
+Current verified live production release marker:
+
+`9540b2616841e9794d8f8c07616edcd1e339982c`
+
+The owner merged [#1029](https://github.com/Fullworth-prod/FullWorth/pull/1029); source development `2218fec6a29f3c58c0009a0a274c37bc6f2c2b34`, tested promotion `40d55590fac80e4955a2f07a7628d54756d88ecb` and integrated master share tree `4b4e74699fbc6d34bf4ad040d5ca5d49f99a278d`. Exact-master [CI41281607324](https://github.com/Fullworth-prod/FullWorth/actions/runs/41281607324) and all eight observed checks passed, including four CodeQL analyses. Actual backend: 3,665 .NET and 753 Node cases, zero failed/skipped; backend/offline builds zero warnings/errors. API/parser/Web no-swap persistence across disposable systemd reload and disposable encrypted restore `8effbb74656dfdcb0663c2f699f5e3a444c6f228ef58a33d2f2b233aa4769908` passed. Rendered visual/passkey steps were conditional and skipped on this master push; earlier PR/browser evidence is separate.
+
+Production image artifact13073795897 was downloaded and its ZIP SHA256 `94a86b473b2d85ca2c396a8c6935b8763e77ba7f454c56027e4731c3a59fccba` matched GitHub metadata. Exactly three image tars and three SPDX documents were present. All three manifest-referenced image configs identify master `b424cd9c08d612d9eadef57839f0dca8c81f2841`; tar hashes match published SBOM/provenance subjects. Artifact expires November8 at06:40:09UTC. Signature/provenance/SPDX cryptographic verification remains required by the guarded deployment workflow; byte hashes and published attestation records are not that verification.
+
+New [#1031](https://github.com/Fullworth-prod/FullWorth/pull/1031) investigates [#1027](https://github.com/Fullworth-prod/FullWorth/issues/1027). On unchanged application source, [run41282814390/job124778013121](https://github.com/Fullworth-prod/FullWorth/actions/runs/41282814390/job/124778013121) held the real Blazor startup script, entered valid native fields, then released hydration. Email/password/remember-me changed from matching/valid to cleared/invalid, with zero login submissions. This demonstrates a mechanism for the prior no-response timeout; the original failing state was not captured, so its exact historical cause remains unproven. The proposed correction renders the cookie-login page statically and hydrates appearance controls independently, following [the framework's documented auth-page pattern](https://learn.microsoft.com/en-us/aspnet/core/blazor/components/render-modes?view=aspnetcore-10.0#static-ssr-pages-in-an-interactive-app). Corrected Chromium/WebKit preservation, native validation/one-submission and full virtual-passkey results are pending. No increased waits/timeouts, atomic test-only login workaround, assertion relaxation or write replay.
+
+[#1030](https://github.com/Fullworth-prod/FullWorth/pull/1030) merged as `0823e1a1ecbdf2a33e9f63719461272157eca466` after all four required final-head checks, empty reviews/threads and source/tested/integrated tree `1d27d45b9d2d8c66fcfc35dcdd7ad1f8f9b65bc5` matched. It adds proposed Plaid cost controls and explicitly unverified screenshot rates only; no provider setting or spending changed.
+
+Fresh read-only production verification passed on the older live release above. No deployment, production reload/restart, resource mutation, runtime upgrade, new grant/credential, spending, activation, financial export, destructive recovery, branch deletion or hourly automation occurred. #1024 stays open for durable intended-release live identity, annotations, manager/kernel limits and readiness. Browser tooling is available; a separate Cloud Work chat is not a technical prerequisite and none was created or messaged. A master merge does not authorize deployment or private recovery. Existing nonempty real-statement/database/both-keyring clean-host, provider/private expected-bill/payroll/merchant, physical-device, actual delivery, two-owner/privacy/security and qualified legal acceptance remain open. Keep creator/gated AI off and terms proposed.
+
+The active goal is **FIX NEW ISSUES AND FINISH RELEASE PREPARATION**. Preserve this candidate and original evidence; continue demonstrated source fixes and protected development integration. Older dated cards below are historical.
+
+---
+
 ## Verified development correction after promotion — October 31, 2026
 
 Development runtime `ca848ad1e61f72a1408b7d87d4d656dbcd9dacec` includes [#1026](https://github.com/Fullworth-prod/FullWorth/pull/1026): explicit OCI zero-swap properties for the three services already configured with equal memory/memswap limits. The isolated runtime regression verified manager/kernel zero for API/parser/Web before and after an actual systemd reload, unchanged processes and parser readiness. No global host drop-in or weakened resource/readiness rule. Source `9cfaa61e5b71822ef0a72b58eab8ce32979ded93`, tested `2e8c6661b00a01434f5affc534eafbdb627ca4e2` and integrated tree `146aa3a0242c0fa353306214ae0c5c69ed843eb0` match; all five final-head checks passed. [Main41234428815](https://github.com/Fullworth-prod/FullWorth/actions/runs/41234428815) executed3,665 .NET/753 Node with zero failed/skipped; backend/offline/actual Android builds0warnings/errors. Full rendered/pinned Chromium/WebKit, virtual-passkey and disposable encrypted restore passed. No financial PostgreSQL workflow was triggered by this operational/test scope; earlier financial evidence remains separately scoped.

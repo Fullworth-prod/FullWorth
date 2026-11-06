@@ -736,7 +736,18 @@ public sealed class RecurringBillDiscoveryPersistenceService
         var rejectedOtherWeakEvidence = 0;
         var rejectedCurrencyAmbiguity = 0;
         var rejectedSourceAccountAmbiguity = 0;
-        var ambiguousEvidenceProviders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // Retention must not depend on cadence succeeding first. Duplicate
+        // dates can reject cadence before the per-candidate currency/account
+        // gates run; that uncertainty cannot retire an existing obligation
+        // or detach its original evidence. Keep the existing covered-stale
+        // retirement policy for sparse, distinct-date histories; candidate-level
+        // currency/account conflicts are still protected below.
+        var ambiguousEvidenceProviders = candidateTransactionsByProvider
+            .Where(pair =>
+                pair.Value.Select(transaction => transaction.PostedDate)
+                    .Distinct().Count() != pair.Value.Count)
+            .Select(pair => pair.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var detectedStream in
                  detectedStreams)
@@ -749,10 +760,7 @@ public sealed class RecurringBillDiscoveryPersistenceService
                 continue;
             }
 
-            var currencyUnits = matchingTransactions.Select(transaction =>
-                FinancialAmountFormatter.TryNormalizeCurrency(transaction.CurrencyCode, out var code)
-                    ? code : null).Distinct().Count();
-            if (currencyUnits > 1)
+            if (HasAmbiguousCurrencyEvidence(matchingTransactions))
             {
                 rejectedCurrencyAmbiguity++;
                 ambiguousEvidenceProviders.Add(detectedStream.ProviderName);
@@ -761,11 +769,7 @@ public sealed class RecurringBillDiscoveryPersistenceService
 
             // Merchant identity is not an obligation identity. Do not assemble
             // monthly cadence from different (or partly unknown) source accounts.
-            var sourceAccounts = matchingTransactions
-                .Select(transaction => transaction.BankAccountId is { } account && account != Guid.Empty
-                    ? (Guid?)account : null)
-                .Distinct().Count();
-            if (sourceAccounts > 1)
+            if (HasAmbiguousSourceAccountEvidence(matchingTransactions))
             {
                 rejectedSourceAccountAmbiguity++;
                 ambiguousEvidenceProviders.Add(detectedStream.ProviderName);
@@ -896,6 +900,18 @@ public sealed class RecurringBillDiscoveryPersistenceService
         IReadOnlyList<AcceptedRecurringDiscovery> AcceptedDiscoveries,
         RecurringBillDiscoveryDiagnostics Diagnostics,
         IReadOnlySet<string> AmbiguousEvidenceProviders);
+
+    private static bool HasAmbiguousCurrencyEvidence(
+        IReadOnlyCollection<DiscoveryTransaction> transactions) =>
+        transactions.Select(transaction =>
+            FinancialAmountFormatter.TryNormalizeCurrency(transaction.CurrencyCode, out var code)
+                ? code : null).Distinct().Count() > 1;
+
+    private static bool HasAmbiguousSourceAccountEvidence(
+        IReadOnlyCollection<DiscoveryTransaction> transactions) =>
+        transactions.Select(transaction =>
+            transaction.BankAccountId is { } account && account != Guid.Empty
+                ? (Guid?)account : null).Distinct().Count() > 1;
 
     private BillCategory ResolveBillCategory(
         IReadOnlyCollection<DiscoveryTransaction>

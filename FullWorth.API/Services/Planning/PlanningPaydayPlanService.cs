@@ -1,3 +1,4 @@
+using FullWorth.Core.Formatting;
 using FullWorth.API.Services.Contracts;
 using FullWorth.Core.Models.Planning;
 using FullWorth.Core.Services;
@@ -9,7 +10,8 @@ public enum PlanningPaydayPlanStatus
     Ready = 1,
     PayrollNotFound = 2,
     PayScheduleRequired = 3,
-    PayrollFactUnsupported = 4
+    PayrollFactUnsupported = 4,
+    BillLimitExceeded = 5
 }
 
 public enum PlanningPaydayPlanSkipReason
@@ -170,6 +172,19 @@ public sealed class PlanningPaydayPlanService(
         {
             return Empty(
                 PlanningPaydayPlanStatus.PayScheduleRequired,
+                payrollTransactionId,
+                postedDate,
+                payroll.Amount,
+                payrollCurrency);
+        }
+
+        // A new plan must cover the complete owned active set. Do not let a
+        // bounded adapter throw, truncate the bills or persist partial coverage.
+        // Saved replay above remains independent of the current active count.
+        if (activeBills.Count > PlanningPaycheckAllocationStore.MaximumBillsPerPaycheck)
+        {
+            return Empty(
+                PlanningPaydayPlanStatus.BillLimitExceeded,
                 payrollTransactionId,
                 postedDate,
                 payroll.Amount,
@@ -568,30 +583,21 @@ public sealed class PlanningPaydayPlanService(
         string? currencyCode,
         out string? normalized)
     {
-        normalized =
-            currencyCode?.Trim().ToUpperInvariant();
-
-        if (normalized is null ||
-            normalized.Length !=
-                3 ||
-            normalized.Any(
-                character =>
-                    character is < 'A' or > 'Z'))
+        if (FinancialAmountFormatter.TryNormalizeCurrency(currencyCode, out var currency))
         {
-            normalized =
-                null;
-
-            return false;
+            normalized = currency;
+            return true;
         }
 
-        return true;
+        normalized = null;
+        return false;
     }
 
     private static string NormalizeStoredCurrency(
         string currencyCode) =>
-        currencyCode
-            .Trim()
-            .ToUpperInvariant();
+        FinancialAmountFormatter.TryNormalizeCurrency(currencyCode, out var normalized)
+            ? normalized
+            : string.Empty;
 
     private static bool IsMoney(
         decimal amount) =>

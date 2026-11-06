@@ -53,7 +53,8 @@ public static class BankLifecycleRaceChecks
             await SuccessAsync(options, transactions);
             count++;
         }
-        Console.WriteLine($"PostgreSQL bank lifecycle checks passed: {count} cases; actual EF save concurrency and transaction rollback.");
+        count += await BillAmbiguousHistoryChecks.RunAsync(options);
+        Console.WriteLine($"PostgreSQL bank lifecycle checks passed: {count} cases; actual EF save concurrency, transaction rollback and bill evidence retention.");
         return 0;
     }
 

@@ -345,6 +345,46 @@ public sealed class PlanningWorkspaceTests
         await page.DisposeAsync();
     }
 
+    [Theory]
+    [InlineData("uſd", "Currency unavailable", true)]
+    [InlineData("ſek", "Currency unavailable", true)]
+    [InlineData(" usd ", "USD", false)]
+    [InlineData("sEk", "SEK", false)]
+    public async Task HistoricalCurrency_PreservesRawEvidenceAndRequiresReviewWithoutRelabeling(
+        string raw, string label, bool review)
+    {
+        var module = new Module(); var normal = module.Reply;
+        const string complete = "{\"eligibleBillCount\":0,\"missingStatementFactCount\":0,\"missingDueDateCount\":0,\"currencyMismatchCount\":0,\"invalidStatementAmountCount\":0,\"priorCurrencyConflictCount\":0}";
+        module.Reply = (name, args) => name == "getRecentPaydayPlans"
+            ? Task.FromResult<string?>(History(complete).Replace("\"USD\"", JsonSerializer.Serialize(raw)))
+            : normal(name, args);
+        var page = Page(module); await Run(page, "LoadAsync");
+        var plan = Assert.Single(Get<IList>(page, "_recentPlans").Cast<object>());
+        Assert.Equal(raw, Get<string>(plan, "CurrencyCode"));
+        Assert.Equal(review, RequiresReview(plan));
+        var format = typeof(Planning).GetMethod("FormatAmount",
+            BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic)!;
+        var display = (string)format.Invoke(format.IsStatic ? null : page, [1000m, raw])!;
+        Assert.EndsWith(" " + label, display);
+        Assert.Equal(1000m, Get<decimal>(plan, "PaycheckAmount"));
+        Assert.DoesNotContain(module.Calls, c => c.Name.StartsWith("put") || c.Name.StartsWith("delete"));
+        await page.DisposeAsync();
+    }
+
+    [Theory]
+    [InlineData("uſd", "Needs review", "needs-review")]
+    [InlineData("ſek", "Needs review", "needs-review")]
+    [InlineData(" usd ", "Ready to replan", "is-ready")]
+    public void UnsupportedChangeUnit_CannotClaimReadyToReplan(
+        string raw, string label, string cssClass)
+    {
+        var page = Page(new Module());
+        Assert.Equal(label, typeof(Planning).GetMethod("GetStatusLabel", Flags)!
+            .Invoke(page, ["Ready", raw]));
+        Assert.Equal(cssClass, typeof(Planning).GetMethod("GetStatusClass",
+            BindingFlags.Static | BindingFlags.NonPublic)!.Invoke(null, ["Ready", raw]));
+    }
+
     [Fact]
     public async Task MissingBillResponse_DoesNotBecomeNoActiveBills()
     {

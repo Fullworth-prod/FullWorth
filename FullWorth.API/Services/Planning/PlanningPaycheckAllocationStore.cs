@@ -1,3 +1,4 @@
+using FullWorth.Core.Formatting;
 using FullWorth.API.Data;
 using FullWorth.API.Data.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -68,7 +69,7 @@ public sealed class PlanningPaycheckAllocationStore(
     FullWorthDbContext dbContext,
     TimeProvider timeProvider)
 {
-    private const int MaximumBillsPerPaycheck = 500;
+    internal const int MaximumBillsPerPaycheck = 500;
 
     public async Task<IReadOnlyList<PlanningPaycheckPlanRunSnapshot>>
         GetRecentPaycheckPlanRunsAsync(
@@ -1026,20 +1027,8 @@ public sealed class PlanningPaycheckAllocationStore(
                 "Planned amount must not contain fractions of a cent.");
         }
 
-        var currency =
-            allocation.CurrencyCode?.Trim().ToUpperInvariant();
-
-        if (currency is null ||
-            currency.Length !=
-                3 ||
-            currency.Any(
-                character =>
-                    character is < 'A' or > 'Z'))
-        {
-            throw new ArgumentException(
-                "Currency code must be a three-letter alphabetic code.",
-                nameof(allocation.CurrencyCode));
-        }
+        var currency = NormalizeCurrency(
+            allocation.CurrencyCode, nameof(allocation.CurrencyCode));
 
         return allocation with
         {
@@ -1163,18 +1152,10 @@ public sealed class PlanningPaycheckAllocationStore(
         string? currencyCode,
         string parameterName)
     {
-        var currency =
-            currencyCode?.Trim().ToUpperInvariant();
-
-        if (currency is null ||
-            currency.Length !=
-                3 ||
-            currency.Any(
-                character =>
-                    character is < 'A' or > 'Z'))
+        if (!FinancialAmountFormatter.TryNormalizeCurrency(currencyCode, out var currency))
         {
             throw new ArgumentException(
-                "Currency code must be a three-letter alphabetic code.",
+                "Currency code must contain three ASCII letters.",
                 parameterName);
         }
 

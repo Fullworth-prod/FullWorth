@@ -2,6 +2,9 @@ name: Themed confirmation dialog
 on:
   pull_request:
     paths:
+      - "FullWorth.Web/wwwroot/service-worker.js"
+      - "FullWorth.Web/wwwroot/js/pwa.js"
+      - "FullWorth.Web/wwwroot/js/transaction-filter-worker.js"
       - "FullWorth.Web/wwwroot/js/bff.js"
       - "FullWorth.Web/wwwroot/js/account-security.js"
       - "FullWorth.Web/wwwroot/js/account-delete.js"
@@ -72,6 +75,8 @@ jobs:
         run: node FullWorth.VisualTests/privacy-response-boundary.test.mjs
       - name: Verify explicit fresh-Link recovery and no silent replay
         run: node FullWorth.VisualTests/hosted-link-recovery.test.mjs
+      - name: Verify native worker message contexts and explicit guarded PWA activation
+        run: node FullWorth.VisualTests/worker-message-boundary.test.mjs
       - name: Retain synthetic mobile screenshots
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9

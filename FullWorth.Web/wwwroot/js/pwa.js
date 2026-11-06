@@ -110,7 +110,8 @@
             // A timed-out request may have activated since its listener expired.
             // Only a fresh explicit action may reload, and only for that exact worker.
             if (!registration.waiting && timedOutUpdateWorker &&
-                navigator.serviceWorker.controller === timedOutUpdateWorker) {
+                navigator.serviceWorker.controller === timedOutUpdateWorker &&
+                timedOutUpdateWorker.state === "activated") {
                 timedOutUpdateWorker = null;
                 window.location.reload();
                 return "reloaded";
@@ -131,8 +132,12 @@
                 let settled = false;
                 let timeout = null;
 
-                const onControllerChange = () => {
-                    if (navigator.serviceWorker.controller === waitingWorker) {
+                // Some browsers signal controllerchange while the worker is still
+                // activating. Reloading at that point can interrupt its activate
+                // work and strand the new document on an unfinished controller.
+                const onUpdateProgress = () => {
+                    if (navigator.serviceWorker.controller === waitingWorker &&
+                        waitingWorker.state === "activated") {
                         finish("reloaded");
                     }
                 };
@@ -144,7 +149,9 @@
                     settled = true;
                     timedOutUpdateWorker = result === "timeout" ? waitingWorker : null;
                     navigator.serviceWorker.removeEventListener(
-                        "controllerchange", onControllerChange);
+                        "controllerchange", onUpdateProgress);
+                    waitingWorker.removeEventListener(
+                        "statechange", onUpdateProgress);
                     if (timeout !== null) {
                         window.clearTimeout(timeout);
                     }
@@ -158,7 +165,9 @@
                 };
 
                 navigator.serviceWorker.addEventListener(
-                    "controllerchange", onControllerChange);
+                    "controllerchange", onUpdateProgress);
+                waitingWorker.addEventListener(
+                    "statechange", onUpdateProgress);
                 timeout = window.setTimeout(
                     () => finish("timeout"), 10000);
 
@@ -166,6 +175,9 @@
                     waitingWorker.postMessage({
                         type: "SKIP_WAITING"
                     });
+                    // The controller and activation events can also complete
+                    // synchronously before the message handler returns.
+                    onUpdateProgress();
                 } catch {
                     // A worker can become redundant before the message is sent.
                     // Clean up this attempt; leave any retry to the user.

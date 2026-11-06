@@ -1,3 +1,4 @@
+using FullWorth.Core.Formatting;
 using System.Runtime.ExceptionServices;
 using System.Globalization;
 using FullWorth.API.Services.Contracts;
@@ -109,6 +110,13 @@ public sealed class PlanningPaydayAlertRefreshService(
                         break;
 
 
+                    // Capacity is an incomplete generation, not a ready or
+                    // silently skipped paycheck. The existing per-paycheck
+                    // failure isolation still attempts independent saved plans.
+                    case PlanningPaydayPlanStatus.BillLimitExceeded:
+                        throw new InvalidOperationException(
+                            "Payday plan exceeds the supported bill limit.");
+
                     case PlanningPaydayPlanStatus.PayrollNotFound:
                     case PlanningPaydayPlanStatus.PayrollFactUnsupported:
                         skipped++;
@@ -156,17 +164,12 @@ public sealed class PlanningPaydayAlertRefreshService(
     {
         if (plan.Status !=
                 PlanningPaydayPlanStatus.Ready ||
-            string.IsNullOrWhiteSpace(
-                plan.CurrencyCode))
+            !FinancialAmountFormatter.TryNormalizeCurrency(
+                plan.CurrencyCode, out var currency))
         {
             throw new InvalidOperationException(
                 "Only complete payday plans can create alerts.");
         }
-
-        var currency =
-            plan.CurrencyCode
-                .Trim()
-                .ToUpperInvariant();
 
         if (plan.Shortfall >
             0m)

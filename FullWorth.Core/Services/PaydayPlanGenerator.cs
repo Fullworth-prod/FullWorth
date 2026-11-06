@@ -1,3 +1,4 @@
+using FullWorth.Core.Formatting;
 using FullWorth.Core.Models.Planning;
 
 namespace FullWorth.Core.Services;
@@ -198,18 +199,10 @@ public static class PaydayPlanGenerator
                 parameterName);
         }
 
-        var normalized =
-            value.Trim()
-                .ToUpperInvariant();
-
-        if (normalized.Length !=
-                3 ||
-            normalized.Any(
-                character =>
-                    character is < 'A' or > 'Z'))
+        if (!FinancialAmountFormatter.TryNormalizeCurrency(value, out var normalized))
         {
             throw new ArgumentException(
-                "Currency code must be a three-letter alphabetic code.",
+                "Currency code must contain three ASCII letters.",
                 parameterName);
         }
 

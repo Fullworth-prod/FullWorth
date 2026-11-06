@@ -527,6 +527,59 @@ public sealed class PlanningPaydayPlanServiceTests
                 .CountAsync());
     }
 
+    [Theory]
+    [InlineData("uſd", true)]
+    [InlineData("uſd", false)]
+    public async Task GenerateAsync_RejectsUnicodePayrollOrBillWithoutCurrencyArithmetic(
+        string raw, bool payroll)
+    {
+        var stream = Guid.NewGuid();
+        var transaction = Guid.NewGuid();
+        await using var harness = await Harness.CreateAsync(stream,
+            Fact(stream) with { CurrencyCode = payroll ? "USD" : raw },
+            Payroll(transaction) with { CurrencyCode = payroll ? raw : "USD" });
+        var result = await harness.Service.GenerateAsync(harness.UserId, transaction,
+            new DateOnly(2026, 9, 25));
+        Assert.Empty(result.Items);
+        Assert.Equal(0m, result.RecommendedSetAside);
+        Assert.Empty(await harness.DbContext.PlanningPaycheckAllocations.ToListAsync());
+        if (payroll)
+        {
+            Assert.Equal(PlanningPaydayPlanStatus.PayrollFactUnsupported, result.Status);
+            Assert.Null(result.CurrencyCode);
+            Assert.Empty(await harness.DbContext.PlanningPaycheckPlanRuns.ToListAsync());
+        }
+        else
+        {
+            Assert.Equal(PlanningPaydayPlanSkipReason.CurrencyMismatch,
+                Assert.Single(result.SkippedBills).Reason);
+            Assert.Equal(1, result.Coverage!.CurrencyMismatchCount);
+        }
+    }
+
+    [Fact]
+    public async Task GenerateAsync_DoesNotSubtractLegacyUnicodeAllocationFromDollarBill()
+    {
+        var stream = Guid.NewGuid();
+        var transaction = Guid.NewGuid();
+        var fact = Fact(stream);
+        await using var harness = await Harness.CreateAsync(stream, fact, Payroll(transaction));
+        await harness.Store.SavePaycheckPlanAsync(harness.UserId, Guid.NewGuid(),
+            new DateOnly(2026, 9, 11),
+            [new PlanningPaycheckAllocationDraft(stream, fact.StatementId, fact.PeriodEnd,
+                fact.DueDate!.Value, 200m, "USD")]);
+        var historical = await harness.DbContext.PlanningPaycheckAllocations.SingleAsync();
+        historical.CurrencyCode = "uſd";
+        await harness.DbContext.SaveChangesAsync();
+        var result = await harness.Service.GenerateAsync(harness.UserId, transaction,
+            new DateOnly(2026, 9, 25));
+        Assert.Empty(result.Items);
+        Assert.Equal(PlanningPaydayPlanSkipReason.PriorCurrencyConflict,
+            Assert.Single(result.SkippedBills).Reason);
+        Assert.Equal("uſd", (await harness.DbContext.PlanningPaycheckAllocations.SingleAsync()).CurrencyCode);
+        Assert.Equal(200m, historical.PlannedAmount);
+    }
+
     private static BillPlanningFact Fact(
         Guid billStreamId) =>
         new(

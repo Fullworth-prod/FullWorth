@@ -1,3 +1,23 @@
+## Promoted candidate and acceptance status — November 10, 2026
+
+The promoted master release is `8472e7cbf8efb4aa6ae95968afb39b9a0bf81335`. The last independently verified served release was `9540b2616841e9794d8f8c07616edcd1e339982c` on November 3. Deployment of the promoted release requires separate authorization.
+
+[#1052](https://github.com/Fullworth-prod/FullWorth/pull/1052) promoted source `22eb6d5daf582ddb97879ec0c1e366b916c8d725`. The release source, integrated master, and development runtime `34a297c5d1be7014e2956506827a034f1790cbc6` share tree `8aa75d5eda8e1723988a0d3ed9c18ca4674f93f3`. [Promotion CI](https://github.com/Fullworth-prod/FullWorth/actions/runs/41976275973) passed alongside the applicable browser, mobile, dependency and PostgreSQL workflows.
+
+[Master push CI](https://github.com/Fullworth-prod/FullWorth/actions/runs/42148686900) passed 3,719 .NET and 773 Node tests with zero failures or skips. The [container job](https://github.com/Fullworth-prod/FullWorth/actions/runs/42148686900/job/127666302069) verified all six image signatures, signed SPDX content and exact release policy using the shared consumer before publication. [Artifact 13471093264](https://github.com/Fullworth-prod/FullWorth/actions/runs/42148686900/artifacts/13471093264) expires November 13 at 02:14:46 UTC. GitHub records the archive digest as `sha256:2c576e26f5699e9bbe23c7826ff458c75aa97129be08c1f61a276e5a1fac009a`. Recheck availability before any authorized deployment. The superseded b424 image archive has expired.
+
+[Master CodeQL](https://github.com/Fullworth-prod/FullWorth/actions/runs/42148686610) completed successfully in Actions, C#, JavaScript/TypeScript and Python. This records job outcomes. The earlier [candidate CodeQL reports](CANDIDATE-CODEQL-REPORTS.md) document partial source extraction and contextual findings at their own source revision.
+
+All 19 acceptance cases remain `NOT_RUN`. The evidence template lists `8472e7cbf8efb4aa6ae95968afb39b9a0bf81335` as the planned release only. Record the actual served Web, API and client revisions and protected receipts at observation time.
+
+Keep [#1024](https://github.com/Fullworth-prod/FullWorth/issues/1024) open until an authorized deployment verifies the intended running image revisions, durable OCI no-swap annotation, manager and kernel zero-swap limits, and parser readiness. [#1033](https://github.com/Fullworth-prod/FullWorth/issues/1033) is closed on the master publisher and consumer proof. [#1027](https://github.com/Fullworth-prod/FullWorth/issues/1027) is closed for the reproduced native-form startup input loss fixed by #1031 and #1032. The original timeout lacked a form snapshot, so its historical cause remains unconfirmed.
+
+[#1053](https://github.com/Fullworth-prod/FullWorth/pull/1053) waits for the exact requested PWA worker to control the page and reach `activated` before its single explicit reload. Chromium and WebKit exercised both activation and the reload. Installed Android and iPhone acceptance still requires an observed upgrade on the intended release. Check the three light/dark pairs, EN/ES, reduced motion, and narrow-screen behavior on the devices. Use an owner-controlled provider session and private known facts for financial cases, a real receipt for alert delivery, two controlled identities for isolation, a current nonempty protected clean-host restore for the database, statements and both key rings, and qualified review for legal acceptance. AI and creator features stay off. Creator terms remain proposed.
+
+Earlier dated entries record historical evidence.
+
+---
+
 ## Final repository handoff — November 4, 2026
 
 Preserved development code candidate: `75df865b787394c7a6a83f24497376a1206b9602` ([#1050](https://github.com/Fullworth-prod/FullWorth/pull/1050)). Explicit types on the seven existing external-auth delegates repair compiled CodeQL binding while preserving handlers/routes/security metadata. All nine source-head checks passed: **3,719 .NET / 769 Node**, zero failed/skipped/backend+offline+Android warnings/errors; full Chromium/WebKit rendered/native-auth/virtual-passkey/MFA and container recovery passed. Source/tested/integrated tree `c3ea4a237a7d7fc5e11bf1900851a463f697576f` matches; files read back exactly and branches retained.

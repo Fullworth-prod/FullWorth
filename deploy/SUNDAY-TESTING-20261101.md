@@ -1,3 +1,19 @@
+## Promoted candidate and acceptance status — November 10, 2026
+
+The promoted master release is `8472e7cbf8efb4aa6ae95968afb39b9a0bf81335`. The last independently verified served release was `9540b2616841e9794d8f8c07616edcd1e339982c` on November 3. Deployment of the promoted release requires separate authorization.
+
+The [release checkpoint](SUNDAY-RELEASE-CHECKPOINT-20261031.md) records the matching source and integration tree, successful master CI and signed artifact expiry. The promoted candidate still awaits authorized deployment and same-release acceptance. The checklist and template retain 19 `NOT_RUN` cases.
+
+All 19 acceptance cases remain `NOT_RUN`. The evidence template lists `8472e7cbf8efb4aa6ae95968afb39b9a0bf81335` as the planned release only. Record the actual served Web, API and client revisions and protected receipts at observation time.
+
+Keep [#1024](https://github.com/Fullworth-prod/FullWorth/issues/1024) open until an authorized deployment verifies the intended running image revisions, durable OCI no-swap annotation, manager and kernel zero-swap limits, and parser readiness. [#1033](https://github.com/Fullworth-prod/FullWorth/issues/1033) is closed on the master publisher and consumer proof. [#1027](https://github.com/Fullworth-prod/FullWorth/issues/1027) is closed for the reproduced native-form startup input loss fixed by #1031 and #1032. The original timeout lacked a form snapshot, so its historical cause remains unconfirmed.
+
+[#1053](https://github.com/Fullworth-prod/FullWorth/pull/1053) waits for the exact requested PWA worker to control the page and reach `activated` before its single explicit reload. Chromium and WebKit exercised both activation and the reload. Installed Android and iPhone acceptance still requires an observed upgrade on the intended release. Check the three light/dark pairs, EN/ES, reduced motion, and narrow-screen behavior on the devices. Use an owner-controlled provider session and private known facts for financial cases, a real receipt for alert delivery, two controlled identities for isolation, a current nonempty protected clean-host restore for the database, statements and both key rings, and qualified review for legal acceptance. AI and creator features stay off. Creator terms remain proposed.
+
+Earlier dated entries record historical evidence.
+
+---
+
 ## Final repository handoff — November 4, 2026
 
 Preserved development code candidate: `75df865b787394c7a6a83f24497376a1206b9602` ([#1050](https://github.com/Fullworth-prod/FullWorth/pull/1050)). Explicit types on the seven existing external-auth delegates repair compiled CodeQL binding while preserving handlers/routes/security metadata. All nine source-head checks passed: **3,719 .NET / 769 Node**, zero failed/skipped/backend+offline+Android warnings/errors; full Chromium/WebKit rendered/native-auth/virtual-passkey/MFA and container recovery passed. Source/tested/integrated tree `c3ea4a237a7d7fc5e11bf1900851a463f697576f` matches; files read back exactly and branches retained.

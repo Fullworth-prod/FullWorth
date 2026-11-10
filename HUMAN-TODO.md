@@ -1,3 +1,21 @@
+## Promoted candidate and acceptance status — November 10, 2026
+
+Current release candidate on `master`:
+
+`8472e7cbf8efb4aa6ae95968afb39b9a0bf81335`
+
+Current verified live production release marker:
+
+`9540b2616841e9794d8f8c07616edcd1e339982c`
+
+The live identity was last independently verified November 3.
+
+The [release checkpoint](deploy/SUNDAY-RELEASE-CHECKPOINT-20261031.md) records the matching source and integration tree, successful master CI and signed artifact expiry. The promoted candidate still awaits authorized deployment and same-release acceptance. The checklist and template retain 19 `NOT_RUN` cases.
+
+Earlier dated entries record historical evidence.
+
+---
+
 ## Final repository handoff — November 4, 2026
 
 Preserved development code candidate: `75df865b787394c7a6a83f24497376a1206b9602` ([#1050](https://github.com/Fullworth-prod/FullWorth/pull/1050)). Explicit types on the seven existing external-auth delegates repair compiled CodeQL binding while preserving handlers/routes/security metadata. All nine source-head checks passed: **3,719 .NET / 769 Node**, zero failed/skipped/backend+offline+Android warnings/errors; full Chromium/WebKit rendered/native-auth/virtual-passkey/MFA and container recovery passed. Source/tested/integrated tree `c3ea4a237a7d7fc5e11bf1900851a463f697576f` matches; files read back exactly and branches retained.

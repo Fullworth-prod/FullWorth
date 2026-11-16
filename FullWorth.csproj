@@ -9,7 +9,7 @@
     <RootNamespace>FullWorth</RootNamespace>
     <UseMaui>true</UseMaui>
     <!-- 10.0.120 includes the upstream Resizetizer SVG text/filter compatibility fix. -->
-    <MauiVersion>10.0.120</MauiVersion>
+    <MauiVersion>10.0.130</MauiVersion>
     <SingleProject>true</SingleProject>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -72,7 +72,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.15" />
   </ItemGroup>
 
   <ItemGroup>

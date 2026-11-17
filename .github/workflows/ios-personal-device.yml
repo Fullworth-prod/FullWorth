@@ -103,7 +103,7 @@ jobs:
 
 
       - name: Install MAUI iOS workload
-        run: dotnet workload install maui-ios --skip-manifest-update
+        run: dotnet workload install maui-ios --version 10.0.401
 
       - name: Restore device dependencies
         run: >-

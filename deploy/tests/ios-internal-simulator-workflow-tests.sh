@@ -32,7 +32,7 @@ grep -Fq 'contents: read' "$workflow" ||
     fail "workflow repository permissions are not read-only."
 grep -Fq 'runs-on: macos-26' "$workflow" ||
     fail "iOS build is not pinned to the macos-26 runner that carries the matching iOS 26.5 simulator runtime."
-grep -Fq 'dotnet workload install maui-ios --skip-manifest-update' "$workflow" ||
+grep -Fq 'dotnet workload install maui-ios --version 10.0.401' "$workflow" ||
     fail "MAUI iOS workload installation is missing."
 
 grep -Fq 'Select Xcode 26.6 required by .NET iOS' "$workflow" ||

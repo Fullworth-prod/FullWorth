@@ -41,7 +41,7 @@ jobs:
   build:
     name: Build unsigned iPhone device IPA
     needs: contract
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -52,17 +52,17 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Select Xcode 26.0 required by .NET iOS
+      - name: Select Xcode 26.6 required by .NET iOS
         shell: bash
         run: |
           set -euo pipefail
 
-          xcode_app="/Applications/Xcode_26.0.1.app"
+          xcode_app="/Applications/Xcode_26.6.app"
           developer_dir="$xcode_app/Contents/Developer"
 
           [ -d "$developer_dir" ] || {
             printf '%s\n' \
-              "Expected the real Xcode 26.0.1 bundle at $xcode_app on the pinned macos-15 runner." \
+              "Expected the real Xcode 26.6 bundle at $xcode_app on the pinned macos-26 runner." \
               >&2
             exit 65
           }
@@ -74,11 +74,11 @@ jobs:
           )
 
           case "$version" in
-            26.0|26.0.*)
+            26.6|26.6.*)
               ;;
             *)
               printf '%s\n' \
-                "Expected Xcode 26.0.x but $xcode_app reports Xcode $version." \
+                "Expected Xcode 26.6.x but $xcode_app reports Xcode $version." \
                 >&2
               exit 65
               ;;
@@ -91,12 +91,12 @@ jobs:
           runtime_count=$(
             DEVELOPER_DIR="$developer_dir" \
               xcrun simctl list runtimes --json |
-              python3 -c 'import json,sys; data=json.load(sys.stdin); print(sum(1 for runtime in data.get("runtimes", []) if runtime.get("isAvailable") and runtime.get("identifier", "").startswith("com.apple.CoreSimulator.SimRuntime.iOS-26-0")))'
+              python3 -c 'import json,sys; data=json.load(sys.stdin); print(sum(1 for runtime in data.get("runtimes", []) if runtime.get("isAvailable") and runtime.get("identifier", "").startswith("com.apple.CoreSimulator.SimRuntime.iOS-26-5")))'
           )
 
           if [ "$runtime_count" -lt 1 ]; then
             printf '%s\n' \
-              "The pinned macos-15 runner does not expose an available iOS 26.0 simulator runtime under Xcode $version." \
+              "The pinned macos-26 runner does not expose an available iOS 26.5 simulator runtime under Xcode $version." \
               >&2
             exit 65
           fi

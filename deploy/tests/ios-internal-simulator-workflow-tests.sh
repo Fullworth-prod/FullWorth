@@ -30,19 +30,25 @@ grep -Fq -- '- master' "$workflow" ||
     fail "master push trigger is missing."
 grep -Fq 'contents: read' "$workflow" ||
     fail "workflow repository permissions are not read-only."
-grep -Fq 'runs-on: macos-15' "$workflow" ||
-    fail "iOS build is not pinned to the macos-15 runner that carries the matching iOS 26.0 simulator runtime."
-grep -Fq 'dotnet workload install maui-ios --skip-manifest-update' "$workflow" ||
+grep -Fq 'runs-on: macos-26' "$workflow" ||
+    fail "iOS build is not pinned to the macos-26 runner that carries the matching iOS 26.5 simulator runtime."
+grep -Fq 'dotnet workload install maui-ios --version 10.0.401' "$workflow" ||
     fail "MAUI iOS workload installation is missing."
+grep -Fq 'Isolate .NET 10 SDK from runner workloads' "$workflow" ||
+    fail "iOS build does not run the SDK isolation setup before workload installation."
+grep -Fq 'DOTNET_INSTALL_DIR=%s' "$workflow" ||
+    fail "iOS build does not configure an isolated .NET 10 install root."
+grep -Fq 'DOTNET_MULTILEVEL_LOOKUP=0' "$workflow" ||
+    fail "iOS build is allowed to fall back to conflicting machine-wide SDKs."
 
-grep -Fq 'Select Xcode 26.0 required by .NET iOS' "$workflow" ||
+grep -Fq 'Select Xcode 26.6 required by .NET iOS' "$workflow" ||
     fail "workflow does not explicitly select the Xcode version required by the .NET iOS workload."
-grep -Fq 'xcode_app="/Applications/Xcode_26.0.1.app"' "$workflow" ||
-    fail "workflow does not use the real Xcode 26.0.1 bundle path."
-grep -Fq '26.0|26.0.*)' "$workflow" ||
+grep -Fq 'xcode_app="/Applications/Xcode_26.6.app"' "$workflow" ||
+    fail "workflow does not use the real Xcode 26.6 bundle path."
+grep -Fq '26.6|26.6.*)' "$workflow" ||
     fail "workflow does not accept the Xcode 26.0 patch line required by the .NET iOS workload."
-grep -Fq 'com.apple.CoreSimulator.SimRuntime.iOS-26-0' "$workflow" ||
-    fail "workflow does not preflight the matching iOS 26.0 simulator runtime."
+grep -Fq 'com.apple.CoreSimulator.SimRuntime.iOS-26-5' "$workflow" ||
+    fail "workflow does not preflight the matching iOS 26.5 simulator runtime."
 grep -Fq 'DEVELOPER_DIR=%s' "$workflow" ||
     fail "selected Xcode developer directory is not exported for later steps."
 grep -Fq 'xcodebuild -version' "$workflow" ||
@@ -97,10 +103,10 @@ if grep -Eiq '(codesign|provisioning|certificate|p12|mobileprovision).*(password
     fail "simulator workflow appears to contain signing-secret handling."
 fi
 
-grep -Fq 'com.apple.CoreSimulator.SimRuntime.iOS-26-0' "$smoke_script" ||
-    fail "smoke is not pinned to the iOS 26.0 simulator runtime compatible with the selected Xcode."
+grep -Fq 'com.apple.CoreSimulator.SimRuntime.iOS-26-5' "$smoke_script" ||
+    fail "smoke is not pinned to the iOS 26.5 simulator runtime compatible with the selected Xcode."
 grep -Fq 'xcrun simctl list devices --json' "$smoke_script" ||
-    fail "smoke does not select a preinstalled iOS 26.0 iPhone Simulator."
+    fail "smoke does not select a preinstalled iOS 26.5 iPhone Simulator."
 grep -Fq 'xcrun simctl erase' "$smoke_script" ||
     fail "smoke does not reset the selected Simulator before launch."
 boot_function=$(

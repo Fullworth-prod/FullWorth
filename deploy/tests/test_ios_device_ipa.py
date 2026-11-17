@@ -105,6 +105,18 @@ class DeviceIpaTests(unittest.TestCase):
         self.assertIn("pull_request:", workflow)
         self.assertIn("Signing: absent", workflow)
 
+    def test_ios_builds_use_isolated_compatible_workloads(self):
+        for workflow_name in ("ios-personal-device.yml", "ios-internal-simulator.yml"):
+            with self.subTest(workflow=workflow_name):
+                workflow = (ROOT / ".github/workflows" / workflow_name).read_text()
+                self.assertIn("runs-on: macos-26", workflow)
+                self.assertIn("Isolate .NET 10 SDK from runner workloads", workflow)
+                self.assertIn("DOTNET_INSTALL_DIR=%s", workflow)
+                self.assertIn("DOTNET_MULTILEVEL_LOOKUP=0", workflow)
+                self.assertIn("fullworth-dotnet10", workflow)
+                self.assertIn("dotnet workload install maui-ios --version 10.0.401", workflow)
+                self.assertIn('xcode_app="/Applications/Xcode_26.6.app"', workflow)
+
     def run_xcode_version_probe(self, workflow_name, fail_after_output=False):
         workflow = (ROOT / ".github/workflows" / workflow_name).read_text()
         start = workflow.index("          version=$(")
@@ -117,7 +129,7 @@ class DeviceIpaTests(unittest.TestCase):
             tool.write_text(
                 "#!" + sys.executable + "\n"
                 "import os, time, sys\n"
-                "os.write(1, b'Xcode 26.0.1\\n')\n"
+                "os.write(1, b'Xcode 26.6\\n')\n"
                 "time.sleep(0.03)\n"
                 "for _ in range(256): os.write(1, b'Build detail ' + b'x' * 8192 + b'\\n')\n"
                 "sys.exit(19 if os.environ.get('SYNTHETIC_XCODE_FAILURE') == '1' else 0)\n"
@@ -127,7 +139,7 @@ class DeviceIpaTests(unittest.TestCase):
                                developer_dir=directory,
                                SYNTHETIC_XCODE_FAILURE="1" if fail_after_output else "0")
             return subprocess.run(
-                ["bash", "-c", "set -euo pipefail\n" + probe + '\n[ "$version" = "26.0.1" ]\n'],
+                ["bash", "-c", "set -euo pipefail\n" + probe + '\n[ "$version" = "26.6" ]\n'],
                 env=environment, capture_output=True, text=True, timeout=10)
 
     def test_xcode_version_parsers_drain_the_producer(self):

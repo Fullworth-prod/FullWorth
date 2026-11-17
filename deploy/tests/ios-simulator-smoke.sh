@@ -116,13 +116,13 @@ items=[
     runtime for runtime in data.get("runtimes", [])
     if runtime.get("isAvailable") and
        runtime.get("identifier", "").startswith(
-           "com.apple.CoreSimulator.SimRuntime.iOS-26-0")
+           "com.apple.CoreSimulator.SimRuntime.iOS-26-5")
 ]
 if not items:
     raise SystemExit(1)
 print(items[0]["identifier"])
 '
-) || fail "no available iOS 26.0 Simulator runtime was found."
+) || fail "no available iOS 26.5 Simulator runtime was found."
 
 record_phase device-selection
 
@@ -146,7 +146,7 @@ preferred=[
 choice=(preferred or devices)[0]
 print(choice["udid"])
 ' "$runtime_id"
-) || fail "no preinstalled iPhone Simulator is available for iOS 26.0."
+) || fail "no preinstalled iPhone Simulator is available for iOS 26.5."
 
 cleanup()
 {
@@ -171,7 +171,7 @@ run_with_timeout 30 \
 record_phase reset
 run_with_timeout 60 \
     xcrun simctl erase "$udid" ||
-    fail "could not reset the iOS 26.0 Simulator within 60 seconds."
+    fail "could not reset the iOS 26.5 Simulator within 60 seconds."
 
 record_phase boot
 if ! boot_simulator; then
@@ -179,7 +179,7 @@ if ! boot_simulator; then
         "Initial iOS simulator boot did not become ready; retrying once." >&2
 
     restart_simulator ||
-        fail "iOS 26.0 Simulator did not finish booting after one bounded retry."
+        fail "iOS 26.5 Simulator did not finish booting after one bounded retry."
 fi
 
 record_phase install
@@ -188,7 +188,7 @@ if ! install_app; then
         "Initial FullWorth simulator install failed or timed out; rebooting and retrying once." >&2
 
     restart_simulator ||
-        fail "iOS 26.0 Simulator did not recover for the install retry."
+        fail "iOS 26.5 Simulator did not recover for the install retry."
 
     install_app ||
         fail "FullWorth could not be installed into the iOS Simulator after one bounded retry."

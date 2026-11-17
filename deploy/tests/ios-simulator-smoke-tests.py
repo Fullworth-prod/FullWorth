@@ -19,9 +19,9 @@ with (root / "calls.jsonl").open("a") as stream:
     stream.write(json.dumps(args) + "\n")
 if args[:3] == ["simctl", "list", "runtimes"]:
     print(json.dumps({"runtimes":[{"isAvailable":True,
-        "identifier":"com.apple.CoreSimulator.SimRuntime.iOS-26-0"}]}))
+        "identifier":"com.apple.CoreSimulator.SimRuntime.iOS-26-5"}]}))
 elif args[:3] == ["simctl", "list", "devices"]:
-    print(json.dumps({"devices":{"com.apple.CoreSimulator.SimRuntime.iOS-26-0":
+    print(json.dumps({"devices":{"com.apple.CoreSimulator.SimRuntime.iOS-26-5":
         [{"isAvailable":True,"name":"iPhone Pro","udid":"fixture-device"}]}}))
 elif args[:2] == ["simctl", "bootstatus"] and scenario == "boot-failure":
     sys.exit(1)

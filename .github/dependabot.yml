@@ -9,6 +9,12 @@ updates:
       time: "09:00"
       timezone: "America/Denver"
     open-pull-requests-limit: 5
+    # .NET 11 is a coordinated migration, not a release maintenance update.
+    # Continue evaluating and applying .NET 10 patch/minor and security updates.
+    ignore:
+      - dependency-name: "Microsoft.*"
+        update-types:
+          - "version-update:semver-major"
     groups:
       non-major-updates:
         update-types:
@@ -39,6 +45,13 @@ updates:
       time: "09:30"
       timezone: "America/Denver"
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "dotnet/sdk"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "dotnet/aspnet"
+        update-types:
+          - "version-update:semver-major"
     groups:
       non-major-updates:
         update-types:

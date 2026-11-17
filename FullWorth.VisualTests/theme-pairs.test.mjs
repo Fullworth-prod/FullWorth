@@ -114,16 +114,16 @@ export async function verifyThemePairs(page, outputDir) {
     const culture = async (language, surface = target) => surface.context().addCookies([{ name: ".AspNetCore.Culture",
       value: encodeURIComponent("c=en-US|uic=" + language), url: origin, secure: true, sameSite: "Lax" }]);
     const ready = async label => {
-      await target.locator(".design-picker select:not([disabled])").waitFor();
+      await target.locator(".theme-toggle:not([disabled])").waitFor();
       if (label === "overview") await target.locator(".overview-dashboard .fw-pulse").waitFor();
       else await target.locator(".home-bill-example").waitFor();
       await target.evaluate(async () => { await document.fonts.ready; });
     };
     const appearance = async (style, mode, surface = target) => {
-      const select = surface.locator(".design-picker select");
-      await select.waitFor();
-      await surface.waitForFunction(() => document.querySelector(".design-picker select")?.disabled === false);
-      if (await select.inputValue() !== style) await select.selectOption(style);
+      await surface.evaluate(async value => {
+        const design = await import("/js/design-style.js");
+        design.selectDesignStyle(value);
+      }, style);
       await surface.waitForFunction(value => document.documentElement.dataset.design === value, style);
       await surface.locator(".theme-toggle:not([disabled])").waitFor();
       if (await surface.locator("html").getAttribute("data-theme") !== mode)
@@ -270,8 +270,8 @@ export async function verifyThemePairs(page, outputDir) {
             expect(await target.locator("html").getAttribute("data-design") === style &&
               await target.locator("html").getAttribute("data-theme") === mode,
               "Navigation restores the selected pair before rendering.");
-            expect(await target.locator(".design-picker select").inputValue() === style,
-              "The visible selector agrees with the restored style.");
+            expect(await target.locator(".design-picker select").count() === 0,
+              "The style selector belongs in settings, not a persistent header.");
             if (label === "home") {
               expect(await target.locator(".hero-title:visible").count() === 1, "One chosen headline is visible.");
               expect(await target.locator('.home-evidence a[href="/app/bills"]').isVisible(),
@@ -362,12 +362,12 @@ export async function verifyThemePairs(page, outputDir) {
         publicPage.on("console", consoleError);
         await culture("en-US", publicPage);
         await publicPage.goto(origin + "/", { waitUntil: "domcontentloaded" });
-        await publicPage.locator(".design-picker select:not([disabled])").waitFor();
+        await publicPage.locator(".theme-toggle:not([disabled])").waitFor();
         for (const style of styles) for (const mode of modes) {
           await appearance(style, mode, publicPage);
           await culture("en-US", publicPage);
           await publicPage.reload({ waitUntil: "domcontentloaded" });
-          await publicPage.locator(".design-picker select:not([disabled])").waitFor();
+          await publicPage.locator(".theme-toggle:not([disabled])").waitFor();
           await publicPage.evaluate(async () => { await document.fonts.ready; });
           await publicPage.setViewportSize({ width: 1487, height: 1058 });
           await publicPage.locator(".hero-copy").evaluate(element => Promise.all(element.getAnimations().map(a => a.finished)));
@@ -415,13 +415,13 @@ export async function verifyThemePairs(page, outputDir) {
           await geometry("anonymous/" + style + "/" + mode + "/en-US", 768, true, publicPage);
           await culture("es", publicPage);
           await publicPage.reload({ waitUntil: "domcontentloaded" });
-          await publicPage.locator(".design-picker select:not([disabled])").waitFor();
+          await publicPage.locator(".theme-toggle:not([disabled])").waitFor();
           await geometry("anonymous/" + style + "/" + mode + "/es", 390, true, publicPage);
           await publicPage.evaluate(() => { document.documentElement.style.fontSize = ""; });
         }
         await culture("en-US", publicPage);
         await publicPage.goto(origin + "/", { waitUntil: "domcontentloaded" });
-        await publicPage.locator(".design-picker select:not([disabled])").waitFor();
+        await publicPage.locator(".theme-toggle:not([disabled])").waitFor();
         await Promise.all([
           publicPage.waitForURL(url => url.pathname === "/register", { waitUntil: "domcontentloaded" }),
           publicPage.locator(".home-primary-action").click()
@@ -433,22 +433,20 @@ export async function verifyThemePairs(page, outputDir) {
 
       // Real native keyboard and sample interactions, without financial writes.
       await culture("en-US");
-      await target.goto(origin + "/", { waitUntil: "domcontentloaded" });
-      await ready("home");
-      await appearance("editorial", "light");
-      await target.locator("a.brand").first().focus();
+      await target.evaluate(async () => (await import("/js/design-style.js")).selectDesignStyle("editorial"));
+      await target.goto(origin + "/app/setup?returnTo=settings", { waitUntil: "domcontentloaded" });
+      await target.locator(".design-picker select:not([disabled])").waitFor();
+      await target.locator(".design-picker select").focus();
       let reached = false;
-      for (let attempt = 0; attempt < 16; attempt++) {
-        await target.keyboard.press("Tab");
-        reached = await target.locator(".design-picker select").evaluate(element => element === document.activeElement);
-        if (reached) break;
-      }
-      expect(reached, "The style selector is reachable through keyboard navigation.");
+      reached = await target.locator(".design-picker select").evaluate(element => element === document.activeElement);
+      expect(reached, "The settings style selector accepts keyboard focus.");
       await target.keyboard.press("ArrowDown");
       await target.keyboard.press("Enter");
       await target.waitForFunction(() => document.documentElement.dataset.design === "workspace");
       expect(await target.locator(".design-picker select").inputValue() === "workspace",
-        "Native keyboard selection applies a different design.");
+        "Settings keyboard selection applies a different design.");
+      await target.goto(origin + "/", { waitUntil: "domcontentloaded" });
+      await ready("home");
       await target.locator(".sample-option").nth(1).click();
       await target.locator(".sample-detail").getByText("No comparable history", { exact: true }).waitFor();
       expect(!(await target.locator(".sample-detail").innerText()).includes("$300"),
@@ -488,7 +486,7 @@ export async function verifyThemePairs(page, outputDir) {
             try {
               await target.goto(origin + "/app", { waitUntil: "domcontentloaded" });
               await target.locator(selector).first().waitFor();
-              await target.locator(".design-picker select:not([disabled])").waitFor();
+              await target.locator(".theme-toggle:not([disabled])").waitFor();
               await target.locator(".theme-toggle:not([disabled])").waitFor();
               await target.evaluate(async () => { await document.fonts.ready; });
               await geometry("state/" + name + "/" + style + "/" + mode + "/" + language, 320, true);
@@ -667,12 +665,10 @@ export async function verifyThemePairs(page, outputDir) {
         isolated.on("pageerror", pageError);
         isolated.on("console", consoleError);
         await isolated.goto(origin + "/", { waitUntil: "domcontentloaded" });
-        await isolated.locator(".design-picker select:not([disabled])").waitFor();
-        await isolated.locator(".design-picker select").selectOption("story");
+        await isolated.evaluate(async () => (await import("/js/design-style.js")).selectDesignStyle("story"));
         await isolated.waitForFunction(() => document.documentElement.dataset.design === "story");
         expect(await isolated.locator(".sample-story").isVisible(), "Blocked storage still permits session appearance.");
         await isolated.reload({ waitUntil: "domcontentloaded" });
-        await isolated.locator(".design-picker select:not([disabled])").waitFor();
         expect(await isolated.locator("html").getAttribute("data-design") === "editorial",
           "Blocked storage reload uses an honest safe default.");
       } finally { await blocked.close(); }

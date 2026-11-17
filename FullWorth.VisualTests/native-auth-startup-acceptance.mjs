@@ -55,7 +55,7 @@ for (const engine of ["chromium", "webkit"]) {
         await Promise.race([held, page.waitForTimeout(15000).then(() => {
           throw new Error("Framework hold was not reached.");
         })]);
-        assert.equal(await page.locator(".design-picker select").isDisabled(), true);
+        assert.equal(await page.locator(".theme-toggle").isDisabled(), true);
         for (const [name, value] of Object.entries(scenario.fields)) {
           const field = page.locator(selector).locator('[name="' + name + '"]');
           if (typeof value === "boolean") await field.setChecked(value);
@@ -64,7 +64,7 @@ for (const engine of ["chromium", "webkit"]) {
         const before = await state();
         assert.ok(Object.values(before).every(Boolean), "Pre-start native fields must be valid.");
         release();
-        await page.locator(".design-picker select:not([disabled])").waitFor();
+        await page.locator(".theme-toggle:not([disabled])").waitFor();
         const after = await state();
         assert.equal(submissions, 0, "This reproduction must never register, send mail or reset a password.");
         // Fixed categories/booleans only; never log entered values, reset proof,

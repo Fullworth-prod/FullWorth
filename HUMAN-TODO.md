@@ -1,3 +1,11 @@
+## Current operator handoff — November 17, 2026 UTC
+
+The separately approved exact-master deployment of `8472e7cbf8efb4aa6ae95968afb39b9a0bf81335` passed [production workflow 44002636814](https://github.com/Fullworth-prod/FullWorth/actions/runs/44002636814), [same-release auth smoke 44003139391](https://github.com/Fullworth-prod/FullWorth/actions/runs/44003139391), and post-recovery production verification. A fresh completed backup from that release was copied object-by-object into the provider-locked prefix; valid production overwrite/delete attempts were denied. The second attempt of [independent recovery run 44008377648](https://github.com/Fullworth-prod/FullWorth/actions/runs/44008377648) passed on a disposable GitHub runner with a separate 24-hour read-only credential and retained only a private metadata receipt. The first attempt stopped on a stale bundle before restore; no production restore occurred.
+
+The real nonempty-statement recovery gate remains open. The release evidence template has the served SHA as planned candidate, with all 19 real-world cases NOT_RUN and actual fields blank. Physical installed-PWA, private/provider bill and statement truth, two-owner isolation, actual delivery and qualified legal acceptance still require release-pinned observations. AI/creator remain off; subscription enforcement is disabled. Older dated cards below are historical.
+
+---
+
 ## Final repository handoff — November 4, 2026
 
 Preserved development code candidate: `75df865b787394c7a6a83f24497376a1206b9602` ([#1050](https://github.com/Fullworth-prod/FullWorth/pull/1050)). Explicit types on the seven existing external-auth delegates repair compiled CodeQL binding while preserving handlers/routes/security metadata. All nine source-head checks passed: **3,719 .NET / 769 Node**, zero failed/skipped/backend+offline+Android warnings/errors; full Chromium/WebKit rendered/native-auth/virtual-passkey/MFA and container recovery passed. Source/tested/integrated tree `c3ea4a237a7d7fc5e11bf1900851a463f697576f` matches; files read back exactly and branches retained.

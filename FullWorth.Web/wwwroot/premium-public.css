@@ -835,3 +835,66 @@ html[data-design] .home-site-shell .footer-copy { white-space: normal; overflow-
 html[data-design="workspace"] .home-site-shell .site-header {
     --bw-surface-soft: #1646ad; --bw-surface-hover: #0d3a92;
 }
+
+/* Keep the public home header usable as one compact navigation surface on phones. */
+@media (max-width: 760px) {
+    html[data-design] .home-site-shell .header-inner {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: minmax(44px, auto) 44px;
+        align-items: center;
+        gap: 8px 12px;
+        padding: 12px 20px;
+    }
+
+    html[data-design] .home-site-shell .brand {
+        grid-column: 1;
+        grid-row: 1;
+        flex-wrap: nowrap;
+        gap: 9px;
+    }
+
+    html[data-design] .home-site-shell .brand-name {
+        font-size: 1.25rem;
+        overflow-wrap: normal;
+    }
+
+    html[data-design] .home-site-shell .desktop-nav {
+        display: none;
+    }
+
+    html[data-design] .home-site-shell .header-actions {
+        display: contents;
+    }
+
+    html[data-design] .home-site-shell .header-actions > .design-picker {
+        grid-column: 1;
+        grid-row: 2;
+        justify-self: start;
+    }
+
+    html[data-design] .home-site-shell .header-actions > .theme-toggle {
+        grid-column: 2;
+        grid-row: 2;
+        justify-self: end;
+    }
+
+    html[data-design] .home-site-shell .header-actions > .header-action {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+        min-height: 44px;
+        padding-inline: 4px;
+        white-space: nowrap;
+    }
+
+    html[data-design] .home-site-shell .header-actions > .header-action[href="/register"] {
+        display: none;
+    }
+
+    html[data-design] .home-site-shell .header-actions > .design-picker-error {
+        grid-column: 1;
+        grid-row: 2;
+        align-self: end;
+    }
+}

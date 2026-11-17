@@ -123,3 +123,106 @@ html[data-theme="light"] .home-bill-example { --sample-increase: #b1460b; --samp
 html[data-design="story"] .sample-story .sample-paper { margin: 0; }
 html[data-design="story"] .sample-story-steps { margin-bottom: 16px; }
 html[data-design="story"] :is(.sample-qualification, .sample-read-only) { margin-top: 8px; }
+
+/* On phones the example reads as one compact bill card, with impact first. */
+@media (max-width: 760px) {
+    .sample-editorial {
+        padding: 18px;
+        border: 1px solid var(--pair-line);
+        border-radius: 20px;
+        background: var(--pair-panel);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, .08);
+    }
+
+    .sample-editorial h2 {
+        padding: 0 0 14px;
+        border-bottom: 0;
+        font: 750 1rem/1.3 Inter, system-ui, sans-serif;
+        letter-spacing: -.02em;
+    }
+
+    .sample-table {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .sample-table > div,
+    .sample-table > div:nth-child(1) {
+        display: block;
+        min-width: 0;
+        padding: 12px;
+        border: 1px solid var(--pair-line);
+        border-radius: 12px;
+    }
+
+    .sample-table > div:nth-child(1) {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        background: var(--pair-canvas);
+    }
+
+    .sample-table > div:nth-child(4),
+    .sample-table > div:nth-child(5) {
+        background: color-mix(in srgb, var(--pair-accent) 10%, var(--pair-panel));
+        border-color: color-mix(in srgb, var(--pair-accent) 28%, var(--pair-line));
+    }
+
+    .sample-table dt {
+        max-width: none;
+        padding: 0;
+        font-size: .69rem;
+        line-height: 1.35;
+        letter-spacing: .055em;
+    }
+
+    .sample-table dd {
+        margin-top: 5px;
+        padding: 0;
+        font: 650 clamp(1.05rem, 4.7vw, 1.3rem)/1.2 Inter, system-ui, sans-serif;
+        text-align: start;
+        white-space: normal;
+        overflow-wrap: normal;
+    }
+
+    .sample-table > div:nth-child(1) dd {
+        margin-top: 0;
+    }
+
+    .sample-table > div:nth-child(4) dd,
+    .sample-table > div:nth-child(5) dd {
+        color: var(--pair-accent);
+        font-weight: 800;
+    }
+
+    .sample-editorial .sample-evidence-disclosure {
+        margin-top: 14px;
+        border-block: 0;
+        border-top: 1px solid var(--pair-line);
+    }
+
+    .sample-editorial .sample-evidence-disclosure summary {
+        display: grid;
+        justify-content: stretch;
+        gap: 4px;
+        padding: 12px 0 0;
+        font-size: .9rem;
+    }
+
+    .sample-editorial .sample-evidence-disclosure summary > span:first-child {
+        color: var(--pair-muted);
+        font-size: .78rem;
+    }
+
+    .sample-editorial .sample-evidence-disclosure summary > span:last-child {
+        color: var(--pair-accent);
+    }
+
+    .sample-qualification,
+    .sample-read-only {
+        font-size: .82rem;
+        line-height: 1.5;
+    }
+}

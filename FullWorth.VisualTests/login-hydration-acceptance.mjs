@@ -44,7 +44,7 @@ export async function verifyLoginHydration(browser, baseURL, engine) {
       held,
       page.waitForTimeout(15000).then(() => { throw new Error("Framework hold was not reached."); })
     ]);
-    assert.equal(await page.locator(".design-picker select").isDisabled(), true,
+    assert.equal(await page.locator(".theme-toggle").isDisabled(), true,
       "The controlled sample must precede interactive hydration.");
     await page.locator('input[name="email"]').fill(sample.email);
     await page.locator('input[name="password"]').fill(sample.password);
@@ -52,16 +52,16 @@ export async function verifyLoginHydration(browser, baseURL, engine) {
     const before = await observe();
     assert.ok(Object.values(before).every(Boolean), "Prerendered native controls must accept valid input.");
     release();
-    await page.locator(".design-picker select:not([disabled])").waitFor();
+    await page.locator(".theme-toggle:not([disabled])").waitFor();
     const after = await observe();
     console.log("Controlled login hydration: " + JSON.stringify({ engine, before, after, submissions }));
     assert.equal(submissions, 0, "Hydration observation must not submit credentials.");
     assert.ok(Object.values(after).every(Boolean),
       "Interactive hydration must preserve the email, password and remember-me choice entered before startup.");
 
-    // The appearance controls hydrate independently; exercising them must not
-    // replace the native cookie-authentication form or erase entered proof.
-    await page.locator(".design-picker select").selectOption("workspace");
+    // A saved style and the visible mode control must not replace the native
+    // cookie-authentication form or erase entered proof.
+    await page.evaluate(async () => (await import("/js/design-style.js")).selectDesignStyle("workspace"));
     await page.waitForFunction(() => document.documentElement.dataset.design === "workspace");
     const previousTheme = await page.locator("html").getAttribute("data-theme");
     assert.ok(["light", "dark"].includes(previousTheme));

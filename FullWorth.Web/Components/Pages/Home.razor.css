@@ -108,3 +108,124 @@ html[data-design="story"] .paired-home .home-evidence > .home-kicker { display: 
 /* Restore readable word separation with the actual display face. */
 html[data-design="story"] .paired-home .hero h1 { letter-spacing: -.035em; }
 html[data-design="workspace"] .paired-home .hero h1 { font-size: clamp(2.4rem, 4.5vw, 4.3rem); letter-spacing: -.025em; }
+
+/* Phone composition: a clear headline, one action, then short evidence cards. */
+@media (max-width: 760px) {
+    .landing-page.paired-home,
+    html[data-design="workspace"] .landing-page.paired-home {
+        padding: 24px 20px 40px;
+    }
+
+    .paired-home .hero {
+        margin: 0 0 24px;
+    }
+
+    .paired-home .hero-copy,
+    html[data-design="workspace"] .paired-home .hero-copy,
+    html[data-design="story"] .paired-home .hero-copy {
+        text-align: start;
+    }
+
+    .paired-home .hero h1,
+    html[data-design="workspace"] .paired-home .hero h1,
+    html[data-design="story"] .paired-home .hero h1 {
+        max-width: 18ch;
+        font: 800 clamp(2.1rem, 9vw, 3rem)/1.04 "FullWorth Display", Inter, system-ui, sans-serif;
+        letter-spacing: -.04em;
+        overflow-wrap: normal;
+    }
+
+    .paired-home .hero-description,
+    html[data-design="workspace"] .paired-home .hero-description,
+    html[data-design="story"] .paired-home .hero-description {
+        max-width: 34ch;
+        margin: 16px 0 0;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    .paired-home .hero-actions,
+    html[data-design="workspace"] .paired-home .hero-actions,
+    html[data-design="story"] .paired-home .hero-actions {
+        margin-top: 22px;
+        justify-content: stretch;
+    }
+
+    .paired-home .home-primary-action {
+        width: 100%;
+        min-height: 54px;
+        border-radius: 14px;
+        box-shadow: 0 10px 24px rgba(40, 84, 232, .18);
+    }
+
+    .paired-home .home-process {
+        margin: 24px 0;
+        padding: 0;
+        border: 0;
+    }
+
+    .paired-home .home-process ol {
+        list-style: none;
+        counter-reset: home-step;
+        gap: 10px;
+        padding: 0;
+    }
+
+    .paired-home .home-process li,
+    .paired-home .home-process li + li {
+        position: relative;
+        counter-increment: home-step;
+        min-height: 90px;
+        padding: 16px 16px 16px 54px;
+        border: 1px solid var(--pair-line);
+        border-radius: 16px;
+        background: var(--pair-panel);
+    }
+
+    .paired-home .home-process li::before {
+        content: counter(home-step);
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        display: grid;
+        place-items: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 9px;
+        background: color-mix(in srgb, var(--pair-accent) 14%, transparent);
+        color: var(--pair-accent);
+        font: 800 .85rem/1 Inter, system-ui, sans-serif;
+    }
+
+    .paired-home .home-process h2 {
+        margin-bottom: 6px;
+        font: 750 1rem/1.3 Inter, system-ui, sans-serif;
+        letter-spacing: -.02em;
+    }
+
+    .paired-home .home-process p {
+        font-size: .9rem;
+        line-height: 1.45;
+    }
+
+    .paired-home .home-evidence {
+        padding: 8px 0 28px;
+    }
+
+    .paired-home .home-evidence h2,
+    .paired-home .home-security h2 {
+        font: 800 clamp(1.45rem, 6vw, 1.85rem)/1.15 "FullWorth Display", Inter, system-ui, sans-serif;
+        letter-spacing: -.035em;
+    }
+
+    .paired-home .home-evidence > p:not(.home-kicker),
+    .paired-home .home-security p {
+        font-size: .95rem;
+        line-height: 1.55;
+    }
+
+    .paired-home .home-security {
+        gap: 12px;
+        padding-top: 28px;
+    }
+}

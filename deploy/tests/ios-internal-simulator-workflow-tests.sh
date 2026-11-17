@@ -34,9 +34,11 @@ grep -Fq 'runs-on: macos-26' "$workflow" ||
     fail "iOS build is not pinned to the macos-26 runner that carries the matching iOS 26.5 simulator runtime."
 grep -Fq 'dotnet workload install maui-ios --version 10.0.401' "$workflow" ||
     fail "MAUI iOS workload installation is missing."
-grep -Fq 'DOTNET_INSTALL_DIR: ${{ runner.temp }}/fullworth-dotnet10' "$workflow" ||
-    fail "iOS build does not isolate the .NET 10 SDK from preinstalled .NET 11 manifests."
-grep -Fq 'DOTNET_MULTILEVEL_LOOKUP: "0"' "$workflow" ||
+grep -Fq 'Isolate .NET 10 SDK from runner workloads' "$workflow" ||
+    fail "iOS build does not run the SDK isolation setup before workload installation."
+grep -Fq 'DOTNET_INSTALL_DIR=%s' "$workflow" ||
+    fail "iOS build does not configure an isolated .NET 10 install root."
+grep -Fq 'DOTNET_MULTILEVEL_LOOKUP=0' "$workflow" ||
     fail "iOS build is allowed to fall back to conflicting machine-wide SDKs."
 
 grep -Fq 'Select Xcode 26.6 required by .NET iOS' "$workflow" ||

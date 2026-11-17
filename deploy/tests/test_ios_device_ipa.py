@@ -110,8 +110,10 @@ class DeviceIpaTests(unittest.TestCase):
             with self.subTest(workflow=workflow_name):
                 workflow = (ROOT / ".github/workflows" / workflow_name).read_text()
                 self.assertIn("runs-on: macos-26", workflow)
-                self.assertIn("DOTNET_INSTALL_DIR: \u0024{{ runner.temp }}/fullworth-dotnet10", workflow)
-                self.assertIn('DOTNET_MULTILEVEL_LOOKUP: "0"', workflow)
+                self.assertIn("Isolate .NET 10 SDK from runner workloads", workflow)
+                self.assertIn("DOTNET_INSTALL_DIR=%s", workflow)
+                self.assertIn("DOTNET_MULTILEVEL_LOOKUP=0", workflow)
+                self.assertIn("fullworth-dotnet10", workflow)
                 self.assertIn("dotnet workload install maui-ios --version 10.0.401", workflow)
                 self.assertIn('xcode_app="/Applications/Xcode_26.6.app"', workflow)
 

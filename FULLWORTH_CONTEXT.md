@@ -1,3 +1,15 @@
+## Served release and independent recovery checkpoint — November 17, 2026 UTC
+
+Current master and independently verified served release: `8472e7cbf8efb4aa6ae95968afb39b9a0bf81335`. The separately approved [guarded production deployment](https://github.com/Fullworth-prod/FullWorth/actions/runs/44002636814) passed exact-master, host, image, runtime and readiness checks. The [same-release authenticated API/Web smoke](https://github.com/Fullworth-prod/FullWorth/actions/runs/44003139391) passed, and the production verifier passed again after the recovery drill. Subscription enforcement remains disabled.
+
+The completed production backup `c038fb59f85457ca866424b5550948e250e66c0faa6b3239d483a98ae5825105` has a manifest ReleaseId equal to the served SHA. A new encrypted copy under the existing indefinite provider lock at `immutable-recovery/20261117T032916Z-577be7601055/` contained 638 objects and 10,215,894 bytes. Byte-for-byte source/copy verification passed. The valid production credential received provider HTTP 409/ObjectLockedByBucketPolicy for both overwrite and delete. A separate 24-hour, bucket-scoped Object Read only credential passed actual read and HTTP 403/AccessDenied write/delete checks; credentials stayed private.
+
+The first [independent recovery workflow run](https://github.com/Fullworth-prod/FullWorth/actions/runs/44008377648) attempt rejected a stale October 25 bundle before restore. Its second attempt passed on a fresh GitHub-hosted runner using the newly verified protected copy. The private metadata-only receipt records `result=complete`, the exact runner/source release and snapshot, and verified read-only provider denials. No restore touched production. The receipt explicitly records `realNonemptyStatementAcceptance=not established`.
+
+The 19-case release evidence template now names the actual master as planned candidate only. All 19 statuses remain NOT_RUN and observed identity/result fields stay blank until their scoped real-world checks are performed. Physical installed-PWA, private bank/bill/subscription/payroll/statement, controlled two-owner and actual delivery, nonempty real-statement recovery, and qualified legal acceptance remain open. AI and creator features stay off. The November 4 and older cards below are historical.
+
+---
+
 ## Final repository handoff — November 4, 2026
 
 Preserved development code candidate: `75df865b787394c7a6a83f24497376a1206b9602` ([#1050](https://github.com/Fullworth-prod/FullWorth/pull/1050)). Explicit types on the seven existing external-auth delegates repair compiled CodeQL binding while preserving handlers/routes/security metadata. All nine source-head checks passed: **3,719 .NET / 769 Node**, zero failed/skipped/backend+offline+Android warnings/errors; full Chromium/WebKit rendered/native-auth/virtual-passkey/MFA and container recovery passed. Source/tested/integrated tree `c3ea4a237a7d7fc5e11bf1900851a463f697576f` matches; files read back exactly and branches retained.

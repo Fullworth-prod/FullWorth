@@ -1089,7 +1089,10 @@ jobs:
         if: steps.container_changes.outputs.required == 'true'
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+          # Report the failing shell line, not the command or any sensitive request data.
+          # This preserves every containment assertion while diagnosing silent exits.
+          trap 'status=$?; printf "OCR containment assertion failed at step line %s (status %s).\\n" "$LINENO" "$status" >&2' ERR
           shopt -s nullglob
 
           image_file="$(mktemp)"

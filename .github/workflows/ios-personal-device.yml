@@ -43,6 +43,10 @@ jobs:
     needs: contract
     runs-on: macos-26
     timeout-minutes: 40
+    env:
+      # Keep .NET 11 runner manifests out of this .NET 10 workload installation.
+      DOTNET_INSTALL_DIR: ${{ runner.temp }}/fullworth-dotnet10
+      DOTNET_MULTILEVEL_LOOKUP: "0"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:

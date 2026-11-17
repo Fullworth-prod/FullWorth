@@ -59,14 +59,25 @@ public sealed class OverviewBillSummaryTests
     [Fact]
     public async Task MissingAmounts_AreCountedAndExcluded()
     {
+        // Ensure a legitimate bill link contains the same digits as the excluded amount.
+        // Arbitrary GUID substrings are not visible financial claims.
+        var recognized = OverviewBillCoverageTests.Bill(29m) with
+        {
+            Id = Guid.Parse("00000000-0000-0000-0000-000000000999")
+        };
         var summary = OverviewBillCoverage.Create([
-            OverviewBillCoverageTests.Bill(29m), OverviewBillCoverageTests.Bill(999m, currency: null)]);
+            recognized, OverviewBillCoverageTests.Bill(999m, currency: null)]);
         var html = await RenderAsync("en", summary);
         Assert.Contains("$29.00", html);
         Assert.Contains("1 of 2 active bills have a usable amount and currency.", html);
         Assert.Contains("1 bills are excluded", html);
         Assert.Contains("Uncompared bills are not confirmed unchanged.", html);
-        Assert.DoesNotContain("999", html);
+        Assert.Contains(recognized.Id.ToString("D"), html);
+
+        // Excluded amounts must not leak into rendered text, even though IDs
+        // legitimately appear in href attributes and may contain "999".
+        var visibleText = System.Text.RegularExpressions.Regex.Replace(html, "<[^>]*>", string.Empty);
+        Assert.DoesNotContain("999", visibleText);
     }
 
     [Fact]
